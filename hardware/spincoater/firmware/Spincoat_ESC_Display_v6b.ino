@@ -25,7 +25,7 @@ double pwm_send = 700;
 //Specify the links and initial tuning parameters
 double pwm_output = 0;
 double rpm_setpoint = 0;
-PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .05,.01,0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
+PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .05,.03,0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
 
 // --------- LCD Display
 #include <LiquidCrystal.h>
@@ -46,13 +46,13 @@ void setup(){
   ESC1.attach(ESC_PIN);
 //  ESC1.write(MAX_SIGNAL); //option to calibrate ESC, (1 of 2)
 //  delay(5000);            // (2 of 2)
-  ESC1.write(MIN_SIGNAL);//start with motor off
-  delay(4000);
+  ESC1.write(MIN_SIGNAL);// ESC initialization procedure requires 3s of min throttle
+  delay(4000); // to hold at least 3s
   FreqMeasure.begin(); //comment out for comLINK to run
-  myPID.SetOutputLimits(810, 935);
+  myPID.SetOutputLimits(810, 935); // if min is set to MIN_SIGNAL, off can be achieved but stabilization may be an issue
   myPID.SetMode(AUTOMATIC); // turns on PID 
- 
   }
+  
 // --------- Funcitons
 void printHelp(void){
   Serial.println("--- Command list: ---");
@@ -61,6 +61,7 @@ void printHelp(void){
   Serial.println("d -> Recipe 2 \"deactivate\"");
   Serial.println("s -> LED     \"status\"");  
   }
+  
 void updateLCD(int rpm, int pwm_send){
   lcd.clear();
   char buffer[16];
@@ -71,6 +72,7 @@ void updateLCD(int rpm, int pwm_send){
   lcd.setCursor(0,1);
   lcd.print(buffer);
   }
+  
 void blink(){
   if (rpm == 0){
   digitalWrite(LED, LOW);
