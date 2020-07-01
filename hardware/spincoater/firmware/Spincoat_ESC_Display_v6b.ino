@@ -26,6 +26,8 @@ double pwm_send = 700;
 double pwm_output = 0;
 double rpm_setpoint = 0;
 PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .05,.03,0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
+int pid_switch = 0;
+
 
 // --------- LCD Display
 #include <LiquidCrystal.h>
@@ -130,6 +132,7 @@ void comLINK(){
       rpm = Serial.parseInt();
       rpm_setpoint = rpm;
       setRPM(rpm);
+      pid_switch = 1;
       break;
       
     case 'r':    
@@ -147,7 +150,8 @@ void comLINK(){
       break;
 
     case 'z':
-    case 'Z':                          
+    case 'Z':
+      pid_switch = 0;                          
       setRPM(0);
       break;  
       
@@ -182,5 +186,7 @@ void runPID(int rpm_setpoint){
 void loop(){ 
   senseRPM();
   comLINK();
-  runPID(rpm_setpoint);  // this will make PID constantly write new pwm value to motor
+  if (pid_switch == 1){
+    runPID(rpm_setpoint); // this will make PID constantly write new pwm value to motor
+      }
   }
