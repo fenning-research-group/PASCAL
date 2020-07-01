@@ -1,0 +1,5 @@
+PASCAL SPINCOATER FIRMWARE README
+
+v5: introduces serial communication 
+v5c: introduces RPM sensing 
+v6b: introduces PID feedback control
