@@ -17,16 +17,13 @@ class movement
 		movement(void);
 
 		// function to initialize movement pins
-		void init_move(void);
+		// void init_move(void);
 
 		// set position [mm]
-		void set_position(float,float,float);
+		void set_position(float x, float y, float z);
 
-		// get current x,y,z coordinates
-		float get_curr_x(void);
-		float get_curr_y(void);
-		float get_curr_z(void);
-
+		void process_move(void);
+		
 		// go to home position (and reset position)
 		void go_home(void);
 
@@ -63,7 +60,7 @@ class movement
 		const int steps_per_rev = 200;
 
 		// time delay for movement [milli sec]
-		const int move_delay = 500;
+		const int MOVE_DELAY = 500;
 
 		// time delay for stepper motor step [micro sec]
 		// 1000 us is optimal speed
@@ -74,20 +71,31 @@ class movement
 		float curr_y;
 		float curr_z;
 
+		// target x,y,z position [mm]
+		float target_x;
+		float target_y;
+		float target_z;
+
+		// axes moving status
+
+		bool x_moving
+		bool y_moving
+		bool z_moving
+
 		// home position [mm]
 		const float home_x = 0;
 		const float home_y = 0;
 		const float home_z = 0;
 
 		// set resolution of stepper motors [mm per step]
-		const float step_x = 0.2;
-		const float step_y = 0.3;
-		const float step_z = 0.04;
+		const float STEP_X = 0.2;
+		const float STEP_Y = 0.3;
+		const float STEP_Z = 0.04;
 
 		// set tolerance values for x,y,z [mm]
-		const float tol_x = 0.1;
-		const float tol_y = 0.1;
-		const float tol_z = 0.02;
+		const float TOL_X = 0.1;
+		const float TOL_Y = 0.1;
+		const float TOL_Z = 0.02;
 
 		// take a step for stepper motor
 		void take_step(int,int,bool);

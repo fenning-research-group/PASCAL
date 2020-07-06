@@ -95,8 +95,7 @@ void gripper::angle_set(int angle_target)
 		delay(step_delay);
 	}
 
-	// delay
-	delay(move_delay);
+    current_angle = angle_get()
 
 	// get actual servo angle (feedback)
 	// NOTE: not used in current gripper design

@@ -63,6 +63,7 @@ class gripper
 		int max_fdbck;  // 180 degrees
 		int min_fdbck;  // 0 degrees
 
+		int current_angle = 0;
 		// gripper angle offset
 		// this is to avoid hard 0,180 angles
 		const int angle_off = 45;

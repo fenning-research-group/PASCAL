@@ -20,11 +20,6 @@ movement::movement(void)
 	curr_x = 10000;
 	curr_y = 10000;
 	curr_z = 10000;
-}
-
-// function to initialize movement pins
-void movement::init_move(void)
-{
 	pinMode(x_dir_pin, OUTPUT);
 	pinMode(x_stp_pin, OUTPUT);
 	pinMode(y_dir_pin, OUTPUT);
@@ -33,95 +28,108 @@ void movement::init_move(void)
 	pinMode(z_stp_pin, OUTPUT);
 }
 
-// set position [mm]
+// // function to initialize movement pins
+// void movement::init(void)
+// {
+// 	pinMode(x_dir_pin, OUTPUT);
+// 	pinMode(x_stp_pin, OUTPUT);
+// 	pinMode(y_dir_pin, OUTPUT);
+// 	pinMode(y_stp_pin, OUTPUT);
+// 	pinMode(z_dir_pin, OUTPUT);
+// 	pinMode(z_stp_pin, OUTPUT);
+// }
+
 void movement::set_position(float x, float y, float z)
 {
-	// set target values [mm]
-	float targ_x = x;
-	float targ_y = y;
-	float targ_z = z;
-	bool reached_x = false;
-	bool reached_y = false;
-	bool reached_z = false;
+	target_x = x;
+	target_y = y;
+	target_z = z;
+}
 
-	while (!reached_x || !reached_y || !reached_z){
-		// move in x
-		if (curr_x<(targ_x - tol_x)){ 
-			if (is_pressed(lim_x_max_pin)){	//make sure we havent hit the limit switch
-				break;
-			}
-			curr_x += step_x;
-			take_step(x_dir_pin,x_stp_pin,true);
+// execute one cycle of motor movement
+void movement::process_move(void)
+{
 
-		}else if (curr_x>(targ_x + tol_x)){
-			if (is_pressed(lim_x_min_pin)){
-				break;
-			}
-			curr_x -= step_x;
-			take_step(x_dir_pin,x_stp_pin,false);
+	if (curr_x < (target_x - TOL_X))
+	{ 
+		// if (is_pressed(lim_x_max_pin))
+		// {	//make sure we havent hit the limit switch
+		// 	break;
+		// }
+		curr_x += STEP_X;
+		take_step(x_dir_pin,x_stp_pin,true);
+		x_moving = true;
 
-		}else{
-			reached_x = true;
-		}
-		
-		// move in y
-		if (curr_y<(targ_y - tol_y)){ 
-			if (is_pressed(lim_y_max_pin)){
-				break;
-			}
-			curr_y += step_y;
-			take_step(y_dir_pin,y_stp_pin,false);
-
-		}else if (curr_y>(targ_y + tol_y)){
-			if (is_pressed(lim_y_min_pin)){
-				break;
-			}
-			curr_y -= step_y;
-			take_step(y_dir_pin,y_stp_pin,true);
-
-		}else{
-			reached_y = true;
-		}
-
-
-		// move in z
-		if (curr_z<(targ_z - tol_z)){
-			if (is_pressed(lim_z_max_pin)){
-				break;
-			}
-			curr_z += step_z;
-			take_step(z_dir_pin,z_stp_pin,true);
-
-		}else if (curr_z>(targ_z + tol_z)){
-			if (is_pressed(lim_z_min_pin)){
-				break;
-			}
-			curr_z -= step_z;
-			take_step(z_dir_pin,z_stp_pin,false);
-
-		}else{
-			reached_z = true;
-		}
-
-		// wait for movement, update current coordinates
-		delay(move_delay);
-		write_coord(curr_x,curr_y,curr_z);
 	}
+	else if (curr_x > (target_x + TOL_X))
+	{
+		// if (is_pressed(lim_x_min_pin)){
+		// 	break;
+		// }
+		curr_x -= STEP_X;
+		take_step(x_dir_pin,x_stp_pin,false);
+		x_moving = true;
+
+	}
+	else
+	{
+		x_moving = false;
+	}
+		
+	// move in y
+	if (curr_y < (target_y - TOL_Y))
+	{ 
+		// if (is_pressed(lim_y_max_pin)){
+		// 	break;
+		// }
+		curr_y += STEP_Y;
+		take_step(y_dir_pin,y_stp_pin,false);
+		y_moving = true;
+	}
+	else if (curr_y > (target_y + TOL_Y))
+	{
+		// if (is_pressed(lim_y_min_pin)){
+		// 	break;
+		// }
+		curr_y -= STEP_Y;
+		take_step(y_dir_pin,y_stp_pin,true);
+		y_moving = true;
+	}
+	else
+	{
+		y_moving = false;
+	}
+
+
+	// move in z
+	if (curr_z < (target_z - TOL_Z))
+	{
+		// if (is_pressed(lim_z_max_pin)){
+		// 	break;
+		// }
+		curr_z += STEP_Z;
+		take_step(z_dir_pin,z_stp_pin,true);
+		z_moving = true;
+
+	}
+	else if (curr_z>(target_z + TOL_Z))
+	{
+		// if (is_pressed(lim_z_min_pin)){
+		// 	break;
+		// }
+		curr_z -= STEP_Z;
+		take_step(z_dir_pin,z_stp_pin,false);
+		z_moving = true;
+	}
+	else
+	{
+		z_moving = false;
+	}
+
+	// wait for movement, update current coordinates
+	delay(MOVE_DELAY);		
 }
 
-// get current x,y,z coordinates
-float movement::get_curr_x(void)
-{
-	return curr_x;
-}
-float movement::get_curr_y(void)
-{
-	return curr_y;
-}
-float movement::get_curr_z(void)
-{
-	return curr_z;
-}
 
 // go to home position (and reset position)
 void movement::go_home(void)
@@ -136,7 +144,7 @@ void movement::go_home(void)
 			if (is_pressed(lim_x_min_pin)){	//make sure we havent hit the limit switch
 				reached_x = true;
 			}else{
-				curr_x -= step_x;
+				curr_x -= STEP_X;
 				take_step(x_dir_pin,x_stp_pin,false);
 			}
 		}
@@ -144,7 +152,7 @@ void movement::go_home(void)
 			if (is_pressed(lim_y_min_pin)){	//make sure we havent hit the limit switch
 				reached_y = true;
 			}else{
-				curr_y -= step_y;
+				curr_y -= STEP_Y;
 				take_step(y_dir_pin,y_stp_pin,true);
 			}
 		}
@@ -152,11 +160,11 @@ void movement::go_home(void)
 			if (is_pressed(lim_z_min_pin)){	//make sure we havent hit the limit switch
 				reached_z = true;
 			}else{
-				curr_z -= step_z;
+				curr_z -= STEP_Z;
 				take_step(z_dir_pin,z_stp_pin,false);
 			}
 		}
-		delay(move_delay);
+		delay(MOVE_DELAY);
 	}
 	curr_x = 0;
 	curr_y = 0;
