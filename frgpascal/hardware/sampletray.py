@@ -23,6 +23,7 @@ class SampleTray:
 		"""
 		routine to export tray data to save file. used to keep track of experimental conditions in certain tray.
 		"""
+		return None
 		
 
 
