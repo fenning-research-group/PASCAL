@@ -759,13 +759,13 @@
 #define Y_PULLEY_TEETH 20 //
  
 #define X_BELT_PITCH 2 //mm  https://openbuildspartstore.com/gt2-2m-timing-belt-by-the-foot/ 
-#define Y_BELT_PITCH 3 //mm https://openbuildspartstore.com/3gt-gt2-3m-timing-belt-by-the-foot/
+#define Y_BELT_PITCH 2 //mm https://openbuildspartstore.com/3gt-gt2-3m-timing-belt-by-the-foot/
 
 #define Z_LEADSCREW_PITCH 2 //mm https://openbuildspartstore.com/8mm-metric-acme-lead-screw/
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { X_STEPS_PER_REVOLUTION/X_PULLEY_TEETH/X_BELT_PITCH,\
-                                        Y_STEPS_PER_REVOLUTION/Y_PULLEY_TEETH/Y_BELT_PITCH,\
-                                        Z_STEPS_PER_REVOLUTION/Z_LEADSCREW_PITCH,\
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 2*X_STEPS_PER_REVOLUTION/X_PULLEY_TEETH/X_BELT_PITCH,\
+                                        2*Y_STEPS_PER_REVOLUTION/Y_PULLEY_TEETH/Y_BELT_PITCH,\
+                                        2*Z_STEPS_PER_REVOLUTION/Z_LEADSCREW_PITCH,\
                                         93}
 /**
  * Default Max Feed Rate (mm/s)

@@ -11,9 +11,9 @@ class Gantry:
 		self.connect(port = port)
 
 		#gantry variables
-		self.xlim = (0,235)
-		self.ylim = (0,235)
-		self.zlim = (0,60)
+		self.xlim = (0,797.0)
+		self.ylim = (0,165.0)
+		self.zlim = (0,136.0)
 		self.position = [None, None, None] #start at None's to indicate stage has not been homed.
 		self.__targetposition = [None, None, None] 
 		self.GANTRYTIMEOUT = 15 #max time allotted to gantry motion before flagging an error, in seconds
@@ -23,10 +23,10 @@ class Gantry:
 		#gripper variables
 		self.gripperangle = None
 		self.servoangle = None
-		self.MAXANGLE = 180
-		self.MINANGLE = 0
-		self.MINWIDTH = 0
-		self.MAXWIDTH = 50 #max gripper width, in mm
+		self.MAXANGLE = 130
+		self.MINANGLE = 55
+		self.MINWIDTH = 5
+		self.MAXWIDTH = 33 #max gripper width, in mm
 
 	#communication methods
 	def connect(self, port):
@@ -65,9 +65,16 @@ class Gantry:
 					break
 		self.position = [x,y,z]
 
-		# output = self.write('M280 P1') #get current servo position
-		# self.servoangle = float(re.findall('S:(\S*)', output[0])[0]) #TODO - READ SERVO POSITION
-		# self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
+	def update_gripper(self):
+		found_coordinates = False
+		while not found_coordinates:
+			output = self.write('M280 P1') #get current servo position
+			for line in output:
+				if line.startswith('echo: Servo'):
+					self.servoangle = float(re.findall('SERVO 0: (\S*)', line)[0]) #TODO - READ SERVO POSITION
+					self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
+					found_coordinates = True
+					break
 
 	#gantry methods
 	def gohome(self):
@@ -102,6 +109,7 @@ class Gantry:
 
 		if self.premove(x, y, z):
 			self.write(f'G0 X{x} Y{y} Z{z}')
+			self.write('M400')
 			return self._waitformovement()
 		else:
 			raise Exception('Invalid move - probably out of bounds')
@@ -134,15 +142,19 @@ class Gantry:
 		return reached_destination
 
 	#gripper methods
-	def open_gripper(self, width):
+	def open_gripper(self, width = None):
 		'''
 		open gripper to width, in mm
 		'''
+		if width is None:
+			width = self.MAXWIDTH
+
 		angle = self.__width_to_servo_angle(width)
-		self.write(f'M280 P1 S{angle}')
+		self.write(f'M280 P0 S{angle}')
+		self.write('M400')
 
 	def close_gripper(self):
-		self.open_gripper(width = 0)
+		self.open_gripper(width = self.MINWIDTH)
 
 	def __servo_angle_to_width(self, angle):
 		'''
@@ -152,7 +164,7 @@ class Gantry:
 			raise Exception(f'Angle {angle} outside acceptable range ({self.MINANGLE}-{self.MAXANGLE})')
 
 		fractional_angle = (angle-self.MINANGLE) / (self.MAXANGLE-self.MINANGLE)
-		width = fractional_angle * self.MAXWIDTH
+		width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
 		return width
 
 	def __width_to_servo_angle(self, width):
@@ -162,8 +174,8 @@ class Gantry:
 		if (width > self.MAXWIDTH) or (width < self.MINWIDTH):
 			raise Exception(f'Width {width} outside acceptable range ({self.MINWIDTH}-{self.MAXWIDTH})')
 
-		fractional_width = width / self.MAXWIDTH
-		angle = fraction_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
+		fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
+		angle = fractional_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
 		return angle
 
 
