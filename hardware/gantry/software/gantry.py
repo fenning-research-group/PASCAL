@@ -7,7 +7,7 @@ class Gantry:
 		#communication variables
 		self.port = port
 		self.terminator = '\n'
-		self.POLLINGDELAY = 0.1 #delay between sending a command and reading a response, in seconds
+		self.POLLINGDELAY = 0.2 #delay between sending a command and reading a response, in seconds
 		self.connect(port = port)
 
 		#gantry variables
