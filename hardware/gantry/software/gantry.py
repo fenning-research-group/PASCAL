@@ -11,9 +11,9 @@ class Gantry:
 		self.connect(port = port)
 
 		#gantry variables
-		self.xlim = (0,100)
-		self.ylim = (0,100)
-		self.zlim = (0,100)
+		self.xlim = (0,235)
+		self.ylim = (0,235)
+		self.zlim = (0,60)
 		self.position = [None, None, None] #start at None's to indicate stage has not been homed.
 		self.__targetposition = [None, None, None] 
 		self.GANTRYTIMEOUT = 15 #max time allotted to gantry motion before flagging an error, in seconds
@@ -53,13 +53,16 @@ class Gantry:
 		return output
 
 	def update(self):
-		output = self.write('M114') #get current position
-		for line in output:
-			if line.startswith('X:'):
-				x = float(re.findall('X:(\S*)', line)[0])
-				y = float(re.findall('Y:(\S*)', line)[0])
-				z = float(re.findall('Z:(\S*)', line)[0])
-				break
+		found_coordinates = False
+		while not found_coordinates:
+			output = self.write('M114') #get current position
+			for line in output:
+				if line.startswith('X:'):
+					x = float(re.findall('X:(\S*)', line)[0])
+					y = float(re.findall('Y:(\S*)', line)[0])
+					z = float(re.findall('Z:(\S*)', line)[0])
+					found_coordinates = True
+					break
 		self.position = [x,y,z]
 
 		# output = self.write('M280 P1') #get current servo position
@@ -69,7 +72,7 @@ class Gantry:
 	#gantry methods
 	def gohome(self):
 		self.write('G28 X Y Z')
-		self.position = [0,0,0]
+		self.update()
 
 	def premove(self, x, y, z):
 		'''

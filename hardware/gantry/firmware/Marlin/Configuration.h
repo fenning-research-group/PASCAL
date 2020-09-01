@@ -747,14 +747,32 @@
  * Override with M92
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 93 }
+#define X_MICROSTEPS 16
+#define Y_MICROSTEPS 16
+#define Z_MICROSTEPS 16
 
+#define X_STEPS_PER_REVOLUTION (200 * X_MICROSTEPS) //X_MICROSTEPS defined in configuration_adv.h
+#define Y_STEPS_PER_REVOLUTION (200 * Y_MICROSTEPS) //Y_MICROSTEPS defined in configuration_adv.h
+#define Z_STEPS_PER_REVOLUTION (200 * Z_MICROSTEPS) //Z_MICROSTEPS defined in configuration_adv.h
+
+#define X_PULLEY_TEETH 20 //
+#define Y_PULLEY_TEETH 20 //
+ 
+#define X_BELT_PITCH 2 //mm  https://openbuildspartstore.com/gt2-2m-timing-belt-by-the-foot/ 
+#define Y_BELT_PITCH 3 //mm https://openbuildspartstore.com/3gt-gt2-3m-timing-belt-by-the-foot/
+
+#define Z_LEADSCREW_PITCH 2 //mm https://openbuildspartstore.com/8mm-metric-acme-lead-screw/
+
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { X_STEPS_PER_REVOLUTION/X_PULLEY_TEETH/X_BELT_PITCH,\
+                                        Y_STEPS_PER_REVOLUTION/Y_PULLEY_TEETH/Y_BELT_PITCH,\
+                                        Z_STEPS_PER_REVOLUTION/Z_LEADSCREW_PITCH,\
+                                        93}
 /**
  * Default Max Feed Rate (mm/s)
  * Override with M203
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 500, 500, 5, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 1000, 1000, 50, 25 }
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -782,9 +800,9 @@
  *   M204 R    Retract Acceleration
  *   M204 T    Travel Acceleration
  */
-#define DEFAULT_ACCELERATION          500    // X, Y, Z and E acceleration for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  500    // E acceleration for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   500    // X, Y, Z acceleration for travel (non printing) moves
+#define DEFAULT_ACCELERATION          100    // X, Y, Z and E acceleration for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  100    // E acceleration for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   100    // X, Y, Z acceleration for travel (non printing) moves
 
 /**
  * Default Jerk limits (mm/s)
@@ -1119,8 +1137,8 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 235
-#define Y_BED_SIZE 235
+#define X_BED_SIZE 797
+#define Y_BED_SIZE 165
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
@@ -1128,7 +1146,7 @@
 #define Z_MIN_POS 0
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 60
+#define Z_MAX_POS 136 //will need to change once endstop is corrected
 
 /**
  * Software Endstops
