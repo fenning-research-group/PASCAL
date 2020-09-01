@@ -763,9 +763,9 @@
 
 #define Z_LEADSCREW_PITCH 2 //mm https://openbuildspartstore.com/8mm-metric-acme-lead-screw/
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 2*X_STEPS_PER_REVOLUTION/X_PULLEY_TEETH/X_BELT_PITCH,\
-                                        2*Y_STEPS_PER_REVOLUTION/Y_PULLEY_TEETH/Y_BELT_PITCH,\
-                                        2*Z_STEPS_PER_REVOLUTION/Z_LEADSCREW_PITCH,\
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { X_STEPS_PER_REVOLUTION/X_PULLEY_TEETH/X_BELT_PITCH,\
+                                        Y_STEPS_PER_REVOLUTION/Y_PULLEY_TEETH/Y_BELT_PITCH,\
+                                        Z_STEPS_PER_REVOLUTION/Z_LEADSCREW_PITCH,\
                                         93}
 /**
  * Default Max Feed Rate (mm/s)

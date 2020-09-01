@@ -7,11 +7,11 @@ class Gantry:
 		#communication variables
 		self.port = port
 		self.terminator = '\n'
-		self.POLLINGDELAY = 0.2 #delay between sending a command and reading a response, in seconds
+		self.POLLINGDELAY = 0.05 #delay between sending a command and reading a response, in seconds
 		self.connect(port = port)
 
 		#gantry variables
-		self.xlim = (0,797.0)
+		self.xlim = (10,797.0)
 		self.ylim = (0,165.0)
 		self.zlim = (0,136.0)
 		self.position = [None, None, None] #start at None's to indicate stage has not been homed.
@@ -36,6 +36,8 @@ class Gantry:
 			baudrate = 115200
 			)
 		self.position = [None, None, None] #start at None's to indicate stage has not been homed.	
+		self.write('G90')
+		self.write('M92 X40.0 Y26.77 Z400.0')
 
 	def disconnect(self):
 		self._handle.close()
@@ -109,7 +111,6 @@ class Gantry:
 
 		if self.premove(x, y, z):
 			self.write(f'G0 X{x} Y{y} Z{z}')
-			self.write('M400')
 			return self._waitformovement()
 		else:
 			raise Exception('Invalid move - probably out of bounds')
@@ -130,13 +131,18 @@ class Gantry:
 		'''
 		start_time = time.time()
 		time_elapsed = time.time() - start_time
-
+		self._handle.write(f'M400{self.terminator}'.encode())
+		self.write(f'M18 E1 FinishedMoving{self.terminator}'.encode())
 		reached_destination = False
 		while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
-			self.update()
-			if self.position == self.__targetposition:
-				reached_destination = True
 			time.sleep(self.POLLINGDELAY)
+			while self._handle.in_waiting:
+				line = self.readline()
+				if line == 'echo:FinishedMoving':
+					self.update()
+					if selfposition == self.__targetposition:
+						reached_destination = True
+				time.sleep(self.POLLINGDELAY)
 			time_elapsed = time.time() - start_time
 
 		return reached_destination
@@ -151,7 +157,7 @@ class Gantry:
 
 		angle = self.__width_to_servo_angle(width)
 		self.write(f'M280 P0 S{angle}')
-		self.write('M400')
+		# self.write('M400')
 
 	def close_gripper(self):
 		self.open_gripper(width = self.MINWIDTH)
