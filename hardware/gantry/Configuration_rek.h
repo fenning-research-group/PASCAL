@@ -761,7 +761,7 @@
 #define Y_PULLEY_TEETH 20 //
  
 #define X_BELT_PITCH 2 //mm  https://openbuildspartstore.com/gt2-2m-timing-belt-by-the-foot/ 
-#define Y_BELT_PITCH 3 //mm https://openbuildspartstore.com/3gt-gt2-3m-timing-belt-by-the-foot/
+#define Y_BELT_PITCH 2 //mm https://openbuildspartstore.com/3gt-gt2-3m-timing-belt-by-the-foot/
 
 #define Z_LEADSCREW_PITCH 2 //mm https://openbuildspartstore.com/8mm-metric-acme-lead-screw/
 
