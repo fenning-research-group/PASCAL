@@ -8,6 +8,7 @@ class Gantry:
 		self.port = port
 		self.terminator = '\n'
 		self.POLLINGDELAY = 0.1 #delay between sending a command and reading a response, in seconds
+		self.connect(port = port)
 
 		#gantry variables
 		self.xlim = (0,100)
@@ -41,25 +42,29 @@ class Gantry:
 		del self._handle
 
 	def write(self, msg):
-		self._handle.write(b'{}{}'.format(msg, self.terminator))
+		self._handle.write(f'{msg}{self.terminator}'.encode())
 		time.sleep(self.POLLINGDELAY)
 		output = []
 		while self._handle.in_waiting:
 			line = self._handle.readline().decode('utf-8').strip()
 			if line != 'ok':
 				output.append(line)
+			time.sleep(self.POLLINGDELAY)
 		return output
 
 	def update(self):
 		output = self.write('M114') #get current position
-		x = float(re.findall('X:(\S*)', output[0])[0])
-		y = float(re.findall('Y:(\S*)', output[0])[0])
-		z = float(re.findall('Z:(\S*)', output[0])[0])
+		for line in output:
+			if line.startswith('X:'):
+				x = float(re.findall('X:(\S*)', line)[0])
+				y = float(re.findall('Y:(\S*)', line)[0])
+				z = float(re.findall('Z:(\S*)', line)[0])
+				break
 		self.position = [x,y,z]
 
-		output = self.write('M280 P1') #get current servo position
-		self.servoangle = float(re.findall('S:(\S*)', output[0])[0]) #TODO - READ SERVO POSITION
-		self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
+		# output = self.write('M280 P1') #get current servo position
+		# self.servoangle = float(re.findall('S:(\S*)', output[0])[0]) #TODO - READ SERVO POSITION
+		# self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
 
 	#gantry methods
 	def gohome(self):
@@ -70,8 +75,6 @@ class Gantry:
 		'''
 		checks to confirm that all target positions are valid
 		'''
-		if self.position == [None, None, None]: # stage has not been homed yet
-			return False
 		if x > self.xlim[1] or x < self.xlim[0]:
 			return False
 		if y > self.ylim[1] or y < self.ylim[0]:
@@ -96,8 +99,9 @@ class Gantry:
 
 		if self.premove(x, y, z):
 			self.write(f'G0 X{x} Y{y} Z{z}')
-
-		return self._waitformovement():
+			return self._waitformovement()
+		else:
+			raise Exception('Invalid move - probably out of bounds')
 
 	def moverel(self, x = 0, y = 0, z = 0):
 		'''
