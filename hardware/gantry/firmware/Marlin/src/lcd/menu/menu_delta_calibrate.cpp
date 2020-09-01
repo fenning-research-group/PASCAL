@@ -28,7 +28,7 @@
 
 #if HAS_LCD_MENU && EITHER(DELTA_CALIBRATION_MENU, DELTA_AUTO_CALIBRATION)
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../module/delta.h"
 #include "../../module/motion.h"
 

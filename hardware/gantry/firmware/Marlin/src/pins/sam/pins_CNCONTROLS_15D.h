@@ -92,7 +92,7 @@
 //
 // Fans
 //
-//#define FAN_PIN                              8
+//#define FAN0_PIN                             8
 
 //
 // Auto fans

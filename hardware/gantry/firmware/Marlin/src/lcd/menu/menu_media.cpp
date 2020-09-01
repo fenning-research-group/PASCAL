@@ -28,7 +28,7 @@
 
 #if BOTH(HAS_LCD_MENU, SDSUPPORT)
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../sd/cardreader.h"
 
 void lcd_sd_updir() {

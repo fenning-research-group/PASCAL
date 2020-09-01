@@ -8,6 +8,7 @@
 				"MarlinFirmware/lib",
 				"Marlin/lib",
 				"datatmp",
+				"Marlin/*/src",
 				".vscode"
 			],
 			"binary_file_patterns":

@@ -126,7 +126,7 @@ void GcodeSuite::M240() {
 
   #ifdef PHOTO_POSITION
 
-    if (homing_needed_error()) return;
+    if (axis_unhomed_error()) return;
 
     const xyz_pos_t old_pos = {
       current_position.x + parser.linearval('A'),

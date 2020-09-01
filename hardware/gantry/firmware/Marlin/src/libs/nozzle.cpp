@@ -46,24 +46,15 @@ Nozzle nozzle;
 
     // Move to the starting point
     #if ENABLED(NOZZLE_CLEAN_NO_Z)
-      #if ENABLED(NOZZLE_CLEAN_NO_Y)
-        do_blocking_move_to_x(start.x);
-      #else
-        do_blocking_move_to_xy(start);
-      #endif
+      do_blocking_move_to_xy(start);
     #else
       do_blocking_move_to(start);
     #endif
 
     // Start the stroke pattern
     LOOP_L_N(i, strokes >> 1) {
-      #if ENABLED(NOZZLE_CLEAN_NO_Y)
-        do_blocking_move_to_x(end.x);
-        do_blocking_move_to_x(start.x);
-      #else
-        do_blocking_move_to_xy(end);
-        do_blocking_move_to_xy(start);
-      #endif
+      do_blocking_move_to_xy(end);
+      do_blocking_move_to_xy(start);
     }
 
     TERN_(NOZZLE_CLEAN_GOBACK, do_blocking_move_to(oldpos));

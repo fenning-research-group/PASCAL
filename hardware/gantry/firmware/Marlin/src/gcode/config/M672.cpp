@@ -22,11 +22,19 @@
 
 #include "../../inc/MarlinConfig.h"
 
-#if ENABLED(DUET_SMART_EFFECTOR) && PIN_EXISTS(SMART_EFFECTOR_MOD)
+#if ENABLED(SMART_EFFECTOR) && PIN_EXISTS(SMART_EFFECTOR_MOD)
 
 #include "../gcode.h"
 #include "../../HAL/shared/Delay.h"
 #include "../parser.h"
+
+/**
+ * M672 - Set/reset Duet Smart Effector sensitivity
+ *
+ *  One of these is required:
+ *    S<sensitivity> - 0-255
+ *    R              - Flag to reset sensitivity to default
+ */
 
 /**
  * The Marlin format for the M672 command is different than shown in the Duet Smart Effector
@@ -69,13 +77,6 @@ void M672_send(uint8_t b) {    // bit rate requirement: 1KHz +/- 30%
   }
 }
 
-/**
- * M672 - Set/reset Duet Smart Effector sensitivity
- *
- *  One of these is required:
- *    S<sensitivity> - 0-255
- *    R              - Flag to reset sensitivity to default
- */
 void GcodeSuite::M672() {
   if (parser.seen('R')) {
     M672_send(M672_ERASEBYTE);
@@ -95,4 +96,4 @@ void GcodeSuite::M672() {
   OUT_WRITE(SMART_EFFECTOR_MOD_PIN, LOW);  // Keep Smart Effector in NORMAL mode
 }
 
-#endif // DUET_SMART_EFFECTOR && SMART_EFFECTOR_MOD_PIN
+#endif // SMART_EFFECTOR && SMART_EFFECTOR_MOD_PIN

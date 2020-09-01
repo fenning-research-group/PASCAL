@@ -28,7 +28,7 @@
 
 #if HAS_LCD_MENU && HAS_POWER_MONITOR
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../feature/power_monitor.h"
 
 void menu_power_monitor() {

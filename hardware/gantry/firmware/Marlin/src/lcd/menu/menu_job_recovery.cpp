@@ -28,7 +28,7 @@
 
 #if BOTH(HAS_LCD_MENU, POWER_LOSS_RECOVERY)
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../gcode/queue.h"
 #include "../../sd/cardreader.h"
 #include "../../feature/powerloss.h"

@@ -28,7 +28,7 @@
 
 #if BOTH(HAS_LCD_MENU, LEVEL_BED_CORNERS)
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../module/motion.h"
 #include "../../module/planner.h"
 

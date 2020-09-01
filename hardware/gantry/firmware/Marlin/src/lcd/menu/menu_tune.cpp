@@ -28,7 +28,7 @@
 
 #if HAS_LCD_MENU
 
-#include "menu_item.h"
+#include "menu.h"
 #include "../../module/motion.h"
 #include "../../module/planner.h"
 #include "../../module/temperature.h"

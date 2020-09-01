@@ -584,7 +584,7 @@ void GcodeSuite::G425() {
   TEMPORARY_SOFT_ENDSTOP_STATE(false);
   TEMPORARY_BED_LEVELING_STATE(false);
 
-  if (homing_needed_error()) return;
+  if (axis_unhomed_error()) return;
 
   measurements_t m;
 

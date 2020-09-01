@@ -21,7 +21,7 @@
  */
 
 /**
- * feature/powerloss.cpp - Resume an SD print after power-loss
+ * power_loss_recovery.cpp - Resume an SD print after power-loss
  */
 
 #include "../inc/MarlinConfigPre.h"
@@ -365,7 +365,7 @@ void PrintJobRecovery::resume() {
   #endif
 
   // Pretend that all axes are homed
-  set_all_homed();
+  axis_homed = axis_known_position = xyz_bits;
 
   // Recover volumetric extrusion state
   #if DISABLED(NO_VOLUMETRICS)

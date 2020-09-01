@@ -28,25 +28,24 @@
 
 #if HAS_LCD_MENU && EITHER(LED_CONTROL_MENU, CASE_LIGHT_MENU)
 
-#include "menu_item.h"
+#include "menu.h"
 
 #if ENABLED(LED_CONTROL_MENU)
   #include "../../feature/leds/leds.h"
 
   #if ENABLED(LED_COLOR_PRESETS)
-
     void menu_led_presets() {
       START_MENU();
       #if LCD_HEIGHT > 2
-        STATIC_ITEM(MSG_LED_PRESETS, SS_DEFAULT|SS_INVERT);
+        STATIC_ITEM(MSG_LED_PRESETS, SS_CENTER|SS_INVERT);
       #endif
       BACK_ITEM(MSG_LED_CONTROL);
-      ACTION_ITEM(MSG_SET_LEDS_WHITE,  leds.set_white);
-      ACTION_ITEM(MSG_SET_LEDS_RED,    leds.set_red);
+      ACTION_ITEM(MSG_SET_LEDS_WHITE, leds.set_white);
+      ACTION_ITEM(MSG_SET_LEDS_RED, leds.set_red);
       ACTION_ITEM(MSG_SET_LEDS_ORANGE, leds.set_orange);
-      ACTION_ITEM(MSG_SET_LEDS_YELLOW, leds.set_yellow);
-      ACTION_ITEM(MSG_SET_LEDS_GREEN,  leds.set_green);
-      ACTION_ITEM(MSG_SET_LEDS_BLUE,   leds.set_blue);
+      ACTION_ITEM(MSG_SET_LEDS_YELLOW,leds.set_yellow);
+      ACTION_ITEM(MSG_SET_LEDS_GREEN, leds.set_green);
+      ACTION_ITEM(MSG_SET_LEDS_BLUE, leds.set_blue);
       ACTION_ITEM(MSG_SET_LEDS_INDIGO, leds.set_indigo);
       ACTION_ITEM(MSG_SET_LEDS_VIOLET, leds.set_violet);
       END_MENU();
@@ -77,17 +76,18 @@
     void menu_case_light() {
       START_MENU();
       BACK_ITEM(MSG_CONFIGURATION);
-      EDIT_ITEM(percent, MSG_CASE_LIGHT_BRIGHTNESS, &caselight.brightness, 0, 255, caselight.update_brightness, true);
-      EDIT_ITEM(bool, MSG_CASE_LIGHT, (bool*)&caselight.on, caselight.update_enabled);
+      EDIT_ITEM(percent, MSG_CASE_LIGHT_BRIGHTNESS, &case_light_brightness, 0, 255, update_case_light, true);
+      EDIT_ITEM(bool, MSG_CASE_LIGHT, (bool*)&case_light_on, update_case_light);
       END_MENU();
     }
   #endif
 #endif
 
+
+
 void menu_led() {
   START_MENU();
   BACK_ITEM(MSG_MAIN);
-
   #if ENABLED(LED_CONTROL_MENU)
     bool led_on = leds.lights_on;
     EDIT_ITEM(bool, MSG_LEDS, &led_on, leds.toggle);
@@ -97,8 +97,7 @@ void menu_led() {
     #endif
     SUBMENU(MSG_CUSTOM_LEDS, menu_led_custom);
   #endif
-
-  //
+   //
   // Set Case light on/off/brightness
   //
   #if ENABLED(CASE_LIGHT_MENU)
@@ -107,7 +106,7 @@ void menu_led() {
         SUBMENU(MSG_CASE_LIGHT, menu_case_light);
       else
     #endif
-        EDIT_ITEM(bool, MSG_CASE_LIGHT, (bool*)&caselight.on, caselight.update_enabled);
+        EDIT_ITEM(bool, MSG_CASE_LIGHT, (bool*)&case_light_on, update_case_light);
   #endif
   END_MENU();
 }
