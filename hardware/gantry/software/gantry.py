@@ -1,6 +1,7 @@
 import serial
 import time
 import re
+import numpy as np
 
 class Gantry:
 	def __init__(self, port):
@@ -8,7 +9,6 @@ class Gantry:
 		self.port = port
 		self.terminator = '\n'
 		self.POLLINGDELAY = 0.05 #delay between sending a command and reading a response, in seconds
-		self.connect(port = port)
 
 		#gantry variables
 		self.xlim = (10,797.0)
@@ -17,6 +17,10 @@ class Gantry:
 		self.position = [None, None, None] #start at None's to indicate stage has not been homed.
 		self.__targetposition = [None, None, None] 
 		self.GANTRYTIMEOUT = 15 #max time allotted to gantry motion before flagging an error, in seconds
+		self.POSITIONTOLERANCE = 0.05 #tolerance for position, in mm
+		self.MAXSPEED = 10000 #mm/min
+		self.MINSPEED = 500   #mm/min
+		self.speed = 10000 #mm/min, default speed
 
 		# self.moving = [False, False, False] #boolean flag to indicate whether the xyz axes are in motion or not
 
@@ -28,6 +32,10 @@ class Gantry:
 		self.MINWIDTH = 5
 		self.MAXWIDTH = 33 #max gripper width, in mm
 
+		#connect to gantry by default
+		self.connect(port = port)
+		self.set_defaults()
+
 	#communication methods
 	def connect(self, port):
 		self._handle = serial.Serial(
@@ -35,13 +43,21 @@ class Gantry:
 			timeout = 1,
 			baudrate = 115200
 			)
-		self.position = [None, None, None] #start at None's to indicate stage has not been homed.	
-		self.write('G90')
-		self.write('M92 X40.0 Y26.77 Z400.0')
+		self.update()
+		if self.position == [max(self.xlim), max(self.ylim), max(self.zlim)]: #this is what it shows when initially turned on, but not homed
+			self.position = [None, None, None] #start at None's to indicate stage has not been homed.	
+		
+		# self.write('M92 X40.0 Y26.77 Z400.0')
 
 	def disconnect(self):
 		self._handle.close()
 		del self._handle
+
+	def set_defaults(self):
+		self.write('G90') #absolute coordinate system
+		self.write('M92 X80.0 Y53.333 Z400.0') #set steps/mm, randomly resets to defaults sometimes idk why
+		self.write(f'M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z35.00') #set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware. 
+		self.set_speed_percentage(80) #set speed to 80% of max
 
 	def write(self, msg):
 		self._handle.write(f'{msg}{self.terminator}'.encode())
@@ -79,6 +95,12 @@ class Gantry:
 					break
 
 	#gantry methods
+	def set_speed_percentage(self, p):
+		if p < 0 or p > 100:
+			raise Exception('Speed must be set by a percentage value between 0-100!')
+		self.speed = (p/100) * (self.MAXSPEED - self.MINSPEED) + self.MINSPEED
+		self.write(f'G0 F{self.speed}')
+
 	def gohome(self):
 		self.write('G28 X Y Z')
 		self.update()
@@ -86,7 +108,7 @@ class Gantry:
 	def premove(self, x, y, z):
 		'''
 		checks to confirm that all target positions are valid
-		'''
+		'''			
 		if x > self.xlim[1] or x < self.xlim[0]:
 			return False
 		if y > self.ylim[1] or y < self.ylim[0]:
@@ -97,10 +119,12 @@ class Gantry:
 		self.__targetposition = [x,y,z]
 		return True
 
-	def moveto(self, x = None, y = None, z = None):
+	def moveto(self, x = None, y = None, z = None, speed = None):
 		'''
 		moves to target position in x,y,z (mm)
 		'''
+		if self.position == [None, None, None]:
+			raise Exception('Stage has not been homed! Home with self.gohome() before moving please.')
 
 		if x is None:
 			x = self.position[0]
@@ -108,21 +132,29 @@ class Gantry:
 			y = self.position[1]
 		if z is None:
 			z = self.position[2]
+		if speed is None:
+			speed = self.speed
 
 		if self.premove(x, y, z):
-			self.write(f'G0 X{x} Y{y} Z{z}')
-			return self._waitformovement()
+			if self.position == [x,y,z]:
+				return True #already at target position
+			else:
+				self.write(f'G0 X{x} Y{y} Z{z} F{speed}')
+				return self._waitformovement()
 		else:
 			raise Exception('Invalid move - probably out of bounds')
 
-	def moverel(self, x = 0, y = 0, z = 0):
+	def moverel(self, x = 0, y = 0, z = 0, speed = None):
 		'''
 		moves by coordinates relative to the current position
 		'''
+		if self.position == [None, None, None]:
+			raise Exception('Stage has not been homed! Home with self.gohome() before moving please.')
+
 		x += self.position[0]
 		y += self.position[1]
 		z += self.position[2]
-		self.moveto(x,y,z)
+		self.moveto(x,y,z,speed)
 
 	def _waitformovement(self):
 		'''
@@ -132,15 +164,15 @@ class Gantry:
 		start_time = time.time()
 		time_elapsed = time.time() - start_time
 		self._handle.write(f'M400{self.terminator}'.encode())
-		self.write(f'M18 E1 FinishedMoving{self.terminator}'.encode())
+		self._handle.write(f'M118 E1 FinishedMoving{self.terminator}'.encode())
 		reached_destination = False
 		while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
 			time.sleep(self.POLLINGDELAY)
 			while self._handle.in_waiting:
-				line = self.readline()
+				line = self._handle.readline().decode('utf-8').strip()
 				if line == 'echo:FinishedMoving':
 					self.update()
-					if selfposition == self.__targetposition:
+					if np.linalg.norm([a-b for a,b in zip(self.position, self.__targetposition)]) < self.POSITIONTOLERANCE:
 						reached_destination = True
 				time.sleep(self.POLLINGDELAY)
 			time_elapsed = time.time() - start_time
