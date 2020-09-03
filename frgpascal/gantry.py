@@ -9,7 +9,6 @@ class Gantry:
 		self.port = port
 		self.terminator = '\n'
 		self.POLLINGDELAY = 0.05 #delay between sending a command and reading a response, in seconds
-		self.inmotion = False
 
 		#gantry variables
 		self.xlim = (10,797.0)
@@ -26,7 +25,7 @@ class Gantry:
 		# self.moving = [False, False, False] #boolean flag to indicate whether the xyz axes are in motion or not
 
 		#gripper variables
-		self.gripperwidth = None
+		self.gripperangle = None
 		self.servoangle = None
 		self.MAXANGLE = 130
 		self.MINANGLE = 55
@@ -162,7 +161,6 @@ class Gantry:
 		confirm that gantry has reached target position. returns False if
 		target position is not reached in time allotted by self.GANTRYTIMEOUT
 		'''
-		self.inmotion = True
 		start_time = time.time()
 		time_elapsed = time.time() - start_time
 		self._handle.write(f'M400{self.terminator}'.encode())
@@ -179,7 +177,6 @@ class Gantry:
 				time.sleep(self.POLLINGDELAY)
 			time_elapsed = time.time() - start_time
 
-		self.inmotion = ~reached_destination
 		return reached_destination
 
 	#gripper methods
@@ -192,9 +189,6 @@ class Gantry:
 
 		angle = self.__width_to_servo_angle(width)
 		self.write(f'M280 P0 S{angle}')
-		self.gripperwidth = width
-		self.servoangle = angle
-
 		# self.write('M400')
 
 	def close_gripper(self):
