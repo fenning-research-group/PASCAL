@@ -29,4 +29,3 @@ class Maestro:
 
 	def breadboard(self, name):
 		return self.__breadboard_coordinates[name]
-				
