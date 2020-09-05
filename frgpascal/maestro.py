@@ -167,7 +167,7 @@ class Workspace:
 			raise Exception('Must provide three test points, in list form [A1, A2,B3], etc')
 
 		self.testslots = testslots
-		self.testpoints = np.array([self.__coordinates[name] for name in testslots])
+		self.testpoints = np.array([self.__coordinates[name] for name in testslots]).astype(np.float32)
 
 	def __generate_coordinates(self):
 		def letter(num):
@@ -188,29 +188,32 @@ class Workspace:
 		return self.transform(self.__coordinates[name])
 
 	def calibrate(self, measuredpoints):
-		measuredpoints = np.array(measuredpoints)
+		measuredpoints = np.array(measuredpoints).astype(np.float32)
 		u1 = self.testpoints[0] - self.testpoints[1]
 		v1 = self.testpoints[0] - self.testpoints[2]
 		p1 = np.mean(self.testpoints, axis = 0) #centroid of 3 test points
 		n1 = np.cross(u1, v1) # vector normal to test plane in workspace coordinates
-		n1 /= np.linalg.norm(n1) #convert to unit vector
+		# n1 /= np.linalg.norm(n1) #convert to unit vector
 
 		u2 = measuredpoints[0] - measuredpoints[1]
 		v2 = measuredpoints[0] - measuredpoints[2]
 		p2 = np.mean(measuredpoints, axis = 0) #centroid
 		n2 = np.cross(u2,v2) # vector normal to test plane in reference coordinates
-		n2 /= np.linalg.norm(n2)
+		# n2 /= np.linalg.norm(n2)
 
 
 		dot = np.dot(n1,n2)
+		dotlen = dot + np.linalg.norm(n1)*np.linalg.norm(n2)
 		if dot > 0.99999:
 			self.R = pyquaternion.Quaternion() #normal vectors are essentially parallel, no rotation needed to align coordinate systems - return unit quaternion
 		elif dot < -0.99999:
 			self.R = pyquaternion.Quaternion(angle = np.pi, axis = [1,0,0]) #normal vectors are parallel but in opposite directions (this shouldnt really ever happen for us). return inverting quaternion
 		else:
-			self.R = pyquaternion.Quaternion(angle = dot, axis = np.cross(n1,n2)) #rotation quaternion to bring workspace coordinate system parallel to reference coordinate system
-		self.T = p2 - p1 #translation vector to align workspace and reference coordinate systems
-		self.meauredpoints = measuredpoints
+			self.R = pyquaternion.Quaternion(angle = dotlen, axis = np.cross(n1,n2)) #rotation quaternion to bring workspace coordinate system parallel to reference coordinate system
+		self.R = self.R.unit	#normalized quaternion
+		self.R = (self.R + pyquaternion.Quaternion())/2
+		self.T = p2 - self.R.rotate(p1) #translation vector to align workspace and reference coordinate systems
+		self.measuredpoints = measuredpoints
 		self.calibrated = True
 
 	def transform(self, p):
