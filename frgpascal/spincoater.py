@@ -49,7 +49,7 @@ class SpinCoater:
 		self.setspeed(min(self.SPEEDRANGE))
 		time.sleep(1)
 		self.setspeed(0, 1) #slowly decelerate to stop
-		self.__handle.write(f'l{terminator}'.encode()) #send command to engage electromagnet
+		self.write('l') #send command to engage electromagnet
 		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
 		self.locked = True
 
@@ -57,7 +57,7 @@ class SpinCoater:
 		"""
 		unlocks the rotor from registered position
 		"""
-		self.__handle.write(f'u{terminator}'.encode()) #send command to disengage electromagnet
+		self.write('u') #send command to disengage electromagnet
 		self.locked = False
 
 	def setspeed(self, speed, acceleration = max(self.ACCELERATIONRANGE)):
@@ -73,7 +73,7 @@ class SpinCoater:
 		if self.locked:
 			self.unlock()
 
-		self.__handle.write(f's{speed:d},{acceleratio:d}{terminator}'.encode()) #send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+		self.__handle.write(f's{speed:d},{acceleratio:d}') #send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
 
 		#possible code to wait for confirmation response from arduino that speed was hit successfully
 

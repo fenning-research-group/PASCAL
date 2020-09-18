@@ -193,13 +193,13 @@ class Workspace:
 		v1 = self.testpoints[0] - self.testpoints[2]
 		p1 = np.mean(self.testpoints, axis = 0) #centroid of 3 test points
 		n1 = np.cross(u1, v1) # vector normal to test plane in workspace coordinates
-		# n1 /= np.linalg.norm(n1) #convert to unit vector
+		n1 /= np.linalg.norm(n1) #convert to unit vector
 
 		u2 = measuredpoints[0] - measuredpoints[1]
 		v2 = measuredpoints[0] - measuredpoints[2]
 		p2 = np.mean(measuredpoints, axis = 0) #centroid
 		n2 = np.cross(u2,v2) # vector normal to test plane in reference coordinates
-		# n2 /= np.linalg.norm(n2)
+		n2 /= np.linalg.norm(n2)
 
 
 		dot = np.dot(n1,n2)
