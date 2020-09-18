@@ -7,7 +7,7 @@ class SpinCoater:
 		self.POLLINGRATE = 0.5 #query rate to arduino, in seconds
 		self.ACCELERATIONRANGE = (1,200) #rpm/s
 		self.SPEEDRANGE = (1000, 9000) #rpm
-
+		self.TERMINATOR = '\n'
 
 		self.connect(port = port)
 		self.unlock()
@@ -37,7 +37,7 @@ class SpinCoater:
 		'''
 		appends terminator and converts to bytes before sending message to arduino
 		'''
-		self.__handle.write(f'{s}{terminator}'.encode())
+		self.__handle.write(f'{s}{self.TERMINATOR}'.encode())
  	
 	def lock(self):
 		"""
