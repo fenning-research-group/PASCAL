@@ -23,7 +23,7 @@ double rpm_sense = 0;
 //Specify the links and initial tuning parameters
 double pwm_output = 0;
 double rpm_setpoint = 0;
-PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .08, .1, 0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
+PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .08, .09, 0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
 bool pid_switch = false;
 
 
@@ -95,6 +95,11 @@ void relayon(int relay_number){
   }
      
   digitalWrite(relay_number, LOW);
+
+  
+  if (relay_number == relay1){
+    calibrateESC();
+  }
 }
 
 void relayoff(int relay_number){
@@ -145,9 +150,17 @@ void setRPM(int rpm) {
   }else if(rpm_setpoint <= JUMPSTART_RPM_CUTOFF){
     jumpstartRPM();
   }
-
+  
   int pwm = map(rpm, MIN_RPM, MAX_RPM, MIN_SIGNAL, MAX_SIGNAL);
-
+  
+  // force RPM moving average window to = target RPM initially, prevents the overshoot. 
+  // should probably tune PID to address this,but this is a hacky "fix" kind of
+  for(int i = 0; i < RPM_WINDOW_SIZE; i++){ //initialize rpm moving average window array
+    rpm_window[i] = rpm;
+  }
+  sum = rpm * RPM_WINDOW_SIZE;
+  ///
+  
   /* REK debugging start */
   // char buffer[32];
   // sprintf(buffer, "=== Sending %d  pwm for %d rpm ===", pwm, rpm);
