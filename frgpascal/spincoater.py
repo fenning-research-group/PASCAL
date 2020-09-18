@@ -73,7 +73,7 @@ class SpinCoater:
 		if self.locked:
 			self.unlock()
 
-		self.__handle.write(f's{speed:d},{acceleratio:d}') #send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+		self.__handle.write(f's{speed:d},{acceleration:d}') #send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
 
 		#possible code to wait for confirmation response from arduino that speed was hit successfully
 
