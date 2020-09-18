@@ -1,0 +1,340 @@
+{
+    "ordering": [
+        [
+            "A1",
+            "B1",
+            "C1",
+            "D1",
+            "E1"
+        ],
+        [
+            "A2",
+            "B2",
+            "C2",
+            "D2",
+            "E2"
+        ],
+        [
+            "A3",
+            "B3",
+            "C3",
+            "D3",
+            "E3"
+        ],
+        [
+            "A4",
+            "B4",
+            "C4",
+            "D4",
+            "E4"
+        ],
+        [
+            "A5",
+            "B5",
+            "C5",
+            "D5",
+            "E5"
+        ]
+    ],
+    "brand": {
+        "brand": "frg",
+        "brandId": [
+            "1"
+        ]
+    },
+    "metadata": {
+        "displayName": "frg25",
+        "displayCategory": "reservoir",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.8,
+        "yDimension": 85.5,
+        "zDimension": 10
+    },
+    "wells": {
+        "A1": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 5,
+            "y": 80.5,
+            "z": 5
+        },
+        "B1": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 5,
+            "y": 70.5,
+            "z": 5
+        },
+        "C1": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 5,
+            "y": 60.5,
+            "z": 5
+        },
+        "D1": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 5,
+            "y": 50.5,
+            "z": 5
+        },
+        "E1": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 5,
+            "y": 40.5,
+            "z": 5
+        },
+        "A2": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 15,
+            "y": 80.5,
+            "z": 5
+        },
+        "B2": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 15,
+            "y": 70.5,
+            "z": 5
+        },
+        "C2": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 15,
+            "y": 60.5,
+            "z": 5
+        },
+        "D2": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 15,
+            "y": 50.5,
+            "z": 5
+        },
+        "E2": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 15,
+            "y": 40.5,
+            "z": 5
+        },
+        "A3": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 25,
+            "y": 80.5,
+            "z": 5
+        },
+        "B3": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 25,
+            "y": 70.5,
+            "z": 5
+        },
+        "C3": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 25,
+            "y": 60.5,
+            "z": 5
+        },
+        "D3": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 25,
+            "y": 50.5,
+            "z": 5
+        },
+        "E3": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 25,
+            "y": 40.5,
+            "z": 5
+        },
+        "A4": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 35,
+            "y": 80.5,
+            "z": 5
+        },
+        "B4": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 35,
+            "y": 70.5,
+            "z": 5
+        },
+        "C4": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 35,
+            "y": 60.5,
+            "z": 5
+        },
+        "D4": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 35,
+            "y": 50.5,
+            "z": 5
+        },
+        "E4": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 35,
+            "y": 40.5,
+            "z": 5
+        },
+        "A5": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 45,
+            "y": 80.5,
+            "z": 5
+        },
+        "B5": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 45,
+            "y": 70.5,
+            "z": 5
+        },
+        "C5": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 45,
+            "y": 60.5,
+            "z": 5
+        },
+        "D5": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 45,
+            "y": 50.5,
+            "z": 5
+        },
+        "E5": {
+            "depth": 5,
+            "totalLiquidVolume": 1000,
+            "shape": "circular",
+            "diameter": 5,
+            "x": 45,
+            "y": 40.5,
+            "z": 5
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "displayName": "frg25",
+                "displayCategory": "reservoir",
+                "wellBottomShape": "flat"
+            },
+            "brand": {
+                "brand": "frg",
+                "brandId": [
+                    "1"
+                ]
+            },
+            "wells": [
+                "A1",
+                "B1",
+                "C1",
+                "D1",
+                "E1",
+                "A2",
+                "B2",
+                "C2",
+                "D2",
+                "E2",
+                "A3",
+                "B3",
+                "C3",
+                "D3",
+                "E3",
+                "A4",
+                "B4",
+                "C4",
+                "D4",
+                "E4",
+                "A5",
+                "B5",
+                "C5",
+                "D5",
+                "E5"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "frg_25"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
