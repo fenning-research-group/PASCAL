@@ -216,6 +216,7 @@ class Gantry:
 
 		fractional_angle = (angle-self.MINANGLE) / (self.MAXANGLE-self.MINANGLE)
 		width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
+		
 		return np.round(width, 1)
 
 	def __width_to_servo_angle(self, width):
@@ -227,7 +228,5 @@ class Gantry:
 
 		fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
 		angle = fractional_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
+		
 		return np.round(angle, 0)
-
-
-
