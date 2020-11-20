@@ -9,15 +9,22 @@ class Listener:
         self.tipracks = None    #will be set externally in run(). can be any number
         self.stock = None       #set externally. assumes only one stock wellplate!
         self.pipettes = None    #set externally. assumes two pipettes.
+        self.spincoater = None  #set externally, has two locations named "staging" and "chuck"
 
         self.AIRGAP = 20 #airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         
         self.ANTISOLVENT_PIPETTE = 0 #default left pipette for antisolvent
         self.PSK_PIPETTE = 1 #default right for psk
 
+        self.tasklist = {
+            'aspirate_for_spincoating': self.aspirate_for_spincoating,
+            'drop_psk': self.drop_psk,
+            'drop_as': self.drop_as,
+            ''
+        }
     def check_for_instructions(self):
         payload = {
-          'status': 0,
+            'status': 0,
         }
 
         r = requests.post(
@@ -37,7 +44,8 @@ class Listener:
     def process_request(self, taskid, pipette, function, arguments):
         self.current_task = taskid
         self.status = 1
-        self.
+
+
 
     def aspirate_for_spincoating(self, psk_well, psk_volume, as_well, as_volume):
         for p in self.pipettes:
@@ -56,6 +64,11 @@ class Listener:
             )
         self.pipettes[self.ANTISOLVENT_PIPETTE].air_gap(self.AIRGAP)
 
+        self.pipettes[1].move_to(
+            self.spincoater['staging']
+            ) #moves right pipette to staging location of spincoater, which should be to the bottom left of chuck
+
+        self.status = 2
 
 
 
