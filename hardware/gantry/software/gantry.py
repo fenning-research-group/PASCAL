@@ -28,11 +28,13 @@ class Gantry:
 		#gripper variables
 		self.gripperwidth = None
 		self.servoangle = None
-		self.MAXANGLE = 130
-		self.MINANGLE = 55
-		self.MINWIDTH = 5
+		self.MAXANGLE = 127
+		self.MINANGLE = 57
+		self.MINWIDTH = 8
 		self.MAXWIDTH = 33 #max gripper width, in mm
-
+		self.GRIPRATE = 10 #default gripper open/close rate, mm/s
+		self.GRIPINTERVAL = 0.05 #gripper open/close motions interpolated onto this time interval, s
+		self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
 		#connect to gantry by default
 		self.connect(port = port)
 		self.set_defaults()
@@ -45,6 +47,7 @@ class Gantry:
 			baudrate = 115200
 			)
 		self.update()
+		self.update_gripper()
 		if self.position == [max(self.xlim), max(self.ylim), max(self.zlim)]: #this is what it shows when initially turned on, but not homed
 			self.position = [None, None, None] #start at None's to indicate stage has not been homed.	
 		
@@ -87,10 +90,10 @@ class Gantry:
 	def update_gripper(self):
 		found_coordinates = False
 		while not found_coordinates:
-			output = self.write('M280 P1') #get current servo position
+			output = self.write('M280 P0') #get current servo position
 			for line in output:
 				if line.startswith('echo: Servo'):
-					self.servoangle = float(re.findall('SERVO 0: (\S*)', line)[0]) #TODO - READ SERVO POSITION
+					self.servoangle = float(re.findall('Servo 0: (\S*)', line)[0]) #TODO - READ SERVO POSITION
 					self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
 					found_coordinates = True
 					break
@@ -183,22 +186,29 @@ class Gantry:
 		return reached_destination
 
 	#gripper methods
-	def open_gripper(self, width = None):
+	def open_gripper(self, width = None, instant = True):
 		'''
 		open gripper to width, in mm
 		'''
 		if width is None:
 			width = self.MAXWIDTH
 
+
 		angle = self.__width_to_servo_angle(width)
-		self.write(f'M280 P0 S{angle}')
-		self.gripperwidth = width
-		self.servoangle = angle
 
-		# self.write('M400')
+		if instant:
+			self.write(f'M280 P0 S{angle}')
+		else:
+			delta = np.abs(width - self.gripperwidth)
+			n_points = np.ceil(delta/self.GRIPSTEP).astype(int)
+			for w in np.linspace(self.gripperwidth, width, n_points):
+				angle = self.__width_to_servo_angle(w)
+				self.write(f'M280 P0 S{angle}')	
+				time.sleep(self.GRIPINTERVAL)
+		self.update_gripper()
 
-	def close_gripper(self):
-		self.open_gripper(width = self.MINWIDTH)
+	def close_gripper(self, instant = True):
+		self.open_gripper(width = self.MINWIDTH, instant = instant)
 
 	def __servo_angle_to_width(self, angle):
 		'''
@@ -209,7 +219,8 @@ class Gantry:
 
 		fractional_angle = (angle-self.MINANGLE) / (self.MAXANGLE-self.MINANGLE)
 		width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
-		return width
+		
+		return np.round(width, 1)
 
 	def __width_to_servo_angle(self, width):
 		'''
@@ -220,4 +231,5 @@ class Gantry:
 
 		fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
 		angle = fractional_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
-		return angle
+		
+		return np.round(angle, 0)
