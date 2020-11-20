@@ -9,6 +9,7 @@ class Gantry:
 		self.port = port
 		self.terminator = '\n'
 		self.POLLINGDELAY = 0.05 #delay between sending a command and reading a response, in seconds
+		self.inmotion = False
 
 		#gantry variables
 		self.xlim = (10,797.0)
@@ -25,13 +26,15 @@ class Gantry:
 		# self.moving = [False, False, False] #boolean flag to indicate whether the xyz axes are in motion or not
 
 		#gripper variables
-		self.gripperangle = None
+		self.gripperwidth = None
 		self.servoangle = None
-		self.MAXANGLE = 130
-		self.MINANGLE = 55
-		self.MINWIDTH = 5
+		self.MAXANGLE = 127
+		self.MINANGLE = 57
+		self.MINWIDTH = 8
 		self.MAXWIDTH = 33 #max gripper width, in mm
-
+		self.GRIPRATE = 10 #default gripper open/close rate, mm/s
+		self.GRIPINTERVAL = 0.05 #gripper open/close motions interpolated onto this time interval, s
+		self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
 		#connect to gantry by default
 		self.connect(port = port)
 		self.set_defaults()
@@ -44,6 +47,7 @@ class Gantry:
 			baudrate = 115200
 			)
 		self.update()
+		self.update_gripper()
 		if self.position == [max(self.xlim), max(self.ylim), max(self.zlim)]: #this is what it shows when initially turned on, but not homed
 			self.position = [None, None, None] #start at None's to indicate stage has not been homed.	
 		
@@ -86,10 +90,10 @@ class Gantry:
 	def update_gripper(self):
 		found_coordinates = False
 		while not found_coordinates:
-			output = self.write('M280 P1') #get current servo position
+			output = self.write('M280 P0') #get current servo position
 			for line in output:
 				if line.startswith('echo: Servo'):
-					self.servoangle = float(re.findall('SERVO 0: (\S*)', line)[0]) #TODO - READ SERVO POSITION
+					self.servoangle = float(re.findall('Servo 0: (\S*)', line)[0]) #TODO - READ SERVO POSITION
 					self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
 					found_coordinates = True
 					break
@@ -161,6 +165,7 @@ class Gantry:
 		confirm that gantry has reached target position. returns False if
 		target position is not reached in time allotted by self.GANTRYTIMEOUT
 		'''
+		self.inmotion = True
 		start_time = time.time()
 		time_elapsed = time.time() - start_time
 		self._handle.write(f'M400{self.terminator}'.encode())
@@ -177,22 +182,33 @@ class Gantry:
 				time.sleep(self.POLLINGDELAY)
 			time_elapsed = time.time() - start_time
 
+		self.inmotion = ~reached_destination
 		return reached_destination
 
 	#gripper methods
-	def open_gripper(self, width = None):
+	def open_gripper(self, width = None, instant = True):
 		'''
 		open gripper to width, in mm
 		'''
 		if width is None:
 			width = self.MAXWIDTH
 
-		angle = self.__width_to_servo_angle(width)
-		self.write(f'M280 P0 S{angle}')
-		# self.write('M400')
 
-	def close_gripper(self):
-		self.open_gripper(width = self.MINWIDTH)
+		angle = self.__width_to_servo_angle(width)
+
+		if instant:
+			self.write(f'M280 P0 S{angle}')
+		else:
+			delta = np.abs(width - self.gripperwidth)
+			n_points = np.ceil(delta/self.GRIPSTEP).astype(int)
+			for w in np.linspace(self.gripperwidth, width, n_points):
+				angle = self.__width_to_servo_angle(w)
+				self.write(f'M280 P0 S{angle}')	
+				time.sleep(self.GRIPINTERVAL)
+		self.update_gripper()
+
+	def close_gripper(self, instant = True):
+		self.open_gripper(width = self.MINWIDTH, instant = instant)
 
 	def __servo_angle_to_width(self, angle):
 		'''
@@ -203,7 +219,8 @@ class Gantry:
 
 		fractional_angle = (angle-self.MINANGLE) / (self.MAXANGLE-self.MINANGLE)
 		width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
-		return width
+		
+		return np.round(width, 1)
 
 	def __width_to_servo_angle(self, width):
 		'''
@@ -214,7 +231,119 @@ class Gantry:
 
 		fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
 		angle = fractional_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
-		return angle
+		
+		return np.round(angle, 0)
+
+	def gui(self):
+		GantryGUI(gantry = self) #opens blocking gui to manually jog motors
 
 
+class GantryGUI():
+   def __init__(self, gantry):
+      self.gantry = gantry
+      self.app = QApplication()
+      self.win = QWidget()
+      self.grid = QGridLayout()
+      self.stepsize = 1 #default step size, in mm
 
+      ### axes labels
+      for j, label in enumerate(['X', 'Y', 'Z']):
+         temp = QLabel(label)
+         temp.setAlignment(AlignHCenter)
+         self.grid.addWidget(temp,0,j)
+      
+      ### position readback values
+      self.xposition = QLabel('0')
+      self.xposition.setAlignment(AlignHCenter)
+      self.grid.addWidget(self.xposition, 1,0)
+
+      self.yposition = QLabel('0')
+      self.yposition.setAlignment(AlignHCenter)
+      self.grid.addWidget(self.yposition, 1,1)
+
+      self.zposition = QLabel('0')
+      self.zposition.setAlignment(AlignHCenter)
+      self.grid.addWidget(self.zposition, 1,2)
+
+      self.update_position()
+
+      ### status label
+      self.gantrystatus = QLabel('Idle')
+      self.gantrystatus.setAlignment(AlignHCenter)
+      self.grid.addWidget(self.gantrystatus, 5,3)
+
+      ### jog motor buttons
+      self.jogback = QPushButton('Back')
+      self.jogback.clicked.connect(partial(self.jog, y = 1))
+      self.grid.addWidget(self.jogback, 3, 1)
+
+      self.jogforward = QPushButton('Forward')
+      self.jogforward.clicked.connect(partial(self.jog, y = -1))
+      self.grid.addWidget(self.jogforward, 2, 1)
+
+      self.jogleft = QPushButton('Left')
+      self.jogleft.clicked.connect(partial(self.jog, x = -1))
+      self.grid.addWidget(self.jogleft, 3, 0)
+
+      self.jogright = QPushButton('Right')
+      self.jogright.clicked.connect(partial(self.jog, x = 1))
+      self.grid.addWidget(self.jogright, 3, 2)
+      
+      self.jogup = QPushButton('Up')
+      self.grid.addWidget(self.jogup, 2, 3)
+      self.jogup.clicked.connect(partial(self.jog, z = 1))
+
+      self.jogdown = QPushButton('Down')
+      self.jogdown.clicked.connect(partial(self.jog, z = -1))
+      self.grid.addWidget(self.jogdown, 3, 3)
+
+      ### step size selector buttons
+      self.steppt1 = QPushButton('0.1 mm')
+      self.steppt1.clicked.connect(partial(self.set_stepsize, stepsize = 0.1))
+      self.grid.addWidget(self.steppt1, 5, 0)
+      self.step1 = QPushButton('1 mm')
+      self.step1.clicked.connect(partial(self.set_stepsize, stepsize = 1))
+      self.grid.addWidget(self.step1, 5, 1)
+      self.step10 = QPushButton('10 mm')
+      self.step10.clicked.connect(partial(self.set_stepsize, stepsize = 10))
+      self.grid.addWidget(self.step10, 5, 2)
+      
+      self.stepsize_options = {
+         0.1: self.steppt1,
+         1: self.step1,
+         10: self.step10
+         }
+
+      self.set_stepsize(self.stepsize)
+      
+      self.run()
+
+
+   def set_stepsize(self, stepsize):
+      self.stepsize = stepsize
+      for setting, button in self.stepsize_options.items():
+         if setting == stepsize:
+            button.setStyleSheet('background-color: #a7d4d2')
+         else:
+            button.setStyleSheet('background-color: None')
+
+
+   def jog(self, x = 0, y = 0, z = 0):
+      self.gantrystatus.setText('Moving')
+      self.gantrystatus.setStyleSheet('color: red')
+      self.gantry.moverel(x*self.stepsize, y*self.stepsize, z*self.stepsize)
+      self.update_position()
+      self.gantrystatus.setText('Idle')
+      self.gantrystatus.setStyleSheet('color: None')
+
+   def update_position(self):
+      for position, var in zip(self.gantry.position, [self.xposition, self.yposition, self.zposition]):
+         var.setText(f'{position:.2f}')
+
+   def run(self):
+      self.win.setLayout(self.grid)
+      self.win.setWindowTitle("PASCAL Gantry GUI")
+      self.win.setGeometry(300,300,500,150)
+      self.win.show()
+      sys.exit(self.app.exec_())
+      return
