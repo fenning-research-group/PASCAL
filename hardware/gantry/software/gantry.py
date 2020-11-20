@@ -221,6 +221,3 @@ class Gantry:
 		fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
 		angle = fractional_width*(self.MAXANGLE-self.MINANGLE) + self.MINANGLE
 		return angle
-
-
-
