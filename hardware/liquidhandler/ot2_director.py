@@ -1,6 +1,7 @@
 import numpy as np
 from aiohttp import web
 import asyncio
+import time
 
 class OT2Server:
 	def __init__(self, parent, host = '0.0.0.0', port = 80):
@@ -8,7 +9,47 @@ class OT2Server:
 		self.port = port
 		self.loop = None
 		self.parent = parent
+		self.pending_requests = 0 #number of pending instructions for OT2
+		self.requests = []
+		self.OT2_status = 0 #0 = idle, 1 = task in progress, 2 = task completed, awaiting acknowledgement.
+		self.taskid = None
 
+	### protocol methods
+
+	def add_to_queue(self, pipette, function, *args, **kwargs):
+		payload = {
+			'taskid': hash(time.now()),
+			'pipette': pipette,
+			'function': function,
+			'args': args,
+			'kwargs': kwargs
+		}
+		self.pending_requests += 1
+		self.requests.append(payload)
+
+	def send_request(self):
+		payload = self.requests.pop(0) #take request from top of stack
+		payload['pending_requests'] = self.pending_requests
+		self.pending_requests -= 1
+
+		return web.json_response(
+			status=200, # OK
+			data=payload
+			)
+
+	def idle_ack(self):
+		return web.json_response(
+			status=200, # OK
+			data={'pending_requests':0}
+			)
+	def complete_ack(self):
+		return web.json_response(
+			status=200, # OK
+			data={'pending_requests':self.pending_requests, 'taskid': self.taskid, 'completion_acknowledged': 1}
+			)
+
+
+	### webserver methods
 	def start(self):
 		if self.loop is None:
 			self.loop = asyncio.new_event_loop()
@@ -26,6 +67,7 @@ class OT2Server:
 		# self.loop.close()
 		# asyncio.get_event_loop().stop()
 		# asyncio.get_event_loop().close()
+
 
 	async def __stop_routine(self):
 		await self.site.stop()
@@ -67,17 +109,23 @@ class OT2Server:
 			return web.json_response(status=400, # Bad Request
 									 data={'error': 'bad-request'})
 		
-		if 'step' not in body:
-			print(f"Body did not have a 'step' key")
-			return web.json_response(status=400, # Bad Request
-									 data={'error': 'no-step'})
-		if body['step'] == 'done-aspirating':
-		   # Here you might for instance check a balance
-		   # attached to the computer to validate apsiration
-		   print("Robot is done aspirating")
-		   return web.json_response(status=200, # OK
-									data={'done': True})
 
-		if body['step'] == 'query':
-			return web.json_response(status=200, # OK
-									data={'parent': self.parent})
+		self.OT2_status = body['status']
+
+		# if 'step' not in body:
+		# 	print(f"Body did not have a 'step' key")
+		# 	return web.json_response(status=400, # Bad Request
+		# 							 data={'error': 'no-step'})
+
+		if body['status'] == 0: #OT2 idle, waiting for instructions
+			if self.pending_requests:
+				return self.send_request()
+			else:
+				return self.idle_ack()
+
+
+		if body['status'] == 1: #task in progress
+			self.taskid = body['taskid']
+
+		if body['status'] == 2: #task completed
+			self.taskid = None
