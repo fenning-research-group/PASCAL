@@ -2,9 +2,10 @@ import numpy as np
 from aiohttp import web
 import asyncio
 import time
+import threading
 
 class OT2Server:
-	def __init__(self, parent, host = '0.0.0.0', port = 80):
+	def __init__(self, parent, host = '0.0.0.0', port = 8080):
 		self.host = host
 		self.port = port
 		self.loop = None
@@ -18,7 +19,7 @@ class OT2Server:
 
 	def add_to_queue(self, pipette, function, *args, **kwargs):
 		payload = {
-			'taskid': hash(time.now()),
+			'taskid': hash(time.time()),
 			'pipette': pipette,
 			'function': function,
 			'args': args,
@@ -63,8 +64,9 @@ class OT2Server:
 
 	def stop(self):
 		asyncio.run(self.__stop_routine())
-		# self.loop.stop()
+		self.loop.call_soon_threadsafe(self.loop.stop)
 		# self.loop.close()
+		self.thread.join()
 		# asyncio.get_event_loop().stop()
 		# asyncio.get_event_loop().close()
 
