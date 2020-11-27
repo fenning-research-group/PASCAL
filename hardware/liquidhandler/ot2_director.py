@@ -8,7 +8,6 @@ class OT2Server:
 	def __init__(self, parent, host = '0.0.0.0', port = 8080):
 		self.host = host
 		self.port = port
-		self.loop = None
 		self.parent = parent
 		self.pending_requests = 0 #number of pending instructions for OT2
 		self.requests = []

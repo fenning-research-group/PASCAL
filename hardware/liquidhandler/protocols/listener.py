@@ -9,6 +9,7 @@ class Listener:
         self.currenttask = None
         self.tipracks = None    #will be set externally in run(). can be any number
         self.stock = None       #set externally. assumes only one stock wellplate!
+        self.mixing = None      #set externally. assumes one wellplate to hold mixtures of stock solutions
         self.pipettes = None    #set externally. assumes two pipettes.
         self.spincoater = None  #set externally, has two locations named "standby" and "chuck"
 
@@ -96,6 +97,8 @@ class Listener:
         else:
             raise ValueError('Invalid pipette name given!')
 
+    ### bundled pipetting methods
+
     def aspirate_for_spincoating(self, psk_well, psk_volume, as_well, as_volume):
         for p in self.pipettes:
             p.pick_up_tip()
@@ -135,14 +138,19 @@ class Listener:
         pipette.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
         pipette.flow_rate.dispense = self.DISPENSE_RATE #dispense flow rate, ul/s
 
+    def cleanup(self):
+        for p in self.pipettes:
+            p.drop_tip()
+        for p in self.pipettes:
+            p.pick_up_tip()
 
 
 
 
 metadata = {
-    'protocolName': 'Customizable Serial Dilution',
-    'author': 'Opentrons <protocols@opentrons.com>',
-    'source': 'Protocol Library',
+    'protocolName': 'Maestro Listener',
+    'author': 'Rishi Kumar',
+    'source': 'FRG',
     'apiLevel': '2.2'
     }
 

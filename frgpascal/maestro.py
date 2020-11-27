@@ -301,8 +301,6 @@ class Reporter:
 			return web.json_response(status=400, # Bad Request
 									 data={'error': 'bad-request'})
 		
-
-
 		if 'step' not in body:
 			print(f"Body did not have a 'step' key")
 			return web.json_response(status=400, # Bad Request
