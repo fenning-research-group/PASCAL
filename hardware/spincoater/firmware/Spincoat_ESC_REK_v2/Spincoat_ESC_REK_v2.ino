@@ -4,7 +4,7 @@
 #include <ServoTimer2.h>
 ServoTimer2 ESC1;
 
-// --------- relay 
+// --------- relay
 int relay1 = 10;
 int relay2 = 11;
 int relay3 = 12;
@@ -23,39 +23,43 @@ double rpm_sense = 0;
 //Specify the links and initial tuning parameters
 double pwm_output = 0;
 double rpm_setpoint = 0;
-PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .08, .1, 0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
+PID myPID(&rpm_sense, &pwm_output, &rpm_setpoint, .04, .04, 0, P_ON_E, DIRECT); // PID values are not optimized, P_ON_M vs P_ON_M not tested
 bool pid_switch = false;
-
+// .04 = P = I is good for 1700kV
 
 // --------- Serial Communication
 char rxChar = 0;        // RXcHAR holds the received command.
 unsigned int rpm = 0;
 unsigned int rpm2 = 0;
 unsigned int duration = 0;
+unsigned int pwm_set = 0;
 
 // --------- Setup
 
 
-void calibrateESC(){
+
+
+
+void calibrateESC() {
   ESC1.write(MAX_SIGNAL); //option to calibrate ESC, (1 of 2)
   delay(5000);            // (2 of 2)
   ESC1.write(MIN_SIGNAL);// ESC initialization procedure requires 3s of min throttle
-  delay(4000); // to hold at least 3s  
+  delay(4000); // to hold at least 3s
 }
 
 void setup() {
-  Serial.begin(57600);  // Open serial port (9600 bauds).try changing to higher frequency to see if we can use the same line as the senseRPM
+  Serial.begin(57600);  // Open serial port (57600 bauds).try changing to higher frequency to see if we can use the same line as the senseRPM
   Serial.flush();       // Clear receive buffer.
 
   ESC1.attach(ESC_PIN);
   calibrateESC();
   // ESC1.write(MIN_SIGNAL);// ESC initialization procedure requires 3s of min throttle
-  // delay(4000); // to hold at least 3s  
+  // delay(4000); // to hold at least 3s
 
-  for(int i = 0; i < RPM_WINDOW_SIZE; i++){ //initialize rpm moving average window array
+  for (int i = 0; i < RPM_WINDOW_SIZE; i++) { //initialize rpm moving average window array
     rpm_window[i] = 0;
   }
-  
+
   FreqMeasure.begin(); //comment out for comLINK to run
   myPID.SetOutputLimits(MIN_USABLE_SIGNAL, MAX_USABLE_SIGNAL); // if min is set to MIN_SIGNAL, off can be achieved but stabilization may be an issue
   myPID.SetMode(AUTOMATIC); // turns on PID
@@ -66,7 +70,7 @@ void setup() {
 
 // --------- Functions
 
-void relaysetup(){
+void relaysetup() {
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
@@ -78,41 +82,46 @@ void relaysetup(){
   digitalWrite(relay4, HIGH);
 }
 
-void relayon(int relay_number){
-  if (relay_number == 1){
+void relayon(int relay_number) {
+  if (relay_number == 1) {
     relay_number = relay1;
   }
 
-  if (relay_number == 2){
+  if (relay_number == 2) {
     relay_number = relay2;
-  }  
+  }
 
-  if (relay_number == 3){
+  if (relay_number == 3) {
     relay_number = relay3;
   }
-  if (relay_number == 4){
+  if (relay_number == 4) {
     relay_number = relay4;
   }
-     
+
   digitalWrite(relay_number, LOW);
+
+
+  if (relay_number == relay1) {
+    calibrateESC();
+  }
 }
 
-void relayoff(int relay_number){
-  if (relay_number == 1){
+void relayoff(int relay_number) {
+  if (relay_number == 1) {
     relay_number = relay1;
   }
 
-  if (relay_number == 2){
+  if (relay_number == 2) {
     relay_number = relay2;
-  }  
+  }
 
-  if (relay_number == 3){
+  if (relay_number == 3) {
     relay_number = relay3;
   }
-  if (relay_number == 4){
+  if (relay_number == 4) {
     relay_number = relay4;
   }
-  
+
   digitalWrite(relay_number, HIGH);
 }
 
@@ -123,7 +132,7 @@ void senseRPM() {
     rpm_window[count] = FreqMeasure.read();
     sum += rpm_window[count];
     count += 1;
-    if (count >= RPM_WINDOW_SIZE){
+    if (count >= RPM_WINDOW_SIZE) {
       count = 0;
     }
     float frequency = FreqMeasure.countToFrequency(sum / RPM_WINDOW_SIZE);
@@ -131,22 +140,32 @@ void senseRPM() {
   }
 }
 
-void jumpstartRPM(void){
+void jumpstartRPM(void) {
   ESC1.write(JUMPSTART_SIGNAL);
   delay(JUMPSTART_DELAY);
 }
 
 void setRPM(int rpm) {
-
+  if (pid_switch == true){
+    myPID.SetTunings(0.2,0.2, 0, P_ON_E);
+  }
   rpm_setpoint = rpm;
-  if(rpm_setpoint == 0){
+  if (rpm_setpoint == 0) {
     ESC1.write(0);
     analogWrite(9, 0);
-  }else if(rpm_setpoint <= JUMPSTART_RPM_CUTOFF){
+  } else if (rpm_setpoint <= JUMPSTART_RPM_CUTOFF) {
     jumpstartRPM();
   }
 
   int pwm = map(rpm, MIN_RPM, MAX_RPM, MIN_SIGNAL, MAX_SIGNAL);
+
+  // force RPM moving average window to = target RPM initially, prevents the overshoot.
+  // should probably tune PID to address this,but this is a hacky "fix" kind of
+  //  for (int i = 0; i < RPM_WINDOW_SIZE; i++) { //initialize rpm moving average window array
+  //    rpm_window[i] = rpm;
+  //  }
+  //  sum = rpm * RPM_WINDOW_SIZE;
+  ///
 
   /* REK debugging start */
   // char buffer[32];
@@ -172,7 +191,7 @@ void rampRPM(int rpm0, int rpm1, int duration) {
 
 void runPID() {
   myPID.Compute(); // calculates new 'pwm_output'
-//  pwm_send = (int) pwm_output/; //needs to be converted to integer to be able to write it
+  //  pwm_send = (int) pwm_output/; //needs to be converted to integer to be able to write it
   ESC1.write((int) pwm_output);
 }
 
@@ -188,25 +207,41 @@ void comLINK() {
         pid_switch = true;
         break;
 
+//      case 'd': //set RPM, no PID loop
+//      case 'D':
+//        myPID.SetTunings(.08, .08, 0, P_ON_E);
+//        break;
+//
+//      case 'f': //set RPM, no PID loop
+//      case 'F':
+//        myPID.SetTunings(.04, .04, 0, P_ON_E);
+//        break;
+
       case 'b': //set RPM, no PID loop
       case 'B':
         rpm = Serial.parseInt();
         setRPM(rpm);
         break;
 
+      case 'q': //set RPM, no PID loop
+      case 'Q':
+        pwm_set = Serial.parseInt();
+        ESC1.write(pwm_set);
+        break;
+
       case 'i': // open a relay
       case 'I':
-        
+
         relay_number = Serial.parseInt();
         relayon(relay_number);
         break;
 
       case 'o': // close a relay
       case 'O':
-        
+
         relay_number = Serial.parseInt();
         relayoff(relay_number);
-        break;        
+        break;
 
       case 'r': // ramp RPM with PID loop
       case 'R':
@@ -223,11 +258,11 @@ void comLINK() {
         break;
       case 'z': // stop the spincoater
       case 'Z':
-        pid_switch = 0;
+        pid_switch = false;
         setRPM(0);
         break;
+    }
   }
-}
 }
 // --------- Loop
 void loop() {
