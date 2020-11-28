@@ -2,7 +2,7 @@ import serial
 import time
 
 class SpinCoater:
-	def __init__(self, port = '/dev/ttyACM5'):
+	def __init__(self, port = '/dev/ttyACM0'):
 		#constants
 		self.POLLINGRATE = .5 #query rate to arduino, in seconds
 		# self.ACCELERATIONRANGE = (1,200) #rpm/s
@@ -14,22 +14,11 @@ class SpinCoater:
 		self.unlock()
 
 	def connect(self, **kwargs):
-		self.__handle = serial.Serial(port = self.port, baudrate=self.BAUDRATE,**kwargs)
-
-	# def connect(self, port = None, **kwargs):
-	# 	if port is None:
-	# 	    port = self.port
-	# 	self.__handle = serial.Serial(port = port, baudrate=self.BAUDRATE,**kwargs)
-
-	@property
-	def rpm(self):
-		self.write(f'c') #command to read rpm
-		self.__rpm = float(self.__handle.readline().strip())
-		return self.__rpm
-	
-	# def connect(self, port, baudrate, **kwargs):
-	# 	self.__handle = serial.Serial(port = self.port, baudrate=self.baudrate,**kwargs)
-
+		self.__handle = serial.Serial(
+			port = self.port, 
+			baudrate=self.BAUDRATE,
+			timeout = 2,
+			**kwargs)
 
 	def disconnect(self):
 		self.__handle.close()
@@ -40,6 +29,20 @@ class SpinCoater:
 		'''
 		self.__handle.write(f'{s}{self.TERMINATOR}'.encode())
 	
+
+	@property
+	def rpm(self):
+		self.write(f'c') #command to read rpm
+		self.__rpm = float(self.__handle.readline().strip())
+		return self.__rpm
+
+	@rpm.setter
+	def rpm(self, rpm):
+		if rpm == 0:
+			self.stop()
+		else:
+			self.setspeed(rpm)
+
 	def lock(self):
 		"""
 		routine to lock rotor in registered position for sample transfer
@@ -54,29 +57,20 @@ class SpinCoater:
 		self.locked = True
 
 	def motor_on(self):
-		"""
-		routine to lock rotor in registered position for sample transfer
-		"""
-		if self.locked:
-			return
-
-		self.write('z') # 
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
 		self.write('i3') #send command to engage electromagnet
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
-		self.locked = True
 
 	def motor_off(self):
-		"""
-		routine to lock rotor in registered position for sample transfer
-		"""
-		if self.locked:
-			return
 
 		self.write('z') # 
 		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
 		self.write('o3') #send command to engage electromagnet
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
+
+	def lock(self):
+		"""
+		locks the rotor to registered position
+		"""		
+		self.write('i4') #send command to engage electromagnet
+		# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
 		self.locked = True
 
 	def unlock(self):
@@ -84,7 +78,7 @@ class SpinCoater:
 		unlocks the rotor from registered position
 		"""
 		self.write('o4') #send command to disengage electromagnet
-		time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
+		# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
 		self.locked = False
 
 	def setspeed(self, speed): #acceleration = max(self.ACCELERATIONRANGE)):
