@@ -9,6 +9,7 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 ### CAD schematics of PASCAL
 
 ![top view](images/topview.png)
+
 ![front view](images/sideview.png)
 
 ### Liquid handler preparing precursor solution mixtures for a compositional search
