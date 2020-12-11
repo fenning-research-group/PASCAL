@@ -13,13 +13,13 @@ class OT2Server:
 		self.requests = []
 		self.OT2_status = 0 #0 = idle, 1 = task in progress, 2 = task completed, awaiting acknowledgement.
 		self.taskid = None
+		self.loop = None
 
 	### protocol methods
 
-	def add_to_queue(self, pipette, function, *args, **kwargs):
+	def add_to_queue(self, function, *args, **kwargs):
 		payload = {
 			'taskid': hash(time.time()),
-			'pipette': pipette,
 			'function': function,
 			'args': args,
 			'kwargs': kwargs
@@ -127,6 +127,9 @@ class OT2Server:
 
 		if body['status'] == 1: #task in progress
 			self.taskid = body['taskid']
+			return self.idle_ack()
+
 
 		if body['status'] == 2: #task completed
 			self.taskid = None
+			return self.complete_ack()

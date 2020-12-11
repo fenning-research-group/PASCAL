@@ -25,8 +25,8 @@ class Listener:
 
         self.tasklist = {
             'aspirate_for_spincoating': self.aspirate_for_spincoating,
-            # 'drop_psk': self.drop_psk,
-            # 'drop_as': self.drop_as
+            'dispense_onto_chuck': self.dispense_onto_chuck,
+            'cleanup': self.cleanup
         }
 
     def check_for_instructions(self):
@@ -37,14 +37,16 @@ class Listener:
         r = requests.post(
             self.address,
             json=payload
-            ).json()
+            )
+
+        r = r.json()
 
         if 'all_done' in r:
             return False
         if r['pending_requests'] > 0:
+            print('identified request')
             self.process_request(
                 taskid = r['taskid'],
-                pipette = r['pipette'],
                 function = r['function'],
                 args = r['args'],
                 kwargs = r['kwargs'] #keyword arguments
@@ -52,11 +54,11 @@ class Listener:
 
         return True #flag to indicate whether experiment is completed
 
-    def process_request(self, taskid, pipette, function, args, kwargs):
+    def process_request(self, taskid, function, args, kwargs):
         if function in self.tasklist:
             function = self.tasklist[function]
         else:
-            pipette = self.parse_pipette(pipette)
+            pipette = self.parse_pipette(kwargs['pipette'])
             function = getattr(pipette, function)
 
         self.taskid = taskid
@@ -68,7 +70,8 @@ class Listener:
         r = requests.post(
                 self.address,
                 json = payload
-            ).json()
+            )
+        r = r.json()
 
         function(*args, **kwargs)
 
@@ -81,6 +84,9 @@ class Listener:
                 self.address,
                 json = payload
             )
+
+        r = r.json()
+        self.status = 0
         if r['completion_acknowledged']:
             self.status = 0
 
@@ -105,19 +111,19 @@ class Listener:
 
         self.pipettes[self.PSK_PIPETTE].aspirate(
             psk_volume, 
-            self.stock.wells()[psk_well]
+            self.stock.wells_by_name()[psk_well]
             )
 
         self.pipettes[self.PSK_PIPETTE].air_gap(self.AIRGAP)
 
         self.pipettes[self.ANTISOLVENT_PIPETTE].aspirate(
             as_volume, 
-            self.stock.wells()[as_well]
+            self.stock.wells_by_name()[as_well]
             )
         self.pipettes[self.ANTISOLVENT_PIPETTE].air_gap(self.AIRGAP)
 
         self.pipettes[1].move_to(
-            self.spincoater[self.STANDBY_WELL]
+            self.spincoater[self.STANDBY_WELL].top()
             ) #moves right pipette to standby location of spincoater, which should be to the bottom left of chuck
 
     def dispense_onto_chuck(self, pipette, height = None, rate = None):
@@ -132,7 +138,7 @@ class Listener:
         pipette.well_bottom_clearance.dispense = height #set z-offset from chuck to tip, mm
         pipette.flow_rate.dispense = rate #dispense flow rate, ul/s
         
-        pipette.dispense(self.spincoater[self.CHUCK_WELL])
+        pipette.dispense(location = self.spincoater[self.CHUCK_WELL])
         
         #set dispense settings to defaults for liquid handling
         pipette.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
@@ -141,8 +147,8 @@ class Listener:
     def cleanup(self):
         for p in self.pipettes:
             p.drop_tip()
-        for p in self.pipettes:
-            p.pick_up_tip()
+        # for p in self.pipettes:
+        #     p.pick_up_tip()
 
 
 
@@ -151,7 +157,7 @@ metadata = {
     'protocolName': 'Maestro Listener',
     'author': 'Rishi Kumar',
     'source': 'FRG',
-    'apiLevel': '2.2'
+    'apiLevel': '2.8'
     }
 
 
@@ -160,10 +166,10 @@ def run(protocol_context):
 
     listener.tipracks = [
       protocol_context.load_labware('opentrons_96_tiprack_300ul', slot)
-      for slot in ['4']
+      for slot in ['5']
       ]
 
-    listener.stock = protocol_context.load_labware('frg_28_wellplate_4000ul', '1')
+    listener.stock = protocol_context.load_labware('frg_28_wellplate_4000ul', '2')
     listener.pipettes = [
       protocol_context.load_instrument('p300_single', side, tip_racks=listener.tipracks)
       for side in ['left', 'right']
@@ -174,16 +180,20 @@ def run(protocol_context):
 
 
     listener.pipettes[0].pick_up_tip()
-    listener.pipettes[0].aspirate(10, listener.stock.wells()[0])
-    listener.pipettes[0].dispense(10, listener.stock.wells()[0])
+    listener.pipettes[0].aspirate(10, listener.stock.wells_by_name()['B2'])
+    listener.pipettes[0].dispense(10, listener.spincoater.wells()[0])
+    listener.pipettes[0].return_tip()
 
-    listener.pipettes[1].pick_up_tip()
-    listener.pipettes[1].aspirate(10, listener.spincoater.wells()[0])
-    listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
+    # listener.pipettes[1].pick_up_tip()
+    # listener.pipettes[1].aspirate(10, listener.spincoater.wells()[0])
+    # listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
     
 
-    if not protocol_context.is_simulating(): #without this, the protocol simulation gets stuck in loop forever.
-        experiment_in_progress = True
-        while experiment_in_progress:
-            experiment_in_progress = listener.check_for_instructions()
-            time.sleep(0.5)
+    if protocol_context.is_simulating(): #without this, the protocol simulation gets stuck in loop forever.
+        return
+
+
+    experiment_in_progress = True
+    while experiment_in_progress:
+        experiment_in_progress = listener.check_for_instructions()
+        time.sleep(0.2)

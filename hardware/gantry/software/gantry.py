@@ -57,6 +57,12 @@ class Gantry:
 		self._handle.close()
 		del self._handle
 
+	def _enable_steppers(self):
+		self.write('M18')
+
+	def _disable_steppers(self):
+		self.write('M17')
+
 	def set_defaults(self):
 		self.write('G90') #absolute coordinate system
 		self.write('M92 X80.0 Y53.333 Z400.0') #set steps/mm, randomly resets to defaults sometimes idk why
