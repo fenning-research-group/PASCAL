@@ -43,86 +43,56 @@ class SpinCoater:
 		else:
 			self.setspeed(rpm)
 
+	def vacuum_on(self):
+		self.write('i3') #send command to engage/open vacuum solenoid
+
+	def vacuum_off(self):
+		self.write('o3') #send command to disengage/close vacuum solenoid
+
 	def lock(self):
 		"""
 		routine to lock rotor in registered position for sample transfer
 		"""
-		if self.locked:
-			return
-
-		self.write('z') # 
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
-		self.write('i4') #send command to engage electromagnet
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
-		self.locked = True
-
-	def motor_on(self):
-		self.write('i3') #send command to engage electromagnet
-
-	def motor_off(self):
-
-		self.write('z') # 
-		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
-		self.write('o3') #send command to engage electromagnet
-
-	def lock(self):
-		"""
-		locks the rotor to registered position
-		"""		
-		self.write('i4') #send command to engage electromagnet
-		# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
-		self.locked = True
+		if not self.locked:
+			self.write('i4') #send command to engage electromagnet
+			self.locked = True
 
 	def unlock(self):
 		"""
 		unlocks the rotor from registered position
 		"""
-		self.write('o4') #send command to disengage electromagnet
-		# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
-		self.locked = False
-
-	def setspeed(self, speed): #acceleration = max(self.ACCELERATIONRANGE)):
-		
-		speed = int(speed) #arduino only takes integer inputs
-
 		if self.locked:
-			self.unlock()
-		self.__handle.write(f'a{speed:d}'.encode()) 
+			self.write('o4') #send command to disengage electromagnet
+			# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
+			self.locked = False
 
-		#send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+	def setspeed(self, speed, acceleration = max(self.ACCELERATIONRANGE)):
 		'''
 		sends commands to arduino to set a target speed with a target acceleration
 
 		speed - target angular velocity, in rpm
-		acceleration - target angular acceleration, in rpm/second. always positive
+		acceleration - target angular acceleration, in rpm/second. 
 		acceleration = int(acceleration) 
-		#possible code to wait for confirmation response from arduino that speed was hit successfully
-		'''
+		'''	
+		speed = int(speed) #arduino only takes integer inputs
+
+		self.unlock()
+		self.__handle.write(f'a{speed:d}'.encode()) 
+
+		#send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+
 
 	def stop(self):
 		"""
 		stop rotation and locks the rotor in position
 		"""
 		self.write('z') # 
+		time.sleep(2) #wait some time to ensure rotor has stopped and engaged with electromagnet
 		self.lock()
+		time.sleep(1)
 
 	def recipe(self, recipe):
-		"""
-		executes a series of spin coating steps. A final "stop" step is inserted
-		at the end to bring the rotor to a halt.
-
-		recipe - nested list of steps in format:
-			
-			[
-				[speed, acceleration, duration],
-				[speed, acceleration, duration],
-				...,
-				[speed, acceleration, duration]
-			]
-
-			where speed = rpm, acceleration = rpm/s, duration = s
-
-		"""
+		
 		record = {
 			'time':[],
 			'rpm': []

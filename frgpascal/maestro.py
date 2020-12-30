@@ -55,7 +55,23 @@ class Maestro:
 		self.moveto(p2, zhop = zhop)
 		self.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 
-	def spincoat(self, conditions, drops):
+	def spincoat(self, recipe, drops):
+		"""
+		executes a series of spin coating steps. A final "stop" step is inserted
+		at the end to bring the rotor to a halt.
+
+		recipe - nested list of steps in format:
+			
+			[
+				[speed, acceleration, duration],
+				[speed, acceleration, duration],
+				...,
+				[speed, acceleration, duration]
+			]
+
+			where speed = rpm, acceleration = rpm/s, duration = s
+
+		"""
 		record = {
 			'time':[],
 			'rpm': [],
@@ -67,8 +83,8 @@ class Maestro:
 		step_idx = 0
 
 		drop_idx = 0
-		drop_times = drops.values()
-		drop_names = drops.keys()
+		drop_times = list(drops.values())
+		drop_names = list(drops.keys())
 		next_drop_time = drop_times[0]
 		drop_moves = [self.drop_perovskite(), self.drop_antisolvent()]
 
@@ -80,9 +96,9 @@ class Maestro:
 			record['rpm'].append(self.spincoater.rpm)
 
 			if time_elapsed >= next_step_time:
-				speed = conditions[step_idx][0]
-				acceleration = conditions[step_idx][1]
-				duration = conditions[step_idx][2]
+				speed = recipe[step_idx][0]
+				acceleration = recipe[step_idx][1]
+				duration = recipe[step_idx][2]
 
 				self.spincoater.setspeed(speed, acceleration)
 				next_step_time += duration	
@@ -91,7 +107,7 @@ class Maestro:
 				drop_idx += 1
 				record['droptime'][drop_names[drop_idx]] = time_elapsed
 
-			if drop_idx > len(drops) and step_idx > len(conditions):
+			if drop_idx > len(drops) and step_idx > len(recipe):
 				spincoat_completed = True
 
 			time.sleep(self.spincoater.POLLINGRATE)
