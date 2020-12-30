@@ -1,23 +1,46 @@
 import string
+from geometry import Workspace
 
-class SampleTray:
-	# def __init__(self, shape = (5,5), x0 = 10, xstep = 30, y0 = 10, ystep = 30):
-	def __init__(self, shape = (5,5), x0 = 10, xstep = 30, y0 = 10, ystep = 30):
-		self.slot = OrderedDict()
-		for m, n in np.ndindex(shape):
-			trayindex = '{}{}'.format(string.ascii_uppercase[m], n+1)
-			self.slot[trayindex] = {
-				'position': (x0 + n*xstep, y0 + m*ystep)
+
+# tray constants. None = defaults
+tray_versions = {
+	'v1': {
+		'pitch': (20,16),
+		'gridsize': (8,5),
+		'testslots': None,  
+		'z_clearance': None,
+		'openwidth': 12
+	}
+}
+class SampleTray(Workspace):
+	def __init__(self, name, num, version = 'v1', gantry, p0 = [None, None, None]):
+		if version not in tray_versions:
+			raise Exception(f'Invalid tray version "{version}" - must be in {list(tray_versions.keys())}.')
+		tray_kwargs = tray_versions[version]
+		self.openwidth = tray_kwargs.pop('openwidth')
+		super().__init__(
+			name = name,
+			gantry = gantry,
+			p0 = p0,
+			**tray_kwargs
+			)
+
+		#only consider slots with blanks loaded		
+		self.slots = {
+			name:{'coordinates':coord, 'payload':'blank substrate'}
+			for _, (name,coord) 
+			in zip(range(num), self.__coordinates.items()) 
 			}
-		self.__queue = iter(self.slot.keys())
-		self.exhausted = False
 
+		self.__queue = iter(self.slots.keys())
+		self.exhausted = False
+		
 	def next(self):
-		try:
-			nextslot = next(self.__queue)
-		except:
-			nextslot = None #if all slots have been consumed, return none
+		nextslot = next(self.__queue, None) #if no more slots left, return None
+		if nextslot is None
 			self.exhausted = True
+
+		return nextslot
 
 	def export(self, fpath):
 		"""

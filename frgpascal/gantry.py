@@ -7,8 +7,6 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushBut
 import PyQt5
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
-import numpy as np
-from scipy.interpolate import LinearNDInterpolator
 
 class Gantry:
     def __init__(self, port):
@@ -144,12 +142,16 @@ class Gantry:
         '''
         moves to target position in x,y,z (mm)
         '''
-        if x is None:
-            x = self.position[0]
-        if y is None:
-            y = self.position[1]
-        if z is None:
-            z = self.position[2]
+        try:
+            if len(x) == 3:
+                x,y,z = x #split 3 coordinates into appropriate variables
+        except:
+            if x is None:
+                x = self.position[0]
+            if y is None:
+                y = self.position[1]
+            if z is None:
+                z = self.position[2]
         if speed is None:
             speed = self.speed
 
@@ -160,9 +162,6 @@ class Gantry:
         else:
             self._movecommand(x, y, z, speed)
 
-
-
-
     def _movecommand(self, x = None, y = None, z = None, speed = None):
         if self.premove(x, y, z):
             if self.position == [x,y,z]:
@@ -172,6 +171,7 @@ class Gantry:
                 return self._waitformovement()
         else:
             raise Exception('Invalid move - probably out of bounds')
+
     def moverel(self, x = 0, y = 0, z = 0, zhop = False, speed = None):
         '''
         moves by coordinates relative to the current position
@@ -260,7 +260,6 @@ class Gantry:
 
     def gui(self):
         GantryGUI(gantry = self) #opens blocking gui to manually jog motors
-
 
 class GantryGUI:
    def __init__(self, gantry):
@@ -378,18 +377,3 @@ class GantryGUI:
       # sys.exit(self.app.quit())
       return
 
-class MapSpace: 
-    def __init__(self, p0, p1): 
-        self.frame = np.asarray(p1) 
-        self.reference = np.asarray(p0) 
-        self.xyoffset = (self.frame.mean(axis = 0) - self.reference.mean(axis = 0)) 
-        self.xyoffset[2] = 0 #no z offset, but keep in 3d 
-        self.zinterp = LinearNDInterpolator(self.reference[:,:2], self.reference[:,2]) 
-        
-    def map(self, p): 
-        if len(p) == 2:
-            p.append(0)
-        p = np.asarray(p) 
-        pmap = p - self.xyoffset 
-        pmap[2] = self.zinterp(pmap[:2]) 
-        return pmap              
