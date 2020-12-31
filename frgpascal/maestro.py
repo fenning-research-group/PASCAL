@@ -6,7 +6,7 @@ import asyncio
 
 from gantry import Gantry
 from spincoater import Spincoater
-from liquidhandler import OT2Server
+from liquidhandler import OT2
 from hotplate import HotPlate
 from sampletray import SampleTray
 
@@ -20,7 +20,7 @@ class Maestro:
 		# Workers
 		self.gantry = Gantry(port = gantryport),
 		self.spincoater = Spincoater(port = spincoaterport)
-		self.liquidhandler = OT2Server()
+		self.liquidhandler = OT2()
 
 		# Labware
 		
@@ -49,11 +49,11 @@ class Maestro:
 	### Physical Methods
 	# Compound Movements
 	def transfer_sample(self, p1, p2, zhop = True):
-		self.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
-		self.moveto(p1, zhop = zhop)
-		self.close()
-		self.moveto(p2, zhop = zhop)
-		self.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.gantry.moveto(p1, zhop = zhop)
+		self.gantry.close_gripper()
+		self.gantry.moveto(p2, zhop = zhop)
+		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 
 	def spincoat(self, recipe, drops):
 		"""
@@ -86,7 +86,7 @@ class Maestro:
 		drop_times = list(drops.values())
 		drop_names = list(drops.keys())
 		next_drop_time = drop_times[0]
-		drop_moves = [self.drop_perovskite(), self.drop_antisolvent()]
+		drop_moves = [self.liquidhandler.drop_perovskite(), self.liquidhandler.drop_antisolvent()]
 
 		spincoat_completed = False
 		start_time = time.time()
@@ -118,8 +118,7 @@ class Maestro:
 		return record
 
 	# Complete Sample
-
-	def execute()
+	
 # OT2 Communication + Reporting Server
 
 class Reporter:

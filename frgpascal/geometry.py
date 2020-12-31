@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
-from gantry import GantryGUI
 
 class CoordinateMapper: 
 	"""Transforms from one coordinate system (source) to another (destination)
@@ -48,7 +47,7 @@ def map_coordinates(points, gantry, z_clearance = 5):
 	for p in points_source_guess:
 		movedelta = p - p_prev #offset between current and next point
 		gantry.moverel(*movedelta, zhop = False) #move to next point
-		GantryGUI(g) #prompt user to align gantry to exact target location
+		gantry.gui() #prompt user to align gantry to exact target location
 		points_source_meas.append(gantry.position)
 		gantry.moverel(z = z_clearance, zhop = False)
 		p_prev = p 

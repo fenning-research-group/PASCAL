@@ -103,8 +103,7 @@ class Listener:
         else:
             raise ValueError('Invalid pipette name given!')
 
-    ### bundled pipetting methods
-
+    ### bundled pipetting methods    
     def aspirate_for_spincoating(self, psk_well, psk_volume, as_well, as_volume):
         for p in self.pipettes:
             p.pick_up_tip()
