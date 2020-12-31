@@ -13,7 +13,7 @@ tray_versions = {
 	}
 }
 class SampleTray(Workspace):
-	def __init__(self, name, num, version = 'v1', gantry, p0 = [None, None, None]):
+	def __init__(self, name, num, version = 'v1', gantry = None, p0 = [None, None, None]):
 		if version not in tray_versions:
 			raise Exception(f'Invalid tray version "{version}" - must be in {list(tray_versions.keys())}.')
 		tray_kwargs = tray_versions[version]
@@ -37,7 +37,7 @@ class SampleTray(Workspace):
 		
 	def next(self):
 		nextslot = next(self.__queue, None) #if no more slots left, return None
-		if nextslot is None
+		if nextslot is None:
 			self.exhausted = True
 
 		return nextslot

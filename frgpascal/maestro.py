@@ -5,7 +5,7 @@ import threading
 import asyncio
 
 from gantry import Gantry
-from spincoater import Spincoater
+from spincoater import SpinCoater
 from liquidhandler import OT2
 from hotplate import HotPlate
 from sampletray import SampleTray
@@ -19,7 +19,7 @@ class Maestro:
 
 		# Workers
 		self.gantry = Gantry(port = gantryport),
-		self.spincoater = Spincoater(port = spincoaterport)
+		self.spincoater = SpinCoater(port = spincoaterport, gantry = self.gantry)
 		self.liquidhandler = OT2()
 
 		# Labware

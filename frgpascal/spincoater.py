@@ -11,6 +11,7 @@ class SpinCoater:
 		self.port = port
 		self.BAUDRATE = 57600
 		self.gantry = gantry
+		self.locked = None
 		self.connect() 
 		self.unlock()
 
@@ -75,7 +76,7 @@ class SpinCoater:
 			# time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate 
 			self.locked = False
 
-	def setspeed(self, speed, acceleration = max(self.ACCELERATIONRANGE)):
+	def setspeed(self, speed, acceleration = None):
 		'''
 		sends commands to arduino to set a target speed with a target acceleration
 

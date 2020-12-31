@@ -5,6 +5,7 @@ import time
 import logging
 import configparser
 from typing import List
+from geometry import Workspace
 
 hotplate_versions = {
 	'v1': {
@@ -17,7 +18,7 @@ hotplate_versions = {
 }
 
 class HotPlate(Workspace):
-	def __init__(self, name, version = 'v1', gantry, p0 = [None, None, None]):
+	def __init__(self, name, version = 'v1', gantry = None, p0 = [None, None, None]):
 		if version not in hotplate_versions:
 			raise Exception(f'Invalid hotplate version "{version}" - must be in {list(hotplate_versions.keys())}.')
 		hotplate_kwargs = hotplate_versions[version]
@@ -35,20 +36,20 @@ class HotPlate(Workspace):
 			for name,coord 
 			in self.__coordinates.items 
 			}
-        self.__capacity = len(self.slots)
+		self.__capacity = len(self.slots)
 
 		self.full = False
 	
 	def get_open_slot(self):
-        openslot = None
-        for i, (slot, v) in enumerate(self.slots.items()):
-            if v['payload'] is None:
-                openslot = slot
-                break
-        if i+1 == self.__capacity or openslot is None:
-            self.full = True
-        return nextslot
-        
+				openslot = None
+				for i, (slot, v) in enumerate(self.slots.items()):
+						if v['payload'] is None:
+								openslot = slot
+								break
+				if i+1 == self.__capacity or openslot is None:
+						self.full = True
+				return nextslot
+				
 	def export(self, fpath):
 		"""
 		routine to export tray data to save file. used to keep track of experimental conditions in certain tray.
@@ -56,40 +57,40 @@ class HotPlate(Workspace):
 		return None
 
 class HotPlate:
-  def __init__(self, port = '/dev/ttyUSB0'):
-      self.tlim = (20, 400) #temperature range, celsius
-      self.connect(port = port)
+	def __init__(self, port = '/dev/ttyUSB0'):
+			self.tlim = (20, 400) #temperature range, celsius
+			self.connect(port = port)
 
-  @property
-  def temperature(self):
-      self.__handle.write(b'GETTEMPERATURECOMMAND')
-      temperature = self.__handle.readline()
-      return float(temperature)
-    
-  @property
-  def setpoint(self):
-      self.__handle.write(b'GETSETPOINTCOMMAND')
-      setpoint = self.__handle.readline()
-      return float(setpoint)
+	@property
+	def temperature(self):
+			self.__handle.write(b'GETTEMPERATURECOMMAND')
+			temperature = self.__handle.readline()
+			return float(temperature)
+		
+	@property
+	def setpoint(self):
+			self.__handle.write(b'GETSETPOINTCOMMAND')
+			setpoint = self.__handle.readline()
+			return float(setpoint)
 
-  @setpoint.setter
-  def setpoint(self, setpoint):
-      if setpoint<min(self.tlim) or setpoint>max(self.tlim):
-          print('Error: set temperature {} is out of range ({}, {})'.format(setpoint, *self.tlim))
-      else:
-          self.__handle.write(b'SETSETPOINTCOMMAND {0:.1f}'.format(setpoint))
-    
+	@setpoint.setter
+	def setpoint(self, setpoint):
+			if setpoint<min(self.tlim) or setpoint>max(self.tlim):
+					print('Error: set temperature {} is out of range ({}, {})'.format(setpoint, *self.tlim))
+			else:
+					self.__handle.write(b'SETSETPOINTCOMMAND {0:.1f}'.format(setpoint))
+		
 
-  def connect(self, port, **kwargs):
-      self.__handle = serial.Serial(
-          port = port,
-          **kwargs
-          )
-      self.__handle.open()
+	def connect(self, port, **kwargs):
+			self.__handle = serial.Serial(
+					port = port,
+					**kwargs
+					)
+			self.__handle.open()
 
-        
-  def disconnect(self):
-      self.__handle.close()       
+				
+	def disconnect(self):
+			self.__handle.close()       
 
 
 
@@ -342,7 +343,7 @@ class HotPlate:
 
 #             # test_io = self._hotplate.read(11)
 #             self._hotplate.flush()
-        
+				
 #         # status: bool = bool(test_io) #
 
 #         # sweep = print(test_io)
@@ -396,7 +397,7 @@ class HotPlate:
 
 #         #     # test_io = self._hotplate.read(11)
 #         #     self._hotplate.flush()
-        
+				
 #         # # status: bool = bool(test_io) #
 
 #         # # sweep = print(test_io)

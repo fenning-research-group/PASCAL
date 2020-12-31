@@ -5,46 +5,46 @@ import time
 import threading
 
 class OT2:
-    def __init__(self):
-        self.server = OT2Server()
-        self.server.start()
-        self.INTERVAL = 0.05
+	def __init__(self):
+		self.server = OT2Server()
+		self.server.start()
+		self.INTERVAL = 0.05
 
-    def drop_perovskite(self):
-        self.server.add_to_queue(
-            function = 'dispense_onto_chuck',
-            pipette = 1
-        )    
-        self._wait_for_task_complete()
+	def drop_perovskite(self):
+		self.server.add_to_queue(
+			function = 'dispense_onto_chuck',
+			pipette = 1
+		)    
+		self._wait_for_task_complete()
 
-    def drop_antisolvent(self):
-        self.server.add_to_queue(
-            function = 'dispense_onto_chuck',
-            pipette = 0
-        )    
-        self._wait_for_task_complete()
+	def drop_antisolvent(self):
+		self.server.add_to_queue(
+			function = 'dispense_onto_chuck',
+			pipette = 0
+		)    
+		self._wait_for_task_complete()
 
-    def aspirate_for_spincoating(self, psk_well, psk_volume, antisolvent_well, antisolvent_volume):
-        self.server.add_to_queue(
-            function = 'aspirate_for_spincoating',
-            psk_well = psk_well, 
-            psk_volume = psk_volume,
-            as_well = as_well, 
-            as_volume = as_volume
-        )
-        self._wait_for_task_complete()
+	def aspirate_for_spincoating(self, psk_well, psk_volume, antisolvent_well, antisolvent_volume):
+		self.server.add_to_queue(
+			function = 'aspirate_for_spincoating',
+			psk_well = psk_well, 
+			psk_volume = psk_volume,
+			as_well = as_well, 
+			as_volume = as_volume
+		)
+		self._wait_for_task_complete()
 
-    def cleanup(self):
-        self.server.add_to_queue(
-            function = 'cleanup'
-        )
-        self.server._wait_for_task_complete()
+	def cleanup(self):
+		self.server.add_to_queue(
+			function = 'cleanup'
+		)
+		self.server._wait_for_task_complete()
 
-    def _wait_for_task_complete(self):
-        while self.server.OT2_status == 0: #wait for task to be acknowledged by ot2
-            time.sleep(self.INTERVAL)
-        while self.server.OT2_status != 0: #wait for task to be marked complete by ot2
-            time.sleep(self.INTERVAL)
+	def _wait_for_task_complete(self):
+		while self.server.OT2_status == 0: #wait for task to be acknowledged by ot2
+			time.sleep(self.INTERVAL)
+		while self.server.OT2_status != 0: #wait for task to be marked complete by ot2
+			time.sleep(self.INTERVAL)
 
 class OT2Server:
 	def __init__(self, parent, host = '0.0.0.0', port = 8080):
@@ -69,7 +69,7 @@ class OT2Server:
 		self.requests.append(payload)
 
 	def send_request(self):
-        self.OT2_status = 1
+		self.OT2_status = 1
 		payload = self.requests.pop(0) #take request from top of stack
 		payload['pending_requests'] = self.pending_requests
 		self.pending_requests -= 1
@@ -85,8 +85,8 @@ class OT2Server:
 			data={'pending_requests':0}
 			)
 	
-    def complete_ack(self):
-        self.OT2_status = 0
+	def complete_ack(self):
+		self.OT2_status = 0
 		return web.json_response(
 			status=200, # OK
 			data={'pending_requests':self.pending_requests, 'taskid': self.taskid, 'completion_acknowledged': 1}
