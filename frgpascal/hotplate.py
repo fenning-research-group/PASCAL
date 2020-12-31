@@ -9,10 +9,10 @@ from geometry import Workspace
 
 hotplate_versions = {
 	'v1': {
-		'pitch': (20,16),
-		'gridsize': (8,5),
+		'pitch': (20,20),
+		'gridsize': (5,2),
 		'testslots': None,  
-		'z_clearance': None,
+		'z_clearance': 5,
 		'openwidth': 12
 	}
 }
@@ -22,7 +22,6 @@ class HotPlate(Workspace):
 		if version not in hotplate_versions:
 			raise Exception(f'Invalid hotplate version "{version}" - must be in {list(hotplate_versions.keys())}.')
 		hotplate_kwargs = hotplate_versions[version]
-		self.openwidth = hotplate_kwargs.pop('openwidth')
 		super().__init__(
 			name = name,
 			gantry = gantry,
@@ -34,9 +33,9 @@ class HotPlate(Workspace):
 		self.slots = {
 			name:{'coordinates':coord, 'payload':None}
 			for name,coord 
-			in self.__coordinates.items 
+			in self._coordinates.items()
 			}
-		self.__capacity = len(self.slots)
+		self._capacity = len(self.slots)
 
 		self.full = False
 	
@@ -56,41 +55,41 @@ class HotPlate(Workspace):
 		"""
 		return None
 
-class HotPlate:
-	def __init__(self, port = '/dev/ttyUSB0'):
-			self.tlim = (20, 400) #temperature range, celsius
-			self.connect(port = port)
+# class HotPlate:
+# 	def __init__(self, port = '/dev/ttyUSB0'):
+# 			self.tlim = (20, 400) #temperature range, celsius
+# 			self.connect(port = port)
 
-	@property
-	def temperature(self):
-			self.__handle.write(b'GETTEMPERATURECOMMAND')
-			temperature = self.__handle.readline()
-			return float(temperature)
+# 	@property
+# 	def temperature(self):
+# 			self.__handle.write(b'GETTEMPERATURECOMMAND')
+# 			temperature = self.__handle.readline()
+# 			return float(temperature)
 		
-	@property
-	def setpoint(self):
-			self.__handle.write(b'GETSETPOINTCOMMAND')
-			setpoint = self.__handle.readline()
-			return float(setpoint)
+# 	@property
+# 	def setpoint(self):
+# 			self.__handle.write(b'GETSETPOINTCOMMAND')
+# 			setpoint = self.__handle.readline()
+# 			return float(setpoint)
 
-	@setpoint.setter
-	def setpoint(self, setpoint):
-			if setpoint<min(self.tlim) or setpoint>max(self.tlim):
-					print('Error: set temperature {} is out of range ({}, {})'.format(setpoint, *self.tlim))
-			else:
-					self.__handle.write(b'SETSETPOINTCOMMAND {0:.1f}'.format(setpoint))
+# 	@setpoint.setter
+# 	def setpoint(self, setpoint):
+# 			if setpoint<min(self.tlim) or setpoint>max(self.tlim):
+# 					print('Error: set temperature {} is out of range ({}, {})'.format(setpoint, *self.tlim))
+# 			else:
+# 					self.__handle.write(b'SETSETPOINTCOMMAND {0:.1f}'.format(setpoint))
 		
 
-	def connect(self, port, **kwargs):
-			self.__handle = serial.Serial(
-					port = port,
-					**kwargs
-					)
-			self.__handle.open()
+# 	def connect(self, port, **kwargs):
+# 			self.__handle = serial.Serial(
+# 					port = port,
+# 					**kwargs
+# 					)
+# 			self.__handle.open()
 
 				
-	def disconnect(self):
-			self.__handle.close()       
+# 	def disconnect(self):
+# 			self.__handle.close()       
 
 
 

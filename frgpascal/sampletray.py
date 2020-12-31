@@ -8,7 +8,7 @@ tray_versions = {
 		'pitch': (20,16),
 		'gridsize': (8,5),
 		'testslots': None,  
-		'z_clearance': None,
+		'z_clearance': 5,
 		'openwidth': 12
 	}
 }
@@ -17,7 +17,6 @@ class SampleTray(Workspace):
 		if version not in tray_versions:
 			raise Exception(f'Invalid tray version "{version}" - must be in {list(tray_versions.keys())}.')
 		tray_kwargs = tray_versions[version]
-		self.openwidth = tray_kwargs.pop('openwidth')
 		super().__init__(
 			name = name,
 			gantry = gantry,
@@ -29,7 +28,7 @@ class SampleTray(Workspace):
 		self.slots = {
 			name:{'coordinates':coord, 'payload':'blank substrate'}
 			for _, (name,coord) 
-			in zip(range(num), self.__coordinates.items()) 
+			in zip(range(num), self._coordinates.items()) 
 			}
 
 		self.__queue = iter(self.slots.keys())

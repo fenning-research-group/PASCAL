@@ -34,9 +34,9 @@ class Gantry:
         self.gripperwidth = None
         self.servoangle = None
         self.MAXANGLE = 127
-        self.MINANGLE = 57
-        self.MINWIDTH = 8
-        self.MAXWIDTH = 33 #max gripper width, in mm
+        self.MINANGLE = 66
+        self.MINWIDTH = 6.5
+        self.MAXWIDTH = 28 #max gripper width, in mm
         self.GRIPRATE = 10 #default gripper open/close rate, mm/s
         self.GRIPINTERVAL = 0.05 #gripper open/close motions interpolated onto this time interval, s
         self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
@@ -64,8 +64,9 @@ class Gantry:
 
     def set_defaults(self):
         self.write('G90') #absolute coordinate system
-        self.write('M92 X53.333 Y53.333 Z400.0') #set steps/mm, randomly resets to defaults sometimes idk why
-        self.write(f'M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z35.00') #set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware. 
+        self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write('M92 X53.333 Y53.333 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
+        self.write(f'M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z25.00') #set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware. 
         self.set_speed_percentage(80) #set speed to 80% of max
 
     def write(self, msg):
@@ -156,9 +157,11 @@ class Gantry:
             speed = self.speed
 
         if zhop:
-            self.moverel(z = self.ZHOP_HEIGHT, zhop = False, speed = speed)
-            self.moveto(x, y, z+self.ZHOP_HEIGHT, zhop = False, speed = speed)
-            self.moverel(z = -self.ZHOP_HEIGHT, zhop = False, speed = speed)
+            z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
+            z_ceiling = min(z_ceiling, max(self.zlim)) #cant z-hop above build volume. mostly here for first move after homing.
+            self.moveto(z = z_ceiling, zhop = False, speed = speed)
+            self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
+            self.moveto(z = z, zhop = False, speed = speed)
         else:
             self._movecommand(x, y, z, speed)
 
@@ -170,7 +173,7 @@ class Gantry:
                 self.write(f'G0 X{x} Y{y} Z{z} F{speed}')
                 return self._waitformovement()
         else:
-            raise Exception('Invalid move - probably out of bounds')
+            raise Exception('Invalid move - probably out of bounds. Possibly due to z-hopping between points near top of working volume?')
 
     def moverel(self, x = 0, y = 0, z = 0, zhop = False, speed = None):
         '''
@@ -178,7 +181,11 @@ class Gantry:
         '''
         if self.position == [None, None, None]:
             raise Exception('Stage has not been homed! Home with self.gohome() before moving please.')
-
+        try:
+            if len(x) == 3:
+                x,y,z = x #split 3 coordinates into appropriate variables
+        except:
+            pass
         x += self.position[0]
         y += self.position[1]
         z += self.position[2]
@@ -295,7 +302,7 @@ class GantryGUI:
       ### status label
       self.gantrystatus = QLabel('Idle')
       self.gantrystatus.setAlignment(AlignHCenter)
-      self.grid.addWidget(self.gantrystatus, 5,3)
+      self.grid.addWidget(self.gantrystatus, 5,4)
 
       ### jog motor buttons
       self.jogback = QPushButton('Back')
@@ -332,11 +339,19 @@ class GantryGUI:
       self.step10 = QPushButton('10 mm')
       self.step10.clicked.connect(partial(self.set_stepsize, stepsize = 10))
       self.grid.addWidget(self.step10, 5, 2)
+      self.step50 = QPushButton('50 mm')
+      self.step50.clicked.connect(partial(self.set_stepsize, stepsize = 50))
+      self.grid.addWidget(self.step50, 6, 0)
+      self.step100 = QPushButton('100 mm')
+      self.step100.clicked.connect(partial(self.set_stepsize, stepsize = 100))
+      self.grid.addWidget(self.step100, 6, 1)
       
       self.stepsize_options = {
          0.1: self.steppt1,
          1: self.step1,
-         10: self.step10
+         10: self.step10,
+         50: self.step50,
+         100: self.step100
          }
 
       self.set_stepsize(self.stepsize)

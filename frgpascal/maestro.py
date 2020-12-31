@@ -11,24 +11,24 @@ from hotplate import HotPlate
 from sampletray import SampleTray
 
 class Maestro:
-	def __init__(self, gantryport = None, spincoaterport = None, hotplateport = None):
+	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM3', hotplateport = None):
 		# Constants
-		self.ZHOPCLEARANCE = 50 #height (above breadboard) to raise to when moving gantry with zhop option on.
+		self.ZHOPCLEARANCE = 10 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2.5 #mm extra opening width
 
 		# Workers
-		self.gantry = Gantry(port = gantryport),
+		self.gantry = Gantry(port = gantryport)
 		self.spincoater = SpinCoater(port = spincoaterport, gantry = self.gantry)
 		self.liquidhandler = OT2()
 
 		# Labware
 		
-		self.hotplate = Hotplate(
+		self.hotplate = HotPlate(
 			name = 'Hotplate1',
 			version = 'v1',
 			gantry = self.gantry,
-			# p0 = [None, None, None]
+			p0 = [197, 45, 25]
 
 		)
 
@@ -38,7 +38,7 @@ class Maestro:
 			version = 'v1',
 			num = 5, #number of substrates loaded
 			gantry = self.gantry,
-			# p0 = [None, None, None]
+			p0 = [197, 85, 35]
 		)
 
 		# Stock Solutions
@@ -48,12 +48,13 @@ class Maestro:
 
 	### Physical Methods
 	# Compound Movements
-	def transfer_sample(self, p1, p2, zhop = True):
+	def transfer(self, p1, p2, zhop = True):
 		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 		self.gantry.moveto(p1, zhop = zhop)
 		self.gantry.close_gripper()
 		self.gantry.moveto(p2, zhop = zhop)
 		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.gantry.moverel(z = self.ZHOPCLEARANCE)
 
 	def spincoat(self, recipe, drops):
 		"""
