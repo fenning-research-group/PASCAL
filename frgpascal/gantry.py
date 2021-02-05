@@ -64,8 +64,8 @@ class Gantry:
 
     def set_defaults(self):
         self.write('G90') #absolute coordinate system
-        self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
-        # self.write('M92 X53.333 Y53.333 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
+        self.write('M92 X53.333 Y53.333 Z400.0') #set steps/mm, randomly resets to defaults sometimes idk why
         self.write(f'M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z25.00') #set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware. 
         self.set_speed_percentage(80) #set speed to 80% of max
 

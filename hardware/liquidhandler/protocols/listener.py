@@ -175,17 +175,25 @@ def run(protocol_context):
       ]
 
 
-    listener.spincoater = protocol_context.load_labware('frg_spincoater_v1', '6') #has two locations defined as "wells", called "standby" and "chuck"
+    listener.spincoater = protocol_context.load_labware('frg_spincoater_v1', '9') #has two locations defined as "wells", called "standby" and "chuck"
 
+    listener.pipettes[1].pick_up_tip()
+    listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B2'])
+    listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
+    listener.pipettes[1].return_tip()
 
     listener.pipettes[0].pick_up_tip()
-    listener.pipettes[0].aspirate(10, listener.stock.wells_by_name()['B2'])
-    listener.pipettes[0].dispense(10, listener.spincoater.wells()[0])
-    listener.pipettes[0].return_tip()
+    listener.pipettes[0].aspirate(125, listener.stock.wells_by_name()['A1'])
+    listener.pipettes[1].pick_up_tip()
+    listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B1'])
+    
+    listener.pipettes[0].move_to(
+            listener.spincoater[listener.CHUCK_WELL].top()
+            )
 
-    # listener.pipettes[1].pick_up_tip()
-    # listener.pipettes[1].aspirate(10, listener.spincoater.wells()[0])
-    # listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
+    # time.sleep(1e10)
+
+
     
 
     if protocol_context.is_simulating(): #without this, the protocol simulation gets stuck in loop forever.
