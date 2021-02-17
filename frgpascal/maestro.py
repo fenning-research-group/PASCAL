@@ -62,9 +62,12 @@ class Maestro:
 	### Physical Methods
 	# Compound Movements
 	def transfer(self, p1, p2, zhop = True):
-		self.release()
+		if p1 == self.spincoater.coordinates:
+			self.gantry.open_gripper(self.SAMPLEWIDTH + 2*self.SAMPLETOLERANCE) #wider grip to pick samples from chuck.
+		else:
+			self.release()
 		self.gantry.moveto(p1, zhop = zhop)
-		self.catch() #TODO possibly close to < samplewidth to prevent gripper x floating
+		self.catch()
 		self.gantry.moveto(p2, zhop = zhop)
 		self.release()
 		self.gantry.moverel(z = self.ZHOPCLEARANCE)
@@ -86,6 +89,11 @@ class Maestro:
 
 			where speed = rpm, acceleration = rpm/s, duration = s
 
+		drops = dictionary with perovskite, antisolvent drops
+			{
+				'perovskite': 10,
+				'antisolvent': 15
+			}
 		"""
 		record = {
 			'time':[],
@@ -93,42 +101,54 @@ class Maestro:
 			'droptime': {d:None for d in drops}
 			}
 
-		next_step_time = 0
-		time_elapsed = 0
-		step_idx = 0
-
 		drop_idx = 0
 		drop_times = list(drops.values())
+		if drop_times[0] < 0: #set negative drop time to drop before spinning, static spincoat.
+			static_offset = -drop_times[0] 
+		else:
+			static_offset = 0
 		drop_names = list(drops.keys())
 		next_drop_time = drop_times[0]
 		drop_moves = [self.liquidhandler.drop_perovskite, self.liquidhandler.drop_antisolvent]
 
+		next_step_time = 0 + static_offset
+		time_elapsed = 0
+		step_idx = 0
+
 		spincoat_completed = False
+		steps_completed = False
+		drops_completed = False
 		start_time = time.time()
 		while not spincoat_completed:
 			time_elapsed = time.time() - start_time
 			record['time'].append(time_elapsed)
 			record['rpm'].append(self.spincoater.rpm)
 
-			if time_elapsed >= next_step_time:
-				speed = recipe[step_idx][0]
-				acceleration = recipe[step_idx][1]
-				duration = recipe[step_idx][2]
-
-				self.spincoater.setspeed(speed, acceleration)
-				next_step_time += duration	
-			if time_elapsed >= next_drop_time:
-				drop_moves[drop_idx]
+			if time_elapsed >= next_step_time and not steps_completed:
+				if step_idx >= len(recipe):
+					steps_completed = True
+				else:
+					speed = recipe[step_idx][0]
+					acceleration = recipe[step_idx][1]
+					duration = recipe[step_idx][2]
+					
+			        self.spincoater.setspeed(speed, acceleration)
+					next_step_time += duration
+					step_idx += 1
+			if time_elapsed >= next_drop_time and not drops_completed:
+				drop_moves[drop_idx]()
 				record['droptime'][drop_names[drop_idx]] = time_elapsed
 				drop_idx += 1
-				
+				if drop_idx >= len(drop_times):
+					drops_completed = True
+				else:
+					next_drop_time = drop_times[drop_idx]
 
-			if drop_idx > len(drops) and step_idx > len(recipe):
+			if drops_completed and steps_completed:
 				spincoat_completed = True
 
 			time.sleep(self.spincoater.POLLINGRATE)
 
-			
 		self.spincoater.stop()
 
 		return record
