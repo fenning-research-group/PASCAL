@@ -14,6 +14,7 @@ class SpinCoater:
 		self.locked = None
 		self.connect() 
 		self.unlock()
+		self.__calibrated = False
 
 	def connect(self, **kwargs):
 		self.__handle = serial.Serial(
@@ -32,15 +33,19 @@ class SpinCoater:
 		self.coordinates = self.gantry.position
 		self.gantry.moverel(z = 10, zhop = False)
 		self.gantry.close_gripper()
-		
-
+		self.__calibrated = True
+	
 	def write(self, s):
 		'''
 		appends terminator and converts to bytes before sending message to arduino
 		'''
 		self.__handle.write(f'{s}{self.TERMINATOR}'.encode())
 	
-
+	def __call__(self):
+		if self.__calibrated == False:
+			raise Exception(f'Need to calibrate spincoater position before use!')
+		return self.coordinates
+		
 	@property
 	def rpm(self):
 		self.write(f'c') #command to read rpm

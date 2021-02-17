@@ -10,7 +10,7 @@ from geometry import Workspace
 hotplate_versions = {
 	'v1': {
 		'pitch': (20,20),
-		'gridsize': (5,2),
+		'gridsize': (5,5),
 		'testslots': None,  
 		'z_clearance': 5,
 		'openwidth': 12
@@ -40,14 +40,14 @@ class HotPlate(Workspace):
 		self.full = False
 	
 	def get_open_slot(self):
-				openslot = None
-				for i, (slot, v) in enumerate(self.slots.items()):
-						if v['payload'] is None:
-								openslot = slot
-								break
-				if i+1 == self.__capacity or openslot is None:
-						self.full = True
-				return nextslot
+		openslot = None
+		for i, (slot, v) in enumerate(self.slots.items()):
+				if v['payload'] is None:
+						openslot = slot
+						break
+		if i+1 == self.__capacity or openslot is None:
+				self.full = True
+		return nextslot
 				
 	def export(self, fpath):
 		"""
