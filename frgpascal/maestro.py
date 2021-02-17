@@ -9,6 +9,7 @@ from spincoater import SpinCoater
 from liquidhandler import OT2
 from hotplate import HotPlate
 from sampletray import SampleTray
+import time
 
 class Maestro:
 	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM3', hotplateport = None):
@@ -16,6 +17,7 @@ class Maestro:
 		self.ZHOPCLEARANCE = 10 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
+		self.idle_coordinates = (500, 160, 40) #where to move the gantry during idle times, mainly to avoid cameras.
 
 		# Workers
 		self.gantry = Gantry(port = gantryport)
@@ -25,7 +27,6 @@ class Maestro:
 		self.liquidhandler = OT2()
 
 		# Labware
-		
 		self.hotplate = HotPlate(
 			name = 'Hotplate1',
 			version = 'v1',
@@ -47,15 +48,17 @@ class Maestro:
 
 
 		# Status
+		self.manifest = {} #store all sample info, key is sample storage slot
 
 	### Physical Methods
 	# Compound Movements
 	def transfer(self, p1, p2, zhop = True):
-		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.gantry.release(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 		self.gantry.moveto(p1, zhop = zhop)
-		self.gantry.close_gripper() #TODO possibly close to < samplewidth to prevent gripper x floating
+
+		self.gantry.catch() #TODO possibly close to < samplewidth to prevent gripper x floating
 		self.gantry.moveto(p2, zhop = zhop)
-		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.gantry.release(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 		self.gantry.moverel(z = self.ZHOPCLEARANCE)
 		self.gantry.close_gripper()
 
@@ -121,8 +124,94 @@ class Maestro:
 
 		return record
 
-	# Complete Sample
+	def catch(self):
+		"""
+		Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float 
+		"""
+		self.gantry.open_gripper(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
 	
+	def release(self):
+		"""
+		Open gripper barely enough to release sample
+		"""
+		self.gantry.close_grippe(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
+
+	def idle_gantry(self):
+		self.gantry.moveto(self.idle_coordinates)
+		self.gantry.close_gripper()
+
+	# Complete Sample
+	def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
+		"""
+		storage_slot: slot name for storage location
+		spincoat_instructions:
+			{
+				'source_wells': [
+									[plate_psk, well_psk, vol_psk], 	 (stock/mix, name, uL)
+									[plate_antisolvent, well_antisolvent, vol_antisolvent],
+								],
+				'recipe':   [
+								[speed, acceleration, duration], 	(rpm, rpm/s, s)
+								[speed, acceleration, duration],
+								...,
+								[speed, acceleration, duration]
+							],
+				'drop_times':    [time_psk, time_antisolvent]	 (s)
+			}
+
+		hotplate_instructions:
+			{
+				'temperature': temp 	(C),
+				'slot': slot name on hotplate,
+				'duration': time to anneal 	(s)
+			}
+		"""
+
+		# aspirate liquids, move pipettes next to spincoater
+		self.liquidhandler.aspirate_for_spincoating(
+			psk_well = spincoat_instructions['source_wells']['well_psk'],
+			psk_volume = spincoat_instructions['source_wells']['volume_psk'],
+			as_well = spincoat_instructions['source_wells']['well_antisolvent'],
+			as_volume = spincoat_instructions['source_wells']['volume_antisolvent']
+		)
+
+		#load sample onto chuck
+		self.spincoater.lock()
+		self.spincoater.vacuum_on()
+		self.transfer(
+			self.storage(storage_slot),
+			self.spincoater()
+		)
+		self.idle_gantry()
+		
+		#spincoat
+		spincoating_record = self.spincoat(
+			recipe = spincoat_instructions['recipe'],
+			drops = spincoat_instructions['drop_times']
+		)
+
+		#move sample to hotplate
+		self.liquidhandler.cleanup()
+		self.spincoater.vacuum_off()
+		self.transfer(
+			self.spincoater(),
+			self.hotplate(hotplate_instructions['slot'])
+		)
+		### TODO - start timer for anneal removal
+		
+		self.idle_gantry()
+
+		self.manifest[storage_slot] = {
+			'hotplate': {
+				'instructions': hotplate_instructions
+			},
+			'spincoat': {
+				'instructions': spincoat_instructions,
+				'record': spincoating_record
+			},
+		}
+
+
 # OT2 Communication + Reporting Server
 
 class Reporter:

@@ -10,6 +10,13 @@ tray_versions = {
 		'testslots': None,  
 		'z_clearance': 5,
 		'openwidth': 12
+	},
+	'v2': {
+		'pitch': (17,13),
+		'gridsize': (9,6),
+		'testslots': None,  
+		'z_clearance': 5,
+		'openwidth': 12
 	}
 }
 class SampleTray(Workspace):

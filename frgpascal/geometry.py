@@ -79,7 +79,7 @@ class Workspace:
 		:param z_clearance: vertical offset when calibrating points, in mm. ensures no crashing before calibration, defaults to 5
 		:type z_clearance: int, optional
 		"""
-		self.calibrated = False #set to True after calibration routine has been run
+		self.__calibrated = False #set to True after calibration routine has been run
 		self.name = name
 		self.gantry = gantry
 		# coordinate system properties
@@ -118,7 +118,7 @@ class Workspace:
 				# self._coordinates[name] = [p + poffset for p, poffset in zip(relative_position, self.offset)]
 
 	def slot_coordinates(self, name):
-		if self.calibrated == False:
+		if self.__calibrated == False:
 			raise Exception(f'Need to calibrate {self.name} before use!')
 		return self.transform.map(self._coordinates[name])
 
@@ -129,4 +129,4 @@ class Workspace:
 		self.gantry.moveto(*self.p0)
 		self.gantry.open_gripper(self.OPENWIDTH)
 		self.transform = map_coordinates(self.testslots, self.testpoints, self.gantry, self.z_clearance)
-		self.calibrated = True
+		self.__calibrated = True
