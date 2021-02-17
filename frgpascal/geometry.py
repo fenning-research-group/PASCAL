@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
+import pickle
 
 class CoordinateMapper: 
 	"""Transforms from one coordinate system (source) to another (destination)
@@ -23,7 +24,7 @@ class CoordinateMapper:
 		pmap[2] = self.zinterp(pmap[:2]) 
 		return pmap              
 
-def map_coordinates(slots, points, gantry, z_clearance = 5):
+def map_coordinates(name, slots, points, gantry, z_clearance = 5):
 	"""prompts user to move gripper to target points on labware for
 	calibration purposes
 
@@ -52,6 +53,11 @@ def map_coordinates(slots, points, gantry, z_clearance = 5):
 		points_source_meas.append(gantry.position)
 		gantry.moverel(z = z_clearance, zhop = False)
 		p_prev = p 
+
+	#save calibration
+	with open(f'{name}_calibration.pkl', 'wb') as f:
+		out = {'p0': points_source_meas, 'p1': points}
+		pickle.dump(out,f)
 
 	return CoordinateMapper(p0 = points_source_meas, p1 = points)
 
@@ -84,7 +90,7 @@ class Workspace:
 		self.gantry = gantry
 		# coordinate system properties
 		self.pitch = pitch
-		self.p0 = np.asarray(p0)
+		self.p0 = np.asarray(p0) + [0,0,5]
 		self.gridsize = gridsize
 		self.z_clearance = z_clearance 	
 		self.OPENWIDTH = openwidth
@@ -128,5 +134,11 @@ class Workspace:
 	def calibrate(self):
 		self.gantry.moveto(*self.p0)
 		self.gantry.open_gripper(self.OPENWIDTH)
-		self.transform = map_coordinates(self.testslots, self.testpoints, self.gantry, self.z_clearance)
+		self.transform = map_coordinates(self.name, self.testslots, self.testpoints, self.gantry, self.z_clearance)
+		self.__calibrated = True
+
+	def _load_calibration(self):
+		with open(f'{self.name}_calibration.pkl', 'rb') as f:
+			pts = pickle.load(f)
+		self.transform = CoordinateMapper(p0 = pts['p0'], p1 = pts['p1'])
 		self.__calibrated = True

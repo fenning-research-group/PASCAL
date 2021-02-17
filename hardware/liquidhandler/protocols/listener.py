@@ -165,12 +165,12 @@ def run(protocol_context):
 
     listener.tipracks = [
       protocol_context.load_labware('opentrons_96_tiprack_300ul', slot)
-      for slot in ['5']
+      for slot in ['2']
       ]
 
-    listener.stock = protocol_context.load_labware('frg_28_wellplate_4000ul', '2')
+    listener.stock = protocol_context.load_labware('frg_28_wellplate_4000ul', '5')
     listener.pipettes = [
-      protocol_context.load_instrument('p300_single', side, tip_racks=listener.tipracks)
+      protocol_context.load_instrument('p300_single_gen2', side, tip_racks=listener.tipracks)
       for side in ['left', 'right']
       ]
 
@@ -182,10 +182,10 @@ def run(protocol_context):
     listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
     listener.pipettes[1].return_tip()
 
-    listener.pipettes[0].pick_up_tip()
-    listener.pipettes[0].aspirate(125, listener.stock.wells_by_name()['A1'])
-    listener.pipettes[1].pick_up_tip()
-    listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B1'])
+    # listener.pipettes[0].pick_up_tip()
+    # listener.pipettes[0].aspirate(125, listener.stock.wells_by_name()['B1'])
+    # listener.pipettes[1].pick_up_tip()
+    # listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B1'])
     
     listener.pipettes[0].move_to(
             listener.spincoater[listener.CHUCK_WELL].top()
@@ -201,6 +201,14 @@ def run(protocol_context):
 
 
     experiment_in_progress = True
+    timeout = 5*60 #timeout, seconds
     while experiment_in_progress:
-        experiment_in_progress = listener.check_for_instructions()
+        try:
+            experiment_in_progress = listener.check_for_instructions()
+            time_of_last_response = time.time()
+        except:
+            if time.time()-time_of_last_response > timeout:
+                print('Timeout')
+                experiment_in_progress = False
+
         time.sleep(0.2)

@@ -12,18 +12,20 @@ from sampletray import SampleTray
 import time
 
 class Maestro:
-	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM3', hotplateport = None):
+	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM2', hotplateport = None):
 		# Constants
 		self.ZHOPCLEARANCE = 10 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
-		self.idle_coordinates = (500, 160, 40) #where to move the gantry during idle times, mainly to avoid cameras.
+		self.idle_coordinates = (288, 165, 55.5) #where to move the gantry during idle times, mainly to avoid cameras.
 
 		# Workers
 		self.gantry = Gantry(port = gantryport)
 		self.spincoater = SpinCoater(
 			port = spincoaterport, 
-			gantry = self.gantry)
+			gantry = self.gantry,
+			p0 = [52, 126, 36]
+			)
 		self.liquidhandler = OT2()
 
 		# Labware
@@ -31,7 +33,7 @@ class Maestro:
 			name = 'Hotplate1',
 			version = 'v1',
 			gantry = self.gantry,
-			p0 = [332, 5, 29]
+			p0 = [486, 35, 25.5]
 
 		)
 
@@ -41,7 +43,7 @@ class Maestro:
 			version = 'v1',
 			num = 5, #number of substrates loaded
 			gantry = self.gantry,
-			p0 = [582, 5, 8.4]
+			p0 = [256, 25, 10.5]
 		)
 
 		# Stock Solutions
@@ -50,15 +52,21 @@ class Maestro:
 		# Status
 		self.manifest = {} #store all sample info, key is sample storage slot
 
+	def calibrate(self):
+		for component in [self.hotplate, self.storage, self.spincoater]:
+			component.calibrate()
+	def _load_calibrations(self):
+		for component in [self.hotplate, self.storage, self.spincoater]:
+			component._load_calibration()
+			
 	### Physical Methods
 	# Compound Movements
 	def transfer(self, p1, p2, zhop = True):
-		self.gantry.release(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.release()
 		self.gantry.moveto(p1, zhop = zhop)
-
-		self.gantry.catch() #TODO possibly close to < samplewidth to prevent gripper x floating
+		self.catch() #TODO possibly close to < samplewidth to prevent gripper x floating
 		self.gantry.moveto(p2, zhop = zhop)
-		self.gantry.release(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
+		self.release()
 		self.gantry.moverel(z = self.ZHOPCLEARANCE)
 		self.gantry.close_gripper()
 
@@ -93,7 +101,7 @@ class Maestro:
 		drop_times = list(drops.values())
 		drop_names = list(drops.keys())
 		next_drop_time = drop_times[0]
-		drop_moves = [self.liquidhandler.drop_perovskite(), self.liquidhandler.drop_antisolvent()]
+		drop_moves = [self.liquidhandler.drop_perovskite, self.liquidhandler.drop_antisolvent]
 
 		spincoat_completed = False
 		start_time = time.time()
@@ -111,8 +119,9 @@ class Maestro:
 				next_step_time += duration	
 			if time_elapsed >= next_drop_time:
 				drop_moves[drop_idx]
-				drop_idx += 1
 				record['droptime'][drop_names[drop_idx]] = time_elapsed
+				drop_idx += 1
+				
 
 			if drop_idx > len(drops) and step_idx > len(recipe):
 				spincoat_completed = True
@@ -134,7 +143,7 @@ class Maestro:
 		"""
 		Open gripper barely enough to release sample
 		"""
-		self.gantry.close_grippe(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
+		self.gantry.open_gripper(self.SAMPLEWIDTH+self.SAMPLETOLERANCE)
 
 	def idle_gantry(self):
 		self.gantry.moveto(self.idle_coordinates)
@@ -171,8 +180,8 @@ class Maestro:
 		self.liquidhandler.aspirate_for_spincoating(
 			psk_well = spincoat_instructions['source_wells']['well_psk'],
 			psk_volume = spincoat_instructions['source_wells']['volume_psk'],
-			as_well = spincoat_instructions['source_wells']['well_antisolvent'],
-			as_volume = spincoat_instructions['source_wells']['volume_antisolvent']
+			antisolvent_well = spincoat_instructions['source_wells']['well_antisolvent'],
+			antisolvent_volume = spincoat_instructions['source_wells']['volume_antisolvent']
 		)
 
 		#load sample onto chuck
@@ -197,6 +206,7 @@ class Maestro:
 			self.spincoater(),
 			self.hotplate(hotplate_instructions['slot'])
 		)
+		self.spincoater.unlock()
 		### TODO - start timer for anneal removal
 		
 		self.idle_gantry()
@@ -211,7 +221,8 @@ class Maestro:
 			},
 		}
 
-
+	def __del__(self):
+		self.liquidhandler.server.stop()
 # OT2 Communication + Reporting Server
 
 class Reporter:

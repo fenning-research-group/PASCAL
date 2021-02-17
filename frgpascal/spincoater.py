@@ -1,8 +1,10 @@
 import serial
 import time
+import numpy as np
+import pickle
 
 class SpinCoater:
-	def __init__(self, gantry, port = '/dev/ttyACM3'):
+	def __init__(self, gantry, port = '/dev/ttyACM3', p0 = [52, 126, 36]):
 		#constants
 		self.POLLINGRATE = .5 #query rate to arduino, in seconds
 		# self.ACCELERATIONRANGE = (1,200) #rpm/s
@@ -15,6 +17,8 @@ class SpinCoater:
 		self.connect() 
 		self.unlock()
 		self.__calibrated = False
+		self.p0 = np.asarray(p0) + [0,0,5]
+
 
 	def connect(self, **kwargs):
 		self.__handle = serial.Serial(
@@ -28,11 +32,19 @@ class SpinCoater:
 		self.__handle.close()
 
 	def calibrate(self):
-		self.gantry.open_gripper()
+		self.gantry.open_gripper(12)
+		self.gantry.moveto(*self.p0)
 		self.gantry.gui()
 		self.coordinates = self.gantry.position
 		self.gantry.moverel(z = 10, zhop = False)
 		self.gantry.close_gripper()
+		self.__calibrated = True
+		with open('spincoater_calibration.pkl','wb') as f:
+			pickle.dump(self.coordinates, f)
+
+	def _load_calibration(self):
+		with open('spincoater_calibration.pkl', 'rb') as f:
+			self.coordinates = pickle.load(f)
 		self.__calibrated = True
 	
 	def write(self, s):

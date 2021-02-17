@@ -27,7 +27,7 @@ class Gantry:
         self.MAXSPEED = 10000 #mm/min
         self.MINSPEED = 500   #mm/min
         self.speed = 10000 #mm/min, default speed
-        self.ZHOP_HEIGHT = 5 #mm above endpoints to move to in between points
+        self.ZHOP_HEIGHT = 20 #mm above endpoints to move to in between points
         # self.moving = [False, False, False] #boolean flag to indicate whether the xyz axes are in motion or not
 
         #gripper variables
