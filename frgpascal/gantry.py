@@ -33,8 +33,8 @@ class Gantry:
         #gripper variables
         self.gripperwidth = None
         self.servoangle = None
-        self.MAXANGLE = 127
-        self.MINANGLE = 66
+        self.MAXANGLE = 60
+        self.MINANGLE = 0
         self.MINWIDTH = 6.5
         self.MAXWIDTH = 28 #max gripper width, in mm
         self.GRIPRATE = 10 #default gripper open/close rate, mm/s

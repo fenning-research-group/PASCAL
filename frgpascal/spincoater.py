@@ -2,7 +2,7 @@ import serial
 import time
 
 class SpinCoater:
-	def __init__(self, gantry, port = '/dev/ttyACM0'):
+	def __init__(self, gantry, port = '/dev/ttyACM3'):
 		#constants
 		self.POLLINGRATE = .5 #query rate to arduino, in seconds
 		# self.ACCELERATIONRANGE = (1,200) #rpm/s
@@ -20,6 +20,7 @@ class SpinCoater:
 			port = self.port, 
 			baudrate=self.BAUDRATE,
 			timeout = 2,
+			write_timeout = 2,
 			**kwargs)
 
 	def disconnect(self):
