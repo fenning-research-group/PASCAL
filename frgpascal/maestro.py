@@ -15,11 +15,13 @@ class Maestro:
 		# Constants
 		self.ZHOPCLEARANCE = 10 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
-		self.SAMPLETOLERANCE = 2.5 #mm extra opening width
+		self.SAMPLETOLERANCE = 2 #mm extra opening width
 
 		# Workers
 		self.gantry = Gantry(port = gantryport)
-		self.spincoater = SpinCoater(port = spincoaterport, gantry = self.gantry)
+		self.spincoater = SpinCoater(
+			port = spincoaterport, 
+			gantry = self.gantry)
 		self.liquidhandler = OT2()
 
 		# Labware
@@ -28,7 +30,7 @@ class Maestro:
 			name = 'Hotplate1',
 			version = 'v1',
 			gantry = self.gantry,
-			p0 = [197, 45, 25]
+			p0 = [332, 5, 29]
 
 		)
 
@@ -38,7 +40,7 @@ class Maestro:
 			version = 'v1',
 			num = 5, #number of substrates loaded
 			gantry = self.gantry,
-			p0 = [197, 85, 35]
+			p0 = [582, 5, 8.4]
 		)
 
 		# Stock Solutions
@@ -51,10 +53,11 @@ class Maestro:
 	def transfer(self, p1, p2, zhop = True):
 		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 		self.gantry.moveto(p1, zhop = zhop)
-		self.gantry.close_gripper()
+		self.gantry.close_gripper() #TODO possibly close to < samplewidth to prevent gripper x floating
 		self.gantry.moveto(p2, zhop = zhop)
 		self.gantry.open_gripper(self.SAMPLEWIDTH + self.SAMPLETOLERANCE)
 		self.gantry.moverel(z = self.ZHOPCLEARANCE)
+		self.gantry.close_gripper()
 
 	def spincoat(self, recipe, drops):
 		"""

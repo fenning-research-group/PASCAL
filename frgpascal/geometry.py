@@ -122,6 +122,9 @@ class Workspace:
 			raise Exception(f'Need to calibrate {self.name} before use!')
 		return self.transform.map(self._coordinates[name])
 
+	def __call__(self, name):
+		return self.slot_coordinates(name)
+
 	def calibrate(self):
 		self.gantry.moveto(*self.p0)
 		self.gantry.open_gripper(self.OPENWIDTH)

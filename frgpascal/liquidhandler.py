@@ -29,8 +29,8 @@ class OT2:
 			function = 'aspirate_for_spincoating',
 			psk_well = psk_well, 
 			psk_volume = psk_volume,
-			as_well = as_well, 
-			as_volume = as_volume
+			as_well = antisolvent_well, 
+			as_volume = antisolvent_volume
 		)
 		self._wait_for_task_complete()
 
@@ -38,7 +38,7 @@ class OT2:
 		self.server.add_to_queue(
 			function = 'cleanup'
 		)
-		self.server._wait_for_task_complete()
+		self._wait_for_task_complete()
 
 	def _wait_for_task_complete(self):
 		while self.server.OT2_status == 0: #wait for task to be acknowledged by ot2
