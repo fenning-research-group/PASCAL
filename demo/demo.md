@@ -38,13 +38,20 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 ## In-Line Characterization
 
 - Widefield PL camera
+![segmenting PL from wells](images/pl_segmentation.png)
+
 - RGB Imaging for color determination
+![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
 
 ## Active Learning
 
 ### intra-run (narrow scope)
+
 - bayesian approach to evaluating sample space
+![bayesian posterior fit to experimental outcome](images/bayesian_snbi.png)
+
 - update compositions of interest using in-line during experiment
+![simulated bayesian optimization series](images/simulated_BO_search.png)
 
 ### inter-run (wide scope)
 
