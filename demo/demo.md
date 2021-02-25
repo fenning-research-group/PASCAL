@@ -20,7 +20,9 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 ![spin coating one sample](images/spincoating.gif)
 
+### Full Sample Fabrication
 
+![gantry, spincoater, liquid handler, and hot plate working together](images/pascal_gif.gif)
 
 ## Experimental Planning
 
