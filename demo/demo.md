@@ -48,7 +48,7 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 ### intra-run (narrow scope)
 
 - bayesian approach to evaluating sample space
-![bayesian posterior fit to experimental outcome](images/bayesian_snbi.png)
+![bayesian posterior fit to experimental outcome](images/bayesian.png)
 
 - update compositions of interest using in-line during experiment
 ![simulated bayesian optimization series](images/simulated_BO_search.png)
