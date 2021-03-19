@@ -34,14 +34,6 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 ![sample fabrication scheduling to parallelize sample processes while hitting target timings](images/hp_limited.png)
 
-## In-Line Characterization
-
-- Widefield PL camera
-![segmenting PL from wells](images/pl_segmentation.png)
-
-- RGB Imaging for color determination
-![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
-
 ## Active Learning
 
 ### intra-run (narrow scope)
@@ -50,6 +42,7 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 ![bayesian posterior fit to experimental outcome](images/bayesian.png)
 
 - update compositions of interest using in-line during experiment
+
 ![simulated bayesian optimization series](images/simulated_BO_search.png)
 
 ### inter-run (wide scope)
@@ -57,3 +50,11 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 - bayesian approach with operator input (XRD, UV-Vis, etc)
 - find covariances between composition/fabrication conditions
 - point towards broader design philosophies in perovskite solar cells
+
+## In-Line Characterization
+
+- Widefield PL camera
+![segmenting PL from wells](images/pl_segmentation.png)
+
+- RGB Imaging for color determination
+![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
