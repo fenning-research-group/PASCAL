@@ -26,14 +26,13 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 ## Experimental Planning
 
-- ternary of arbitrary composition
+- Computed material properties -> manifold embedding / dimensionality reduction into "behavior space"
 
-- stack ternary to add dimensions (spincoating conditions, anneal conditions, etc)
+![manifold embedding](images/manifold_redacted.png)
 
 ### Hardware Scheduling
 
 ![sample fabrication scheduling to parallelize sample processes while hitting target timings](images/hp_limited.png)
-
 
 ## In-Line Characterization
 
