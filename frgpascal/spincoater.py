@@ -2,10 +2,12 @@ import serial
 import time
 import numpy as np
 import pickle
+from .helpers import get_port
 
 class SpinCoater:
-	def __init__(self, gantry, port = '/dev/ttyACM3', p0 = [52, 126, 36]):
+	def __init__(self, gantry, serial_number = '558383339323513140D1', p0 = [52, 126, 36]):
 		#constants
+		self.port = get_port(serial_number) #find port to connect to this device.
 		self.POLLINGRATE = .5 #query rate to arduino, in seconds
 		# self.ACCELERATIONRANGE = (1,200) #rpm/s
 		self.SPEEDRANGE = (1000, 9000) #rpm

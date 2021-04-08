@@ -7,11 +7,12 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushBut
 import PyQt5
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
+from .helpers import get_port
 
 class Gantry:
-    def __init__(self, port):
+    def __init__(self, serial_number='55838333932351108212'):
         #communication variables
-        self.port = port
+        self.port = get_port(serial_number)
         self.terminator = '\n'
         self.POLLINGDELAY = 0.05 #delay between sending a command and reading a response, in seconds
         self.inmotion = False
