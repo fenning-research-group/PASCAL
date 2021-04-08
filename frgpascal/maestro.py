@@ -14,13 +14,14 @@ import time
 class Maestro:
 	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM2', hotplateport = None):
 		# Constants
-		self.ZHOPCLEARANCE = 10 #height (above breadboard) to raise to when moving gantry with zhop option on.
+		self.ZHOPCLEARANCE = 20 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
 		self.idle_coordinates = (288, 165, 55.5) #where to move the gantry during idle times, mainly to avoid cameras.
 
 		# Workers
 		self.gantry = Gantry(port = gantryport)
+		self.gantry.ZHOP_HEIGHT = self.ZHOPCLEARANCE
 		self.spincoater = SpinCoater(
 			port = spincoaterport, 
 			gantry = self.gantry,
@@ -62,7 +63,7 @@ class Maestro:
 	### Physical Methods
 	# Compound Movements
 	def transfer(self, p1, p2, zhop = True):
-		if p1 == self.spincoater.coordinates:
+		if list(p1) == self.spincoater.coordinates:
 			self.gantry.open_gripper(self.SAMPLEWIDTH + 2*self.SAMPLETOLERANCE) #wider grip to pick samples from chuck.
 		else:
 			self.release()
@@ -132,7 +133,7 @@ class Maestro:
 					acceleration = recipe[step_idx][1]
 					duration = recipe[step_idx][2]
 					
-			        self.spincoater.setspeed(speed, acceleration)
+					self.spincoater.setspeed(speed, acceleration)
 					next_step_time += duration
 					step_idx += 1
 			if time_elapsed >= next_drop_time and not drops_completed:

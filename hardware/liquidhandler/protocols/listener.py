@@ -43,6 +43,7 @@ class Listener:
 
         if 'all_done' in r:
             return False
+            
         if r['pending_requests'] > 0:
             print('identified request')
             self.process_request(

@@ -40,6 +40,12 @@ class OT2:
 		)
 		self._wait_for_task_complete()
 
+	def end(self):
+		self.server.add_to_queue(
+			function = 'None',
+			all_done = 'all_done'
+		)
+		
 	def _wait_for_task_complete(self):
 		while self.server.OT2_status == 0: #wait for task to be acknowledged by ot2
 			time.sleep(self.INTERVAL)
