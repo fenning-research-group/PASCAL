@@ -2,7 +2,7 @@ import serial
 import time
 import numpy as np
 import pickle
-from .helpers import get_port
+from helpers import get_port
 
 class SpinCoater:
 	def __init__(self, gantry, serial_number = '558383339323513140D1', p0 = [52, 126, 36]):
@@ -12,7 +12,6 @@ class SpinCoater:
 		# self.ACCELERATIONRANGE = (1,200) #rpm/s
 		self.SPEEDRANGE = (1000, 9000) #rpm
 		self.TERMINATOR = '\n'
-		self.port = port
 		self.BAUDRATE = 57600
 		self.gantry = gantry
 		self.locked = None

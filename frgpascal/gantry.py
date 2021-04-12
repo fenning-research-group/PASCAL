@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushBut
 import PyQt5
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
-from .helpers import get_port
+from helpers import get_port
 
 class Gantry:
     def __init__(self, serial_number='55838333932351108212'):
@@ -42,13 +42,13 @@ class Gantry:
         self.GRIPINTERVAL = 0.05 #gripper open/close motions interpolated onto this time interval, s
         self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
         #connect to gantry by default
-        self.connect(port = port)
+        self.connect()
         self.set_defaults()
 
     #communication methods
-    def connect(self, port):
+    def connect(self):
         self._handle = serial.Serial(
-            port = port,
+            port = self.port,
             timeout = 1,
             baudrate = 115200
             )
