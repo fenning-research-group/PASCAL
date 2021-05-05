@@ -4,26 +4,23 @@ import json
 import threading
 import asyncio
 
-from gantry import Gantry
-from spincoater import SpinCoater
-from liquidhandler import OT2
-from hotplate import HotPlate
-from sampletray import SampleTray
+from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.spincoater import SpinCoater
+from frgpascal.hardware.liquidhandler import OT2
+from frgpascal.hardware.hotplate import HotPlate
+from frgpascal.hardware.sampletray import SampleTray
 import time
 
 class Maestro:
 	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM2', hotplateport = None):
 		# Constants
-		self.ZHOPCLEARANCE = 20 #height (above breadboard) to raise to when moving gantry with zhop option on.
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
 		self.idle_coordinates = (288, 165, 55.5) #where to move the gantry during idle times, mainly to avoid cameras.
 
 		# Workers
-		self.gantry = Gantry(port = gantryport)
-		self.gantry.ZHOP_HEIGHT = self.ZHOPCLEARANCE
+		self.gantry = Gantry()
 		self.spincoater = SpinCoater(
-			port = spincoaterport, 
 			gantry = self.gantry,
 			p0 = [52, 126, 36]
 			)

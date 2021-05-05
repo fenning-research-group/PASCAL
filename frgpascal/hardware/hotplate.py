@@ -5,7 +5,7 @@ import time
 import logging
 import configparser
 from typing import List
-from geometry import Workspace
+from .geometry import Workspace
 
 hotplate_versions = {
 	'v1': {
@@ -45,9 +45,10 @@ class HotPlate(Workspace):
 				if v['payload'] is None:
 						openslot = slot
 						break
-		if i+1 == self.__capacity or openslot is None:
-				self.full = True
-		return nextslot
+		if i+1 == self._capacity or openslot is None:
+			self.full = True
+			return None
+		return openslot
 				
 	def export(self, fpath):
 		"""

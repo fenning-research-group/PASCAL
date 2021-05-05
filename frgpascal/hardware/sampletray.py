@@ -1,5 +1,5 @@
 import string
-from geometry import Workspace
+from .geometry import Workspace
 
 
 # tray constants. None = defaults
