@@ -9,13 +9,16 @@ gantry:
   speed_max: 10000 #max gantry speed, mm/min
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 20 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+  idle_coordinates: [288,165,55.5] #coordinates to move the gantry to when idle, mainly to avoid cameras
 
 gripper:
   width_max: 28  #maximum opening width (mm)
   width_min: 6.5 #minimum opening width (mm)
   angle_max: 60  #servo angle corresponding to max width
   angle_min: 0   #servo angle corresponding to min width
-
+  extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
+  idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
+  
 hotplate:
   p0: [100,100,100] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 

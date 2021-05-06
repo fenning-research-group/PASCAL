@@ -12,7 +12,7 @@ from frgpascal.hardware.sampletray import SampleTray
 import time
 
 class Maestro:
-	def __init__(self, gantryport = '/dev/ttyACM0', spincoaterport = '/dev/ttyACM2', hotplateport = None):
+	def __init__(self):
 		# Constants
 		self.SAMPLEWIDTH = 10 #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
