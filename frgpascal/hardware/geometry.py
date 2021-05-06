@@ -61,7 +61,6 @@ def map_coordinates(name, slots, points, gantry, z_clearance = 5):
 
 	return CoordinateMapper(p0 = points_source_meas, p1 = points)
 
-
 class Workspace:
 	'''
 	General class for defining planar workspaces. Primary use is to calibrate the coordinate system of this workspace to 

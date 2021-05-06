@@ -1,20 +1,25 @@
 import numpy as np
+import os
 from aiohttp import web # You can install aiohttp with pip
 import json
 import threading
 import asyncio
+import time
 
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-import time
 
+
+
+MODULE_DIR = os.path.dirname(__file__)
+constants = 
 class Maestro:
-	def __init__(self):
+	def __init__(self, samplewidth: float=10):
 		# Constants
-		self.SAMPLEWIDTH = 10 #mm
+		self.SAMPLEWIDTH = samplewidth #mm
 		self.SAMPLETOLERANCE = 2 #mm extra opening width
 		self.idle_coordinates = (288, 165, 55.5) #where to move the gantry during idle times, mainly to avoid cameras.
 
