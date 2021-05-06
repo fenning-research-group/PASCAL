@@ -2,41 +2,58 @@ import serial
 import time
 import numpy as np
 import pickle
+import os
+import yaml
 from .helpers import get_port
 from .gantry import Gantry
+
+MODULE_DIR = os.path.dirname(__file__)
+constants = yaml.load(
+    os.path.join(MODULE_DIR, "hardwareconstants.yaml"), Loader=yaml.Loader
+)
+spincoater_serial_number = constants["spincoater"]["serialid"]
+p0 = constants["spincoater"]["p0"]
 
 
 class SpinCoater:
     def __init__(
         self,
         gantry: Gantry,
-        serial_number: str = "558383339323513140D1",
-        p0: tuple = (52, 126, 36),
+        serial_number: str = spincoater_serial_number,
+        p0: tuple = p0,
     ):
         """Initialize the spincoater control object
 
         Args:
-                gantry (Gantry): PASCAL Gantry control object
-                serial_number (str, optional): Serial number for spincoater arduino, used to find and connect to correct COM port. Defaults to "558383339323513140D1":str.
-                p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
+                                        gantry (Gantry): PASCAL Gantry control object
+                                        serial_number (str, optional): Serial number for spincoater arduino, used to find and connect to correct COM port. Defaults to "558383339323513140D1":str.
+                                        p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
         self.port = get_port(serial_number)  # find port to connect to this device.
-        self.POLLINGRATE = 0.5  # query rate to arduino, in seconds
-        # self.ACCELERATIONRANGE = (1,200) #rpm/s
-        self.SPEEDRANGE = (1000, 9000)  # rpm
-        self.TERMINATOR = "\n"
-        self.BAUDRATE = 57600
+        self.POLLINGRATE = constants["spincoater"][
+            "pollingrate"
+        ]  # query rate to arduino, in seconds
+        self.ACCELERATIONRANGE = (
+            constants["spincoater"]["acceleration_min"],
+            constants["spincoater"]["acceleration_max"],
+        )  # rpm/s
+        self.SPEEDRANGE = (
+            constants["spincoater"]["rpm_min"],
+            constants["spincoater"]["rpm_max"],
+        )  # rpm
         self.gantry = gantry
         self.locked = None
         self.connect()
         self.unlock()
         self.__calibrated = False
+
+        # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(p0) + [0, 0, 5]
 
     def connect(self, **kwargs):
         self.__handle = serial.Serial(
-            port=self.port, baudrate=self.BAUDRATE, timeout=2, write_timeout=2, **kwargs
+            port=self.port, baudrate=57600, timeout=2, write_timeout=2, **kwargs
         )
 
     def disconnect(self):
@@ -63,24 +80,24 @@ class SpinCoater:
         """
         appends terminator and converts to bytes before sending message to arduino
         """
-        self.__handle.write(f"{s}{self.TERMINATOR}".encode())
+        self.__handle.write(f"{s}\n".encode())
 
     def __call__(self):
-		"""Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
+        """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
 
-		Raises:
-			Exception: If spincoater position is not calibrated, error will thrown.
+        Raises:
+                        Exception: If spincoater position is not calibrated, error will thrown.
 
-		Returns:
-			tuple: (x,y,z) coordinates for gantry to pick/place sample on spincoater chuck.
-		"""
+        Returns:
+                        tuple: (x,y,z) coordinates for gantry to pick/place sample on spincoater chuck.
+        """
         if self.__calibrated == False:
             raise Exception(f"Need to calibrate spincoater position before use!")
         return self.coordinates
 
     @property
     def rpm(self):
-        self.write(f"c")  # command to read rpm
+        self.write("c")  # command to read rpm
         self.__rpm = float(self.__handle.readline().strip())
         return self.__rpm
 
@@ -114,13 +131,13 @@ class SpinCoater:
             # time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate
             self.locked = False
 
-    def setspeed(self, speed: float, acceleration: float=500):
-		"""sends commands to arduino to set a target speed with a target acceleration
-        
-		Args:
-			speed (float): target angular velocity, in rpm
-			acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
-		"""
+    def setspeed(self, speed: float, acceleration: float = 500):
+        """sends commands to arduino to set a target speed with a target acceleration
+
+        Args:
+                        speed (float): target angular velocity, in rpm
+                        acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
+        """
         speed = int(speed)  # arduino only takes integer inputs
 
         self.unlock()
@@ -138,7 +155,7 @@ class SpinCoater:
         self.lock()
         time.sleep(1)
 
-    def recipe(self, recipe): ### TODO
+    def recipe(self, recipe):  ### TODO
 
         record = {"time": [], "rpm": []}
 
@@ -159,8 +176,8 @@ class SpinCoater:
 
             while time_elapsed <= next_step_time:
                 time_elapsed = time.time() - start_time
-                record["time"].append(time_elapsed)
                 record["rpm"].append(self.rpm)
+                record["time"].append(time_elapsed)
                 time.sleep(self.POLLINGRATE)
 
             # self.write('f')

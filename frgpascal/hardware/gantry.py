@@ -5,52 +5,60 @@ import numpy as np
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
 import PyQt5
+import yaml
+import os
 
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
 from .helpers import get_port
 
 
+MODULE_DIR = os.path.dirname(__file__)
+constants = yaml.load(
+    os.path.join(MODULE_DIR, "hardwareconstants.yaml"), Loader=yaml.FullLoader
+)
+
+
 class Gantry:
     def __init__(self, serial_number="55838333932351108212"):
         # communication variables
         self.port = get_port(serial_number)
-        self.terminator = "\n"
-        self.POLLINGDELAY = (
-            0.05  # delay between sending a command and reading a response, in seconds
-        )
+        self.POLLINGDELAY = constants["gantry"][
+            "pollingrate"
+        ]  # delay between sending a command and reading a response, in seconds
         self.inmotion = False
 
         # gantry variables
-        self.xlim = (10, 797.0)
-        self.ylim = (0, 165.0)
-        self.zlim = (0, 136.0)
+        self.XLIM = (constants["gantry"]["xmin"], constants["gantry"]["xmax"])
+        self.YLIM = (constants["gantry"]["ymin"], constants["gantry"]["ymax"])
+        self.ZLIM = (constants["gantry"]["zmin"], constants["gantry"]["zmax"])
         self.position = [
             None,
             None,
             None,
         ]  # start at None's to indicate stage has not been homed.
         self.__targetposition = [None, None, None]
-        self.GANTRYTIMEOUT = 15  # max time allotted to gantry motion before flagging an error, in seconds
-        self.POSITIONTOLERANCE = 0.05  # tolerance for position, in mm
-        self.MAXSPEED = 10000  # mm/min
-        self.MINSPEED = 500  # mm/min
-        self.speed = 10000  # mm/min, default speed
-        self.ZHOP_HEIGHT = 20  # mm above endpoints to move to in between points
-        # self.moving = [False, False, False] #boolean flag to indicate whether the xyz axes are in motion or not
+        self.GANTRYTIMEOUT = constants["gantry"][
+            "timeout"
+        ]  # max time allotted to gantry motion before flagging an error, in seconds
+        self.POSITIONTOLERANCE = constants["gantry"][
+            "positiontolerance"
+        ]  # tolerance for position, in mm
+        self.MAXSPEED = constants["gantry"]["speed_max"]  # mm/min
+        self.MINSPEED = constants["gantry"]["speed_min"]  # mm/min
+        self.speed = self.MAXSPEED  # mm/min, default speed
+        self.ZHOP_HEIGHT = constants["gantry"][
+            "zhop_height"
+        ]  # mm above endpoints to move to in between points
 
         # gripper variables
         self.gripperwidth = None
         self.servoangle = None
-        self.MAXANGLE = 60
-        self.MINANGLE = 0
-        self.MINWIDTH = 6.5
-        self.MAXWIDTH = 28  # max gripper width, in mm
-        self.GRIPRATE = 10  # default gripper open/close rate, mm/s
-        self.GRIPINTERVAL = (
-            0.05  # gripper open/close motions interpolated onto this time interval, s
-        )
-        self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
+        self.MAXANGLE = constants["gripper"]["angle_max"]
+        self.MINANGLE = constants["gripper"]["angle_min"]
+        self.MAXWIDTH = constants["gripper"]["width_max"]  # max gripper width, in mm
+        self.MINWIDTH = constants["gripper"]["width_min"]
+
         # connect to gantry by default
         self.connect()
         self.set_defaults()
@@ -61,9 +69,9 @@ class Gantry:
         self.update()
         # self.update_gripper()
         if self.position == [
-            max(self.xlim),
-            max(self.ylim),
-            max(self.zlim),
+            max(self.XLIM),
+            max(self.YLIM),
+            max(self.ZLIM),
         ]:  # this is what it shows when initially turned on, but not homed
             self.position = [
                 None,
@@ -89,7 +97,7 @@ class Gantry:
         self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
-        self._handle.write(f"{msg}{self.terminator}".encode())
+        self._handle.write(f"{msg}\n".encode())
         time.sleep(self.POLLINGDELAY)
         output = []
         while self._handle.in_waiting:
@@ -151,11 +159,11 @@ class Gantry:
                 "Stage has not been homed! Home with self.gohome() before moving please."
             )
 
-        if x > self.xlim[1] or x < self.xlim[0]:
+        if x > self.XLIM[1] or x < self.XLIM[0]:
             return False
-        if y > self.ylim[1] or y < self.ylim[0]:
+        if y > self.YLIM[1] or y < self.YLIM[0]:
             return False
-        if z > self.zlim[1] or z < self.zlim[0]:
+        if z > self.ZLIM[1] or z < self.ZLIM[0]:
             return False
 
         self.__targetposition = [x, y, z]
@@ -181,7 +189,7 @@ class Gantry:
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(
-                z_ceiling, max(self.zlim)
+                z_ceiling, max(self.ZLIM)
             )  # cant z-hop above build volume. mostly here for first move after homing.
             self.moveto(z=z_ceiling, zhop=False, speed=speed)
             self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
@@ -189,7 +197,8 @@ class Gantry:
         else:
             self._movecommand(x, y, z, speed)
 
-    def _movecommand(self, x=None, y=None, z=None, speed=None):
+    def _movecommand(self, x: float, y: float, z: float, speed: float):
+        """internal command to execute a direct move from current location to new location"""
         if self.premove(x, y, z):
             if self.position == [x, y, z]:
                 return True  # already at target position
@@ -205,10 +214,6 @@ class Gantry:
         """
         moves by coordinates relative to the current position
         """
-        if self.position == [None, None, None]:
-            raise Exception(
-                "Stage has not been homed! Home with self.gohome() before moving please."
-            )
         try:
             if len(x) == 3:
                 x, y, z = x  # split 3 coordinates into appropriate variables
@@ -227,8 +232,8 @@ class Gantry:
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        self._handle.write(f"M400{self.terminator}".encode())
-        self._handle.write(f"M118 E1 FinishedMoving{self.terminator}".encode())
+        self._handle.write(f"M400\n".encode())
+        self._handle.write(f"M118 E1 FinishedMoving\n".encode())
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
             time.sleep(self.POLLINGDELAY)
@@ -253,7 +258,7 @@ class Gantry:
         return reached_destination
 
     # gripper methods
-    def open_gripper(self, width=None, instant=True):
+    def open_gripper(self, width=None):
         """
         open gripper to width, in mm
         """
@@ -262,19 +267,14 @@ class Gantry:
 
         angle = self.__width_to_servo_angle(width)
 
-        if instant:
-            self.write(f"M280 P0 S{angle}")
-        else:
-            delta = np.abs(width - self.gripperwidth)
-            n_points = np.ceil(delta / self.GRIPSTEP).astype(int)
-            for w in np.linspace(self.gripperwidth, width, n_points):
-                angle = self.__width_to_servo_angle(w)
-                self.write(f"M280 P0 S{angle}")
-                time.sleep(self.GRIPINTERVAL)
+        self.write(f"M280 P0 S{angle}")
         self.update_gripper()
 
-    def close_gripper(self, instant=True):
-        self.open_gripper(width=self.MINWIDTH, instant=instant)
+    def close_gripper(self):
+        """
+        close the gripper to minimum width
+        """
+        self.open_gripper(width=self.MINWIDTH)
 
     def __servo_angle_to_width(self, angle):
         """

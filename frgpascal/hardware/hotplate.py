@@ -1,60 +1,70 @@
 import serial
 import numpy as np
+
 # from pydlcp import errors
 import time
+import os
+import yaml
 import logging
 import configparser
 from typing import List
 from .geometry import Workspace
 
-hotplate_versions = {
-	'v1': {
-		'pitch': (20,20),
-		'gridsize': (5,5),
-		'testslots': None,  
-		'z_clearance': 5,
-		'openwidth': 12
-	}
+
+MODULE_DIR = os.path.dirname(__file__)
+HOTPLATE_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "hotplates")
+AVAILABLE_VERSIONS = {
+    os.path.splitext(f)[0]: os.path.join(HOTPLATE_VERSIONS_DIR, f)
+    for f in os.listdir(HOTPLATE_VERSIONS_DIR)
 }
 
+
 class HotPlate(Workspace):
-	def __init__(self, name, version = 'v1', gantry = None, p0 = [None, None, None]):
-		if version not in hotplate_versions:
-			raise Exception(f'Invalid hotplate version "{version}" - must be in {list(hotplate_versions.keys())}.')
-		hotplate_kwargs = hotplate_versions[version]
-		super().__init__(
-			name = name,
-			gantry = gantry,
-			p0 = p0,
-			**hotplate_kwargs
-			)
+    def __init__(self, name, version, gantry=None, p0=[None, None, None]):
+        constants, workspace_kwargs = self._load_version(version)
+        super().__init__(name=name, gantry=gantry, p0=p0, **workspace_kwargs)
 
-		#only consider slots with blanks loaded		
-		self.slots = {
-			name:{'coordinates':coord, 'payload':None}
-			for name,coord 
-			in self._coordinates.items()
-			}
-		self._capacity = len(self.slots)
+        self.TLIM = (constants["temperature_min"], constants["temperature_max"])
 
-		self.full = False
-	
-	def get_open_slot(self):
-		openslot = None
-		for i, (slot, v) in enumerate(self.slots.items()):
-				if v['payload'] is None:
-						openslot = slot
-						break
-		if i+1 == self._capacity or openslot is None:
-			self.full = True
-			return None
-		return openslot
-				
-	def export(self, fpath):
-		"""
-		routine to export tray data to save file. used to keep track of experimental conditions in certain tray.
-		"""
-		return None
+        # only consider slots with blanks loaded
+        self.slots = {
+            name: {"coordinates": coord, "payload": None}
+            for name, coord in self._coordinates.items()
+        }
+        self._capacity = len(self.slots)
+        self.full = False
+
+    def get_open_slot(self):
+        openslot = None
+        for i, (slot, v) in enumerate(self.slots.items()):
+            if v["payload"] is None:
+                openslot = slot
+                break
+        if i + 1 == self._capacity or openslot is None:
+            self.full = True
+            return None
+        return openslot
+
+    def _load_version(self, version):
+        if version not in AVAILABLE_VERSIONS:
+            raise Exception(
+                f'Invalid tray version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
+            )
+        constants = yaml.load(AVAILABLE_VERSIONS[version], Loader=yaml.FullLoader)
+        workspace_kwargs = {
+            "pitch": (constants["xpitch"], constants["ypitch"]),
+            "gridsize": (constants["numx"], constants["numy"]),
+            "z_clearance": constants["z_clearance"],
+            "openwidth": constants["openwidth"],
+        }
+        return constants, workspace_kwargs
+
+    def export(self, fpath):
+        """
+        routine to export tray data to save file. used to keep track of experimental conditions in certain tray.
+        """
+        return None
+
 
 # class HotPlate:
 # 	def __init__(self, port = '/dev/ttyUSB0'):
@@ -66,7 +76,7 @@ class HotPlate(Workspace):
 # 			self.__handle.write(b'GETTEMPERATURECOMMAND')
 # 			temperature = self.__handle.readline()
 # 			return float(temperature)
-		
+
 # 	@property
 # 	def setpoint(self):
 # 			self.__handle.write(b'GETSETPOINTCOMMAND')
@@ -79,7 +89,7 @@ class HotPlate(Workspace):
 # 					print('Error: set temperature {} is out of range ({}, {})'.format(setpoint, *self.tlim))
 # 			else:
 # 					self.__handle.write(b'SETSETPOINTCOMMAND {0:.1f}'.format(setpoint))
-		
+
 
 # 	def connect(self, port, **kwargs):
 # 			self.__handle = serial.Serial(
@@ -88,10 +98,9 @@ class HotPlate(Workspace):
 # 					)
 # 			self.__handle.open()
 
-				
-# 	def disconnect(self):
-# 			self.__handle.close()       
 
+# 	def disconnect(self):
+# 			self.__handle.close()
 
 
 # class Hotplate:
@@ -343,7 +352,7 @@ class HotPlate(Workspace):
 
 #             # test_io = self._hotplate.read(11)
 #             self._hotplate.flush()
-				
+
 #         # status: bool = bool(test_io) #
 
 #         # sweep = print(test_io)
@@ -376,7 +385,7 @@ class HotPlate(Workspace):
 #                                                                                      self._MAX_FAILED_CALLS)
 #                 self._print(msg, level='ERROR')
 #                 raise e
-#         return status    
+#         return status
 
 #     def get_heating_status(self):
 #         # Prepare the query to the hotplate
@@ -397,7 +406,7 @@ class HotPlate(Workspace):
 
 #         #     # test_io = self._hotplate.read(11)
 #         #     self._hotplate.flush()
-				
+
 #         # # status: bool = bool(test_io) #
 
 #         # # sweep = print(test_io)
