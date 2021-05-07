@@ -20,7 +20,7 @@ constants = yaml.load(
 
 
 class Gantry:
-    def __init__(self, serial_number="55838333932351108212"):
+    def __init__(self, serial_number=constants["gantry"]["serialid"]):
         # communication variables
         self.port = get_port(serial_number)
         self.POLLINGDELAY = constants["gantry"][
