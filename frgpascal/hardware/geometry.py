@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import pickle
-from .gantry import Gantry
+from gantry import Gantry
 
 
 class CoordinateMapper:
