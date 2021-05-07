@@ -4,12 +4,19 @@ gantry:
   serialid: "55838333932351108212"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
+
   # movement
   positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
   speed_max: 10000 #max gantry speed, mm/min
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 20 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
   idle_coordinates: [288,165,55.5] #coordinates to move the gantry to when idle, mainly to avoid cameras
+  x_max: 797.0 #max x position (mm)
+  x_min: 0     #min x position (mm)
+  y_max: 165.0 #max y position (mm)
+  y_min: 0     #min y position (mm)
+  z_max: 136.0 #max z position (mm)
+  z_min: 0     #min z position (mm)
 
 gripper:
   width_max: 28  #maximum opening width (mm)
@@ -24,7 +31,7 @@ hotplate:
 
 liquidhandler:
   pollingrate: 0.05 #delay (seconds) between checks for new commands to push to liquid handler server
-
+  
 sampletray:
   p0: [100,100,100] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
@@ -32,9 +39,9 @@ spincoater:
   # communication
   serialid: "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
-  baudrate: 57600 #communcation baudrate to talk to arduino
-  terminator: "\n" #terminator to signify end of line to arduino
   # movement
   p0: [52, 126, 41] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
   rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 1000 #minimum angular velocity (rpm) the spincoater can hit
+  acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
+  acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit

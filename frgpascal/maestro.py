@@ -5,6 +5,7 @@ import json
 import threading
 import asyncio
 import time
+import yaml
 
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.spincoater import SpinCoater
@@ -15,40 +16,46 @@ from frgpascal.hardware.sampletray import SampleTray
 
 
 MODULE_DIR = os.path.dirname(__file__)
-constants = 
+constants = yaml.load(
+	os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), Loader=yaml.FullLoader
+)
+
 class Maestro:
-	def __init__(self, samplewidth: float=10):
+	def __init__(self, numsamples: int, samplewidth: float=10):
+		"""Initialze Maestro, which coordinates all the PASCAL hardware
+
+		Args:
+			numsamples (int): number of substrates loaded in sampletray
+			samplewidth (float, optional): width of the substrates (mm). Defaults to 10 (ie 1 cm).
+		"""
+
 		# Constants
 		self.SAMPLEWIDTH = samplewidth #mm
-		self.SAMPLETOLERANCE = 2 #mm extra opening width
-		self.idle_coordinates = (288, 165, 55.5) #where to move the gantry during idle times, mainly to avoid cameras.
+		self.SAMPLETOLERANCE = constants['gripper']['extra_opening_width'] #mm extra opening width
+		self.IDLECOORDINATES = constants['gantry']['idle_coordinates'] #where to move the gantry during idle times, mainly to avoid cameras.
 
 		# Workers
 		self.gantry = Gantry()
 		self.spincoater = SpinCoater(
 			gantry = self.gantry,
-			p0 = [52, 126, 36]
+			p0 = constants['spincoater']['p0']
 			)
 		self.liquidhandler = OT2()
 
 		# Labware
 		self.hotplate = HotPlate(
 			name = 'Hotplate1',
-			version = 'v1',
+			version = 'hotplate_SCILOGEX', #TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
 			gantry = self.gantry,
-			p0 = [486, 35, 25.5]
-
+			p0 = constants['hotplate']['p0']
 		)
-
-		# Storage
 		self.storage = SampleTray(
 			name = 'SampleTray1',
-			version = 'v1',
-			num = 5, #number of substrates loaded
+			version = 'sampletray_v1', #TODO #3
+			num = numsamples, #number of substrates loaded
 			gantry = self.gantry,
-			p0 = [256, 25, 10.5]
+			p0 = constants['sampletray']['p0']
 		)
-
 		# Stock Solutions
 
 
@@ -56,11 +63,15 @@ class Maestro:
 		self.manifest = {} #store all sample info, key is sample storage slot
 
 	def calibrate(self):
+		"""Prompt user to fine tune the gantry positions for all hardware components
+		"""
 		for component in [self.hotplate, self.storage, self.spincoater]:
 			component.calibrate()
 	def _load_calibrations(self):
+		"""Load previous gantry positions, assume that hardware hasn't moved since last time.
+		"""
 		for component in [self.hotplate, self.storage, self.spincoater]:
-			component._load_calibration()
+			component._load_calibration() #REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 			
 	### Physical Methods
 	# Compound Movements
@@ -73,7 +84,7 @@ class Maestro:
 		self.catch()
 		self.gantry.moveto(p2, zhop = zhop)
 		self.release()
-		self.gantry.moverel(z = self.ZHOPCLEARANCE)
+		self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
 		self.gantry.close_gripper()
 
 	def spincoat(self, recipe, drops):
@@ -90,9 +101,9 @@ class Maestro:
 				[speed, acceleration, duration]
 			]
 
-			where speed = rpm, acceleration = rpm/s, duration = s
+			where speed = rpm, acceleration = rpm/s, duration = s (including the acceleration ramp!)
 
-		drops = dictionary with perovskite, antisolvent drops
+		drops = dictionary with perovskite, antisolvent drop times (seconds relative to start of recipe)
 			{
 				'perovskite': 10,
 				'antisolvent': 15
@@ -169,7 +180,7 @@ class Maestro:
 		self.gantry.open_gripper(self.SAMPLEWIDTH+self.SAMPLETOLERANCE)
 
 	def idle_gantry(self):
-		self.gantry.moveto(self.idle_coordinates)
+		self.gantry.moveto(self.IDLECOORDINATES)
 		self.gantry.close_gripper()
 
 	# Complete Sample
@@ -248,83 +259,83 @@ class Maestro:
 		self.liquidhandler.server.stop()
 # OT2 Communication + Reporting Server
 
-class Reporter:
-	def __init__(self, parent, host = '0.0.0.0', port = 80):
-		self.host = host
-		self.port = port
-		self.loop = None
-		self.parent = parent
+# class Reporter:
+# 	def __init__(self, parent, host = '0.0.0.0', port = 80):
+# 		self.host = host
+# 		self.port = port
+# 		self.loop = None
+# 		self.parent = parent
 
-	def start(self):
-		if self.loop is None:
-			self.loop = asyncio.new_event_loop()
-		asyncio.set_event_loop(self.loop)
-		asyncio.ensure_future(self.main())
-		self.thread = threading.Thread(
-			target = self.loop.run_forever,
-			args = ()
-			)
-		self.thread.start()
+# 	def start(self):
+# 		if self.loop is None:
+# 			self.loop = asyncio.new_event_loop()
+# 		asyncio.set_event_loop(self.loop)
+# 		asyncio.ensure_future(self.main())
+# 		self.thread = threading.Thread(
+# 			target = self.loop.run_forever,
+# 			args = ()
+# 			)
+# 		self.thread.start()
 
-	def stop(self):
-		asyncio.run(self.__stop_routine())
-		# self.loop.stop()
-		# self.loop.close()
-		# asyncio.get_event_loop().stop()
-		# asyncio.get_event_loop().close()
+# 	def stop(self):
+# 		asyncio.run(self.__stop_routine())
+# 		# self.loop.stop()
+# 		# self.loop.close()
+# 		# asyncio.get_event_loop().stop()
+# 		# asyncio.get_event_loop().close()
 
 
-	async def __stop_routine(self):
-		await self.site.stop()
-		await self.runner.cleanup()
+# 	async def __stop_routine(self):
+# 		await self.site.stop()
+# 		await self.runner.cleanup()
 
-	def build_app(self):
-		self.app = web.Application()
-		self.app.router.add_post('/update', self.update)
+# 	def build_app(self):
+# 		self.app = web.Application()
+# 		self.app.router.add_post('/update', self.update)
 
-	async def main(self):
-		self.build_app()
-		self.runner = web.AppRunner(self.app)
-		await self.runner.setup()
-		self.site = web.TCPSite(
-			self.runner,
-			host = self.host,
-			port = self.port
-			)
-		await self.site.start()
+# 	async def main(self):
+# 		self.build_app()
+# 		self.runner = web.AppRunner(self.app)
+# 		await self.runner.setup()
+# 		self.site = web.TCPSite(
+# 			self.runner,
+# 			host = self.host,
+# 			port = self.port
+# 			)
+# 		await self.site.start()
 
-	# async def close(self):
-	# 	await self.runner.cleanup()
-	# 	self.loop.close()
+# 	# async def close(self):
+# 	# 	await self.runner.cleanup()
+# 	# 	self.loop.close()
 
-	async def update(self, request):
-		"""
-		This function serves POST /update.
+# 	async def update(self, request):
+# 		"""
+# 		This function serves POST /update.
 
-		The request should have a json body with a "step" key that at some point
-		has the value "done-aspirating".
+# 		The request should have a json body with a "step" key that at some point
+# 		has the value "done-aspirating".
 
-		It will return a json message with appropriate HTTP status.
-		"""
-		try:
-			body = await request.json()
-		except json.JSONDecodeError:
-			text = await body.text()
-			print(f"Request was not json: {text}")
-			return web.json_response(status=400, # Bad Request
-									 data={'error': 'bad-request'})
+# 		It will return a json message with appropriate HTTP status.
+# 		"""
+# 		try:
+# 			body = await request.json()
+# 		except json.JSONDecodeError:
+# 			text = await body.text()
+# 			print(f"Request was not json: {text}")
+# 			return web.json_response(status=400, # Bad Request
+# 									 data={'error': 'bad-request'})
 		
-		if 'step' not in body:
-			print(f"Body did not have a 'step' key")
-			return web.json_response(status=400, # Bad Request
-									 data={'error': 'no-step'})
-		if body['step'] == 'done-aspirating':
-		   # Here you might for instance check a balance
-		   # attached to the computer to validate apsiration
-		   print("Robot is done aspirating")
-		   return web.json_response(status=200, # OK
-									data={'done': True})
+# 		if 'step' not in body:
+# 			print(f"Body did not have a 'step' key")
+# 			return web.json_response(status=400, # Bad Request
+# 									 data={'error': 'no-step'})
+# 		if body['step'] == 'done-aspirating':
+# 		   # Here you might for instance check a balance
+# 		   # attached to the computer to validate apsiration
+# 		   print("Robot is done aspirating")
+# 		   return web.json_response(status=200, # OK
+# 									data={'done': True})
 
-		if body['step'] == 'query':
-			return web.json_response(status=200, # OK
-									data={'parent': self.parent})
+# 		if body['step'] == 'query':
+# 			return web.json_response(status=200, # OK
+# 									data={'parent': self.parent})
