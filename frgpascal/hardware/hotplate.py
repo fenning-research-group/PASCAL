@@ -8,7 +8,7 @@ import yaml
 import logging
 import configparser
 from typing import List
-from .geometry import Workspace
+from geometry import Workspace
 
 
 MODULE_DIR = os.path.dirname(__file__)

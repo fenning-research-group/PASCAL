@@ -1,7 +1,7 @@
 import string
 import os
 import yaml
-from .geometry import Workspace
+from geometry import Workspace
 
 MODULE_DIR = os.path.dirname(__file__)
 TRAY_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "sampletrays")
@@ -37,7 +37,8 @@ class SampleTray(Workspace):
             raise Exception(
                 f'Invalid tray version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
             )
-        constants = yaml.load(AVAILABLE_VERSIONS[version], Loader=yaml.FullLoader)
+        with open(AVAILABLE_VERSIONS[version], 'r') as f:
+            constants = yaml.load(f, Loader=yaml.FullLoader)
         workspace_kwargs = {
             "pitch": (constants["xpitch"], constants["ypitch"]),
             "gridsize": (constants["numx"], constants["numy"]),
