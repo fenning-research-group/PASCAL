@@ -1,10 +1,10 @@
 // ------ Pin Definitions
 #define ESC_PWM 9               // PWM pin for ESC control
-#define ESC_RELAY 6             // Relay to provide power to ESC
-#define ELECTROMAGNET_RELAY 7   // Relay to provide power to electromagnet to lock rotor
-#define VACUUM_SOLENOID_RELAY 8 // Relay to provide power to solenoid to pull vacuum on chuck
+#define ESC_RELAY 3             // Relay to provide power to ESC
+#define ELECTROMAGNET_RELAY 4   // Relay to provide power to electromagnet to lock rotor
+#define VACUUM_SOLENOID_RELAY 2 // Relay to provide power to solenoid to pull vacuum on chuck
 #define SD_CHIP_SELECT 10       // Pin to activate SD card readwrite
-#define SD_GREEN_LED 4          // Pin to indicate active read/write to SD
+#define SD_GREEN_LED 5          // Pin to indicate active read/write to SD
 // ------ Communication
 #define BAUDRATE 57600
 
@@ -29,5 +29,5 @@
 #define MOTOR_POLES 14    // number of magnetic poles present in BLDC motor
 
 // ------ SD Card Logging
-#define LOG_INTERVAL 1000 // delay (ms) between entries
+#define LOG_INTERVAL 250 // delay (ms) between entries
 #define WAIT_TO_START 0   // Wait for serial input in setup()

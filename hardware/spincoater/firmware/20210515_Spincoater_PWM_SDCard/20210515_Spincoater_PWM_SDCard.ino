@@ -13,7 +13,10 @@ double rpm_window[RPM_WINDOW_SIZE];
 double rpm_sense = 0;
 
 /*Serial Communication*/
-char rxChar; // RXcHAR holds the received command.
+char rxChar = 0; // RXcHAR holds the received command.
+int state; //whether relays turn on or off
+unsigned int rpm_setpoint;
+unsigned int duration;
 
 /*RPM Setpoint Calculation*/
 unsigned int rpm0 = 0;
@@ -28,22 +31,24 @@ double rpm_target = 0;
 #include "SD.h"
 #include <Wire.h>
 #include "RTClib.h"
+#include <TimeLib.h>
 RTC_DS1307 RTC; // define the Real Time Clock object
 File logfile;
 char filename[] = "RPMLOG.CSV";
 bool loggingactive = false;
+unsigned long last_logged = 0;
 
 // ------ Functions
 /*Relay Control*/
-void relay_off(int pin) { digitalWrite(pin, LOW) }
-void relay_on(int pin) { digitalWrite(pin, HIGH) }
+void relay_off(int pin) { digitalWrite(pin, HIGH); }
+void relay_on(int pin) { digitalWrite(pin, LOW); }
 
-void esc_off() { relay_off(ESC_RELAY) }
-void esc_on() { relay_on(ESC_RELAY) }
-void vacuum_off() { relay_off(VACUUM_SOLENOID_RELAY) }
-void vacuum_on() { relay_on(VACUUM_SOLENOID_RELAY) }
-void lock_chuck() { relay_on(ELECTROMAGNET_RELAY) }
-void unlock_chuck() { relay_off(ELECTROMAGNET_RELAY) }
+void esc_off() { relay_off(ESC_RELAY); }
+void esc_on() { relay_on(ESC_RELAY); }
+void vacuum_off() { relay_off(VACUUM_SOLENOID_RELAY); }
+void vacuum_on() { relay_on(VACUUM_SOLENOID_RELAY); }
+void lock_chuck() { relay_on(ELECTROMAGNET_RELAY); }
+void unlock_chuck() { relay_off(ELECTROMAGNET_RELAY); }
 
 void relaysetup()
 {
@@ -60,7 +65,7 @@ void relaysetup()
 void calibrateESC() // recalibrates the PWM settings on the spincoater ESC
 {
   esc_off();
-  delay(2000);
+  delay(1000);
   esc_on();
   ESC1.write(MAX_SIGNAL); //option to calibrate ESC
   delay(5000);
@@ -122,11 +127,22 @@ void executeRPM()
     pwm_target = map(rpm_target, MIN_RPM, MAX_RPM, MIN_SIGNAL, MAX_SIGNAL);
   }
 
-  if (pwm_target != pwm_current)
-  {
-    ESC.write(pwm_target);
-    pwm_current = pwm_target;
-  }
+//  if (pwm_target != pwm_current)
+//  {
+//    ESC1.write((int) pwm_target);
+//    pwm_current = pwm_target;
+//  }
+  ESC1.write(pwm_target);
+
+
+//  Serial.print("Target rpm: ");
+//  Serial.print(rpm_target);
+//  Serial.print(" Target pwm: ");
+//  Serial.print(pwm_target);
+//  Serial.print(" Current PWM: ");
+//  Serial.print(pwm_current);
+//  Serial.print(" Current RPM: ");
+//  Serial.println(rpm_sense);
 }
 
 /* SD Card */
@@ -137,37 +153,45 @@ void SDcardsetup()
 
   Wire.begin(); // Activate realtime clock
   RTC.begin();
+  RTC.adjust(DateTime(__DATE__, __TIME__));
 }
 
 void logging_start()
 {
+  if (SD.exists(filename)){
+    SD.remove(filename); 
+  }
   logfile = SD.open(filename, FILE_WRITE);
   loggingactive = true;
   //write header
-  logfile.println('Datetime, Target RPM, Actual RPM')
+  logfile.println("Datetime, Target RPM, Actual RPM");
 }
 
 void writetolog()
 {
-  DateTime now;
-
+  if (millis() > (last_logged+LOG_INTERVAL)){
+    last_logged = millis();
+  }else{
+    return;
+  }
   digitalWrite(SD_GREEN_LED, HIGH);
-
+//  DateTime now = RTC.now()
   // fetch the time
-  now = RTC.now();
+
   // log time
-  logfile.print(now.year(), DEC);
+  logfile.print(year(), DEC);
   logfile.print("/");
-  logfile.print(now.month(), DEC);
+  logfile.print(month(), DEC);
   logfile.print("/");
-  logfile.print(now.day(), DEC);
+  logfile.print(day(), DEC);
   logfile.print(" ");
-  logfile.print(now.hour(), DEC);
+  logfile.print(hour(), DEC);
   logfile.print(":");
-  logfile.print(now.minute(), DEC);
+  logfile.print(minute(), DEC);
   logfile.print(":");
-  logfile.print(now.second(), DEC);
+  logfile.print(second(), DEC);
   // log target rpm
+  logfile.print(",");
   logfile.print(rpm_target);
   logfile.print(',');
   logfile.println(rpm_sense);
@@ -183,9 +207,10 @@ void logging_stop()
 
 void printlogtoserial()
 {
-  if loggingactive: // cant read while logging is active
-    Serial.println("Error: Cannot read log while logging is active!")
-    return
+  if (loggingactive){ // cant read while logging is active
+    Serial.println("Error: Cannot read log while logging is active!");
+    return;
+  }
   logfile = SD.open(filename, FILE_READ);
   digitalWrite(SD_GREEN_LED, HIGH);
   while (logfile.available())
@@ -195,6 +220,11 @@ void printlogtoserial()
   logfile.close();
   digitalWrite(SD_GREEN_LED, LOW);
 }
+/* Realtime Clock */
+time_t time_provider()
+{
+    return RTC.now().unixtime();  
+}
 
 /*Communication*/
 void comLINK()
@@ -202,29 +232,33 @@ void comLINK()
   if (Serial.available())
   {                         // Check receive buffer.
     rxChar = Serial.read(); // Save character received.
+    Serial.println(rxChar);
     switch (rxChar)
     {
     case 'r': //set RPM
     case 'R':
-      int rpm = Serial.parseInt();
-      int duration = Serial.parseInt(SKIP_WHITESPACE);
-      setRPM(rpm, duration);
+      rpm_setpoint = Serial.parseInt();
+      duration = Serial.parseInt(SKIP_WHITESPACE);
+      setRPM(rpm_setpoint, duration);
       break;
     case 'c': //control the chuck electromagnet
     case 'C':
-      int state = Serial.parseInt();
+//      Serial.println("Received C");
+      state = Serial.parseInt();
       if (state == 1)
       {
         lock_chuck();
+//        Serial.println("Electromagnet engaged");
       }
       else
       {
         unlock_chuck();
+//        Serial.println("Electromagnet disengaged");
       }
       break;
     case 'v': //control the vacuum line solenoid
     case 'V':
-      int state = Serial.parseInt();
+      state = Serial.parseInt();
       if (state == 1)
       {
         vacuum_on();
@@ -236,19 +270,36 @@ void comLINK()
       break;
     case 'l': //start/stop rpm logging to SD card
     case 'L':
-      int state = Serial.parseInt();
+      state = Serial.parseInt();
       if (state == 1)
       {
         logging_start();
+        Serial.println("Starting log");
       }
       else
       {
         logging_stop();
+        Serial.println("Stopping log");
       }
       break;
     case 'd': // dump log data to serial buffer.
     case 'D':
       printlogtoserial();
+      Serial.println("dumping log");
+      break;
+    case 'e': //recalibrate ESC
+    case 'E':
+      calibrateESC();
+      break;
+    case 't': //set the RTC
+    case 'T':
+      int y = Serial.parseInt(SKIP_WHITESPACE);
+      int m = Serial.parseInt(SKIP_WHITESPACE);
+      int d = Serial.parseInt(SKIP_WHITESPACE);
+      int hh = Serial.parseInt(SKIP_WHITESPACE);
+      int mm = Serial.parseInt(SKIP_WHITESPACE);
+      int ss = Serial.parseInt(SKIP_WHITESPACE);
+      RTC.adjust(DateTime(y,m,d,hh,mm,ss));
       break;
     }
   }
@@ -263,15 +314,22 @@ void setup()
 
   relaysetup(); // initialize all relay pins + set to off
 
-  ESC1.attach(ESC_PIN);
-  calibrateESC(); //calibrate PWM range for rotor control - takes about 10 seconds
-
+  ESC1.attach(ESC_PWM);
+//  calibrateESC(); //calibrate PWM range for rotor control - takes about 10 seconds
+  ESC1.write(0);
   for (int i = 0; i < RPM_WINDOW_SIZE; i++) //initialize rpm moving average window array
   {
     rpm_window[i] = 0;
   }
 
   FreqMeasure.begin(); //start measuring RPM
+
+  SDcardsetup();
+
+  DateTime now = RTC.now();
+  setSyncProvider(time_provider);  //sets Time Library to RTC time
+  setSyncInterval(5);            //sync Time Library to RTC every 5 seconds
+
 }
 
 // ------ Main Loop
@@ -280,6 +338,7 @@ void loop()
   comLINK();
   senseRPM();
   executeRPM();
-  if loggingactive:
+  if (loggingactive){
     writetolog();
+  }
 }
