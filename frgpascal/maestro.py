@@ -172,7 +172,7 @@ class Maestro:
         Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float 
         """
         self.gantry.open_gripper(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
-    
+        
     def release(self):
         """
         Open gripper barely enough to release sample
