@@ -14,7 +14,7 @@ double rpm_sense = 0;
 
 /*Serial Communication*/
 char rxChar = 0; // RXcHAR holds the received command.
-int state; //whether relays turn on or off
+int state;       //whether relays turn on or off
 unsigned int rpm_setpoint;
 unsigned int duration;
 
@@ -107,7 +107,6 @@ void setRPM(int rpm_setpoint, int duration)
 
 void executeRPM()
 {
-  // unsigned int time_now = millis()
   rpm_target = map(millis(), time0, time1, rpm0, rpm1);
   if (rpm1 > rpm0)
   {
@@ -120,29 +119,20 @@ void executeRPM()
 
   if (rpm_target == 0)
   {
-    pwm_target = 0;
+    pwm_target = MIN_SIGNAL;
   }
   else
   {
-    pwm_target = map(rpm_target, MIN_RPM, MAX_RPM, MIN_SIGNAL, MAX_SIGNAL);
+    pwm_target = map(rpm_target, MIN_RPM, MAX_RPM, MIN_USABLE_SIGNAL, MAX_USABLE_SIGNAL);
   }
 
-//  if (pwm_target != pwm_current)
-//  {
-//    ESC1.write((int) pwm_target);
-//    pwm_current = pwm_target;
-//  }
+  //  if (pwm_target != pwm_current)
+  //  {
+  //    ESC1.write((int) pwm_target);
+  //    pwm_current = pwm_target;
+  //  }
   ESC1.write(pwm_target);
-
-
-//  Serial.print("Target rpm: ");
-//  Serial.print(rpm_target);
-//  Serial.print(" Target pwm: ");
-//  Serial.print(pwm_target);
-//  Serial.print(" Current PWM: ");
-//  Serial.print(pwm_current);
-//  Serial.print(" Current RPM: ");
-//  Serial.println(rpm_sense);
+  pwm_current = pwm_target;
 }
 
 /* SD Card */
@@ -158,8 +148,9 @@ void SDcardsetup()
 
 void logging_start()
 {
-  if (SD.exists(filename)){
-    SD.remove(filename); 
+  if (SD.exists(filename))
+  {
+    SD.remove(filename);
   }
   logfile = SD.open(filename, FILE_WRITE);
   loggingactive = true;
@@ -169,13 +160,16 @@ void logging_start()
 
 void writetolog()
 {
-  if (millis() > (last_logged+LOG_INTERVAL)){
+  if (millis() > (last_logged + LOG_INTERVAL))
+  {
     last_logged = millis();
-  }else{
+  }
+  else
+  {
     return;
   }
   digitalWrite(SD_GREEN_LED, HIGH);
-//  DateTime now = RTC.now()
+  //  DateTime now = RTC.now()
   // fetch the time
 
   // log time
@@ -207,7 +201,8 @@ void logging_stop()
 
 void printlogtoserial()
 {
-  if (loggingactive){ // cant read while logging is active
+  if (loggingactive)
+  { // cant read while logging is active
     Serial.println("Error: Cannot read log while logging is active!");
     return;
   }
@@ -223,7 +218,7 @@ void printlogtoserial()
 /* Realtime Clock */
 time_t time_provider()
 {
-    return RTC.now().unixtime();  
+  return RTC.now().unixtime();
 }
 
 /*Communication*/
@@ -243,17 +238,17 @@ void comLINK()
       break;
     case 'c': //control the chuck electromagnet
     case 'C':
-//      Serial.println("Received C");
+      //      Serial.println("Received C");
       state = Serial.parseInt();
       if (state == 1)
       {
         lock_chuck();
-//        Serial.println("Electromagnet engaged");
+        //        Serial.println("Electromagnet engaged");
       }
       else
       {
         unlock_chuck();
-//        Serial.println("Electromagnet disengaged");
+        //        Serial.println("Electromagnet disengaged");
       }
       break;
     case 'v': //control the vacuum line solenoid
@@ -299,12 +294,27 @@ void comLINK()
       int hh = Serial.parseInt(SKIP_WHITESPACE);
       int mm = Serial.parseInt(SKIP_WHITESPACE);
       int ss = Serial.parseInt(SKIP_WHITESPACE);
-      RTC.adjust(DateTime(y,m,d,hh,mm,ss));
+      RTC.adjust(DateTime(y, m, d, hh, mm, ss));
       break;
     }
   }
 }
 
+void debugReport()
+{
+  Serial.print("Target rpm: ");
+  Serial.print(rpm_target);
+  Serial.print(" Current RPM: ");
+  Serial.print(rpm_sense);
+  Serial.print(" Target pwm: ");
+  Serial.print(pwm_target);
+  Serial.print(" Current PWM: ");
+  Serial.print(pwm_current);
+  Serial.print(" rpm0, rpm1 ");
+  Serial.print(rpm0);
+  Serial.print(",");
+  Serial.println(rpm1);
+}
 // ------ Setup
 
 void setup()
@@ -315,8 +325,8 @@ void setup()
   relaysetup(); // initialize all relay pins + set to off
 
   ESC1.attach(ESC_PWM);
-//  calibrateESC(); //calibrate PWM range for rotor control - takes about 10 seconds
-  ESC1.write(0);
+  //  calibrateESC(); //calibrate PWM range for rotor control - takes about 10 seconds
+  ESC1.write(MIN_SIGNAL);
   for (int i = 0; i < RPM_WINDOW_SIZE; i++) //initialize rpm moving average window array
   {
     rpm_window[i] = 0;
@@ -327,9 +337,8 @@ void setup()
   SDcardsetup();
 
   DateTime now = RTC.now();
-  setSyncProvider(time_provider);  //sets Time Library to RTC time
-  setSyncInterval(5);            //sync Time Library to RTC every 5 seconds
-
+  setSyncProvider(time_provider); //sets Time Library to RTC time
+  setSyncInterval(5);             //sync Time Library to RTC every 5 seconds
 }
 
 // ------ Main Loop
@@ -338,7 +347,9 @@ void loop()
   comLINK();
   senseRPM();
   executeRPM();
-  if (loggingactive){
+  if (loggingactive)
+  {
     writetolog();
   }
+  debugReport();
 }
