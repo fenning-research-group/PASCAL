@@ -1,5 +1,6 @@
 // ------ Pin Definitions
 #define ESC_PWM 9               // PWM pin for ESC control
+#define RPM_SENSOR 8            // FreqMeasure library only works on pin 8!
 #define ESC_RELAY 3             // Relay to provide power to ESC
 #define ELECTROMAGNET_RELAY 4   // Relay to provide power to electromagnet to lock rotor
 #define VACUUM_SOLENOID_RELAY 2 // Relay to provide power to solenoid to pull vacuum on chuck

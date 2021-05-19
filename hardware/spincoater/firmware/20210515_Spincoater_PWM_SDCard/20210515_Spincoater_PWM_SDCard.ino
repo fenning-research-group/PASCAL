@@ -107,7 +107,7 @@ void setRPM(int rpm_setpoint, int duration)
 
 void executeRPM()
 {
-  rpm_target = map(millis(), time0, time1, rpm0, rpm1);
+  rpm_target = constrain(map(millis(), time0, time1, rpm0, rpm1), MIN_RPM, MAX_RPM);
   if (rpm1 > rpm0)
   {
     rpm_target = constrain(rpm_target, rpm0, rpm1);
@@ -123,7 +123,7 @@ void executeRPM()
   }
   else
   {
-    pwm_target = map(rpm_target, MIN_RPM, MAX_RPM, MIN_USABLE_SIGNAL, MAX_USABLE_SIGNAL);
+    pwm_target = constrain(map(rpm_target, MIN_RPM, MAX_RPM, MIN_USABLE_SIGNAL, MAX_USABLE_SIGNAL), MIN_USABLE_SIGNAL, MAX_USABLE_SIGNAL);
   }
 
   //  if (pwm_target != pwm_current)
@@ -155,7 +155,7 @@ void logging_start()
   logfile = SD.open(filename, FILE_WRITE);
   loggingactive = true;
   //write header
-  logfile.println("Datetime, Target RPM, Actual RPM");
+  logfile.println("Datetime, Target RPM, Actual RPM, PWM Signal");
 }
 
 void writetolog()
@@ -188,7 +188,9 @@ void writetolog()
   logfile.print(",");
   logfile.print(rpm_target);
   logfile.print(',');
-  logfile.println(rpm_sense);
+  logfile.print(rpm_sense);
+  logfile.print(',');
+  logfile.println(pwm_current);
 
   digitalWrite(SD_GREEN_LED, LOW);
 }
