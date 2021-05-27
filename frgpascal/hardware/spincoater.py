@@ -19,7 +19,6 @@ class SpinCoater:
     def __init__(
         self,
         gantry: Gantry,
-        serial_number: str = spincoater_serial_number,
         p0: tuple = p0,
     ):
         """Initialize the spincoater control object
@@ -30,7 +29,7 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
-        self.port = get_port(serial_number)  # find port to connect to this device.
+        self.port = get_port(constants['spincoater'])  # find port to connect to this device.
         self.POLLINGRATE = constants["spincoater"][
             "pollingrate"
         ]  # query rate to arduino, in seconds

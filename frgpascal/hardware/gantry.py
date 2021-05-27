@@ -20,10 +20,10 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), 'r') as f:
 
 
 class Gantry:
-    def __init__(self, port = None, serial_number=constants['gantry']['serialid']):
+    def __init__(self, port = None):
         # communication variables
         if port is None:
-            self.port = get_port(serial_number)
+            self.port = get_port(constants['gantry'])
         else:
             self.port = port
         self.POLLINGDELAY = constants["gantry"][
@@ -55,8 +55,6 @@ class Gantry:
         ]  # mm above endpoints to move to in between points
 
         # gripper variables
-        self.gripperwidth = None
-        self.servoangle = None
         self.__gripperwatchdogthread = threading.Thread(target=self.__watch_gripper_timeout, daemon=True)
         self.__stop_gripperidlethread = False
         self.__gripper_last_opened = np.inf
@@ -65,7 +63,10 @@ class Gantry:
         self.MINANGLE = constants["gripper"]["angle_min"]
         self.MAXWIDTH = constants["gripper"]["width_max"]  # max gripper width, in mm
         self.MINWIDTH = constants["gripper"]["width_min"]
-
+        self.SLOWGRIPPERINTERVAL = constants["gripper"]["slow_movement_interval"]
+        self.SLOWSERVOSTEPSIZE = 1 #degrees to move per step in slow opening/closing.
+        self.gripperwidth = self.MINWIDTH
+        self.servoangle = self.MINANGLE
         # connect to gantry by default
         self.connect()
         self.set_defaults()
@@ -132,6 +133,8 @@ class Gantry:
                     found_coordinates = True
                     break
         self.position = [x, y, z]
+        # if self.servoangle > self.MINANGLE:
+        self.__gripper_last_opened = time.time()
 
     def update_gripper(self):
         found_coordinates = False
@@ -145,8 +148,8 @@ class Gantry:
                     self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
                     found_coordinates = True
                     break
-        if self.servoangle > self.MINANGLE:
-            self.__gripper_last_opened = time.time()
+        # if self.servoangle > self.MINANGLE:
+        self.__gripper_last_opened = time.time()
 
     # gantry methods
     def set_speed_percentage(self, p):
@@ -267,7 +270,7 @@ class Gantry:
         return reached_destination
 
     # gripper methods
-    def open_gripper(self, width=None):
+    def open_gripper(self, width=None, slow=False):
         """
         open gripper to width, in mm
         """
@@ -276,14 +279,23 @@ class Gantry:
 
         angle = self.__width_to_servo_angle(width)
 
+        if slow:
+            angle0 = self.servoangle
+            if angle0 < angle:
+                step = self.SLOWSERVOSTEPSIZE
+            else:
+                step = -self.SLOWSERVOSTEPSIZE
+            for a in np.arange(angle0, angle, step)[:-1]:
+                self.write(f"M280 P0 S{a}")
+                time.sleep(self.SLOWGRIPPERINTERVAL)
         self.write(f"M280 P0 S{angle}")
         self.update_gripper()
 
-    def close_gripper(self):
+    def close_gripper(self, slow=False):
         """
         close the gripper to minimum width
         """
-        self.open_gripper(width=self.MINWIDTH)
+        self.open_gripper(width=self.MINWIDTH, slow=slow)
 
     def __servo_angle_to_width(self, angle):
         """
@@ -311,7 +323,7 @@ class Gantry:
         fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
         angle = fractional_width * (self.MAXANGLE - self.MINANGLE) + self.MINANGLE
 
-        return np.round(angle, 0)
+        return np.round(angle, 0).astype(int) #nearest angle
 
 
     # gripper timeout watchdog

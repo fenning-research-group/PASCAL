@@ -1,7 +1,9 @@
 # Constants for the hardware modules that compose PASCAL
 gantry:
   # communcation
-  serialid: "55838333932351108212"
+  # serialid: "55838333932351108212" #LINUX ONLY hardware ID of gantry control board. Used to find correct COM port
+  vendorid: "1EAF" #WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
+  productid: "0004" #WINDOWS ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
 
@@ -22,8 +24,9 @@ gripper:
   width_max: 28  #maximum opening width (mm)
   width_min: 6.5 #minimum opening width (mm)
   angle_max: 60  #servo angle corresponding to max width
-  angle_min: 0   #servo angle corresponding to min width
+  angle_min: 2   #servo angle corresponding to min width
   extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
+  slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
   
 hotplate:
@@ -37,7 +40,9 @@ sampletray:
 
 spincoater:
   # communication
-  serialid: "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
+  # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
+  vendorid: "unknown" #WINDOWS ONLY
+  productid: "unknown" #WINDOWS ONLY
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [52, 126, 41] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
