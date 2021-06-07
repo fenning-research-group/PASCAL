@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Stellarnet Proprietary Files
+stellarnet_driver3.cp38-win_amd64.pyd
+stellarnet.hex
+
 # Distribution / packaging
 .Python
 build/
