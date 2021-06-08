@@ -10,6 +10,8 @@ from scipy.optimize import minimize
 
 
 class Spectrometer:
+    """Object to interface with Stellarnet spectrometer"""
+
     def __init__(self, address=0):
         self.id, self.__wl = sn.array_get_spec(address)
         self.integrationtime = 100  # ms
