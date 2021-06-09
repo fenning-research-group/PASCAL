@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 import os
 import yaml
+from datetime import datetime
 from .helpers import get_port
 from .gantry import Gantry
 
@@ -41,14 +42,27 @@ class SpinCoater:
             constants["spincoater"]["rpm_min"],
             constants["spincoater"]["rpm_max"],
         )  # rpm
+        self.__rpm = 0  # nominal current rpm. does not take ramping into account
         self.gantry = gantry
         self.locked = None
         self.connect()
         self.unlock()
         self.__calibrated = False
 
+        # logging
+        self.__logging_active = False
+
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(p0) + [0, 0, 5]
+
+    @property
+    def rpm(self):
+        return self.__rpm
+
+    # @property.setter
+    # def rpm(self, rpm: int):
+    #     self.__rpm = rpm
+    #     self.setrpm(rpm, self.ACCELERATIONRANGE[1])  # max acceleration
 
     def connect(self, **kwargs):
         self.__handle = serial.Serial(
@@ -60,18 +74,22 @@ class SpinCoater:
 
     def calibrate(self):
         """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
-        self.gantry.open_gripper(12)
+        self.gantry.open_gripper(
+            12
+        )  # TODO #7 dont hardcode the gripper opening position - maybe even keep it closed for this step?
         self.gantry.moveto(*self.p0)
         self.gantry.gui()
         self.coordinates = self.gantry.position
         self.gantry.moverel(z=10, zhop=False)
         self.gantry.close_gripper()
         self.__calibrated = True
-        with open("spincoater_calibration.pkl", "wb") as f:
+        with open(
+            "spincoater_calibration.pkl", "wb"
+        ) as f:  # TODO #6 save the calibration files as yaml, not pickle
             pickle.dump(self.coordinates, f)
 
     def _load_calibration(self):
-        with open("spincoater_calibration.pkl", "rb") as f:
+        with open("spincoater_calibration.pkl", "rb") as f:  # TODO #6
             self.coordinates = pickle.load(f)
         self.__calibrated = True
 
@@ -94,31 +112,18 @@ class SpinCoater:
             raise Exception(f"Need to calibrate spincoater position before use!")
         return self.coordinates
 
-    @property
-    def rpm(self):
-        self.write("c")  # command to read rpm
-        self.__rpm = float(self.__handle.readline().strip())
-        return self.__rpm
-
-    @rpm.setter
-    def rpm(self, rpm):
-        if rpm == 0:
-            self.stop()
-        else:
-            self.setspeed(rpm)
-
     def vacuum_on(self):
-        self.write("i3")  # send command to engage/open vacuum solenoid
+        self.write("v1")  # send command to engage/open vacuum solenoid
 
     def vacuum_off(self):
-        self.write("o3")  # send command to disengage/close vacuum solenoid
+        self.write("v0")  # send command to disengage/close vacuum solenoid
 
     def lock(self):
         """
         routine to lock rotor in registered position for sample transfer
         """
         if not self.locked:
-            self.write("i4")  # send command to engage electromagnet
+            self.write("c1")  # send command to engage electromagnet
             self.locked = True
 
     def unlock(self):
@@ -126,60 +131,90 @@ class SpinCoater:
         unlocks the rotor from registered position to allow spinning again
         """
         if self.locked:
-            self.write("o4")  # send command to disengage electromagnet
+            self.write("c0")  # send command to disengage electromagnet
             # time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate
             self.locked = False
 
-    def setspeed(self, speed: float, acceleration: float = 500):
+    def setrpm(self, rpm: int, acceleration: float = 0):
         """sends commands to arduino to set a target speed with a target acceleration
 
         Args:
-                        speed (float): target angular velocity, in rpm
+                        rpm (int): target angular velocity, in rpm
                         acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
         """
-        speed = int(speed)  # arduino only takes integer inputs
+        rpm = int(rpm)  # arduino only takes integer inputs
+        if acceleration == 0:
+            acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
+        duration = abs(
+            (rpm - self.__rpm) / acceleration
+        )  # time (s) to move from current rpm to target rpm at this acceleration rate
+        duration = int(
+            duration * 1000
+        )  # round time to nearest milliseconds for arduino
 
-        self.unlock()
-        self.__handle.write(f"a{speed:d}".encode())
-        # send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+        self.unlock()  # confirm that the chuck electromagnet is disengaged
+        self.__handle.write(
+            f"a{rpm:d} {duration:d}"
+        )  # send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
+
+        self.__rpm = rpm
 
     def stop(self):
         """
         stop rotation and locks the rotor in position
         """
-        self.write("z")  #
+        self.setrpm(0)  #
         time.sleep(
             2
         )  # wait some time to ensure rotor has stopped and engaged with electromagnet
         self.lock()
         time.sleep(1)
 
-    def recipe(self, recipe):  ### TODO
+    def logging_on(self):
+        if self.__logging_active:
+            raise ValueError("Logging is already active!")
+        self.write("l1")
+        self.__logging_active = True
 
-        record = {"time": [], "rpm": []}
+    def logging_off(self):
+        if not self.__logging_active:
+            raise ValueError("Logging is already stopped!")
+        self.write("l0")
+        self.__logging_active = False
 
-        start_time = round(time.time())  # big ass number
-        next_step_time = 0
-        time_elapsed = 0
-        # first step == true
-        for step in recipe:
-            speed = step[0]
-            duration = step[1]
+    def logging_retrieve(self):
+        """Reads the logged rpm vs time from spincoater SD card
 
-            # if first_step == true:
+        Raises:
+            ValueError: spincoater must not be actively logging to retrieve data
 
-            # 	first_step == false
-            # self.write('d')
-            self.setspeed(speed)
-            next_step_time += duration
+        Returns:
+            data: dictionary with datetime, seconds (relative time), rpm, and rpm_target fields.
+        """
+        if self.__logging_active:
+            raise ValueError(
+                "Logging is currently active - stope with .logging_off() before retrieving data."
+            )
+        self.write("d")
+        time.sleep(0.5)  # let arduino parse and start writing data to serial
+        datetime = []
+        rpm_nominal = []
+        rpm_actual = []
+        while self.__handle.in_waiting:
+            line = self.__handle.readline().decode("utf-8").split(",")
+            datetime.append(datetime.strptime(line[0], "%Y/%m/%d %H:%M:%S"))
+            rpm_nominal.append(float(line[1]))
+            rpm_actual.append(float(line[2]))
+            # time.sleep(self.POLLINGRATE)
+        datetime = np.array(datetime)
+        rpm_nominal = np.array(rpm_nominal)
+        rpm_actual = np.array(rpm_actual)
+        relativetime = [t.total_seconds() for t in datetime - datetime[0]]  # seconds
 
-            while time_elapsed <= next_step_time:
-                time_elapsed = time.time() - start_time
-                record["rpm"].append(self.rpm)
-                record["time"].append(time_elapsed)
-                time.sleep(self.POLLINGRATE)
-
-            # self.write('f')
-        self.lock()
-
-        return record
+        data = {
+            "datetime": datetime,
+            "seconds": relativetime,
+            "rpm_target": rpm_nominal,
+            "rpm": rpm_actual,
+        }
+        return data
