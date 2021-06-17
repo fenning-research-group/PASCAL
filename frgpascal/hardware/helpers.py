@@ -12,12 +12,13 @@ def which_os():
     else:
         raise EnvironmentError('Unsupported platform')
 
-def get_port_windows(vendorid, productid):
+def _get_port_windows(vendorid, productid, location):
     for p in lp.comports():
-        if vendorid in p.hwid and productid in p.hwid:
+        if vendorid in p.hwid and productid in p.hwid and location == p.location:
             return p.device
     return None
-def get_port_linux(serial_number):
+
+def _get_port_linux(serial_number):
     '''
     finds port number for a given hardware serial number
     '''
@@ -26,12 +27,12 @@ def get_port_linux(serial_number):
             return p.device
     return None
 
-def get_port(constants):
+def get_port(device_identifiers):
     operatingsystem = which_os()
     if operatingsystem == 'Windows':
-        port = get_port_windows(constants['vendorid'], constants['productid'])
+        port = _get_port_windows(device_identifiers['vendorid'], device_identifiers['productid'], device_identifiers['location'])
     elif operatingsystem == 'Linux':
-        port = get_port_linux(constants['serialid'])
+        port = _get_port_linux(device_identifiers['serialid'])
 
     if port is None:
         raise ValueError(f'Device not found!')

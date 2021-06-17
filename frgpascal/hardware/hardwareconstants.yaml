@@ -2,8 +2,10 @@
 gantry:
   # communcation
   # serialid: "55838333932351108212" #LINUX ONLY hardware ID of gantry control board. Used to find correct COM port
-  vendorid: "1EAF" #WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
-  productid: "0004" #WINDOWS ONLY
+  device_identifiers:
+    vendorid: "1EAF" #WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
+    productid: "0004" #WINDOWS ONLY
+    location: "1-13.4.4" #WINDOWS + GANTRY ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
 
@@ -21,7 +23,11 @@ gantry:
   z_min: 0     #min z position (mm)
 
 gripper:
-  serialid: "55838333932351108212"
+  #communication
+  device_identifiers:
+      vendorid: "1EAF" #WINDOWS ONLY
+      productid: "0004" #WINDOWS ONLY
+      location: TODO #WINDOWS ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 2 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 28  #maximum opening width (mm)
@@ -43,9 +49,11 @@ sampletray:
 
 spincoater:
   # communication
-  # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-  vendorid: "unknown" #WINDOWS ONLY
-  productid: "unknown" #WINDOWS ONLY
+  device_identifiers:
+    # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
+      vendorid: "1EAF" #WINDOWS ONLY
+      productid: "0004" #WINDOWS ONLY
+      location: TODO #WINDOWS + GANTRY ONLY
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [52, 126, 41] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
@@ -58,32 +66,34 @@ spincoater:
 characterizationline:
   #movement
   axis:
-    serialid: TODO
+    device_identifiers:
+    # serialid: TODO
+      vendorid: "1EAF" #WINDOWS ONLY
+      productid: "0004" #WINDOWS ONLY
+      location: "1-13.4.1.3" #WINDOWS
     pollingrate: 0.05
     timeout: 15 #max time (seconds) to allow movement before flagging an error
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
-    speed_max: 5000 #max gantry speed, mm/min
-    speed_min: 500 #min gantry speed, mm/min
-    x_max: 797.0 #max x position (mm)
+    x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
   #individual stations
   darkfield:
-    cameraid: TODO #serial number for Thorlabs Camera
-    position: 10 #position (mm) at which characterization axis centers sample in FOV
+    cameraid: 12316 #serial number for Thorlabs Camera
+    position: 88.15 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 0 #switchbox plug index for light source
-  brightfield:
-    cameraid: TODO #serial number for Thorlabs Camera
-    position: 15 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 1 #switchbox plug index for light source
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-    position: 20 #position (mm) at which characterization axis centers sample in FOV
+    position: 88.15 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 2 #switchbox plug index for light source
+  brightfield:
+    cameraid: 12519 #serial number for Thorlabs Camera
+    position: 222.5 #position (mm) at which characterization axis centers sample in FOV
+    switchindex: 1 #switchbox plug index for light source
   pl: #spectroscopy
-    position: 25 #position (mm) at which characterization axis centers sample in FOV
+    position: 313 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 3 #switchbox plug index for light source
   transmission: #spectroscopy
-    position: 30 #position (mm) at which characterization axis centers sample in FOV
+    position: 313 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 4 #switchbox plug index for light source
 
   
