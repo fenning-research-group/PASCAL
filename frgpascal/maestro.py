@@ -10,18 +10,18 @@ import yaml
 
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
-from frgpascal.hardware.spincoater import SpinCoater
+
+# from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import CharacterizationLine
+
+# from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
 MODULE_DIR = os.path.dirname(__file__)
-constants = yaml.load(
-    os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"),
-    Loader=yaml.FullLoader,
-)
+with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
+    constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
 class Maestro:
@@ -51,20 +51,22 @@ class Maestro:
         #     gantry = self.gantry,
         #     p0 = constants['spincoater']['p0']
         #     )
-        self.liquidhandler = OT2()
+        # self.liquidhandler = OT2()
 
         # Labware
         self.hotplate = HotPlate(
             name="Hotplate1",
             version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
             gantry=self.gantry,
+            gripper=self.gripper,
             p0=constants["hotplate"]["p0"],
         )
         self.storage = SampleTray(
             name="SampleTray1",
-            version="sampletray_v1",  # TODO #3
+            version="storage_v2",  # TODO #3
             num=numsamples,  # number of substrates loaded
             gantry=self.gantry,
+            gripper=self.gripper,
             p0=constants["sampletray"]["p0"],
         )
         # Stock Solutions
@@ -92,7 +94,7 @@ class Maestro:
         self.gantry.moveto(p2, zhop=zhop)
         self.release()
         self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-        self.gantry.close_gripper()
+        self.gripper.close()
 
     def spincoat(self, recipe, drops):
         """

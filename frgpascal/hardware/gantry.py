@@ -86,7 +86,7 @@ class Gantry:
         #     "M92 X53.333 Y53.333 Z200.0"
         # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
-            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z25.00"
+            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z15.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max
 
@@ -168,7 +168,8 @@ class Gantry:
                 z = self.position[2]
         if speed is None:
             speed = self.speed
-
+        if x == self.position[0] and y == self.position[1]:
+            zhop = False  # no use zhopping for no lateral movement
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(

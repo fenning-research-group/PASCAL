@@ -28,7 +28,7 @@
 /**
  * Marlin release version identifier
  */
-//#define SHORT_BUILD_VERSION "2.0.6"
+//#define SHORT_BUILD_VERSION "2.0.7.2"
 
 /**
  * Verbose version identifier which should contain a reference to the location
@@ -72,5 +72,5 @@
  * Currently only supported by DUE platform
  */
 //#define USB_DEVICE_VENDOR_ID           0x0000
-//#define USB_DEVICE_PRODUCT_ID          0x0000
+#define USB_DEVICE_PRODUCT_ID          0x0005
 //#define USB_DEVICE_MANUFACTURE_NAME    WEBSITE_URL

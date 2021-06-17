@@ -1,7 +1,12 @@
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
-import pickle
-from gantry import Gantry
+from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gripper import Gripper
+import os
+import yaml
+
+MODULE_DIR = os.path.dirname(__file__)
+CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 
 
 class CoordinateMapper:
@@ -16,19 +21,23 @@ class CoordinateMapper:
         self.source = np.asarray(p0)
         self.xyoffset = self.destination.mean(axis=0) - self.source.mean(axis=0)
         self.xyoffset[2] = 0  # no z offset, but keep in 3d
-        self.zinterp = LinearNDInterpolator(self.source[:, :2], self.source[:, 2])
+        self.zinterp = LinearNDInterpolator(self.destination[:, :2], self.source[:, 2])
 
     def map(self, p):
         if len(p) == 2:
             p = list(p)
             p.append(0)
         p = np.asarray(p)
+        p[2] = self.zinterp(p[:2])
         pmap = p - self.xyoffset
-        pmap[2] = self.zinterp(pmap[:2])
+
+        # z interpolated to nan if all z points are 0 during calibration. nice tramming!
+        # if np.isnan(pmap[2]):
+        #     pmap[2] = 0
         return pmap
 
 
-def map_coordinates(name, slots, points, gantry, z_clearance=5):
+def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     """prompts user to move gripper to target points on labware for
     calibration purposes
 
@@ -49,19 +58,19 @@ def map_coordinates(name, slots, points, gantry, z_clearance=5):
     points_source_guess = points
 
     points_source_meas = []  # source coordinates
-    for name, p in zip(slots, points_source_guess):
+    for slotname, p in zip(slots, points_source_guess):
         movedelta = p - p_prev  # offset between current and next point
         gantry.moverel(*movedelta, zhop=False)  # move to next point
-        print(f"Move to {name}")
+        print(f"Move to {slotname}")
         gantry.gui()  # prompt user to align gantry to exact target location
         points_source_meas.append(gantry.position)
         gantry.moverel(z=z_clearance, zhop=False)
         p_prev = p
 
     # save calibration
-    with open(f"{name}_calibration.pkl", "wb") as f:
-        out = {"p0": points_source_meas, "p1": points}
-        pickle.dump(out, f)
+    with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
+        out = {"p0": points_source_meas, "p1": points.tolist()}
+        yaml.dump(out, f)
 
     return CoordinateMapper(p0=points_source_meas, p1=points)
 
@@ -78,6 +87,7 @@ class Workspace:
         pitch: tuple,
         gridsize: tuple,
         gantry: Gantry,
+        gripper: Gripper,
         p0=[None, None, None],
         testslots=None,
         z_clearance: float = 5,
@@ -115,6 +125,7 @@ class Workspace:
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
         self.gantry = gantry
+        self.gripper = gripper
         # coordinate system properties
         self.pitch = pitch
         self.p0 = np.asarray(p0) + [0, 0, 5]
@@ -180,14 +191,26 @@ class Workspace:
 
     def calibrate(self):
         self.gantry.moveto(*self.p0)
-        self.gantry.open_gripper(self.OPENWIDTH)
+        self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
-            self.name, self.testslots, self.testpoints, self.gantry, self.z_clearance
+            self.name,
+            self.testslots,
+            self.testpoints,
+            self.gantry,
+            self.z_clearance,
         )
         self.__calibrated = True
 
+    # def _save_calibration(self):
+    #     if not self.__calibrated:
+    #         raise ValueError(
+    #             "Need to calibrate before you can save a calibration, dingus!"
+    #         )
+
     def _load_calibration(self):
-        with open(f"{self.name}_calibration.pkl", "rb") as f:
-            pts = pickle.load(f)
+        with open(
+            os.path.join(CALIBRATION_DIR, f"{self.name}_calibration.yaml"), "r"
+        ) as f:
+            pts = yaml.load(f, Loader=yaml.FullLoader)
         self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
         self.__calibrated = True

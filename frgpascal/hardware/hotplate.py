@@ -8,8 +8,9 @@ import yaml
 import logging
 import configparser
 from typing import List
-from geometry import Workspace
-
+from frgpascal.hardware.geometry import Workspace
+from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gripper import Gripper
 
 MODULE_DIR = os.path.dirname(__file__)
 HOTPLATE_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "hotplates")
@@ -20,16 +21,20 @@ AVAILABLE_VERSIONS = {
 
 
 class HotPlate(Workspace):
-    def __init__(self, name, version, gantry=None, p0=[None, None, None]):
+    def __init__(
+        self, name, version, gantry: Gantry, gripper: Gripper, p0=[None, None, None]
+    ):
         constants, workspace_kwargs = self._load_version(version)
-        super().__init__(name=name, gantry=gantry, p0=p0, **workspace_kwargs)
+        super().__init__(
+            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs
+        )
 
         self.TLIM = (constants["temperature_min"], constants["temperature_max"])
 
         # only consider slots with blanks loaded
         self.slots = {
-            name: {"coordinates": coord, "payload": None}
-            for name, coord in self._coordinates.items()
+            slotname: {"coordinates": coord, "payload": None}
+            for slotname, coord in self._coordinates.items()
         }
         self._capacity = len(self.slots)
         self.full = False
@@ -50,7 +55,8 @@ class HotPlate(Workspace):
             raise Exception(
                 f'Invalid tray version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
             )
-        constants = yaml.load(AVAILABLE_VERSIONS[version], Loader=yaml.FullLoader)
+        with open(AVAILABLE_VERSIONS[version], "r") as f:
+            constants = yaml.load(f, Loader=yaml.FullLoader)
         workspace_kwargs = {
             "pitch": (constants["xpitch"], constants["ypitch"]),
             "gridsize": (constants["numx"], constants["numy"]),

@@ -8,10 +8,8 @@ import os
 import yaml
 
 MODULE_DIR = os.path.dirname(__file__)
-constants = yaml.load(
-    os.path.join(MODULE_DIR, "hardwareconstants.yaml"),
-    Loader=yaml.FullLoader,
-)
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
 class OT2:
