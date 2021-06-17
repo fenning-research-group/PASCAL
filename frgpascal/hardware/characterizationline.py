@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from tifffile import imsave
 import csv
 
-from functools import partial
 from .helpers import get_port
 from .thorcam import ThorcamHost
 from .spectrometer import Spectrometer

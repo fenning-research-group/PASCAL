@@ -1,3 +1,4 @@
+from termios import error
 import numpy as np
 import os
 from aiohttp import web # You can install aiohttp with pip
@@ -8,11 +9,12 @@ import time
 import yaml
 
 from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-
+from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -33,9 +35,10 @@ class Maestro:
         self.SAMPLEWIDTH = samplewidth #mm
         self.SAMPLETOLERANCE = constants['gripper']['extra_opening_width'] #mm extra opening width
         self.IDLECOORDINATES = constants['gantry']['idle_coordinates'] #where to move the gantry during idle times, mainly to avoid cameras.
-
+        self.CATCHATTEMPTS = constants['gripper']['catch_attempts'] #number of times to try picking up a sample before erroring out
         # Workers
         self.gantry = Gantry()
+        self.gripper = Gripper()
         self.spincoater = SpinCoater(
             gantry = self.gantry,
             p0 = constants['spincoater']['p0']
@@ -76,10 +79,7 @@ class Maestro:
     ### Physical Methods
     # Compound Movements
     def transfer(self, p1, p2, zhop = True):
-        if list(p1) == self.spincoater.coordinates:
-            self.gantry.open_gripper(self.SAMPLEWIDTH + 2*self.SAMPLETOLERANCE) #wider grip to pick samples from chuck.
-        else:
-            self.release()
+        self.release()
         self.gantry.moveto(p1, zhop = zhop)
         self.catch()
         self.gantry.moveto(p2, zhop = zhop)
@@ -171,17 +171,34 @@ class Maestro:
         """
         Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float 
         """
-        self.gantry.open_gripper(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
+        self.CATCHATTEMPTS = 3
+        caught_successfully = False
+        while not caught_successfully and self.CATCHATTEMPTS > 0:
+            self.gripper.open(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
+            if not self.gripper.is_under_load(): #if springs not pulling on grippers, assume that the sample is grabbed
+                caught_successfully = True
+                break
+            else:
+                self.CATCHATTEMPTS -= 1 
+                #lets jog the gripper position and try again.
+                self.release() 
+                self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
+          
+        if not caught_successfully:    
+            raise error('Failed to pick up sample!')
         
     def release(self):
         """
         Open gripper barely enough to release sample
         """
-        self.gantry.open_gripper(self.SAMPLEWIDTH+self.SAMPLETOLERANCE)
+        self.gripper.open(self.SAMPLEWIDTH+self.SAMPLETOLERANCE, slow=True) #slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
+        """Move gantry to the idle position. This is primarily to provide cameras a clear view
+        """
         self.gantry.moveto(self.IDLECOORDINATES)
-        self.gantry.close_gripper()
+        self.gripper.close()
 
     # Complete Sample
     def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
@@ -257,6 +274,8 @@ class Maestro:
 
     def __del__(self):
         self.liquidhandler.server.stop()
+
+
 # OT2 Communication + Reporting Server
 
 # class Reporter:
