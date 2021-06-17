@@ -30,16 +30,16 @@ gripper:
       location: "" #WINDOWS ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 28  #maximum opening width (mm)
-  width_min: 6.5 #minimum opening width (mm)
-  pwm_max: 60  #pulse width (us) corresponding to minimum width
-  pwm_min: 2   #pulse width (us) corresponding to maximum width
+  width_max: 14.6  #maximum opening width (mm)
+  width_min: 3.25 #minimum opening width (mm)
+  pwm_max: 1000  #pulse width (us) corresponding to minimum width
+  pwm_min: 650   #pulse width (us) corresponding to maximum width
   extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 5 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
-  springs_loaded_threshold: 400 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
+  springs_loaded_threshold: 725 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 hotplate:
   p0: [100,100,100] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions

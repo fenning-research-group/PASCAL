@@ -22,7 +22,7 @@ class Gantry:
     def __init__(self, port=None):
         # communication variables
         if port is None:
-            self.port = get_port(constants["gantry"])
+            self.port = get_port(constants["gantry"]["device_identifiers"])
         else:
             self.port = port
         self.POLLINGDELAY = constants["gantry"][
@@ -53,6 +53,8 @@ class Gantry:
             "zhop_height"
         ]  # mm above endpoints to move to in between points
 
+        self.connect()  # connect by default
+
     # communication methods
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
@@ -69,6 +71,7 @@ class Gantry:
                 None,
             ]  # start at None's to indicate stage has not been homed.
         # self.write('M92 X40.0 Y26.77 Z400.0')
+        self.set_defaults()
 
     def disconnect(self):
         self._handle.close()
@@ -76,10 +79,12 @@ class Gantry:
 
     def set_defaults(self):
         self.write("G90")  # absolute coordinate system
-        # self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
-        self.write(
-            "M92 X53.333 Y53.333 Z400.0"
-        )  # set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write(
+        #     "M92 X26.667 Y26.667 Z200.0"
+        # )  # set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write(
+        #     "M92 X53.333 Y53.333 Z200.0"
+        # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z25.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.

@@ -1,9 +1,11 @@
-from termios import error
+# from termios import error
 import time
 import numpy as np
 import yaml
 from frgpascal.hardware.helpers import get_port
-
+import os
+import serial
+import threading
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -15,7 +17,7 @@ class Gripper:
     def __init__(self, port=None):
         # communication variables
         if port is None:
-            self.port = get_port(constants["gripper"])
+            self.port = get_port(constants["gripper"]["device_identifiers"])
         else:
             self.port = port
         self.POLLINGDELAY = constants["gripper"][
@@ -41,11 +43,15 @@ class Gripper:
         self.SLOWGRIPPERINTERVAL = constants["gripper"]["slow_interval"]
         self.FASTGRIPPERINTERVAL = constants["gripper"]["fast_interval"]
 
+        self.currentwidth = self.MINWIDTH
+        self.currentpwm = self.MINPWM
         self.connect()  # connect to gripper by default
         self.close()  # close gripper by default
+        # self.write(f"S{self.MINPWM} {self.SLOWGRIPPERINTERVAL}")
 
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        time.sleep(3)  # takes a few seconds for connection to establish
         self.__start_gripper_timeout_watchdog()
 
     def disconnect(self):
@@ -57,12 +63,13 @@ class Gripper:
         time.sleep(self.POLLINGDELAY)
 
     def _waitformovement(self):
+        # return
         readline = ""
         time0 = time.time()
         while readline != "done":
-            if time.time() - time0 > self.GRIPPERTIMEOUT:
-                raise error("Gripper timed out during movement")
-            if self._handle.in_waiting:
+            if time.time() - time0 > 2:  # self.GRIPPERTIMEOUT:
+                raise ValueError("Gripper timed out during movement")
+            if self._handle.in_waiting > 0:
                 readline = self._handle.readline().decode("utf-8").strip()
             time.sleep(self.POLLINGDELAY)
 
@@ -89,7 +96,7 @@ class Gripper:
         """
         close the gripper to minimum width
         """
-        self.open_gripper(width=self.MINWIDTH, slow=slow)
+        self.open(width=self.MINWIDTH, slow=slow)
 
     def is_under_load(self):
         self.write("l")
@@ -150,7 +157,7 @@ class Gripper:
             time.sleep(interval)
             if self.__stop_gripperidlethread:
                 break
-            if self.servopwm == self.MINPWM:
+            if self.currentpwm == self.MINPWM:
                 continue
             if time.time() - self.__gripper_last_opened >= self.GRIPPERTIMEOUT:
                 self.close_gripper()

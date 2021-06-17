@@ -1,7 +1,7 @@
-from termios import error
+# from termios import error
 import numpy as np
 import os
-from aiohttp import web # You can install aiohttp with pip
+from aiohttp import web  # You can install aiohttp with pip
 import json
 import threading
 import asyncio
@@ -19,11 +19,13 @@ from frgpascal.hardware.characterizationline import CharacterizationLine
 
 MODULE_DIR = os.path.dirname(__file__)
 constants = yaml.load(
-    os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), Loader=yaml.FullLoader
+    os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"),
+    Loader=yaml.FullLoader,
 )
 
+
 class Maestro:
-    def __init__(self, numsamples: int, samplewidth: float=10):
+    def __init__(self, numsamples: int, samplewidth: float = 10):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
         Args:
@@ -32,59 +34,64 @@ class Maestro:
         """
 
         # Constants
-        self.SAMPLEWIDTH = samplewidth #mm
-        self.SAMPLETOLERANCE = constants['gripper']['extra_opening_width'] #mm extra opening width
-        self.IDLECOORDINATES = constants['gantry']['idle_coordinates'] #where to move the gantry during idle times, mainly to avoid cameras.
-        self.CATCHATTEMPTS = constants['gripper']['catch_attempts'] #number of times to try picking up a sample before erroring out
+        self.SAMPLEWIDTH = samplewidth  # mm
+        self.SAMPLETOLERANCE = constants["gripper"][
+            "extra_opening_width"
+        ]  # mm extra opening width
+        self.IDLECOORDINATES = constants["gantry"][
+            "idle_coordinates"
+        ]  # where to move the gantry during idle times, mainly to avoid cameras.
+        self.CATCHATTEMPTS = constants["gripper"][
+            "catch_attempts"
+        ]  # number of times to try picking up a sample before erroring out
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
-        self.spincoater = SpinCoater(
-            gantry = self.gantry,
-            p0 = constants['spincoater']['p0']
-            )
+        # self.spincoater = SpinCoater(
+        #     gantry = self.gantry,
+        #     p0 = constants['spincoater']['p0']
+        #     )
         self.liquidhandler = OT2()
 
         # Labware
         self.hotplate = HotPlate(
-            name = 'Hotplate1',
-            version = 'hotplate_SCILOGEX', #TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
-            gantry = self.gantry,
-            p0 = constants['hotplate']['p0']
+            name="Hotplate1",
+            version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
+            gantry=self.gantry,
+            p0=constants["hotplate"]["p0"],
         )
         self.storage = SampleTray(
-            name = 'SampleTray1',
-            version = 'sampletray_v1', #TODO #3
-            num = numsamples, #number of substrates loaded
-            gantry = self.gantry,
-            p0 = constants['sampletray']['p0']
+            name="SampleTray1",
+            version="sampletray_v1",  # TODO #3
+            num=numsamples,  # number of substrates loaded
+            gantry=self.gantry,
+            p0=constants["sampletray"]["p0"],
         )
         # Stock Solutions
 
-
         # Status
-        self.manifest = {} #store all sample info, key is sample storage slot
+        self.manifest = {}  # store all sample info, key is sample storage slot
 
     def calibrate(self):
-        """Prompt user to fine tune the gantry positions for all hardware components
-        """
-        for component in [self.hotplate, self.storage, self.spincoater]:
+        """Prompt user to fine tune the gantry positions for all hardware components"""
+        for component in [self.hotplate, self.storage]:  # , self.spincoater]:
+            self.release()  # open gripper to open width
             component.calibrate()
+
     def _load_calibrations(self):
-        """Load previous gantry positions, assume that hardware hasn't moved since last time.
-        """
-        for component in [self.hotplate, self.storage, self.spincoater]:
-            component._load_calibration() #REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
-            
+        """Load previous gantry positions, assume that hardware hasn't moved since last time."""
+        for component in [self.hotplate, self.storage]:  # , self.spincoater]:
+            component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
+
     ### Physical Methods
     # Compound Movements
-    def transfer(self, p1, p2, zhop = True):
+    def transfer(self, p1, p2, zhop=True):
         self.release()
-        self.gantry.moveto(p1, zhop = zhop)
+        self.gantry.moveto(p1, zhop=zhop)
         self.catch()
-        self.gantry.moveto(p2, zhop = zhop)
+        self.gantry.moveto(p2, zhop=zhop)
         self.release()
-        self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
+        self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
         self.gantry.close_gripper()
 
     def spincoat(self, recipe, drops):
@@ -93,7 +100,7 @@ class Maestro:
         at the end to bring the rotor to a halt.
 
         recipe - nested list of steps in format:
-            
+
             [
                 [speed, acceleration, duration],
                 [speed, acceleration, duration],
@@ -109,21 +116,22 @@ class Maestro:
                 'antisolvent': 15
             }
         """
-        record = {
-            'time':[],
-            'rpm': [],
-            'droptime': {d:None for d in drops}
-            }
+        record = {"time": [], "rpm": [], "droptime": {d: None for d in drops}}
 
         drop_idx = 0
         drop_times = list(drops.values())
-        if drop_times[0] < 0: #set negative drop time to drop before spinning, static spincoat.
-            static_offset = -drop_times[0] 
+        if (
+            drop_times[0] < 0
+        ):  # set negative drop time to drop before spinning, static spincoat.
+            static_offset = -drop_times[0]
         else:
             static_offset = 0
         drop_names = list(drops.keys())
         next_drop_time = drop_times[0]
-        drop_moves = [self.liquidhandler.drop_perovskite, self.liquidhandler.drop_antisolvent]
+        drop_moves = [
+            self.liquidhandler.drop_perovskite,
+            self.liquidhandler.drop_antisolvent,
+        ]
 
         next_step_time = 0 + static_offset
         time_elapsed = 0
@@ -135,8 +143,8 @@ class Maestro:
         start_time = time.time()
         while not spincoat_completed:
             time_elapsed = time.time() - start_time
-            record['time'].append(time_elapsed)
-            record['rpm'].append(self.spincoater.rpm)
+            record["time"].append(time_elapsed)
+            record["rpm"].append(self.spincoater.rpm)
 
             if time_elapsed >= next_step_time and not steps_completed:
                 if step_idx >= len(recipe):
@@ -145,13 +153,13 @@ class Maestro:
                     speed = recipe[step_idx][0]
                     acceleration = recipe[step_idx][1]
                     duration = recipe[step_idx][2]
-                    
+
                     self.spincoater.setspeed(speed, acceleration)
                     next_step_time += duration
                     step_idx += 1
             if time_elapsed >= next_drop_time and not drops_completed:
                 drop_moves[drop_idx]()
-                record['droptime'][drop_names[drop_idx]] = time_elapsed
+                record["droptime"][drop_names[drop_idx]] = time_elapsed
                 drop_idx += 1
                 if drop_idx >= len(drop_times):
                     drops_completed = True
@@ -169,34 +177,37 @@ class Maestro:
 
     def catch(self):
         """
-        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float 
+        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float
         """
         self.CATCHATTEMPTS = 3
         caught_successfully = False
         while not caught_successfully and self.CATCHATTEMPTS > 0:
-            self.gripper.open(self.SAMPLEWIDTH-self.SAMPLETOLERANCE)
-            if not self.gripper.is_under_load(): #if springs not pulling on grippers, assume that the sample is grabbed
+            self.gripper.open(self.SAMPLEWIDTH - self.SAMPLETOLERANCE)
+            if (
+                not self.gripper.is_under_load()
+            ):  # if springs not pulling on grippers, assume that the sample is grabbed
                 caught_successfully = True
                 break
             else:
-                self.CATCHATTEMPTS -= 1 
-                #lets jog the gripper position and try again.
-                self.release() 
+                self.CATCHATTEMPTS -= 1
+                # lets jog the gripper position and try again.
+                self.release()
                 self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
                 self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
-          
-        if not caught_successfully:    
-            raise error('Failed to pick up sample!')
-        
+
+        if not caught_successfully:
+            raise ValueError("Failed to pick up sample!")
+
     def release(self):
         """
         Open gripper barely enough to release sample
         """
-        self.gripper.open(self.SAMPLEWIDTH+self.SAMPLETOLERANCE, slow=True) #slow to prevent sample position shifting upon release
+        self.gripper.open(
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
+        )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
-        """Move gantry to the idle position. This is primarily to provide cameras a clear view
-        """
+        """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
         self.gantry.moveto(self.IDLECOORDINATES)
         self.gripper.close()
 
@@ -229,46 +240,40 @@ class Maestro:
 
         # aspirate liquids, move pipettes next to spincoater
         self.liquidhandler.aspirate_for_spincoating(
-            psk_well = spincoat_instructions['source_wells']['well_psk'],
-            psk_volume = spincoat_instructions['source_wells']['volume_psk'],
-            antisolvent_well = spincoat_instructions['source_wells']['well_antisolvent'],
-            antisolvent_volume = spincoat_instructions['source_wells']['volume_antisolvent']
+            psk_well=spincoat_instructions["source_wells"]["well_psk"],
+            psk_volume=spincoat_instructions["source_wells"]["volume_psk"],
+            antisolvent_well=spincoat_instructions["source_wells"]["well_antisolvent"],
+            antisolvent_volume=spincoat_instructions["source_wells"][
+                "volume_antisolvent"
+            ],
         )
 
-        #load sample onto chuck
+        # load sample onto chuck
         self.spincoater.lock()
         self.spincoater.vacuum_on()
-        self.transfer(
-            self.storage(storage_slot),
-            self.spincoater()
-        )
+        self.transfer(self.storage(storage_slot), self.spincoater())
         self.idle_gantry()
-        
-        #spincoat
+
+        # spincoat
         spincoating_record = self.spincoat(
-            recipe = spincoat_instructions['recipe'],
-            drops = spincoat_instructions['drop_times']
+            recipe=spincoat_instructions["recipe"],
+            drops=spincoat_instructions["drop_times"],
         )
 
-        #move sample to hotplate
+        # move sample to hotplate
         self.liquidhandler.cleanup()
         self.spincoater.vacuum_off()
-        self.transfer(
-            self.spincoater(),
-            self.hotplate(hotplate_instructions['slot'])
-        )
+        self.transfer(self.spincoater(), self.hotplate(hotplate_instructions["slot"]))
         self.spincoater.unlock()
         ### TODO - start timer for anneal removal
-        
+
         self.idle_gantry()
 
         self.manifest[storage_slot] = {
-            'hotplate': {
-                'instructions': hotplate_instructions
-            },
-            'spincoat': {
-                'instructions': spincoat_instructions,
-                'record': spincoating_record
+            "hotplate": {"instructions": hotplate_instructions},
+            "spincoat": {
+                "instructions": spincoat_instructions,
+                "record": spincoating_record,
             },
         }
 
@@ -343,7 +348,7 @@ class Maestro:
 # 			print(f"Request was not json: {text}")
 # 			return web.json_response(status=400, # Bad Request
 # 									 data={'error': 'bad-request'})
-        
+
 # 		if 'step' not in body:
 # 			print(f"Body did not have a 'step' key")
 # 			return web.json_response(status=400, # Bad Request
