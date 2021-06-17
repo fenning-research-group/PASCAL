@@ -10,6 +10,10 @@ __pycache__/
 stellarnet_driver3.cp38-win_amd64.pyd
 stellarnet.hex
 
+#Opentrons SSH files
+ot2_ssh_key
+ot2_ssh_key.pub
+
 # Distribution / packaging
 .Python
 build/

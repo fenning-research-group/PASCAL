@@ -25,19 +25,22 @@ gantry:
 gripper:
   #communication
   device_identifiers:
-      vendorid: "1EAF" #WINDOWS ONLY
-      productid: "0004" #WINDOWS ONLY
-      location: TODO #WINDOWS ONLY
+      vendorid: "0403" #WINDOWS ONLY
+      productid: "6015" #WINDOWS ONLY
+      location: "" #WINDOWS ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
-  timeout: 2 #max time (seconds) allotted to gripper motion before flagging a movement error
+  timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 28  #maximum opening width (mm)
   width_min: 6.5 #minimum opening width (mm)
-  angle_max: 60  #servo angle corresponding to max width
-  angle_min: 2   #servo angle corresponding to min width
+  pwm_max: 60  #pulse width (us) corresponding to minimum width
+  pwm_min: 2   #pulse width (us) corresponding to maximum width
   extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
-  slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
+  # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
+  slow_interval: 5 #rate (us pwm/ 10 ms) to open at during "slow" setting
+  fast_interval: 50 #rate to open at during "fast" setting
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
-  
+  springs_loaded_threshold: 400 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
+  catch_attempts: 3 #number of times to try picking up a sample before erroring out
 hotplate:
   p0: [100,100,100] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
@@ -51,9 +54,9 @@ spincoater:
   # communication
   device_identifiers:
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-      vendorid: "1EAF" #WINDOWS ONLY
-      productid: "0004" #WINDOWS ONLY
-      location: TODO #WINDOWS + GANTRY ONLY
+      vendorid: "TODO" #WINDOWS ONLY
+      productid: "TODO" #WINDOWS ONLY
+      location: "" #WINDOWS + GANTRY ONLY
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [52, 126, 41] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
@@ -80,21 +83,21 @@ characterizationline:
   darkfield:
     cameraid: 12316 #serial number for Thorlabs Camera
     position: 88.15 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 0 #switchbox plug index for light source
+    switchindex: 0 #switchbox plug index for light source (ring light)
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
     position: 88.15 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 2 #switchbox plug index for light source
+    switchindex: 1 #switchbox plug index for light source (blue LED lamp)
   brightfield:
     cameraid: 12519 #serial number for Thorlabs Camera
     position: 222.5 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 1 #switchbox plug index for light source
+    switchindex: 2 #switchbox plug index for light source (ring light)
   pl: #spectroscopy
     position: 313 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 3 #switchbox plug index for light source
+    switchindex: 3 #switchbox plug index for light source (red laser)
   transmission: #spectroscopy
     position: 313 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 4 #switchbox plug index for light source
+    switchindex: 4 #switchbox plug index for light source (lamp shutter)
 
   
   

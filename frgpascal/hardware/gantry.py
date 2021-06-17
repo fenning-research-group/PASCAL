@@ -7,23 +7,22 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushBut
 import PyQt5
 import yaml
 import os
-import threading
 
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
-from helpers import get_port
+from frgpascal.hardware.helpers import get_port
 
 
 MODULE_DIR = os.path.dirname(__file__)
-with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), 'r') as f:
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
 class Gantry:
-    def __init__(self, port = None):
+    def __init__(self, port=None):
         # communication variables
         if port is None:
-            self.port = get_port(constants['gantry'])
+            self.port = get_port(constants["gantry"])
         else:
             self.port = port
         self.POLLINGDELAY = constants["gantry"][
@@ -54,23 +53,6 @@ class Gantry:
             "zhop_height"
         ]  # mm above endpoints to move to in between points
 
-        # gripper variables
-        self.__gripperwatchdogthread = threading.Thread(target=self.__watch_gripper_timeout, daemon=True)
-        self.__stop_gripperidlethread = False
-        self.__gripper_last_opened = np.inf
-        self.GRIPPERTIMEOUT = constants["gripper"]["idle_timeout"] #gripper will automatically close if left open for this long (s)
-        self.MAXANGLE = constants["gripper"]["angle_max"]
-        self.MINANGLE = constants["gripper"]["angle_min"]
-        self.MAXWIDTH = constants["gripper"]["width_max"]  # max gripper width, in mm
-        self.MINWIDTH = constants["gripper"]["width_min"]
-        self.SLOWGRIPPERINTERVAL = constants["gripper"]["slow_movement_interval"]
-        self.SLOWSERVOSTEPSIZE = 1 #degrees to move per step in slow opening/closing.
-        self.gripperwidth = self.MINWIDTH
-        self.servoangle = self.MINANGLE
-        # connect to gantry by default
-        self.connect()
-        self.set_defaults()
-
     # communication methods
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
@@ -86,7 +68,6 @@ class Gantry:
                 None,
                 None,
             ]  # start at None's to indicate stage has not been homed.
-        self.__start_gripper_timeout_watchdog()
         # self.write('M92 X40.0 Y26.77 Z400.0')
 
     def disconnect(self):
@@ -133,21 +114,6 @@ class Gantry:
                     found_coordinates = True
                     break
         self.position = [x, y, z]
-        # if self.servoangle > self.MINANGLE:
-        self.__gripper_last_opened = time.time()
-
-    def update_gripper(self):
-        found_coordinates = False
-        while not found_coordinates:
-            output = self.write("M280 P0")  # get current servo position
-            for line in output:
-                if line.startswith("echo: Servo"):
-                    self.servoangle = float(
-                        re.findall(r"Servo 0: (\S*)", line)[0]
-                    )  # TODO - READ SERVO POSITION
-                    self.gripperwidth = self.__servo_angle_to_width(self.servoangle)
-                    found_coordinates = True
-                    break
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
 
@@ -269,89 +235,7 @@ class Gantry:
         self.inmotion = ~reached_destination
         return reached_destination
 
-    # gripper methods
-    def open_gripper(self, width=None, slow=False):
-        """
-        open gripper to width, in mm
-        """
-        if width is None:
-            width = self.MAXWIDTH
-
-        angle = self.__width_to_servo_angle(width)
-
-        if slow:
-            angle0 = self.servoangle
-            if angle0 < angle:
-                step = self.SLOWSERVOSTEPSIZE
-            else:
-                step = -self.SLOWSERVOSTEPSIZE
-            for a in np.arange(angle0, angle, step)[:-1]:
-                self.write(f"M280 P0 S{a}")
-                time.sleep(self.SLOWGRIPPERINTERVAL)
-        self.write(f"M280 P0 S{angle}")
-        self.update_gripper()
-
-    def close_gripper(self, slow=False):
-        """
-        close the gripper to minimum width
-        """
-        self.open_gripper(width=self.MINWIDTH, slow=slow)
-
-    def __servo_angle_to_width(self, angle):
-        """
-        convert servo angle (degrees) to gripper opening width (mm)
-        """
-        if (angle > self.MAXANGLE) or (angle < self.MINANGLE):
-            raise Exception(
-                f"Angle {angle} outside acceptable range ({self.MINANGLE}-{self.MAXANGLE})"
-            )
-
-        fractional_angle = (angle - self.MINANGLE) / (self.MAXANGLE - self.MINANGLE)
-        width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
-
-        return np.round(width, 1)
-
-    def __width_to_servo_angle(self, width):
-        """
-        convert gripper width (mm) to servo angle (degrees)
-        """
-        if (width > self.MAXWIDTH) or (width < self.MINWIDTH):
-            raise Exception(
-                f"Width {width} outside acceptable range ({self.MINWIDTH}-{self.MAXWIDTH})"
-            )
-
-        fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
-        angle = fractional_width * (self.MAXANGLE - self.MINANGLE) + self.MINANGLE
-
-        return np.round(angle, 0).astype(int) #nearest angle
-
-
-    # gripper timeout watchdog
-    def __start_gripper_timeout_watchdog(self):
-        self.__stop_gripperidlethread = False
-        if not self.__gripperwatchdogthread.is_alive():
-            self._gripperwatchdogthread = threading.Thread(target=self.__watch_gripper_timeout, daemon=True)
-            self._gripperwatchdogthread.start()
-
-    def __stop_gripper_timeout_watchdog(self):
-        self.__stop_gripperidlethread = True
-        print('Waiting for gripper timeout watchdog thread to finish up...')
-        while self.__gripperwatchdogthread.is_alive():
-            time.sleep(1)
-            print('.')
-
-    def __watch_gripper_timeout(self):
-        interval = self.GRIPPERTIMEOUT/10
-        while True:
-            time.sleep(interval)
-            if self.__stop_gripperidlethread:
-                break
-            if self.servoangle == self.MINANGLE:
-                continue
-            if time.time()-self.__gripper_last_opened >= self.GRIPPERTIMEOUT:
-                self.close_gripper()
-
-    # GUI 
+    # GUI
     def gui(self):
         GantryGUI(gantry=self)  # opens blocking gui to manually jog motors
 
