@@ -168,7 +168,7 @@ class Gantry:
                 z = self.position[2]
         if speed is None:
             speed = self.speed
-        if x == self.position[0] and y == self.position[1]:
+        if (x == self.position[0]) and (y == self.position[1]):
             zhop = False  # no use zhopping for no lateral movement
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
@@ -239,6 +239,7 @@ class Gantry:
             time_elapsed = time.time() - start_time
 
         self.inmotion = ~reached_destination
+        self.update()
         return reached_destination
 
     # GUI

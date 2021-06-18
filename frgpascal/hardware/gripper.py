@@ -160,4 +160,4 @@ class Gripper:
             if self.currentpwm == self.MINPWM:
                 continue
             if time.time() - self.__gripper_last_opened >= self.GRIPPERTIMEOUT:
-                self.close_gripper()
+                self.close()
