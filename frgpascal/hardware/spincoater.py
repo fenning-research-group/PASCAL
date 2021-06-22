@@ -1,7 +1,8 @@
+import odrive
 import serial
+from odrive.enums import * #control/state enumerations
 import time
 import numpy as np
-import pickle
 import os
 import yaml
 from datetime import datetime
@@ -19,6 +20,7 @@ p0 = constants["spincoater"]["p0"]
 class SpinCoater:
     def __init__(
         self,
+        port = None,
         gantry: Gantry,
         p0: tuple = p0,
     ):
@@ -30,10 +32,13 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
-        self.port = get_port(constants['spincoater'])  # find port to connect to this device.
-        self.POLLINGRATE = constants["spincoater"][
-            "pollingrate"
-        ]  # query rate to arduino, in seconds
+        if port is None:
+            self.port = get_port(
+                constants["spincoater"]
+            )  # find port to connect to this device.
+        else:
+            self.port = port
+
         self.ACCELERATIONRANGE = (
             constants["spincoater"]["acceleration_min"],
             constants["spincoater"]["acceleration_max"],
@@ -44,9 +49,6 @@ class SpinCoater:
         )  # rpm
         self.__rpm = 0  # nominal current rpm. does not take ramping into account
         self.gantry = gantry
-        self.locked = None
-        self.connect()
-        self.unlock()
         self.__calibrated = False
 
         # logging
@@ -65,12 +67,18 @@ class SpinCoater:
     #     self.setrpm(rpm, self.ACCELERATIONRANGE[1])  # max acceleration
 
     def connect(self, **kwargs):
-        self.__handle = serial.Serial(
-            port=self.port, baudrate=57600, timeout=2, write_timeout=2, **kwargs
-        )
+        #connect to arduino nano for vacuum relay control
+        self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+
+        #connect to odrive BLDC controller
+        self.odrv0 = odrive.find_any()
+        self.axis = self.odrv0.axis0
+        self.axis.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+        #TODO wait until calibration is complete
 
     def disconnect(self):
-        self.__handle.close()
+        self.arduino.close()
+        #TODO figure out how to destroy odrv0 connection
 
     def calibrate(self):
         """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
@@ -93,11 +101,6 @@ class SpinCoater:
             self.coordinates = pickle.load(f)
         self.__calibrated = True
 
-    def write(self, s):
-        """
-        appends terminator and converts to bytes before sending message to arduino
-        """
-        self.__handle.write(f"{s}\n".encode())
 
     def __call__(self):
         """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
