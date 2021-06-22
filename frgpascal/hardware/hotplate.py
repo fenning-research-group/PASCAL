@@ -22,11 +22,22 @@ AVAILABLE_VERSIONS = {
 
 class HotPlate(Workspace):
     def __init__(
-        self, name, version, gantry: Gantry, gripper: Gripper, p0=[None, None, None]
+        self,
+        name,
+        version,
+        gantry: Gantry,
+        gripper: Gripper,
+        p0=[None, None, None],
+        testslots=None,
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
-            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs
+            name=name,
+            gantry=gantry,
+            gripper=gripper,
+            p0=p0,
+            testslots=testslots,
+            **workspace_kwargs,
         )
 
         self.TLIM = (constants["temperature_min"], constants["temperature_max"])
