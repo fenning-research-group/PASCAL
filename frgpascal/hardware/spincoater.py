@@ -1,15 +1,16 @@
-import odrive
-import serial
+import odrive #odrive documentation https://docs.odriverobotics.com/
 from odrive.enums import * #control/state enumerations
+import serial
 import time
 import numpy as np
 import os
 import yaml
-from datetime import datetime
+import threading
 from .helpers import get_port
 from .gantry import Gantry
 
 MODULE_DIR = os.path.dirname(__file__)
+CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 constants = yaml.load(
     os.path.join(MODULE_DIR, "hardwareconstants.yaml"), Loader=yaml.Loader
 )
@@ -50,12 +51,16 @@ class SpinCoater:
         self.__rpm = 0  # nominal current rpm. does not take ramping into account
         self.gantry = gantry
         self.__calibrated = False
-
         # logging
         self.__logging_active = False
+        self.__logdata = {
+            'time':[],
+            'rpm':[]
+        }
+        self.LOGGINGINTERVAL = constants['spincoater']['logging_interval']
 
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
-        self.p0 = np.asarray(p0) + [0, 0, 5]
+        self.p0 = np.asarray(p0) + [0, 0, 5]    
 
     @property
     def rpm(self):
@@ -73,13 +78,23 @@ class SpinCoater:
         #connect to odrive BLDC controller
         self.odrv0 = odrive.find_any()
         self.axis = self.odrv0.axis0
-        self.axis.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
-        #TODO wait until calibration is complete
+        self.axis.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE #calibrate the encoder
+        time.sleep(10) #TODO wait until calibration is complete
+        self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL #normal control mode
+
+        #odrive defaults
+        self.axis.motor.config.current_lim = 60 #NOT SAME AS POWER SUPPLY CURRENT 
+        self.axis.controller.config.circular_setpoints = True #position = 0-1 radial 
+        self.axis.trap_traj.config.vel_limit = 5 #for position moves to lock position
+        self.axis.trap_traj.config.accel_limit = 1
+        self.axis.trap_traj.config.decel_limit = 1
+        
 
     def disconnect(self):
         self.arduino.close()
         #TODO figure out how to destroy odrv0 connection
 
+    #position calibration methods
     def calibrate(self):
         """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
         self.gantry.open_gripper(
@@ -97,10 +112,11 @@ class SpinCoater:
             pickle.dump(self.coordinates, f)
 
     def _load_calibration(self):
-        with open("spincoater_calibration.pkl", "rb") as f:  # TODO #6
-            self.coordinates = pickle.load(f)
+        with open(
+            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
+        ) as f:
+            self.coordinates = yaml.load(f, Loader=yaml.FullLoader)
         self.__calibrated = True
-
 
     def __call__(self):
         """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
@@ -115,109 +131,85 @@ class SpinCoater:
             raise Exception(f"Need to calibrate spincoater position before use!")
         return self.coordinates
 
+    #arduino/vacuum control methods
+    def _wait_for_arduino(self):
+        #TODO wait for arduino response
+        t0 = time.time()
+        while time.time() - t0 <= self.ARDUINOTIMEOUT:    
+            if self.arduino.in_waiting > 0:
+                line = self.ardunio.readline().decode('utf-8').strip()
+                if line == 'ok':
+                    return
+            time.sleep(0.2)
+        return ValueError('No response from vacuum solenoid control arduino!')
+
     def vacuum_on(self):
-        self.write("v1")  # send command to engage/open vacuum solenoid
+        self.arduino.write(b"1\n")  # send command to engage/open vacuum solenoid
+        self._wait_for_arduino()
 
     def vacuum_off(self):
-        self.write("v0")  # send command to disengage/close vacuum solenoid
+        self.arduino.write(b"0\n")  # send command to engage/open vacuum solenoid
+        self._wait_for_arduino()
 
-    def lock(self):
-        """
-        routine to lock rotor in registered position for sample transfer
-        """
-        if not self.locked:
-            self.write("c1")  # send command to engage electromagnet
-            self.locked = True
-
-    def unlock(self):
-        """
-        unlocks the rotor from registered position to allow spinning again
-        """
-        if self.locked:
-            self.write("c0")  # send command to disengage electromagnet
-            # time.sleep(2) #wait some time to ensure rotor has unlocked before attempting to rotate
-            self.locked = False
-
-    def setrpm(self, rpm: int, acceleration: float = 0):
+    #odrive BLDC motor control methods
+    def setrpm(self, rpm: int, acceleration: float = 500):
         """sends commands to arduino to set a target speed with a target acceleration
 
         Args:
                         rpm (int): target angular velocity, in rpm
                         acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
         """
-        rpm = int(rpm)  # arduino only takes integer inputs
-        if acceleration == 0:
-            acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
-        duration = abs(
-            (rpm - self.__rpm) / acceleration
-        )  # time (s) to move from current rpm to target rpm at this acceleration rate
-        duration = int(
-            duration * 1000
-        )  # round time to nearest milliseconds for arduino
-
-        self.unlock()  # confirm that the chuck electromagnet is disengaged
-        self.__handle.write(
-            f"a{rpm:d} {duration:d}"
-        )  # send command to arduino. assumes arduino responds to "s{rpm},{acceleration}\r'
-
-        self.__rpm = rpm
+        rps = int(rpm/60)  # convert rpm to rps for odrive
+        acceleration = int(acceleration/60) #convert rpm/s to rps/s for odrive
+        # if acceleration == 0:
+        #     acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
+        self.axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+        self.axis.controller.config.input_mode = INPUT_MODE_VEL_RAMP
+        self.axis.controller.config.vel_ramp_rate = acceleration
+        self.axis.controller.config.input_vel = rps
+        
+    def lock(self):
+        """
+        routine to lock rotor in registered position for sample transfer
+        """
+        self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
+        self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
+        self.axis.controller.input_pos = 0 #arbitrary, just needs to be same 0-1 position each time we "lock"
+        while self.axis.pos_estimate > 0.01: #tolerance = 3.6 degrees
+            time.sleep(0.1)
 
     def stop(self):
         """
         stop rotation and locks the rotor in position
         """
-        self.setrpm(0)  #
-        time.sleep(
-            2
-        )  # wait some time to ensure rotor has stopped and engaged with electromagnet
+        self.setrpm(0)
+        #wait until the rotor is nearly stopped 
+        while self.axis.encoder.vel_estimate > 2: #cutoff speed = two rotations/second
+            time.sleep(0.1)
         self.lock()
-        time.sleep(1)
 
-    def logging_on(self):
+    # logging code
+    def __logging_worker(self):
+        t0 = time.time()
+        self.__logdata = {
+            'time': [],
+            'rpm': []
+        }
+        while self.__logging_active:
+            self.__logdata['time'].append(time.time()-t0)
+            self.__logdata['rpm'].append(self.axis.encoder.vel_estimate * 60) #rps from odrive -> rpm
+            time.sleep(self.LOGGINGINTERVAL)
+
+    def start_logging(self):
         if self.__logging_active:
             raise ValueError("Logging is already active!")
-        self.write("l1")
-        self.__logging_active = True
+        self.__logging_active=True
+        self.__logging_thread = threading.Thread(target=self.__logging_worker)
+        self.__logging_thread.start()
 
-    def logging_off(self):
+    def finish_logging(self):
         if not self.__logging_active:
             raise ValueError("Logging is already stopped!")
-        self.write("l0")
-        self.__logging_active = False
-
-    def logging_retrieve(self):
-        """Reads the logged rpm vs time from spincoater SD card
-
-        Raises:
-            ValueError: spincoater must not be actively logging to retrieve data
-
-        Returns:
-            data: dictionary with datetime, seconds (relative time), rpm, and rpm_target fields.
-        """
-        if self.__logging_active:
-            raise ValueError(
-                "Logging is currently active - stope with .logging_off() before retrieving data."
-            )
-        self.write("d")
-        time.sleep(0.5)  # let arduino parse and start writing data to serial
-        datetime = []
-        rpm_nominal = []
-        rpm_actual = []
-        while self.__handle.in_waiting:
-            line = self.__handle.readline().decode("utf-8").split(",")
-            datetime.append(datetime.strptime(line[0], "%Y/%m/%d %H:%M:%S"))
-            rpm_nominal.append(float(line[1]))
-            rpm_actual.append(float(line[2]))
-            # time.sleep(self.POLLINGRATE)
-        datetime = np.array(datetime)
-        rpm_nominal = np.array(rpm_nominal)
-        rpm_actual = np.array(rpm_actual)
-        relativetime = [t.total_seconds() for t in datetime - datetime[0]]  # seconds
-
-        data = {
-            "datetime": datetime,
-            "seconds": relativetime,
-            "rpm_target": rpm_nominal,
-            "rpm": rpm_actual,
-        }
-        return data
+        self.__logging_active=False
+        self.__logging_thread.join()
+        return self.__logdata

@@ -63,7 +63,7 @@ spincoater:
   rpm_min: 1000 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
   acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit
-
+  logging_interval: 0.2 #interval (seconds) at which to log spincoating rpm
 
 characterizationline:
   #movement
