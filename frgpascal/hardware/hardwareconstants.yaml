@@ -55,8 +55,9 @@ spincoater:
   # communication
   device_identifiers: #for the arduino controlling the vacuum solenoid
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-      vid: 2341 #WINDOWS ONLY
-      pid: 0043 #WINDOWS ONLY
+      vid: 9025 #WINDOWS ONLY
+      pid: 67 #WINDOWS ONLY
+      # serial_number: "55838333932351108212"
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [5.5, 195.3, 50.3] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions

@@ -34,13 +34,13 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
-        # if port is None:
-        #     self.port = get_port(
-        #         constants["spincoater"]
-        #     )  # find port to connect to this device.
-        # else:
-        #     self.port = port
-
+        if port is None:
+            self.port = get_port(
+                constants["spincoater"]["device_identifiers"]
+            )  # find port to connect to this device.
+        else:
+            self.port = port
+        self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
         self.ACCELERATIONRANGE = (
             constants["spincoater"]["acceleration_min"],
             constants["spincoater"]["acceleration_max"],
@@ -70,12 +70,12 @@ class SpinCoater:
     #     self.setrpm(rpm, self.ACCELERATIONRANGE[1])  # max acceleration
 
     def connect(self, **kwargs):
-        # connect to arduino nano for vacuum relay control
-        self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
-
         # connect to odrive BLDC controller
         print("Connecting to odrive")
-        self.odrv0 = odrive.find_any()
+        try:
+            self.odrv0 = odrive.find_any(timeout=10)
+        except:
+            raise ValueError("Could not find odrive! confirm that 24V PSU is on")
         print("Found motor, now calibrating. This takes 10-20 seconds.")
         self.axis = self.odrv0.axis0
         self.axis.requested_state = (
@@ -95,10 +95,14 @@ class SpinCoater:
         self.axis.trap_traj.config.accel_limit = 1
         self.axis.trap_traj.config.decel_limit = 1
 
+        # connect to arduino for vacuum relay control
+        self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+
     def disconnect(self):
         self.arduino.close()
         try:
             self.odrv0.reboot()
+            self.odrv0._destroy()
         except:
             pass  # this always throws an "object lost" error...which is what we want
 
@@ -145,18 +149,18 @@ class SpinCoater:
         t0 = time.time()
         while time.time() - t0 <= self.ARDUINOTIMEOUT:
             if self.arduino.in_waiting > 0:
-                line = self.ardunio.readline().decode("utf-8").strip()
+                line = self.arduino.readline().decode("utf-8").strip()
                 if line == "ok":
                     return
             time.sleep(0.2)
         return ValueError("No response from vacuum solenoid control arduino!")
 
     def vacuum_on(self):
-        self.arduino.write(b"1\n")  # send command to engage/open vacuum solenoid
+        self.arduino.write(b"h")  # send command to engage/open vacuum solenoid
         self._wait_for_arduino()
 
     def vacuum_off(self):
-        self.arduino.write(b"0\n")  # send command to engage/open vacuum solenoid
+        self.arduino.write(b"l\n")  # send command to engage/open vacuum solenoid
         self._wait_for_arduino()
 
     # odrive BLDC motor control methods
