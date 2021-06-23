@@ -15,6 +15,8 @@ gantry:
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 20 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
   idle_coordinates: [459,211,85] #coordinates to move the gantry to when idle, mainly to avoid cameras
+  opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
+  opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
   x_max: 567.0 #max x position (mm)
   x_min: 0     #min x position (mm)
   y_max: 282.0 #max y position (mm)
@@ -51,16 +53,15 @@ sampletray:
 
 spincoater:
   # communication
-  device_identifiers:
+  device_identifiers: #for the arduino controlling the vacuum solenoid
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-      vid: "TODO" #WINDOWS ONLY
-      pid: "TODO" #WINDOWS ONLY
-      location: "" #WINDOWS + GANTRY ONLY
+      vid: 2341 #WINDOWS ONLY
+      pid: 0043 #WINDOWS ONLY
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
-  p0: [9, 211, 105] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
-  rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
-  rpm_min: 1000 #minimum angular velocity (rpm) the spincoater can hit
+  p0: [5.5, 195.3, 50.3] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  rpm_max: 7000 #maximum angular velocity (rpm) the spincoater can hit
+  rpm_min: 500 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
   acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit
   logging_interval: 0.2 #interval (seconds) at which to log spincoating rpm
