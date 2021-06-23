@@ -34,6 +34,8 @@ class Gantry:
         self.XLIM = (constants["gantry"]["x_min"], constants["gantry"]["x_max"])
         self.YLIM = (constants["gantry"]["y_min"], constants["gantry"]["y_max"])
         self.ZLIM = (constants["gantry"]["z_min"], constants["gantry"]["z_max"])
+        self.OT2_ZLIM = 83  # coordinates below this point bring the gantry arm within the liquid handler frame
+        self.OT2_XLIM = 190.5  # coordinates below this point bring the gantry arm within the liquid handler frame
         self.position = [
             None,
             None,
@@ -133,7 +135,7 @@ class Gantry:
         self.write("G28 X Y Z")
         self.update()
 
-    def premove(self, x, y, z):
+    def premove(self, x, y, z, avoid_ot2):
         """
         checks to confirm that all target positions are valid
         """
@@ -149,10 +151,13 @@ class Gantry:
         if z > self.ZLIM[1] or z < self.ZLIM[0]:
             return False
 
+        if avoid_ot2 and x < self.OT2_XLIM:
+            return False
+
         self.__targetposition = [x, y, z]
         return True
 
-    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None):
+    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None, avoid_ot2=True):
         """
         moves to target position in x,y,z (mm)
         """
@@ -175,15 +180,15 @@ class Gantry:
             z_ceiling = min(
                 z_ceiling, max(self.ZLIM)
             )  # cant z-hop above build volume. mostly here for first move after homing.
-            self.moveto(z=z_ceiling, zhop=False, speed=speed)
-            self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
-            self.moveto(z=z, zhop=False, speed=speed)
+            self.moveto(z=z_ceiling, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
+            self.moveto(x, y, z_ceiling, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
+            self.moveto(z=z, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
         else:
-            self._movecommand(x, y, z, speed)
+            self._movecommand(x, y, z, speed, avoid_ot2=avoid_ot2)
 
-    def _movecommand(self, x: float, y: float, z: float, speed: float):
+    def _movecommand(self, x: float, y: float, z: float, speed: float, avoid_ot2: bool):
         """internal command to execute a direct move from current location to new location"""
-        if self.premove(x, y, z):
+        if self.premove(x, y, z, avoid_ot2=avoid_ot2):
             if self.position == [x, y, z]:
                 return True  # already at target position
             else:
@@ -194,7 +199,7 @@ class Gantry:
                 "Invalid move - probably out of bounds. Possibly due to z-hopping between points near top of working volume?"
             )
 
-    def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
+    def moverel(self, x=0, y=0, z=0, zhop=False, speed=None, avoid_ot2=True):
         """
         moves by coordinates relative to the current position
         """

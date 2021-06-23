@@ -57,7 +57,7 @@ spincoater:
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
       vid: 9025 #WINDOWS ONLY
       pid: 67 #WINDOWS ONLY
-      # serial_number: "55838333932351108212"
+      serial_number: '55838333932351108212'
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [5.5, 195.3, 50.3] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
@@ -73,7 +73,7 @@ characterizationline:
     device_identifiers:
     # serialid: TODO
       vid: 7855 #WINDOWS ONLY
-      pid: 24597 #WINDOWS ONLY
+      pid: 4 #WINDOWS ONLY
       location: "1-1.4.4.2" #WINDOWS
     pollingrate: 0.05
     timeout: 15 #max time (seconds) to allow movement before flagging an error
@@ -81,6 +81,11 @@ characterizationline:
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
   #individual stations
+  switchbox:
+    device_identifiers:
+      vid: 9025
+      pid: 67
+      serial_number: '558383339323513140D1'
   darkfield:
     cameraid: 12316 #serial number for Thorlabs Camera
     position: 88.15 #position (mm) at which characterization axis centers sample in FOV
