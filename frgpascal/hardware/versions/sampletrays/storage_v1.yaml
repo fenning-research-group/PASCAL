@@ -1,9 +1,9 @@
-### 3D printed sample tray version 1
+### 3D printed sample tray version 1 Rishi 2021-06-23
 
 samplewidth: 10   #intended sample width (mm)
 openwidth: 12     #max gripper opening width (mm) that can reach into tray slots
-xpitch: 20        #horizontal center-center distance (mm) between adjacent slots
-ypitch: 16        #vertical center-center distance (mm) between adjacent slots
-numx: 8           #number of slot columns
-numy: 5           #number of slot rows
+xpitch: 16        #horizontal center-center distance (mm) between adjacent slots
+ypitch: 18        #vertical center-center distance (mm) between adjacent slots
+numx: 5           #number of slot columns
+numy: 9           #number of slot rows
 z_clearance: 5    #extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
