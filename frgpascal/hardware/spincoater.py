@@ -60,22 +60,25 @@ class SpinCoater:
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(p0) + [0, 0, 5]
 
-    @property
-    def rpm(self):
-        return self.__rpm
-
-    # @property.setter
-    # def rpm(self, rpm: int):
-    #     self.__rpm = rpm
-    #     self.setrpm(rpm, self.ACCELERATIONRANGE[1])  # max acceleration
-
     def connect(self, **kwargs):
         # connect to odrive BLDC controller
         print("Connecting to odrive")
+
+        # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
         try:
             self.odrv0 = odrive.find_any(timeout=10)
         except:
             raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+        try:
+            self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
+            self.odrv0._destroy()
+        except:
+            pass  # this always throws an "object lost" error...which is what we want
+        try:
+            self.odrv0 = odrive.find_any(timeout=10)
+        except:
+            raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+
         print("Found motor, now calibrating. This takes 10-20 seconds.")
         self.axis = self.odrv0.axis0
         self.axis.requested_state = (
@@ -164,7 +167,7 @@ class SpinCoater:
         self._wait_for_arduino()
 
     # odrive BLDC motor control methods
-    def setrpm(self, rpm: int, acceleration: float = 500):
+    def set_rpm(self, rpm: int, acceleration: float = 1000):
         """sends commands to arduino to set a target speed with a target acceleration
 
         Args:
@@ -196,9 +199,11 @@ class SpinCoater:
         """
         stop rotation and locks the rotor in position
         """
-        self.setrpm(0)
+        self.setrpm(0, 2000)
         # wait until the rotor is nearly stopped
-        while self.axis.encoder.vel_estimate > 2:  # cutoff speed = two rotations/second
+        while (
+            self.axis.encoder.vel_estimate > 0.5
+        ):  # cutoff speed = half rotation/second
             time.sleep(0.1)
         self.lock()
 
