@@ -40,6 +40,7 @@ gantry:
     z_max: 83
     z_min: 0
   transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+
 gripper:
   #communication
   device_identifiers:
@@ -97,6 +98,8 @@ characterizationline:
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
+    transfer_position: 20 #x coordinate to transfer samples to/from gantry
+    p0: [563, 268, 56.7] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
   #individual stations
   switchbox:
     device_identifiers:

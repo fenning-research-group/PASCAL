@@ -9,10 +9,10 @@ from abc import ABC, abstractmethod
 from tifffile import imsave
 import csv
 
-from .helpers import get_port
-from .thorcam import ThorcamHost
-from .spectrometer import Spectrometer
-from .switchbox import Switchbox
+from frgpascal.hardware.helpers import get_port
+from frgpascal.hardware.thorcam import ThorcamHost
+from frgpascal.hardware.spectrometer import Spectrometer
+from frgpascal.hardware.switchbox import Switchbox
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -91,11 +91,10 @@ class CharacterizationAxis:
     def __init__(
         self,
         port=None,
-        serial_number=constants["axis"]["serialid"],
     ):
         # communication variables
         if port is None:
-            self.port = get_port(serial_number)
+            self.port = get_port(constants["axis"]["device_identifiers"])
         else:
             self.port = port
         self.POLLINGDELAY = constants["axis"][
@@ -116,9 +115,6 @@ class CharacterizationAxis:
         self.POSITIONTOLERANCE = constants["axis"][
             "positiontolerance"
         ]  # tolerance for position, in mm
-        self.MAXSPEED = constants["axis"]["speed_max"]  # mm/min
-        self.MINSPEED = constants["axis"]["speed_min"]  # mm/min
-        self.speed = self.MAXSPEED  # mm/min, default speed
 
         # connect to characterizationline by default
         self.connect()
@@ -133,7 +129,6 @@ class CharacterizationAxis:
             self.XLIM
         ):  # this is what it shows when initially turned on, but not homed
             self.position = None
-        self.__start_gripper_timeout_watchdog()
         # self.write('M92 X40.0 Y26.77 Z400.0')
 
     def disconnect(self):
@@ -144,12 +139,8 @@ class CharacterizationAxis:
         self.write("G90")  # absolute coordinate system
         # self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
-            "M92 X53.333"  # TODO Set default values here
+            "M92 X320.00"  # TODO Set default values here
         )  # set steps/mm, randomly resets to defaults sometimes idk why
-        self.write(
-            f"M203 X{self.MAXSPEED}"
-        )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
-        self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -163,21 +154,21 @@ class CharacterizationAxis:
         return output
 
     def _enable_steppers(self):
-        self.write("M18")
-
-    def _disable_steppers(self):
         self.write("M17")
 
-    def set_speed_percentage(self, p):
-        if p < 0 or p > 100:
-            raise Exception("Speed must be set by a percentage value between 0-100!")
-        self.speed = (p / 100) * (self.MAXSPEED - self.MINSPEED) + self.MINSPEED
-        self.write(f"G0 F{self.speed}")
+    def _disable_steppers(self):
+        self.write("M18")
+
+    # def set_speed_percentage(self, p):
+    #     if p < 0 or p > 100:
+    #         raise Exception("Speed must be set by a percentage value between 0-100!")
+    #     self.speed = (p / 100) * (self.MAXSPEED - self.MINSPEED) + self.MINSPEED
+    #     self.write(f"G0 F{self.speed}")
 
     # movement methods
 
     def gohome(self):
-        self.write("G28 X Y Z")
+        self.write("G28 X")
         self.update()
 
     def premove(self, x):
@@ -198,7 +189,7 @@ class CharacterizationAxis:
     def moveto(self, x: float):
         """internal command to execute a direct move from current location to new location"""
         if self.premove(x):
-            self.write(f"G0 X{x} Y{y} Z{z}")
+            self.write(f"G0 X{x}")
             return self._waitformovement()
 
     def moverel(self, x=0):
@@ -225,21 +216,24 @@ class CharacterizationAxis:
                 line = self._handle.readline().decode("utf-8").strip()
                 if line == "echo:FinishedMoving":
                     self.update()
-                    if (
-                        np.linalg.norm(
-                            [
-                                a - b
-                                for a, b in zip(self.position, self.__targetposition)
-                            ]
-                        )
-                        < self.POSITIONTOLERANCE
-                    ):
+                    if self.position - self.__targetposition < self.POSITIONTOLERANCE:
                         reached_destination = True
                 time.sleep(self.POLLINGDELAY)
             time_elapsed = time.time() - start_time
 
-        self.inmotion = ~reached_destination
+        self.inmotion = False
         return reached_destination
+
+    def update(self):
+        found_coordinates = False
+        while not found_coordinates:
+            output = self.write("M114")  # get current position
+            for line in output:
+                if line.startswith("X:"):
+                    x = float(re.findall(r"X:(\S*)", line)[0])
+                    found_coordinates = True
+                    break
+        self.position = x
 
 
 ### Station Methods

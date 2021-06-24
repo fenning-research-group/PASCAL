@@ -11,26 +11,12 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
-class SingleSwitch:
-    """Exposes on/off control to a single switch"""
-
-    def __init__(self, switchid, switchbox: Switchbox):
-        self.switchid = switchid
-        self.box = switchbox
-
-    def on(self):
-        self.switchbox.turn_on(self.switchid)
-
-    def off(self):
-        self.switchbox.turn_off(self.switchid)
-
-
 class Switchbox:
     """Interfaces with arduino to toggle relays for characterization hardware (relays, light sources, shutters, etc)"""
 
-    def __init__(self, port=None, serial_number=constants["switchbox"]["serialid"]):
+    def __init__(self, port=None):
         if port is None:
-            self.port = get_port(serial_number)
+            self.port = get_port(constants["switchbox"]["device_identifiers"])
         else:
             self.port = port
         self.POLLINGDELAY = constants["switchbox"][
@@ -74,3 +60,17 @@ class Switchbox:
             switch (int): index of switch to adjust
         """
         return SingleSwitch(switchid=switch, switchbox=self)
+
+
+class SingleSwitch:
+    """Exposes on/off control to a single switch"""
+
+    def __init__(self, switchid, switchbox: Switchbox):
+        self.switchid = switchid
+        self.box = switchbox
+
+    def on(self):
+        self.switchbox.turn_on(self.switchid)
+
+    def off(self):
+        self.switchbox.turn_off(self.switchid)
