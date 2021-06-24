@@ -31,18 +31,24 @@ class Gantry:
         self.inmotion = False
 
         # gantry variables
-        self.XLIM = (constants["gantry"]["x_min"], constants["gantry"]["x_max"])
-        self.YLIM = (constants["gantry"]["y_min"], constants["gantry"]["y_max"])
-        self.ZLIM = (constants["gantry"]["z_min"], constants["gantry"]["z_max"])
-        self.OT2_XLIM = constants["gantry"][
-            "opentrons_x"
-        ]  # coordinates below this point bring the gantry arm within the liquid handler frame
-        self.OT2_YLIM = constants["gantry"][
-            "opentrons_y"
-        ]  # coordinates above this point bring the gantry arm within the liquid handler frame
-        self.OT2_ZLIM = constants["gantry"][
-            "opentrons_z"
-        ]  # coordinates below this point bring the gantry arm within the liquid handler frame
+        self.__OVERALL_LIMS = constants["gantry"][
+            "overall_gantry_limits"
+        ]  # total coordinate system for gantry
+        self.__FRAMES = {
+            "workspace": constants["gantry"][
+                "workspace_limits"
+            ],  # accessible coordinate system for workspace
+            "opentrons": constants["gantry"][
+                "opentrons_limits"
+            ],  # accessible coordinate system in Opentrons2 liquid handler
+        }
+        self.TRANSITION_COORDINATES = constants["gantry"][
+            "transition_coordinates"
+        ]  # point to move to when transitioning between ot2 and workspace frames
+
+        self.__currentframe = None
+        self.__ZLIM = None  # ceiling for current frame
+
         self.position = [
             None,
             None,
@@ -70,9 +76,9 @@ class Gantry:
         self.update()
         # self.update_gripper()
         if self.position == [
-            max(self.XLIM),
-            max(self.YLIM),
-            max(self.ZLIM),
+            self.__OVERALL_LIMS["x_max"],
+            self.__OVERALL_LIMS["y_max"],
+            self.__OVERALL_LIMS["z_max"],
         ]:  # this is what it shows when initially turned on, but not homed
             self.position = [
                 None,
@@ -128,6 +134,9 @@ class Gantry:
                     found_coordinates = True
                     break
         self.position = [x, y, z]
+        self.__currentframe = target_frame
+        self.__ZLIM = self.FRAMES[target_frame]["z_max"]
+
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
 
@@ -142,7 +151,44 @@ class Gantry:
         self.write("G28 X Y Z")
         self.update()
 
-    def premove(self, x, y, z, avoid_ot2):
+    def _target_frame(self, x, y, z):
+        """Checks whether a target coordinate is within the liquid handler (OT2), workspace (over the breadboard), or invalid coordinate frames
+
+        Args:
+            x (float): x coordinate
+            y (float): y coordinate
+            z (float): z coordinate
+
+        Returns:
+            string: name of frame. if none, returns 'invalid'
+        """
+        for frame, lims in zip(
+            ["ot2", "workspace"], [self.__OPENTRONS_LIMS, self.__WORKSPACE_LIMS]
+        ):
+            if x <= lims["x_min"] or x >= lims["x_max"]:
+                continue
+            if y <= lims["y_min"] or y >= lims["y_max"]:
+                continue
+            if z <= lims["z_min"] or z >= lims["z_max"]:
+                continue
+            return frame
+        return "invalid"
+
+    def _transition_to_frame(self, target_frame):
+        self._movecommand(
+            x=self.position[0], y=self.position[1], z=self.TRANSITION_COORDINATES[2]
+        )  # move just in z
+
+        # nudge the gantry into the target frame
+        target_coordinates = self.TRANSITION_COORDINATES.copy()
+        if target_frame == "opentrons":
+            target_coordinates[0] -= 0.2
+        else:
+            target_coordinates[0] += 0.2
+
+        self._movecommand(*target_coordinates)  # move to transition coordinate
+
+    def premove(self, x, y, z):
         """
         checks to confirm that all target positions are valid
         """
@@ -150,21 +196,15 @@ class Gantry:
             raise Exception(
                 "Stage has not been homed! Home with self.gohome() before moving please."
             )
-
-        if x > self.XLIM[1] or x < self.XLIM[0]:
-            return False
-        if y > self.YLIM[1] or y < self.YLIM[0]:
-            return False
-        if z > self.ZLIM[1] or z < self.ZLIM[0]:
-            return False
-
-        if avoid_ot2 and x < self.OT2_XLIM:
-            return False
-
         self.__targetposition = [x, y, z]
+
+        # check if we are transitioning between workspace/gantry, if so, handle it
+        target_frame = self._target_frame(x, y, z)
+        if self.__currentframe != target_frame:
+            self._transition_to_frame(target_frame)
         return True
 
-    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None, avoid_ot2=True):
+    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None):
         """
         moves to target position in x,y,z (mm)
         """
@@ -185,17 +225,17 @@ class Gantry:
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(
-                z_ceiling, max(self.ZLIM)
+                z_ceiling, max(self.__ZLIM)
             )  # cant z-hop above build volume. mostly here for first move after homing.
-            self.moveto(z=z_ceiling, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
-            self.moveto(x, y, z_ceiling, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
-            self.moveto(z=z, zhop=False, speed=speed, avoid_ot2=avoid_ot2)
+            self.moveto(z=z_ceiling, zhop=False, speed=speed)
+            self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
+            self.moveto(z=z, zhop=False, speed=speed)
         else:
-            self._movecommand(x, y, z, speed, avoid_ot2=avoid_ot2)
+            self._movecommand(x, y, z, speed)
 
-    def _movecommand(self, x: float, y: float, z: float, speed: float, avoid_ot2: bool):
+    def _movecommand(self, x: float, y: float, z: float, speed: float):
         """internal command to execute a direct move from current location to new location"""
-        if self.premove(x, y, z, avoid_ot2=avoid_ot2):
+        if self.premove(x, y, z):
             if self.position == [x, y, z]:
                 return True  # already at target position
             else:
@@ -206,7 +246,7 @@ class Gantry:
                 "Invalid move - probably out of bounds. Possibly due to z-hopping between points near top of working volume?"
             )
 
-    def moverel(self, x=0, y=0, z=0, zhop=False, speed=None, avoid_ot2=True):
+    def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
         """
         moves by coordinates relative to the current position
         """
@@ -218,7 +258,7 @@ class Gantry:
         x += self.position[0]
         y += self.position[1]
         z += self.position[2]
-        self.moveto(x, y, z, zhop, speed, avoid_ot2=avoid_ot2)
+        self.moveto(x, y, z, zhop, speed)
 
     def _waitformovement(self):
         """
@@ -360,9 +400,7 @@ class GantryGUI:
     def jog(self, x=0, y=0, z=0):
         self.gantrystatus.setText("Moving")
         self.gantrystatus.setStyleSheet("color: red")
-        self.gantry.moverel(
-            x * self.stepsize, y * self.stepsize, z * self.stepsize, avoid_ot2=False
-        )
+        self.gantry.moverel(x * self.stepsize, y * self.stepsize, z * self.stepsize)
         self.update_position()
         self.gantrystatus.setText("Idle")
         self.gantrystatus.setStyleSheet("color: None")
