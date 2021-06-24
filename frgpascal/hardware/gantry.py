@@ -117,10 +117,10 @@ class Gantry:
         return output
 
     def _enable_steppers(self):
-        self.write("M18")
+        self.write("M17")
 
     def _disable_steppers(self):
-        self.write("M17")
+        self.write("M18")
 
     def update(self):
         found_coordinates = False
@@ -134,8 +134,8 @@ class Gantry:
                     found_coordinates = True
                     break
         self.position = [x, y, z]
-        self.__currentframe = target_frame
-        self.__ZLIM = self.FRAMES[target_frame]["z_max"]
+        self.__currentframe = self._target_frame(*self.position)
+        self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
 
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
@@ -162,31 +162,31 @@ class Gantry:
         Returns:
             string: name of frame. if none, returns 'invalid'
         """
-        for frame, lims in zip(
-            ["ot2", "workspace"], [self.__OPENTRONS_LIMS, self.__WORKSPACE_LIMS]
-        ):
-            if x <= lims["x_min"] or x >= lims["x_max"]:
+        for frame, lims in self.__FRAMES.items():
+            if x < lims["x_min"] or x > lims["x_max"]:
                 continue
-            if y <= lims["y_min"] or y >= lims["y_max"]:
+            if y < lims["y_min"] or y > lims["y_max"]:
                 continue
-            if z <= lims["z_min"] or z >= lims["z_max"]:
+            if z < lims["z_min"] or z > lims["z_max"]:
                 continue
             return frame
         return "invalid"
 
     def _transition_to_frame(self, target_frame):
         self._movecommand(
-            x=self.position[0], y=self.position[1], z=self.TRANSITION_COORDINATES[2]
+            x=self.position[0],
+            y=self.position[1],
+            z=self.TRANSITION_COORDINATES[2],
+            speed=self.speed,
         )  # move just in z
 
         # nudge the gantry into the target frame
-        target_coordinates = self.TRANSITION_COORDINATES.copy()
+        x, y, z = self.TRANSITION_COORDINATES
         if target_frame == "opentrons":
-            target_coordinates[0] -= 0.2
+            x -= 0.2
         else:
-            target_coordinates[0] += 0.2
-
-        self._movecommand(*target_coordinates)  # move to transition coordinate
+            x += 0.2
+        self._movecommand(x, y, z, speed=self.speed)
 
     def premove(self, x, y, z):
         """
@@ -196,13 +196,21 @@ class Gantry:
             raise Exception(
                 "Stage has not been homed! Home with self.gohome() before moving please."
             )
-        self.__targetposition = [x, y, z]
+        if x is None:
+            x = self.position[0]
+        if y is None:
+            y = self.position[1]
+        if z is None:
+            y = self.position[2]
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
+        if target_frame == "invalid":
+            raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
         if self.__currentframe != target_frame:
             self._transition_to_frame(target_frame)
-        return True
+
+        return x, y, z
 
     def moveto(self, x=None, y=None, z=None, zhop=True, speed=None):
         """
@@ -212,12 +220,8 @@ class Gantry:
             if len(x) == 3:
                 x, y, z = x  # split 3 coordinates into appropriate variables
         except:
-            if x is None:
-                x = self.position[0]
-            if y is None:
-                y = self.position[1]
-            if z is None:
-                z = self.position[2]
+            pass
+        x, y, z = self.premove(x, y, z)  # will error out if invalid move
         if speed is None:
             speed = self.speed
         if (x == self.position[0]) and (y == self.position[1]):
@@ -225,7 +229,7 @@ class Gantry:
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(
-                z_ceiling, max(self.__ZLIM)
+                z_ceiling, self.__ZLIM
             )  # cant z-hop above build volume. mostly here for first move after homing.
             self.moveto(z=z_ceiling, zhop=False, speed=speed)
             self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
@@ -235,16 +239,12 @@ class Gantry:
 
     def _movecommand(self, x: float, y: float, z: float, speed: float):
         """internal command to execute a direct move from current location to new location"""
-        if self.premove(x, y, z):
-            if self.position == [x, y, z]:
-                return True  # already at target position
-            else:
-                self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
-                return self._waitformovement()
+        if self.position == [x, y, z]:
+            return True  # already at target position
         else:
-            raise Exception(
-                "Invalid move - probably out of bounds. Possibly due to z-hopping between points near top of working volume?"
-            )
+            self.__targetposition = [x, y, z]
+            self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
+            return self._waitformovement()
 
     def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
         """
