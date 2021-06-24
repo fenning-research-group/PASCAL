@@ -66,7 +66,7 @@ class Gripper:
         # return
         readline = ""
         time0 = time.time()
-        while readline != "done":
+        while readline != "ok":
             if time.time() - time0 > 2:  # self.GRIPPERTIMEOUT:
                 raise ValueError("Gripper timed out during movement")
             if self._handle.in_waiting > 0:
@@ -161,3 +161,6 @@ class Gripper:
                 continue
             if time.time() - self.__gripper_last_opened >= self.GRIPPERTIMEOUT:
                 self.close()
+
+    def __del__(self):
+        self.__stop_gripper_timeout_watchdog()

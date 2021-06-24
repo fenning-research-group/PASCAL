@@ -11,7 +11,7 @@ import yaml
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
 
-# from frgpascal.hardware.spincoater import SpinCoater
+from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
@@ -47,11 +47,10 @@ class Maestro:
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
-        # self.spincoater = SpinCoater(
-        #     gantry = self.gantry,
-        #     p0 = constants['spincoater']['p0']
-        #     )
-        # self.liquidhandler = OT2()
+        self.spincoater = SpinCoater(
+            gantry=self.gantry, p0=constants["spincoater"]["p0"]
+        )
+        self.liquidhandler = OT2()
 
         # Labware
         self.hotplate = HotPlate(
@@ -63,7 +62,7 @@ class Maestro:
         )
         self.storage = SampleTray(
             name="SampleTray1",
-            version="storage_v2",  # TODO #3
+            version="storage_v1",  # TODO #3
             num=numsamples,  # number of substrates loaded
             gantry=self.gantry,
             gripper=self.gripper,

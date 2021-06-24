@@ -16,14 +16,30 @@ gantry:
   zhop_height: 20 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
   idle_coordinates: [459,211,85] #coordinates to move the gantry to when idle, mainly to avoid cameras
   opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
+  opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
   opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
-  x_max: 567.0 #max x position (mm)
-  x_min: 0     #min x position (mm)
-  y_max: 282.0 #max y position (mm)
-  y_min: 0     #min y position (mm)
-  z_max: 166.0 #max z position (mm)
-  z_min: 0     #min z position (mm)
-
+  overall_gantry_limits:
+    x_max: 567.0 #max x position (mm)
+    x_min: 0     #min x position (mm)
+    y_max: 282.0 #max y position (mm)
+    y_min: 0     #min y position (mm)
+    z_max: 166.0 #max z position (mm)
+    z_min: 0     #min z position (mm)
+  workspace_limits: #gantry limits in workspace frame
+    x_max: 567.0 #max x position (mm)
+    x_min: 192.25 #min x position (mm)
+    y_max: 282.0 #max y position (mm)
+    y_min: 0     #min y position (mm)
+    z_max: 166.0 #max z position (mm)
+    z_min: 0     #min z position (mm)
+  opentrons_limits: #gantry limits in opentrons frame
+    x_max: 192.25
+    x_min: 0
+    y_max: 200.7
+    y_min: 0
+    z_max: 83
+    z_min: 0
+  transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
 gripper:
   #communication
   device_identifiers:
@@ -31,9 +47,9 @@ gripper:
       pid: 24597 #WINDOWS ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 14.6  #maximum opening width (mm)
-  width_min: 3.25 #minimum opening width (mm)
-  pwm_max: 1000  #pulse width (us) corresponding to minimum width
+  width_max: 27.0  #maximum opening width (mm)
+  width_min: 4.41 #minimum opening width (mm)
+  pwm_max: 1400  #pulse width (us) corresponding to minimum width
   pwm_min: 650   #pulse width (us) corresponding to maximum width
   extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
@@ -42,6 +58,7 @@ gripper:
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
   springs_loaded_threshold: 10000 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
+
 hotplate:
   p0: [254,164,72] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 

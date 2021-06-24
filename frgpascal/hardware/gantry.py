@@ -34,8 +34,15 @@ class Gantry:
         self.XLIM = (constants["gantry"]["x_min"], constants["gantry"]["x_max"])
         self.YLIM = (constants["gantry"]["y_min"], constants["gantry"]["y_max"])
         self.ZLIM = (constants["gantry"]["z_min"], constants["gantry"]["z_max"])
-        self.OT2_ZLIM = 83  # coordinates below this point bring the gantry arm within the liquid handler frame
-        self.OT2_XLIM = 190.5  # coordinates below this point bring the gantry arm within the liquid handler frame
+        self.OT2_XLIM = constants["gantry"][
+            "opentrons_x"
+        ]  # coordinates below this point bring the gantry arm within the liquid handler frame
+        self.OT2_YLIM = constants["gantry"][
+            "opentrons_y"
+        ]  # coordinates above this point bring the gantry arm within the liquid handler frame
+        self.OT2_ZLIM = constants["gantry"][
+            "opentrons_z"
+        ]  # coordinates below this point bring the gantry arm within the liquid handler frame
         self.position = [
             None,
             None,
@@ -211,7 +218,7 @@ class Gantry:
         x += self.position[0]
         y += self.position[1]
         z += self.position[2]
-        self.moveto(x, y, z, zhop, speed)
+        self.moveto(x, y, z, zhop, speed, avoid_ot2=avoid_ot2)
 
     def _waitformovement(self):
         """
@@ -353,7 +360,9 @@ class GantryGUI:
     def jog(self, x=0, y=0, z=0):
         self.gantrystatus.setText("Moving")
         self.gantrystatus.setStyleSheet("color: red")
-        self.gantry.moverel(x * self.stepsize, y * self.stepsize, z * self.stepsize)
+        self.gantry.moverel(
+            x * self.stepsize, y * self.stepsize, z * self.stepsize, avoid_ot2=False
+        )
         self.update_position()
         self.gantrystatus.setText("Idle")
         self.gantrystatus.setStyleSheet("color: None")
