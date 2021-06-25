@@ -99,6 +99,7 @@ class Gripper:
         self.open(width=self.MINWIDTH, slow=slow)
 
     def is_under_load(self):
+        time.sleep(0.3)  # wait for gripper to complete motion
         self.write("l")
         time.sleep(self.POLLINGDELAY)
         load = float(self._handle.readline())

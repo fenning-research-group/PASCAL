@@ -51,6 +51,9 @@ class OT2:
         while self.server.OT2_status != 0:  # wait for task to be marked complete by ot2
             time.sleep(self.INTERVAL)
 
+    def __del__(self):
+        self.server.stop()
+
 
 class OT2Server:
     """Local Server to communicate with OpenTrons-2 Liquid Handling robot from the control PC.

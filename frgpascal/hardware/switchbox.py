@@ -4,11 +4,11 @@ import os
 import serial
 from functools import partial
 from .helpers import get_port
-
+import time
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
-    constants = yaml.load(f, Loader=yaml.FullLoader)
+    constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
 
 
 class Switchbox:
@@ -22,15 +22,17 @@ class Switchbox:
         self.POLLINGDELAY = constants["switchbox"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
-
-        self.__available_switches = [0, 1, 2, 3, 4, 5]
+        self.RELAYRESPONSETIME = constants["switchbox"][
+            "relayresponsetime"
+        ]  # delay between changing relay state and relay open/closing
+        self.__available_switches = [2, 3, 4, 5, 6, 7, 8, 9]
         self.connect()
 
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
 
     def __check_switch(self, switch):
-        if switch not in self.available_switches:
+        if switch not in self.__available_switches:
             raise ValueError(f"Switch {switch} does not exist!")
         else:
             return True
@@ -42,7 +44,8 @@ class Switchbox:
             switch (int): index of switch to adjust
         """
         if self.__check_switch(switch):
-            self._handle.write(f"L{switch}\n".encode())
+            self._handle.write(f"l{switch}\n".encode())
+            time.sleep(self.RELAYRESPONSETIME)
 
     def set_high(self, switch: int):
         """sets a switch HIGH
@@ -51,7 +54,8 @@ class Switchbox:
             switch (int): index of switch to adjust
         """
         if self.__check_switch(switch):
-            self._handle.write(f"H{switch}\n".encode())
+            self._handle.write(f"h{switch}\n".encode())
+            time.sleep(self.RELAYRESPONSETIME)
 
     def Switch(self, switch: int):
         """Returns a SingleSwitch object that controls single switch state
@@ -67,10 +71,10 @@ class SingleSwitch:
 
     def __init__(self, switchid, switchbox: Switchbox):
         self.switchid = switchid
-        self.box = switchbox
+        self.switchbox = switchbox
 
     def on(self):
-        self.switchbox.turn_on(self.switchid)
+        self.switchbox.set_high(self.switchid)
 
     def off(self):
-        self.switchbox.turn_off(self.switchid)
+        self.switchbox.set_low(self.switchid)

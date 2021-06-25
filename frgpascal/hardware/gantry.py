@@ -101,6 +101,9 @@ class Gantry:
         #     "M92 X53.333 Y53.333 Z200.0"
         # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
+            "M84 S0"
+        )  # disable stepper timeout, steppers remain engaged all the time
+        self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z15.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max

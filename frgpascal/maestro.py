@@ -15,6 +15,10 @@ from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
+from frgpascal.hardware.characterizationline import (
+    CharacterizationAxis,
+    CharacterizationLine,
+)
 
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
@@ -25,7 +29,12 @@ with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") a
 
 
 class Maestro:
-    def __init__(self, numsamples: int, samplewidth: float = 10):
+    def __init__(
+        self,
+        numsamples: int = 1,
+        samplewidth: float = 10,
+        rootdir="C:\\Users\\Admin\\Desktop\\SampleExperiment",
+    ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
         Args:
@@ -47,10 +56,11 @@ class Maestro:
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
-        self.spincoater = SpinCoater(
-            gantry=self.gantry, p0=constants["spincoater"]["p0"]
+        self.spincoater = SpinCoater(gantry=self.gantry)
+        # self.liquidhandler = OT2()
+        self.characterization = CharacterizationLine(
+            gantry=self.gantry, rootdir=rootdir
         )
-        self.liquidhandler = OT2()
 
         # Labware
         self.hotplate = HotPlate(
@@ -75,13 +85,36 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
-        for component in [self.hotplate, self.storage]:  # , self.spincoater]:
+        for component in [
+            self.hotplate,
+            self.storage,
+            self.spincoater,
+            self.characterization.axis,
+        ]:
             self.release()  # open gripper to open width
             component.calibrate()
 
+    def gohome(self):
+        threads = []
+        for task in [
+            self.gantry.gohome,
+            self.characterization.axis.gohome,
+            self.spincoater.connect,
+        ]:
+            thread = threading.Thread(target=task)
+            threads.append(thread)
+            thread.start()
+        for thread in threads:
+            thread.join()
+
     def _load_calibrations(self):
         """Load previous gantry positions, assume that hardware hasn't moved since last time."""
-        for component in [self.hotplate, self.storage]:  # , self.spincoater]:
+        for component in [
+            self.hotplate,
+            self.storage,
+            self.spincoater,
+            self.characterization.axis,
+        ]:  # , self.spincoater]:
             component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 
     ### Physical Methods
@@ -183,7 +216,10 @@ class Maestro:
         self.CATCHATTEMPTS = 3
         caught_successfully = False
         while not caught_successfully and self.CATCHATTEMPTS > 0:
+            self.gripper.close()
+            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
             self.gripper.open(self.SAMPLEWIDTH - self.SAMPLETOLERANCE)
+            time.sleep(0.1)
             if (
                 not self.gripper.is_under_load()
             ):  # if springs not pulling on grippers, assume that the sample is grabbed
@@ -192,19 +228,22 @@ class Maestro:
             else:
                 self.CATCHATTEMPTS -= 1
                 # lets jog the gripper position and try again.
-                self.release()
-                self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                self.gripper.close()
+                self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False)
+                # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
                 self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
 
         if not caught_successfully:
+            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+            self.gripper.close()
             raise ValueError("Failed to pick up sample!")
 
     def release(self):
         """
-        Open gripper barely enough to release sample
+        Open gripper slowly release sample without jogging position
         """
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False
         )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):

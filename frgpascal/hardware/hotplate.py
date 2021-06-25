@@ -28,7 +28,6 @@ class HotPlate(Workspace):
         gantry: Gantry,
         gripper: Gripper,
         p0=[None, None, None],
-        testslots=None,
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
@@ -36,7 +35,6 @@ class HotPlate(Workspace):
             gantry=gantry,
             gripper=gripper,
             p0=p0,
-            testslots=testslots,
             **workspace_kwargs,
         )
 
@@ -74,6 +72,8 @@ class HotPlate(Workspace):
             "z_clearance": constants["z_clearance"],
             "openwidth": constants["openwidth"],
         }
+        if "testslots" in constants:  # override 4 corner default
+            workspace_kwargs["testslots"] = constants["testslots"]
         return constants, workspace_kwargs
 
     def export(self, fpath):

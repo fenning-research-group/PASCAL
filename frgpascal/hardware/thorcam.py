@@ -18,6 +18,7 @@ import numpy as np
     once. 
 """
 
+
 class ThorcamHost:
     def __init__(self):
         self.camera_sdk = TLCameraSDK()
@@ -69,7 +70,9 @@ class Thorcam:
             self.camera.bit_depth,
         )
         self.frames = 1
-        
+
+    # def disconnect(self):
+
     @property
     def exposure(self):
         return self.camera.exposure_time_us
@@ -157,8 +160,7 @@ class Thorcam:
         else:
             averaged_image = frames[0]
 
-
-        averaged_image = averaged_image/(2**16) #normalize 16 bit depth to 0-1
+        averaged_image = averaged_image / (2 ** 16)  # normalize 16 bit depth to 0-1
         return averaged_image
 
     def preview(self):
@@ -188,8 +190,12 @@ class Thorcam:
 
         print("Closing resources...")
         self.camera.disarm()
-        self.camera.frames_per_trigger_zero_for_unlimited = self.__frames # put frames back to normal
+        self.camera.frames_per_trigger_zero_for_unlimited = (
+            self.__frames
+        )  # put frames back to normal
         self.camera.image_poll_timeout_ms = 1000  # back to default
+
+    # def __del__(self):
 
 
 ### Camera Preview Code from Thorlabs SDK Example
@@ -253,14 +259,12 @@ class ImageAcquisitionThread(threading.Thread):
             self._mono_to_color_sdk = self._camera._Thorcam__host
             self._image_width = self._camera.camera.image_width_pixels
             self._image_height = self._camera.camera.image_height_pixels
-            self._mono_to_color_processor = (
-                self._camera._Thorcam__host.mono2color_sdk.create_mono_to_color_processor(
-                    SENSOR_TYPE.BAYER,
-                    self._camera.camera.color_filter_array_phase,
-                    self._camera.camera.get_color_correction_matrix(),
-                    self._camera.camera.get_default_white_balance_matrix(),
-                    self._camera.camera.bit_depth,
-                )
+            self._mono_to_color_processor = self._camera._Thorcam__host.mono2color_sdk.create_mono_to_color_processor(
+                SENSOR_TYPE.BAYER,
+                self._camera.camera.color_filter_array_phase,
+                self._camera.camera.get_color_correction_matrix(),
+                self._camera.camera.get_default_white_balance_matrix(),
+                self._camera.camera.bit_depth,
             )
             self._is_color = True
 

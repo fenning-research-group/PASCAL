@@ -148,10 +148,10 @@ class Workspace:
             testslots.append(
                 f"{self._ycoords[0]}{self._xcoords[-1]}"
             )  # bottom right corner
-        elif len(testslots) != 4:
-            raise Exception(
-                'Must provide four corner test points, in list form ["A1", "A2", "B3", "B4"], etc'
-            )
+        # elif len(testslots) != 4:
+        #     raise Exception(
+        #         'Must provide four corner test points, in list form ["A1", "A2", "B3", "B4"], etc'
+        #     )
 
         self.testslots = testslots
         self.testpoints = np.array(

@@ -1,0 +1,1 @@
+from frgpascal.hardware import *

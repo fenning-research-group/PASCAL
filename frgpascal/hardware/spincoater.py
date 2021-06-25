@@ -16,7 +16,6 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 # spincoater_serial_number = constants["spincoater"]["serialid"]
 # print(constants["spincoater"])
-p0 = constants["spincoater"]["p0"]
 
 
 class SpinCoater:
@@ -24,7 +23,6 @@ class SpinCoater:
         self,
         gantry: Gantry,
         port=None,
-        p0: tuple = p0,
     ):
         """Initialize the spincoater control object
 
@@ -58,7 +56,7 @@ class SpinCoater:
         self.LOGGINGINTERVAL = constants["spincoater"]["logging_interval"]
 
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
-        self.p0 = np.asarray(p0) + [0, 0, 5]
+        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
 
     def connect(self, **kwargs):
         # connect to odrive BLDC controller
@@ -92,22 +90,22 @@ class SpinCoater:
             AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
         )
         # odrive defaults
-        self.axis.motor.config.current_lim = 60  # NOT SAME AS POWER SUPPLY CURRENT
+        self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
         self.axis.trap_traj.config.vel_limit = 2  # for position moves to lock position
         self.axis.trap_traj.config.accel_limit = 1
         self.axis.trap_traj.config.decel_limit = 1
-
+        self.__lock()
         # connect to arduino for vacuum relay control
         self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
 
     def disconnect(self):
-        self.arduino.close()
         try:
             self.odrv0.reboot()
             self.odrv0._destroy()
         except:
             pass  # this always throws an "object lost" error...which is what we want
+        self.arduino.close()
 
     # position calibration methods
     def calibrate(self):
@@ -115,6 +113,7 @@ class SpinCoater:
         # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
+        self.gantry.moveto(*self.p0)
         self.gantry.gui()
         self.coordinates = self.gantry.position
         # self.gantry.moverel(z=10, zhop=False)
@@ -181,7 +180,7 @@ class SpinCoater:
         self.axis.controller.config.vel_ramp_rate = acceleration
         self.axis.controller.input_vel = rps
 
-    def lock(self):
+    def __lock(self):
         """
         routine to lock rotor in registered position for sample transfer
         """
@@ -190,14 +189,14 @@ class SpinCoater:
         self.axis.controller.input_pos = (
             0  # arbitrary, just needs to be same 0-1 position each time we "lock"
         )
-        while self.axis.encoder.pos_circular > 0.001:  # tolerance = 0.36 degrees
+        while self.axis.encoder.pos_circular > 0.005:  # tolerance = 360*value degrees
             time.sleep(0.1)
 
     def stop(self):
         """
         stop rotation and locks the rotor in position
         """
-        self.setrpm(0, 2000)
+        self.set_rpm(0, 2000)
         # wait until the rotor is nearly stopped
         while (
             self.axis.encoder.vel_estimate > 0.5

@@ -6,7 +6,7 @@ import yaml
 import os
 import threading
 from abc import ABC, abstractmethod
-from tifffile import imsave
+from tifffile import imwrite
 import csv
 
 from frgpascal.hardware.helpers import get_port
@@ -15,6 +15,7 @@ from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import Switchbox
 
 MODULE_DIR = os.path.dirname(__file__)
+CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
 
@@ -22,11 +23,9 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir):
-        self.axis = CharacterizationAxis()
-        self.x0 = constants["x0"]  # position where gantry picks/places samples
+    def __init__(self, rootdir, gantry):
+        self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
-
         self.switchbox = Switchbox()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
@@ -73,16 +72,16 @@ class CharacterizationLine:
                 position=constants["pl"]["position"],
                 rootdir=self.rootdir,
                 spectrometer=self.spectrometer,
-                shutter=self.switchbox.Switch(constants["pl"]["switchindex"]),
+                lightswitch=self.switchbox.Switch(constants["pl"]["switchindex"]),
             ),
         ]
 
-    def run(self):
+    def run(self, sample):
         """Pass a sample down the line and measure at each station"""
         for s in self.stations:
             self.axis.moveto(s.position)
-            s.run()  # combines measure + save methods
-        self.axis.moveto(self.x0)
+            s.run(sample=sample)  # combines measure + save methods
+        self.axis.moveto(self.axis.TRANSFERPOSITION)
 
 
 class CharacterizationAxis:
@@ -90,6 +89,7 @@ class CharacterizationAxis:
 
     def __init__(
         self,
+        gantry,
         port=None,
     ):
         # communication variables
@@ -115,7 +115,10 @@ class CharacterizationAxis:
         self.POSITIONTOLERANCE = constants["axis"][
             "positiontolerance"
         ]  # tolerance for position, in mm
-
+        self.gantry = gantry
+        self.__calibrated = False  # calibrate gantry transfer coordinates
+        self.TRANSFERPOSITION = constants["axis"]["transfer_position"]
+        self.p0 = constants["axis"]["p0"]
         # connect to characterizationline by default
         self.connect()
         self.set_defaults()
@@ -134,6 +137,45 @@ class CharacterizationAxis:
     def disconnect(self):
         self._handle.close()
         del self._handle
+
+    def __call__(self):
+        """Calling the characterization axis object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
+
+        Raises:
+                        Exception: If spincoater position is not calibrated, error will thrown.
+
+        Returns:
+                        tuple: (x,y,z) coordinates for gantry to pick/place sample on spincoater chuck.
+        """
+        if self.__calibrated == False:
+            raise Exception(
+                f"Need to calibrate characterization axis position before use!"
+            )
+        return self.coordinates
+
+    # gantry transfer position calibration methods
+    def calibrate(self):
+        """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
+        # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
+        # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
+        # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
+        self.moveto(self.TRANSFERPOSITION)
+        self.gantry.moveto(*self.p0)
+        self.gantry.gui()
+        self.coordinates = self.gantry.position
+        # self.gantry.moverel(z=10, zhop=False)
+        self.__calibrated = True
+        with open(
+            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
+        ) as f:
+            yaml.dump(self.coordinates, f)
+
+    def _load_calibration(self):
+        with open(
+            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
+        ) as f:
+            self.coordinates = yaml.load(f, Loader=yaml.FullLoader)
+        self.__calibrated = True
 
     def set_defaults(self):
         self.write("G90")  # absolute coordinate system
@@ -252,7 +294,7 @@ class StationTemplate(ABC):
     def __init__(self, position, savedir):
         self.position = position
         self.savedir = savedir
-        if ~os.path.exists(savedir):
+        if not os.path.exists(savedir):
             os.mkdir(savedir)
 
     @abstractmethod
@@ -265,10 +307,10 @@ class StationTemplate(ABC):
         """save measurement data"""
         pass
 
-    def run(self, *args, **kwargs) -> None:
+    def run(self, sample, *args, **kwargs) -> None:
         """acquire + save a measurement"""
         output = self.capture(*args, **kwargs)
-        self.save(output)
+        self.save(output, sample=sample)
 
 
 class DarkfieldImaging(StationTemplate):
@@ -287,7 +329,7 @@ class DarkfieldImaging(StationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imsave(os.path.join(self.savedir, fname), img)
+        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
 
 
 class PLImaging(StationTemplate):
@@ -300,13 +342,14 @@ class PLImaging(StationTemplate):
 
     def capture(self):
         self.lightswitch.on()
+        time.sleep(1)  # takes a little longer for PL lamp to turn on
         img = self.camera.capture()
         self.lightswitch.off()
         return img
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imsave(os.path.join(self.savedir, fname), img)
+        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
 
 
 class BrightfieldImaging(StationTemplate):
@@ -325,7 +368,7 @@ class BrightfieldImaging(StationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imsave(os.path.join(self.savedir, fname), img)
+        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
 
 
 class TransmissionSpectroscopy(StationTemplate):
@@ -344,7 +387,7 @@ class TransmissionSpectroscopy(StationTemplate):
 
     def save(self, spectrum, sample):
         fname = f"{sample}_transmission.csv"
-        with open(os.path.join(self.savedir, fname), "w") as f:
+        with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(["Wavelength (nm)", "Transmittance"])
             for wl, t in spectrum:
@@ -367,7 +410,7 @@ class PLSpectroscopy(StationTemplate):
 
     def save(self, spectrum, sample):
         fname = f"{sample}_pl.csv"
-        with open(os.path.join(self.savedir, fname), "w") as f:
+        with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(["Wavelength (nm)", "PL (counts/second)"])
             for wl, t in spectrum:
