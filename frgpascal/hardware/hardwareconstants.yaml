@@ -5,7 +5,7 @@ gantry:
   device_identifiers:
     vid: 7855 #vendor id, converted from hex to integer. WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
     pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
-    location: "1-1.4.4.4" #WINDOWS + GANTRY ONLY
+    location: "1-1.4" #WINDOWS + GANTRY ONLY
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
 
@@ -36,11 +36,11 @@ gantry:
     x_max: 192.25
     x_min: 0
     y_max: 200.7
-    y_min: 0
-    z_max: 83
+    y_min: 10
+    z_max: 82
     z_min: 0
-  transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-
+  # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+  transition_coordinates: [192.25, 27.4, 82] #spincoater in deck slot 3
 gripper:
   #communication
   device_identifiers:
@@ -52,12 +52,12 @@ gripper:
   width_min: 5.6 #minimum opening width (mm)
   pwm_max: 1400  #pulse width (us) corresponding to minimum width
   pwm_min: 650   #pulse width (us) corresponding to maximum width
-  extra_opening_width: 2 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width: 4 #extra width (mm) to open gripper when moving to pick up a sample
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 10 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
-  springs_loaded_threshold: 700 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
+  springs_loaded_threshold: 525 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 
 hotplate:
@@ -78,10 +78,10 @@ spincoater:
       serial_number: '55838333932351108212'
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
-  p0: [5.5, 195.3, 50.3] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
-  rpm_max: 7000 #maximum angular velocity (rpm) the spincoater can hit
-  rpm_min: 500 #minimum angular velocity (rpm) the spincoater can hit
-  acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
+  p0: [6.3, 27.4, 52.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  rpm_max: 10000 #maximum angular velocity (rpm) the spincoater can hit
+  rpm_min: 300 #minimum angular velocity (rpm) the spincoater can hit
+  acceleration_max: 10000 #maximum angular acceleration (rpm/s) the spincoater can hit
   acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit
   logging_interval: 0.2 #interval (seconds) at which to log spincoating rpm
 
@@ -92,9 +92,9 @@ characterizationline:
     # serialid: TODO
       vid: 7855 #WINDOWS ONLY
       pid: 4 #WINDOWS ONLY
-      location: "1-1.4.4.2" #WINDOWS
+      location: "1-1.2.4" #WINDOWS
     pollingrate: 0.05
-    timeout: 15 #max time (seconds) to allow movement before flagging an error
+    timeout: 20 #max time (seconds) to allow movement before flagging an error
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)

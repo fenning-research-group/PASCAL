@@ -30,6 +30,7 @@ class Switchbox:
 
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        print("Connected to characterization switchbox")
 
     def __check_switch(self, switch):
         if switch not in self.__available_switches:

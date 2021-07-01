@@ -87,6 +87,7 @@ class Gantry:
             ]  # start at None's to indicate stage has not been homed.
         # self.write('M92 X40.0 Y26.77 Z400.0')
         self.set_defaults()
+        print("Connected to gantry")
 
     def disconnect(self):
         self._handle.close()

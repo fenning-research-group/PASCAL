@@ -53,6 +53,7 @@ class Gripper:
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
         time.sleep(3)  # takes a few seconds for connection to establish
         self.__start_gripper_timeout_watchdog()
+        print("Connected to gripper")
 
     def disconnect(self):
         self._handle.close()
@@ -99,10 +100,11 @@ class Gripper:
         self.open(width=self.MINWIDTH, slow=slow)
 
     def is_under_load(self):
-        time.sleep(0.3)  # wait for gripper to complete motion
+        time.sleep(0.5)  # wait for gripper to complete motion
         self.write("l")
         time.sleep(self.POLLINGDELAY)
         load = float(self._handle.readline())
+        print(load)
         if load > self.LOADTHRESHOLD:
             return True
         else:

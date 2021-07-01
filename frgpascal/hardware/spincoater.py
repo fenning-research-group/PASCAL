@@ -92,12 +92,15 @@ class SpinCoater:
         # odrive defaults
         self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
-        self.axis.trap_traj.config.vel_limit = 2  # for position moves to lock position
+        self.axis.trap_traj.config.vel_limit = (
+            0.5  # for position moves to lock position
+        )
         self.axis.trap_traj.config.accel_limit = 1
         self.axis.trap_traj.config.decel_limit = 1
         self.__lock()
         # connect to arduino for vacuum relay control
         self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        print("Connected to vacuum solenoid arduino")
 
     def disconnect(self):
         try:
@@ -186,6 +189,7 @@ class SpinCoater:
         """
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
+        time.sleep(0.1)
         self.axis.controller.input_pos = (
             0  # arbitrary, just needs to be same 0-1 position each time we "lock"
         )
@@ -202,7 +206,7 @@ class SpinCoater:
             self.axis.encoder.vel_estimate > 0.5
         ):  # cutoff speed = half rotation/second
             time.sleep(0.1)
-        self.lock()
+        self.__lock()
 
     # logging code
     def __logging_worker(self):

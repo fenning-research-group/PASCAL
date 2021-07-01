@@ -132,6 +132,7 @@ class CharacterizationAxis:
             self.XLIM
         ):  # this is what it shows when initially turned on, but not homed
             self.position = None
+        print("Connected to characterization axis")
         # self.write('M92 X40.0 Y26.77 Z400.0')
 
     def disconnect(self):
@@ -179,7 +180,6 @@ class CharacterizationAxis:
 
     def set_defaults(self):
         self.write("G90")  # absolute coordinate system
-        # self.write('M92 X26.667 Y26.667 Z200.0') #set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
             "M92 X320.00"  # TODO Set default values here
         )  # set steps/mm, randomly resets to defaults sometimes idk why

@@ -14,6 +14,7 @@ class Spectrometer:
 
     def __init__(self, address=0):
         self.id, self.__wl = sn.array_get_spec(address)
+        print("Connected to spectrometer")
         self.integrationtime = 100  # ms
         self.numscans = 1  # one scan per spectrum
         self.smooth = 0  # smoothing factor, units unclear
