@@ -10,15 +10,12 @@ import yaml
 
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
-
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import (
-    CharacterizationAxis,
-    CharacterizationLine,
-)
+from frgpascal.hardware.characterizationline import CharacterizationLine
+from frgpascal.experimentaldesign.recipes import SpincoatRecipe, AnnealRecipe, Sample
 
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
@@ -120,92 +117,62 @@ class Maestro:
     ### Physical Methods
     # Compound Movements
     def transfer(self, p1, p2, zhop=True):
-        self.release()
-        self.gantry.moveto(p1, zhop=zhop)
-        self.catch()
-        self.gantry.moveto(p2, zhop=zhop)
-        self.release()
-        self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-        self.gripper.close()
+        self.release()  # open the grippers
+        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
+        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+        )  # move just above destination
+        if self.gripper.is_under_load():
+            raise ValueError("Sample dropped in transit!")
+        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.release()  # drop the sample
+        self.gantry.moverel(
+            z=self.gantry.ZHOP_HEIGHT
+        )  # move up a bit, mostly to avoid resting gripper on hotplate
+        self.gripper.close()  # fully close gripper to reduce servo strain
 
-    def spincoat(self, recipe, drops):
-        """
-        executes a series of spin coating steps. A final "stop" step is inserted
+    def spincoat(self, recipe: SpincoatRecipe):
+        """executes a series of spin coating steps. A final "stop" step is inserted
         at the end to bring the rotor to a halt.
 
-        recipe - nested list of steps in format:
+        Args:
+            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
 
-            [
-                [speed, acceleration, duration],
-                [speed, acceleration, duration],
-                ...,
-                [speed, acceleration, duration]
-            ]
-
-            where speed = rpm, acceleration = rpm/s, duration = s (including the acceleration ramp!)
-
-        drops = dictionary with perovskite, antisolvent drop times (seconds relative to start of recipe)
-            {
-                'perovskite': 10,
-                'antisolvent': 15
-            }
+        Returns:
+            record: dictionary of recorded spincoating process.
         """
-        record = {"time": [], "rpm": [], "droptime": {d: None for d in drops}}
 
-        drop_idx = 0
-        drop_times = list(drops.values())
-        if (
-            drop_times[0] < 0
-        ):  # set negative drop time to drop before spinning, static spincoat.
-            static_offset = -drop_times[0]
-        else:
-            static_offset = 0
-        drop_names = list(drops.keys())
-        next_drop_time = drop_times[0]
-        drop_moves = [
-            self.liquidhandler.drop_perovskite,
-            self.liquidhandler.drop_antisolvent,
-        ]
+        perovskite_dropped = False
+        antisolvent_dropped = False
+        record = {}
 
-        next_step_time = 0 + static_offset
-        time_elapsed = 0
-        step_idx = 0
+        self.spincoater.start_logging()
+        spincoating_in_progress = True
+        t0 = time.time()
+        tnext = 0
+        for start_time, (rpm, acceleration, duration) in zip(
+            recipe.start_times, recipe.steps
+        ):
+            tnext += start_time
+            tnow = time.time() - t0  # time relative to recipe start
+            while (
+                tnow <= tnext
+            ):  # loop and check for drop times until next spin step is reached
+                if not perovskite_dropped and tnow >= recipe.perovskite_droptime:
+                    self.liquidhandler.drop_perovskite
+                    perovskite_dropped = True
+                    record["perovskite_drop"] = tnow
+                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
+                    self.liquidhandler.drop_antisolvent
+                    antisolvent_dropped = True
+                    record["antisolvent_drop"] = tnow
+                time.sleep(0.25)
 
-        spincoat_completed = False
-        steps_completed = False
-        drops_completed = False
-        start_time = time.time()
-        while not spincoat_completed:
-            time_elapsed = time.time() - start_time
-            record["time"].append(time_elapsed)
-            record["rpm"].append(self.spincoater.rpm)
-
-            if time_elapsed >= next_step_time and not steps_completed:
-                if step_idx >= len(recipe):
-                    steps_completed = True
-                else:
-                    speed = recipe[step_idx][0]
-                    acceleration = recipe[step_idx][1]
-                    duration = recipe[step_idx][2]
-
-                    self.spincoater.setspeed(speed, acceleration)
-                    next_step_time += duration
-                    step_idx += 1
-            if time_elapsed >= next_drop_time and not drops_completed:
-                drop_moves[drop_idx]()
-                record["droptime"][drop_names[drop_idx]] = time_elapsed
-                drop_idx += 1
-                if drop_idx >= len(drop_times):
-                    drops_completed = True
-                else:
-                    next_drop_time = drop_times[drop_idx]
-
-            if drops_completed and steps_completed:
-                spincoat_completed = True
-
-            time.sleep(self.spincoater.POLLINGRATE)
+            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
 
         self.spincoater.stop()
+        record.update(self.spincoater.finish_logging())
 
         return record
 
@@ -244,7 +211,7 @@ class Maestro:
         Open gripper slowly release sample without jogging position
         """
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
         )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
@@ -253,70 +220,70 @@ class Maestro:
         self.gripper.close()
 
     # Complete Sample
-    def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
-        """
-        storage_slot: slot name for storage location
-        spincoat_instructions:
-            {
-                'source_wells': [
-                                    [plate_psk, well_psk, vol_psk], 	 (stock/mix, name, uL)
-                                    [plate_antisolvent, well_antisolvent, vol_antisolvent],
-                                ],
-                'recipe':   [
-                                [speed, acceleration, duration], 	(rpm, rpm/s, s)
-                                [speed, acceleration, duration],
-                                ...,
-                                [speed, acceleration, duration]
-                            ],
-                'drop_times':    [time_psk, time_antisolvent]	 (s)
-            }
+    # def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
+    #     """
+    #     storage_slot: slot name for storage location
+    #     spincoat_instructions:
+    #         {
+    #             'source_wells': [
+    #                                 [plate_psk, well_psk, vol_psk], 	 (stock/mix, name, uL)
+    #                                 [plate_antisolvent, well_antisolvent, vol_antisolvent],
+    #                             ],
+    #             'recipe':   [
+    #                             [speed, acceleration, duration], 	(rpm, rpm/s, s)
+    #                             [speed, acceleration, duration],
+    #                             ...,
+    #                             [speed, acceleration, duration]
+    #                         ],
+    #             'drop_times':    [time_psk, time_antisolvent]	 (s)
+    #         }
 
-        hotplate_instructions:
-            {
-                'temperature': temp 	(C),
-                'slot': slot name on hotplate,
-                'duration': time to anneal 	(s)
-            }
-        """
+    #     hotplate_instructions:
+    #         {
+    #             'temperature': temp 	(C),
+    #             'slot': slot name on hotplate,
+    #             'duration': time to anneal 	(s)
+    #         }
+    #     """
 
-        # aspirate liquids, move pipettes next to spincoater
-        self.liquidhandler.aspirate_for_spincoating(
-            psk_well=spincoat_instructions["source_wells"]["well_psk"],
-            psk_volume=spincoat_instructions["source_wells"]["volume_psk"],
-            antisolvent_well=spincoat_instructions["source_wells"]["well_antisolvent"],
-            antisolvent_volume=spincoat_instructions["source_wells"][
-                "volume_antisolvent"
-            ],
-        )
+    #     # aspirate liquids, move pipettes next to spincoater
+    #     self.liquidhandler.aspirate_for_spincoating(
+    #         psk_well=spincoat_instructions["source_wells"]["well_psk"],
+    #         psk_volume=spincoat_instructions["source_wells"]["volume_psk"],
+    #         antisolvent_well=spincoat_instructions["source_wells"]["well_antisolvent"],
+    #         antisolvent_volume=spincoat_instructions["source_wells"][
+    #             "volume_antisolvent"
+    #         ],
+    #     )
 
-        # load sample onto chuck
-        self.spincoater.lock()
-        self.spincoater.vacuum_on()
-        self.transfer(self.storage(storage_slot), self.spincoater())
-        self.idle_gantry()
+    #     # load sample onto chuck
+    #     self.spincoater.lock()
+    #     self.spincoater.vacuum_on()
+    #     self.transfer(self.storage(storage_slot), self.spincoater())
+    #     self.idle_gantry()
 
-        # spincoat
-        spincoating_record = self.spincoat(
-            recipe=spincoat_instructions["recipe"],
-            drops=spincoat_instructions["drop_times"],
-        )
+    #     # spincoat
+    #     spincoating_record = self.spincoat(
+    #         recipe=spincoat_instructions["recipe"],
+    #         drops=spincoat_instructions["drop_times"],
+    #     )
 
-        # move sample to hotplate
-        self.liquidhandler.cleanup()
-        self.spincoater.vacuum_off()
-        self.transfer(self.spincoater(), self.hotplate(hotplate_instructions["slot"]))
-        self.spincoater.unlock()
-        ### TODO - start timer for anneal removal
+    #     # move sample to hotplate
+    #     self.liquidhandler.cleanup()
+    #     self.spincoater.vacuum_off()
+    #     self.transfer(self.spincoater(), self.hotplate(hotplate_instructions["slot"]))
+    #     self.spincoater.unlock()
+    #     ### TODO - start timer for anneal removal
 
-        self.idle_gantry()
+    #     self.idle_gantry()
 
-        self.manifest[storage_slot] = {
-            "hotplate": {"instructions": hotplate_instructions},
-            "spincoat": {
-                "instructions": spincoat_instructions,
-                "record": spincoating_record,
-            },
-        }
+    #     self.manifest[storage_slot] = {
+    #         "hotplate": {"instructions": hotplate_instructions},
+    #         "spincoat": {
+    #             "instructions": spincoat_instructions,
+    #             "record": spincoating_record,
+    #         },
+    #     }
 
     def __del__(self):
         self.liquidhandler.server.stop()
