@@ -19,23 +19,67 @@ class OT2:
         self.INTERVAL = constants["liquidhandler"]["pollingrate"]
 
     def drop_perovskite(self):
-        self.server.add_to_queue(function="dispense_onto_chuck", pipette=1)
+        self.server.add_to_queue(function="dispense_onto_chuck", pipette="perovskite")
         self._wait_for_task_complete()
 
     def drop_antisolvent(self):
-        self.server.add_to_queue(function="dispense_onto_chuck", pipette=0)
+        self.server.add_to_queue(function="dispense_onto_chuck", pipette="antisolvent")
         self._wait_for_task_complete()
 
     def aspirate_for_spincoating(
-        self, psk_well, psk_volume, antisolvent_well, antisolvent_volume
+        self,
+        tray,
+        well,
+        volume,
+        pipette="perovskite",
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
     ):
         self.server.add_to_queue(
             function="aspirate_for_spincoating",
+            tray=tray,
+            well=well,
+            volume=volume,
+            pipette=pipette,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
+        self._wait_for_task_complete()
+
+    def aspirate_both_for_spincoating(
+        self,
+        psk_tray,
+        psk_well,
+        psk_volume,
+        antisolvent_tray,
+        antisolvent_well,
+        antisolvent_volume,
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
+    ):
+        self.server.add_to_queue(
+            function="aspirate_both_for_spincoating",
+            psk_tray=psk_tray,
             psk_well=psk_well,
             psk_volume=psk_volume,
+            as_tray=antisolvent_tray,
             as_well=antisolvent_well,
             as_volume=antisolvent_volume,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
         )
+        self._wait_for_task_complete()
+
+    def stage_perovskite(self):
+        self.server.add_to_queue(function="stage_for_dispense", pipette="perovskite")
+        self._wait_for_task_complete()
+
+    def stage_antisolvent(self):
+        self.server.add_to_queue(function="stage_for_dispense", pipette="antisolvent")
         self._wait_for_task_complete()
 
     def cleanup(self):
