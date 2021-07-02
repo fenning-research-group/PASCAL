@@ -54,7 +54,7 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.spincoater = SpinCoater(gantry=self.gantry)
-        # self.liquidhandler = OT2()
+        self.liquidhandler = OT2()
         self.characterization = CharacterizationLine(
             gantry=self.gantry, rootdir=rootdir
         )

@@ -50,8 +50,11 @@ class Listener:
 
         r = r.json()
 
-        if "all_done" in r:
-            return False
+        try:
+            if "all_done" in r["kwargs"]:
+                return False
+        except:
+            pass
 
         if r["pending_requests"] > 0:
             print("identified request")
@@ -126,6 +129,7 @@ class Listener:
         pipette.well_bottom_clearance.dispense = (
             height  # set z-offset from chuck to tip, mm
         )
+
         pipette.flow_rate.dispense = rate  # dispense flow rate, ul/s
         pipette.dispense(location=self.spincoater[self.CHUCK_WELL])
 
@@ -152,35 +156,27 @@ def run(protocol_context):
     listener = Listener()
 
     listener.tipracks = [
-        protocol_context.load_labware("opentrons_96_tiprack_300ul", slot)
-        for slot in ["2"]
+        protocol_context.load_labware("sartorius_safetyspace_tiprack_200ul", slot)
+        for slot in ["8"]
     ]
 
-    listener.stock = protocol_context.load_labware("frg_28_wellplate_4000ul", "5")
-    listener.pipettes = {
-        side: protocol_context.load_instrument(
+    listener.stock = protocol_context.load_labware("frg_12_wellplate_15000ul", "9")
+    listener.pipettes = [
+        protocol_context.load_instrument(
             "p300_single_gen2", side, tip_racks=listener.tipracks
         )
         for side in ["left", "right"]
-    }
+    ]
 
     listener.spincoater = protocol_context.load_labware(
-        "frg_spincoater_v1", "9"
+        "frg_spincoater_v1", "3"
     )  # has two locations defined as "wells", called "standby" and "chuck"
 
-    listener.pipettes[1].pick_up_tip()
-    listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()["B2"])
-    listener.pipettes[1].dispense(10, listener.spincoater.wells()[0])
-    listener.pipettes[1].return_tip()
-
-    # listener.pipettes[0].pick_up_tip()
-    # listener.pipettes[0].aspirate(125, listener.stock.wells_by_name()['B1'])
-    # listener.pipettes[1].pick_up_tip()
-    # listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B1'])
-
-    listener.pipettes[0].move_to(listener.spincoater[listener.CHUCK_WELL].top())
-
-    # time.sleep(1e10)
+    for p in listener.pipettes:
+        p.pick_up_tip()
+        p.aspirate(10, listener.stock.wells_by_name()["B2"])  # make this an empty well!
+        p.dispense(10, listener.spincoater[listener.CHUCK_WELL])
+        p.return_tip()
 
     if (
         protocol_context.is_simulating()
@@ -189,6 +185,7 @@ def run(protocol_context):
 
     experiment_in_progress = True
     timeout = 5 * 60  # timeout, seconds
+    time_of_last_response = time.time()
     while experiment_in_progress:
         try:
             experiment_in_progress = listener.check_for_instructions()
@@ -198,4 +195,4 @@ def run(protocol_context):
                 print("Timeout")
                 experiment_in_progress = False
 
-        time.sleep(0.2)
+        time.sleep(0.1)

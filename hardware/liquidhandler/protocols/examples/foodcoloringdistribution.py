@@ -4,44 +4,49 @@ metadata = {
     'protocolName': 'Food Coloring Distribution',
     'author': 'Rishi Kumar',
     'source': 'FRG',
-    'apiLevel': '2.8'
+    'apiLevel': '2.10'
     }
 
 def run(protocol_context): 
     tipracks = [
-      protocol_context.load_labware('opentrons_96_tiprack_300ul', slot)
-      for slot in ['4']
+      protocol_context.load_labware('sartorius_safetyspace_tiprack_200ul', slot)
+      for slot in ['8']
       ]
 
-    stock = protocol_context.load_labware('frg_28_wellplate_4000ul', '1')
+    stock = protocol_context.load_labware('frg_12_wellplate_15000ul', '9')
 
-    mix = protocol_context.load_labware('corning_96_wellplate_360ul_flat', '2')
+    mix = protocol_context.load_labware('greiner_96_wellplate_360ul', '6')
 
-    pipettes = [
-      protocol_context.load_instrument('p300_single', side, tip_racks=tipracks)
+    pipettes = {side: protocol_context.load_instrument('p300_single', side, tip_racks=tipracks)
       for side in ['left', 'right']
-      ]
+      }
 
     # for p in pipettes:
     #     p.min_volume = 0 #pipettes will always overfill by this number.
     
     # spincoater = protocol_context.load_labware('frg_spincoater_v1', '6') #has two locations defined as "wells", called "standby" and "chuck"
 
-    NUM_WELLS = 96
-    MAX_VOLUME = 75
-    MIN_VOLUME = 0
-    amts = list(np.linspace(MAX_VOLUME, MIN_VOLUME, NUM_WELLS))
+    NUM_WELLS = 8
+    MAX_VOLUME = 50
+    MIN_VOLUME = 20
+    amts = list(np.linspace(MAX_VOLUME, MIN_VOLUME, NUM_WELLS).round(3))
 
-    pipettes[0].transfer(
+    pipettes['left'].transfer(
         amts,
         stock.wells('A1'),
-        mix.wells()[:NUM_WELLS]
+        mix.wells()[:NUM_WELLS],
+        touch_tip=True,
+        # blow_out=True,
+        # blowout_location='source well',
+        air_gap = 10
         # trash = False
         )
-    pipettes[0].transfer(
-        amts[::-1],
-        stock.wells('B1'),
-        mix.wells()[:NUM_WELLS]
-        # trash = False
-        )
+    # pipettes['right'].transfer(
+    #     amts[::-1],
+    #     stock.wells('A2'),
+    #     mix.wells()[:NUM_WELLS],
+    #     touch_tip=True,
+    #     blow_out=True,
+    #     blowout_location='source well'
+    #     )
 
