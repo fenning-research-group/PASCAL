@@ -6,6 +6,7 @@ import threading
 import json
 import os
 import yaml
+import websockets
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -53,6 +54,30 @@ class OT2:
 
     def __del__(self):
         self.server.stop()
+
+
+class OT2Server_websocket:
+    def __init__(self):
+        pass
+
+    def start(self):
+        if self.loop is None:
+            self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        start_server = websockets.serve(self.main, "127.0.0.1", 8080)
+        self.loop.run_until_complete(start_server)
+        # self.loop.run_forever()
+        # asyncio.ensure_future(self.main())
+        self.thread = threading.Thread(target=self.loop.run_forever, args=())
+        self.thread.start()
+
+    async def main(self, websocket, path):
+        while True:
+            ot2 = json.loads(await websocket.recv())
+
+            ### some logic
+            maestro = {}
+            await websocket.send(json.dumps(maestro))
 
 
 class OT2Server:

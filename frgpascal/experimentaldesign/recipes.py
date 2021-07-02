@@ -1,4 +1,6 @@
 import numpy as np
+import yaml
+from uuid import uuid4  # for unique sample identifiers
 
 
 class SpincoatRecipe:
@@ -39,6 +41,19 @@ class SpincoatRecipe:
         self.duration = (
             self.steps[:, 2].sum() + 10
         )  # total duration + 10 seconds for stopping
+
+    def export(self, filepath):
+        steps_dict = [
+            {"rpm": s[0], "acceleration": s[1], "duration": s[2], "start_time": st}
+            for s, st in zip(self.steps, self.start_times)
+        ]
+        output = {
+            "steps": steps_dict,
+            "perovskite_drop_time": self.perovskite_droptime,
+            "antisolvent_drop_time": self.antisolvent_droptime,
+        }
+        with open(filepath, "w") as f:
+            yaml.dump(output, f)
 
     def __repr__(self):
         output = "<SpincoatingRecipe>\n"
@@ -82,12 +97,25 @@ class AnnealRecipe:
             output += f"{self.duration:.2f} seconds"
         return output
 
+    def export(self, filepath):
+        output = {"temperature": self.temperature, "duration": self.duration}
+        with open(filepath, "w") as f:
+            yaml.dump(output, f)
+
 
 class Sample:
     def __init__(
-        self, name, spincoat_recipe: SpincoatRecipe, anneal_recipe: AnnealRecipe
+        self,
+        name: str,
+        spincoat_recipe: SpincoatRecipe,
+        anneal_recipe: AnnealRecipe,
+        hashid: str = None,
     ):
         self.name = name
+        if hash is None:
+            self._hashid = str(uuid4())
+        else:
+            self._hashid = hashid
         self.storage_slot = {
             "tray": None,
             "slot": None,
@@ -120,3 +148,28 @@ class Sample:
         output += f"{self.storage_slot}\n"
         output += f"\n{sc[0]}\n\n{an[0]}"
         return output
+
+    def export(self, filepath):
+        steps_dict = [
+            {"rpm": s[0], "acceleration": s[1], "duration": s[2], "start_time": st}
+            for s, st in zip(
+                self.spincoat_recipe.steps, self.spincoat_recipe.start_times
+            )
+        ]
+        spincoat_output = {
+            "steps": steps_dict,
+            "perovskite_drop_time": self.spincoat_recipe.perovskite_droptime,
+            "antisolvent_drop_time": self.spincoat_recipe.antisolvent_droptime,
+        }
+        anneal_output = {
+            "temperature": self.anneal_recipe.temperature,
+            "duration": self.anneal_recipe.duration,
+        }
+
+        out = {
+            "name": self.name,
+            "hashid": self._hashid,
+            "storage_slot": self.storage_slot,
+            "spincoat_recipe": self.spincoat_recipe,
+            "anneal_recipe": self.anneal_recipe,
+        }
