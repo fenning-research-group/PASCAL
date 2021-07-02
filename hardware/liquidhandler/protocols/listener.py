@@ -1,9 +1,14 @@
 import requests  # you can install this with pip
 import time
 
+# status enumerations
+STATUS_IDLE = 0
+STATUS_TASK_RECEIVED = 1
+STATUS_TASK_INPROGRESS = 2
+
 
 class Listener:
-    def __init__(self, address="http://132.239.93.30:8080/update"):
+    def __init__(self, address="http://132.239.93.24:8080/update"):
         self.address = address
         self.experiment_in_progress = True
         self.status = 0  # liquid handler status key: 0 = idle, 1 = actively working on task, 2 = completed task, waiting for maestro to acknowlegde
@@ -30,6 +35,7 @@ class Listener:
         self.STANDBY_WELL = "B1"
         self.CHUCK_WELL = "A1"
 
+        # tasklist contains all methods to control liquid handler
         self.tasklist = {
             "aspirate_for_spincoating": self.aspirate_for_spincoating,
             "dispense_onto_chuck": self.dispense_onto_chuck,
@@ -70,21 +76,20 @@ class Listener:
             function = getattr(pipette, function)
 
         self.taskid = taskid
-        self.status = 1
-        payload = {"status": 1, "taskid": taskid}
+        self.status = STATUS_TASK_RECEIVED
+        payload = {"status": STATUS_TASK_RECEIVED, "taskid": taskid}
         r = requests.post(self.address, json=payload)
         r = r.json()
 
         function(*args, **kwargs)
 
-        self.status = 2
-        payload = {"status": 2, "taskid": taskid}
+        self.status = STATUS_TASK_INPROGRESS
+        payload = {"status": STATUS_TASK_INPROGRESS, "taskid": taskid}
         r = requests.post(self.address, json=payload)
 
         r = r.json()
-        self.status = 0
         if r["completion_acknowledged"]:
-            self.status = 0
+            self.status = STATUS_IDLE
 
     def parse_pipette(self, pipette):
         if type(pipette) is int:
@@ -130,6 +135,7 @@ class Listener:
         pipette.well_bottom_clearance.dispense = (
             height  # set z-offset from chuck to tip, mm
         )
+
         pipette.flow_rate.dispense = rate  # dispense flow rate, ul/s
 
         pipette.dispense(location=self.spincoater[self.CHUCK_WELL])
@@ -149,7 +155,7 @@ metadata = {
     "protocolName": "Maestro Listener",
     "author": "Rishi Kumar",
     "source": "FRG",
-    "apiLevel": "2.8",
+    "apiLevel": "2.10",
 }
 
 
@@ -179,13 +185,6 @@ def run(protocol_context):
         p.dispense(10, listener.spincoater[listener.CHUCK_WELL])
         p.return_tip()
 
-    # listener.pipettes[0].pick_up_tip()
-    # listener.pipettes[0].aspirate(125, listener.stock.wells_by_name()['B1'])
-    # listener.pipettes[1].pick_up_tip()
-    # listener.pipettes[1].aspirate(125, listener.stock.wells_by_name()['B1'])
-
-    # time.sleep(1e10)
-
     if (
         protocol_context.is_simulating()
     ):  # without this, the protocol simulation gets stuck in loop forever.
@@ -203,4 +202,4 @@ def run(protocol_context):
                 print("Timeout")
                 experiment_in_progress = False
 
-        time.sleep(0.2)
+        time.sleep(0.1)
