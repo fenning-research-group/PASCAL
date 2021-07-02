@@ -8,19 +8,30 @@ STATUS_TASK_INPROGRESS = 2
 
 
 class Listener:
-    def __init__(self, address="http://132.239.93.24:8080/update"):
+    def __init__(
+        self,
+        protocol_context,
+        tips,
+        stocks,
+        spincoater,
+        address="http://132.239.93.24:8080/update",
+    ):
         self.address = address
+        self.protocol_context = protocol_context
         self.experiment_in_progress = True
-        self.status = 0  # liquid handler status key: 0 = idle, 1 = actively working on task, 2 = completed task, waiting for maestro to acknowlegde
+        self.status = STATUS_IDLE  # liquid handler status key: 0 = idle, 1 = actively working on task, 2 = completed task, waiting for maestro to acknowlegde
         self.currenttask = None
-        self.tipracks = None  # will be set externally in run(). can be any number
-        self.stock = None  # set externally. assumes only one stock wellplate!
-        self.mixing = None  # set externally. assumes one wellplate to hold mixtures of stock solutions
-        self.pipettes = None  # set externally. assumes two pipettes.
-        self.spincoater = (
-            None  # set externally, has two locations named "standby" and "chuck"
-        )
-
+        self.tips = tips
+        self.stocks = stocks
+        self.mixing = {}  # TODO intermediate mixing wells
+        self._sources = {**self.stocks, **self.mixing}
+        self.spincoater = spincoater
+        self.pipettes = {
+            side: protocol_context.load_instrument(
+                "p300_single_gen2", side, tip_racks=self.tips
+            )
+            for side in ["left", "right"]
+        }
         self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
             1  # mm, distance between tip and bottom of wells while dispensing
@@ -28,11 +39,12 @@ class Listener:
         self.DISPENSE_RATE = 10  # uL/s
         self.SPINCOATING_DISPENSE_HEIGHT = 6  # mm, distance between tip and chuck
         self.SPINCOATING_DISPENSE_RATE = 50  # uL/s
+        self.SLOW_Z_RATE = 20  # mm/s
 
-        self.ANTISOLVENT_PIPETTE = 0  # default left pipette for antisolvent
-        self.PSK_PIPETTE = 1  # default right for psk
-        self.STANDBY_WELL = "B1"
-        self.CHUCK_WELL = "A1"
+        self.ANTISOLVENT_PIPETTE = self.pipettes[
+            "left"
+        ]  # default left pipette for antisolvent
+        self.PSK_PIPETTE = self.pipettes["right"]  # default right for psk
 
         # tasklist contains all methods to control liquid handler
         self.tasklist = {
@@ -97,45 +109,99 @@ class Listener:
         if type(pipette) is str:
             pipette = pipette.lower()
         if pipette in ["psk", "perovskite", "p", "left", "l"]:
-            return self.pipettes[self.PSK_PIPETTE]
+            return self.PSK_PIPETTE
         elif pipette in ["as", "antisolvent", "a", "right", "r"]:
-            return self.pipettes[self.ANTISOLVENT_PIPETTE]
+            return self.ANTISOLVENT_PIPETTE
         else:
             raise ValueError("Invalid pipette name given!")
 
     ### bundled pipetting methods
-    def aspirate_for_spincoating(self, psk_well, psk_volume, as_well, as_volume):
-        for p in self.pipettes:
+    def _aspirate_from_well(
+        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip
+    ):
+        p = pipette
+        if p.has_tip:
+            p.drop_tip()
+        p.pick_up_tip()
+        p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
+        p.aspirate(volume)
+        if slow_retract:
+            p.move_to(self._sources[tray][well].top(2), speed=self.SLOW_Z_RATE)
+        if air_gap:
+            p.air_gap(self.AIRGAP)
+        if touch_tip:
+            p.touch_tip()
+
+    def aspirate_for_spincoating(
+        self,
+        tray,
+        well,
+        volume,
+        pipette="perovskite",
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
+    ):
+        p = self.parse_pipette(pipette=pipette)
+        self._aspirate_from_well(
+            tray=tray,
+            well=well,
+            volume=volume,
+            pipette=p,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
+        p.move_to(self.spincoater["Standby"].top())
+
+    def aspirate_both_for_spincoating(
+        self,
+        psk_tray,
+        psk_well,
+        psk_volume,
+        as_tray,
+        as_well,
+        as_volume,
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
+    ):
+        for p in self.pipettes.values():
             p.pick_up_tip()
 
-        self.pipettes[self.PSK_PIPETTE].aspirate(psk_volume, self.stock[psk_well])
-        self.pipettes[self.PSK_PIPETTE].air_gap(self.AIRGAP)
+        self._aspirate_from_well(
+            tray=psk_tray,
+            well=psk_well,
+            volume=psk_volume,
+            pipette=self.PSK_PIPETTE,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
+        self._aspirate_from_well(
+            tray=as_tray,
+            well=as_well,
+            volume=as_volume,
+            pipette=self.ANTISOLVENT_PIPETTE,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
 
-        self.pipettes[self.ANTISOLVENT_PIPETTE].aspirate(as_volume, self.stock[as_well])
-        self.pipettes[self.ANTISOLVENT_PIPETTE].air_gap(self.AIRGAP)
-
-        self.pipettes[1].move_to(
-            self.spincoater[self.STANDBY_WELL].top()
-        )  # moves right pipette to standby location of spincoater, which should be to the upper left of chuck
+        self.PSK_PIPETTE.move_to(self.spincoater["Standby"].top())
 
     def dispense_onto_chuck(self, pipette, height=None, rate=None):
         if height is None:
             height = self.SPINCOATING_DISPENSE_HEIGHT
+        elif height < 0:
+            height = 0  # negative height = crash into substrate!
         if rate is None:
             rate = self.SPINCOATING_DISPENSE_RATE
 
-        pipette = self.parse_pipette(pipette)
-        # set dispense settings for spincoating
-        pipette.well_bottom_clearance.dispense = (
-            height  # set z-offset from chuck to tip, mm
-        )
-
-        pipette.flow_rate.dispense = rate  # dispense flow rate, ul/s
-        pipette.dispense(location=self.spincoater[self.CHUCK_WELL])
-
-        # set dispense settings to defaults for liquid handling
-        pipette.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
-        pipette.flow_rate.dispense = self.DISPENSE_RATE  # dispense flow rate, ul/s
+        p = self.parse_pipette(pipette)
+        relative_rate = rate / p.flow_rate
+        p.move_to(self.spincoater["Chuck"].top(height))
+        pipette.dispense(location=self.spincoater[self.CHUCK_WELL], rate=relative_rate)
 
     def cleanup(self):
         for p in self.pipettes:
@@ -153,30 +219,41 @@ metadata = {
 
 
 def run(protocol_context):
-    listener = Listener()
-
-    listener.tipracks = [
-        protocol_context.load_labware("sartorius_safetyspace_tiprack_200ul", slot)
+    # define your hardware
+    tips = [
+        protocol_context.load_labware("sartorius_safetyspace_tiprack_200ul", slot=slot)
         for slot in ["8"]
     ]
 
-    listener.stock = protocol_context.load_labware("frg_12_wellplate_15000ul", "9")
-    listener.pipettes = [
-        protocol_context.load_instrument(
-            "p300_single_gen2", side, tip_racks=listener.tipracks
+    # note that each stock tray name must match the names from experiment designer!
+    stocks = {
+        "StockTray1": protocol_context.load_labware(
+            "frg_12_wellplate_15000ul", slot="9"
         )
-        for side in ["left", "right"]
+    }
+
+    empty_wells_for_dummy_moves = [
+        stocks["StockTray1"]["B2"],
     ]
 
-    listener.spincoater = protocol_context.load_labware(
-        "frg_spincoater_v1", "3"
-    )  # has two locations defined as "wells", called "standby" and "chuck"
+    listener = Listener(
+        protocol_context=protocol_context,
+        tips=tips,
+        stocks=stocks,
+        spincoater=protocol_context.load_labware("frg_spincoater_v1", slot="3"),
+    )
 
-    for p in listener.pipettes:
+    # each piece of labware has to be involved in some dummy moves to be included in protocol
+    # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
+    for side, p in listener.pipettes.items():
         p.pick_up_tip()
-        p.aspirate(10, listener.stock.wells_by_name()["B2"])  # make this an empty well!
-        p.dispense(10, listener.spincoater[listener.CHUCK_WELL])
+        volume = 0
+        for name, labware in stocks.items():
+            p.aspirate(10, labware["A1"].top(10))
+            volume += 10
+        p.dispense(volume, listener.spincoater["Chuck"])
         p.return_tip()
+        p.reset_tipracks()
 
     if (
         protocol_context.is_simulating()
