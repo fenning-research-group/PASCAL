@@ -23,13 +23,12 @@ class Listener:
 
         self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
-            1  # distance between tip and bottom of wells while dispensing, mm
+            1  # mm, distance between tip and bottom of wells while dispensing
         )
-        self.SPINCOATING_DISPENSE_HEIGHT = 10  # distance between tip and chuck, mm
-        self.DISPENSE_RATE = (
-            5  # distance between tip and bottom of wells while dispensing, mm
-        )
-        self.SPINCOATING_DISPENSE_RATE = 50  # distance between tip and chuck, mm
+        self.DISPENSE_RATE = 10  # uL/s
+        self.SPINCOATING_DISPENSE_HEIGHT = 6  # mm, distance between tip and chuck
+        self.SPINCOATING_DISPENSE_RATE = 50  # uL/s
+
         self.ANTISOLVENT_PIPETTE = 0  # default left pipette for antisolvent
         self.PSK_PIPETTE = 1  # default right for psk
         self.STANDBY_WELL = "B1"
@@ -106,20 +105,15 @@ class Listener:
         for p in self.pipettes:
             p.pick_up_tip()
 
-        self.pipettes[self.PSK_PIPETTE].aspirate(
-            psk_volume, self.stock.wells_by_name()[psk_well]
-        )
-
+        self.pipettes[self.PSK_PIPETTE].aspirate(psk_volume, self.stock[psk_well])
         self.pipettes[self.PSK_PIPETTE].air_gap(self.AIRGAP)
 
-        self.pipettes[self.ANTISOLVENT_PIPETTE].aspirate(
-            as_volume, self.stock.wells_by_name()[as_well]
-        )
+        self.pipettes[self.ANTISOLVENT_PIPETTE].aspirate(as_volume, self.stock[as_well])
         self.pipettes[self.ANTISOLVENT_PIPETTE].air_gap(self.AIRGAP)
 
         self.pipettes[1].move_to(
             self.spincoater[self.STANDBY_WELL].top()
-        )  # moves right pipette to standby location of spincoater, which should be to the bottom left of chuck
+        )  # moves right pipette to standby location of spincoater, which should be to the upper left of chuck
 
     def dispense_onto_chuck(self, pipette, height=None, rate=None):
         if height is None:
@@ -133,7 +127,6 @@ class Listener:
             height  # set z-offset from chuck to tip, mm
         )
         pipette.flow_rate.dispense = rate  # dispense flow rate, ul/s
-
         pipette.dispense(location=self.spincoater[self.CHUCK_WELL])
 
         # set dispense settings to defaults for liquid handling
@@ -151,7 +144,7 @@ metadata = {
     "protocolName": "Maestro Listener",
     "author": "Rishi Kumar",
     "source": "FRG",
-    "apiLevel": "2.8",
+    "apiLevel": "2.10",
 }
 
 
@@ -164,12 +157,12 @@ def run(protocol_context):
     ]
 
     listener.stock = protocol_context.load_labware("frg_28_wellplate_4000ul", "5")
-    listener.pipettes = [
-        protocol_context.load_instrument(
+    listener.pipettes = {
+        side: protocol_context.load_instrument(
             "p300_single_gen2", side, tip_racks=listener.tipracks
         )
         for side in ["left", "right"]
-    ]
+    }
 
     listener.spincoater = protocol_context.load_labware(
         "frg_spincoater_v1", "9"
