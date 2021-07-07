@@ -1,12 +1,12 @@
 import numpy as np
-from aiohttp import web
 import asyncio
 import time
-import threading
+import ntplib
 import json
 import os
 import yaml
 import websockets
+import uuid
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -17,25 +17,76 @@ class OT2:
     def __init__(self):
         self.server = OT2Server()
         self.server.start()
-        self.INTERVAL = constants["liquidhandler"]["pollingrate"]
 
-    def drop_perovskite(self):
-        self.server.add_to_queue(function="dispense_onto_chuck", pipette=1)
+    def drop_perovskite(self, height=None, rate=None, **kwargs):
+        self.server.add_to_queue(
+            function="dispense_onto_chuck",
+            pipette="perovskite",
+            height=height,
+            rate=rate,
+            **kwargs,
+        )
         self._wait_for_task_complete()
 
-    def drop_antisolvent(self):
-        self.server.add_to_queue(function="dispense_onto_chuck", pipette=0)
+    def drop_antisolvent(self, height=None, rate=None, **kwargs):
+        self.server.add_to_queue(
+            function="dispense_onto_chuck",
+            pipette="antisolvent",
+            height=height,
+            rate=rate,
+            **kwargs,
+        )
         self._wait_for_task_complete()
 
     def aspirate_for_spincoating(
-        self, psk_well, psk_volume, antisolvent_well, antisolvent_volume
+        self,
+        tray,
+        well,
+        volume,
+        pipette="right",
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
+        **kwargs,
     ):
         self.server.add_to_queue(
             function="aspirate_for_spincoating",
+            tray=tray,
+            well=well,
+            volume=volume,
+            pipette=pipette,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+            **kwargs,
+        )
+        self._wait_for_task_complete()
+
+    def aspirate_both_for_spincoating(
+        self,
+        psk_tray,
+        psk_well,
+        psk_volume,
+        antisolvent_tray,
+        antisolvent_well,
+        antisolvent_volume,
+        slow_retract=True,
+        air_gap=True,
+        touch_tip=True,
+        **kwargs,
+    ):
+        self.server.add_to_queue(
+            function="aspirate_both_for_spincoating",
+            psk_tray=psk_tray,
             psk_well=psk_well,
             psk_volume=psk_volume,
+            as_tray=antisolvent_tray,
             as_well=antisolvent_well,
             as_volume=antisolvent_volume,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+            **kwargs,
         )
         self._wait_for_task_complete()
 
@@ -47,161 +98,252 @@ class OT2:
         self.server.add_to_queue(function="None", all_done="all_done")
 
     def _wait_for_task_complete(self):
-        while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
-            time.sleep(self.INTERVAL)
-        while self.server.OT2_status != 0:  # wait for task to be marked complete by ot2
-            time.sleep(self.INTERVAL)
+        while len(self.server.pending_tasks) > 0:
+            time.sleep(self.server.POLLINGRATE)
+        # while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
+        #     time.sleep(self.INTERVAL)
+        # while self.server.OT2_status != 0:  # wait for task to be marked complete by ot2
+        #     time.sleep(self.INTERVAL)
 
     def __del__(self):
         self.server.stop()
 
 
-class OT2Server_websocket:
-    def __init__(self):
-        pass
-
-    def start(self):
-        if self.loop is None:
-            self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        start_server = websockets.serve(self.main, "127.0.0.1", 8080)
-        self.loop.run_until_complete(start_server)
-        # self.loop.run_forever()
-        # asyncio.ensure_future(self.main())
-        self.thread = threading.Thread(target=self.loop.run_forever, args=())
-        self.thread.start()
-
-    async def main(self, websocket, path):
-        while True:
-            ot2 = json.loads(await websocket.recv())
-
-            ### some logic
-            maestro = {}
-            await websocket.send(json.dumps(maestro))
-
-
 class OT2Server:
-    """Local Server to communicate with OpenTrons-2 Liquid Handling robot from the control PC.
+    def __init__(self):
+        self.__calibrate_time_to_nist()
+        self.loop = asyncio.get_event_loop()
+        self.connected = False
+        self.ip = constants["liquidhandler"]["server"]["ip"]
+        self.port = constants["liquidhandler"]["server"]["port"]
+        self.pending_tasks = []
+        self.completed_tasks = {}
+        self.POLLINGRATE = 3  # seconds between status checks to OT2
 
-    Commands are posted to this serves. OT2 is constantly querying the server for new commands, will
-    report back when it has completed any existing commands. Low-level movements are all handled on
-    the OT2's onboard computer.
-    """
+    ### Time Synchronization with NIST
+    def __calibrate_time_to_nist(self):
+        client = ntplib.NTPClient()
+        response = None
+        while response is None:
+            try:
+                response = client.request("europe.pool.ntp.org", version=3)
+            except:
+                pass
+        t_local = time.time()
+        self.__local_nist_offset = response.tx_time - t_local
 
-    def __init__(self, parent=None, host="0.0.0.0", port=8080):
-        self.host = host
-        self.port = port
-        self.parent = parent
-        self.pending_requests = 0  # number of pending instructions for OT2
-        self.requests = []
-        self.OT2_status = 0  # 0 = idle, 1 = task in progress, 2 = task completed, awaiting acknowledgement.
-        self.taskid = None
-        self.loop = None
+    def nist_time(self):
+        return time.time() + self.__local_nist_offset
 
-    ### protocol methods
-    def add_to_queue(self, function, *args, **kwargs):
-        payload = {
-            "taskid": hash(time.time()),
-            "function": function,
-            "args": args,
-            "kwargs": kwargs,
-        }
-        self.pending_requests += 1
-        self.requests.append(payload)
+    ### Server Methods
+    async def __connect_to_websocket(self):
+        self.websocket = await websockets.connect(self.uri)
 
-    def send_request(self):
-        self.OT2_status = 1
-        payload = self.requests.pop(0)  # take request from top of stack
-        payload["pending_requests"] = self.pending_requests
-        self.pending_requests -= 1
+    def start(self, ip=None, port=None):
+        if ip is not None:
+            self.ip = ip
+        if port is not None:
+            self.port = port
+        self.uri = f"ws://{self.ip}:{self.port}"
 
-        return web.json_response(status=200, data=payload)  # OK
-
-    def idle_ack(self):
-        return web.json_response(status=200, data={"pending_requests": 0})  # OK
-
-    def complete_ack(self):
-        self.OT2_status = 0
-        return web.json_response(
-            status=200,  # OK
-            data={
-                "pending_requests": self.pending_requests,
-                "taskid": self.taskid,
-                "completion_acknowledged": 1,
-            },
-        )
-
-    ### webserver methods
-    def start(self):
-        if self.loop is None:
-            self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        asyncio.ensure_future(self.main())
-        self.thread = threading.Thread(target=self.loop.run_forever, args=())
-        self.thread.start()
-
-    def stop(self):
-        asyncio.run(self.__stop_routine())
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        # self.loop.close()
-        self.thread.join()
-        # asyncio.get_event_loop().stop()
-        # asyncio.get_event_loop().close()
-
-    async def __stop_routine(self):
-        await self.site.stop()
-        await self.runner.cleanup()
-
-    def build_app(self):
-        self.app = web.Application()
-        self.app.router.add_post("/update", self.update)
-
-    async def main(self):
-        self.build_app()
-        self.runner = web.AppRunner(self.app)
-        await self.runner.setup()
-        self.site = web.TCPSite(self.runner, host=self.host, port=self.port)
-        await self.site.start()
-
-    # async def close(self):
-    # 	await self.runner.cleanup()
-    # 	self.loop.close()
-
-    async def update(self, request):
-        """
-        This function serves POST /update.
-
-        The request should have a json body with a "step" key that at some point
-        has the value "done-aspirating".
-
-        It will return a json message with appropriate HTTP status.
-        """
-        try:
-            body = await request.json()
-        except json.JSONDecodeError:
-            text = await body.text()
-            print(f"Request was not json: {text}")
-            return web.json_response(
-                status=400, data={"error": "bad-request"}  # Bad Request
+        flag = input("confirm that the Listener protocol is running on OT2 (y/n):")
+        if str.lower(flag) == "y":
+            self.loop.run_until_complete(self.__connect_to_websocket())
+            self.connected = True
+            self._worker = asyncio.create_task(self.worker(), name="maestro_worker")
+            self._checker = asyncio.create_task(self.checker(), name="maestro_checker")
+        else:
+            print(
+                "User indicated that Listener protocol is not running - did not attempt to connect to OT2 websocket."
             )
 
-        self.OT2_status = body["status"]
+    def stop(self):
+        self.mark_completed
+        self.connected = False
+        return
 
-        # if 'step' not in body:
-        # 	print(f"Body did not have a 'step' key")
-        # 	return web.json_response(status=400, # Bad Request
-        # 							 data={'error': 'no-step'})
+    def _update_completed_tasklist(self, tasklist):
+        for taskid, nisttime in tasklist.items():
+            print(f"{taskid} completed at {nisttime}")
+            if taskid in self.pending_tasks:
+                self.pending_tasks.remove(taskid)
+        self.completed_tasks.update(tasklist)
 
-        if body["status"] == 0:  # OT2 idle, waiting for instructions
-            if self.pending_requests:
-                return self.send_request()
-            else:
-                return self.idle_ack()
+    async def worker(self):
+        while self.connected:
+            ot2 = json.loads(await self.websocket.recv())
+            #             print(f"maestro recieved {ot2}")
+            if "acknowledged" in ot2:
+                print(f'{ot2["acknowledged"]} acknowledged by OT2')
+                self.pending_tasks.append(ot2["acknowledged"])
+            if "completed" in ot2:
+                self._update_completed_tasklist(ot2["completed"])
 
-        if body["status"] == 1:  # task in progress
-            self.taskid = body["taskid"]
-            return self.idle_ack()
+    async def checker(self):
+        while self.connected:
+            await asyncio.sleep(self.POLLINGRATE)
+            maestro = {"status": 0}  # query the status, 0 is just a placeholder values
+            await self.websocket.send(json.dumps(maestro))
 
-        if body["status"] == 2:  # task completed
-            self.taskid = None
-            return self.complete_ack()
+    async def __add_task(self, task):
+        await self.websocket.send(json.dumps(task))
+
+    def _add_task(self, task):
+        self.loop.run_until_complete(self.__add_task(task))
+
+    def add_to_queue(self, task, taskid=None, nist_time=None, *args, **kwargs):
+        if taskid in kwargs:
+            taskid = kwargs.pop("taskid")
+        else:
+            taskid = str(uuid.uuid4())
+
+        if nist_time in kwargs:
+            nist_time = kwargs.pop("nist_time")
+        else:
+            nist_time = self.nist_time()
+
+        task = {
+            "task": {
+                "task": task,
+                "taskid": taskid,
+                "nist_time": nist_time,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        }
+        self._add_task(task)
+
+    def status_update(self):
+        maestro = {"status": 0}
+        self._add_task(maestro)
+
+    def mark_completed(self):
+        maestro = {"complete": 0}
+        self._add_task(maestro)
+
+
+# class OT2Server:
+#     """Local Server to communicate with OpenTrons-2 Liquid Handling robot from the control PC.
+
+#     Commands are posted to this serves. OT2 is constantly querying the server for new commands, will
+#     report back when it has completed any existing commands. Low-level movements are all handled on
+#     the OT2's onboard computer.
+#     """
+
+#     def __init__(self, parent=None, host="0.0.0.0", port=8080):
+#         self.host = host
+#         self.port = port
+#         self.parent = parent
+#         self.pending_requests = 0  # number of pending instructions for OT2
+#         self.requests = []
+#         self.OT2_status = 0  # 0 = idle, 1 = task in progress, 2 = task completed, awaiting acknowledgement.
+#         self.taskid = None
+#         self.loop = None
+
+#     ### protocol methods
+#     def add_to_queue(self, function, *args, **kwargs):
+#         payload = {
+#             "taskid": hash(time.time()),
+#             "function": function,
+#             "args": args,
+#             "kwargs": kwargs,
+#         }
+#         self.pending_requests += 1
+#         self.requests.append(payload)
+
+#     def send_request(self):
+#         self.OT2_status = 1
+#         payload = self.requests.pop(0)  # take request from top of stack
+#         payload["pending_requests"] = self.pending_requests
+#         self.pending_requests -= 1
+
+#         return web.json_response(status=200, data=payload)  # OK
+
+#     def idle_ack(self):
+#         return web.json_response(status=200, data={"pending_requests": 0})  # OK
+
+#     def complete_ack(self):
+#         self.OT2_status = 0
+#         return web.json_response(
+#             status=200,  # OK
+#             data={
+#                 "pending_requests": self.pending_requests,
+#                 "taskid": self.taskid,
+#                 "completion_acknowledged": 1,
+#             },
+#         )
+
+#     ### webserver methods
+#     def start(self):
+#         if self.loop is None:
+#             self.loop = asyncio.new_event_loop()
+#         asyncio.set_event_loop(self.loop)
+#         asyncio.ensure_future(self.main())
+#         self.thread = threading.Thread(target=self.loop.run_forever, args=())
+#         self.thread.start()
+
+#     def stop(self):
+#         asyncio.run(self.__stop_routine())
+#         self.loop.call_soon_threadsafe(self.loop.stop)
+#         # self.loop.close()
+#         self.thread.join()
+#         # asyncio.get_event_loop().stop()
+#         # asyncio.get_event_loop().close()
+
+#     async def __stop_routine(self):
+#         await self.site.stop()
+#         await self.runner.cleanup()
+
+#     def build_app(self):
+#         self.app = web.Application()
+#         self.app.router.add_post("/update", self.update)
+
+#     async def main(self):
+#         self.build_app()
+#         self.runner = web.AppRunner(self.app)
+#         await self.runner.setup()
+#         self.site = web.TCPSite(self.runner, host=self.host, port=self.port)
+#         await self.site.start()
+
+#     # async def close(self):
+#     # 	await self.runner.cleanup()
+#     # 	self.loop.close()
+
+#     async def update(self, request):
+#         """
+#         This function serves POST /update.
+
+#         The request should have a json body with a "step" key that at some point
+#         has the value "done-aspirating".
+
+#         It will return a json message with appropriate HTTP status.
+#         """
+#         try:
+#             body = await request.json()
+#         except json.JSONDecodeError:
+#             text = await body.text()
+#             print(f"Request was not json: {text}")
+#             return web.json_response(
+#                 status=400, data={"error": "bad-request"}  # Bad Request
+#             )
+
+#         self.OT2_status = body["status"]
+
+#         # if 'step' not in body:
+#         # 	print(f"Body did not have a 'step' key")
+#         # 	return web.json_response(status=400, # Bad Request
+#         # 							 data={'error': 'no-step'})
+
+#         if body["status"] == 0:  # OT2 idle, waiting for instructions
+#             if self.pending_requests:
+#                 return self.send_request()
+#             else:
+#                 return self.idle_ack()
+
+#         if body["status"] == 1:  # task in progress
+#             self.taskid = body["taskid"]
+#             return self.idle_ack()
+
+#         if body["status"] == 2:  # task completed
+#             self.taskid = None
+#             return self.complete_ack()
