@@ -3,6 +3,7 @@ import websockets
 import json
 import time
 import ntplib
+from threading import Thread
 
 
 # status enumerations
@@ -14,15 +15,57 @@ STATUS_ALL_DONE = 9
 
 
 class ListenerWebsocket:
-    def __init__(self, ip="0.0.0.0", port=8765):
+    def __init__(
+        self,
+        protocol_context,
+        tips,
+        stocks,
+        mixing,
+        spincoater,
+        ip="0.0.0.0",
+        port=8764,
+    ):
+        ## Server constants
         self.ip = ip
         self.port = port
-        self.q = asyncio.PriorityQueue()
+        # self.localloop = asyncio.new_event_loop()
+        # self.localloop.run_forever()
+        self._start_worker_thread()  # creates self.loop, self._worker
+
+        ## Task constants
         self.completed_tasks = {}
         self.status = STATUS_IDLE
+        self.tips = tips
+        self.stocks = stocks
+        self.mixing = mixing  # TODO intermediate mixing wells
+        self._sources = {**self.stocks, **self.mixing}
+
+        self.spincoater = spincoater
+        self.CHUCK = "A1"
+        self.STANDBY = "B1"
+
+        self.pipettes = {
+            side: protocol_context.load_instrument(
+                "p300_single_gen2", side, tip_racks=self.tips
+            )
+            for side in ["left", "right"]
+        }
+        self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+        self.DISPENSE_HEIGHT = (
+            1  # mm, distance between tip and bottom of wells while dispensing
+        )
+        self.DISPENSE_RATE = 10  # uL/s
+        self.SPINCOATING_DISPENSE_HEIGHT = 6  # mm, distance between tip and chuck
+        self.SPINCOATING_DISPENSE_RATE = 50  # uL/s
+        self.SLOW_Z_RATE = 20  # mm/s
+
+        self.ANTISOLVENT_PIPETTE = self.pipettes[
+            "left"
+        ]  # default left pipette for antisolvent
+        self.PSK_PIPETTE = self.pipettes["right"]  # default right for psk
+
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
-        self._worker = asyncio.create_task(self.worker())
 
     ### Time Synchronization with NIST
 
@@ -41,6 +84,16 @@ class ListenerWebsocket:
         return time.time() + self.__local_nist_offset
 
     ### Server Methods
+    def _start_worker_thread(self):
+        def f(loop):
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+            self.q = asyncio.PriorityQueue()
+
+        self.loop = asyncio.new_event_loop()
+        self.thread = Thread(target=f, args=(self.loop,))
+        self.thread.start()
+        self.loop.call_soon_threadsafe(self.worker())
 
     async def process_task(self, task, websocket):
         # print(f"> received new task {task['taskid']}")
@@ -65,6 +118,7 @@ class ListenerWebsocket:
                 await self.update_status(websocket)
             if "complete" in maestro:
                 finished = True
+                self.__stop.set()  # flag the websocket to close
                 self.status = STATUS_ALL_DONE
 
     async def worker(self):
@@ -84,10 +138,16 @@ class ListenerWebsocket:
             self.completed_tasks[task["taskid"]] = self.nist_time()
             print(f"{task['taskid']} ({task['task']}) finished")
 
+    async def _start_server(self):
+        self.__stop = asyncio.Event()
+        async with websockets.serve(self.main, self.ip, self.port):
+            await self.__stop.wait()
+
     def start(self):
-        loop = asyncio.get_event_loop()
-        _start_server = websockets.serve(self.main, self.ip, self.port)
-        loop.run_until_complete(_start_server)
+        # _start_server = websockets.serve(self.main, self.ip, self.port)
+        # self.__stop = asyncio.Event()
+        # self.loop.create_task(self._start_server())
+        self.loop.call_soon_threadsafe(self._start_server())
 
     ### Helper Methods
     def _parse_pipette(self, pipette):
@@ -119,7 +179,13 @@ class ListenerWebsocket:
     ### Callable Tasks
 
     def __initialize_tasks(self):
-        self.tasks = {"wait": self.wait}
+        self.tasks = {
+            "aspirate_for_spincoating": self.aspirate_for_spincoating,
+            "aspirate_both_for_spincoating": self.aspirate_both_for_spincoating,
+            "dispense_onto_chuck": self.dispense_onto_chuck,
+            "stage_for_dispense": self.stage_for_dispense,
+            "cleanup": self.cleanup,
+        }
 
     def aspirate_for_spincoating(
         self,
@@ -145,7 +211,7 @@ class ListenerWebsocket:
             air_gap=air_gap,
             touch_tip=touch_tip,
         )
-        p.move_to(self.spincoater["Standby"].top())
+        self.stage_for_dispense(pipette=pipette)
 
     def aspirate_both_for_spincoating(
         self,
@@ -185,7 +251,11 @@ class ListenerWebsocket:
             touch_tip=touch_tip,
         )
 
-        self.PSK_PIPETTE.move_to(self.spincoater["Standby"].top())
+        self.stage_for_dispense(pipette="perovskite")
+
+    def stage_for_dispense(self, pipette):
+        p = self.parse_pipette(pipette)
+        p.moveto(self.spincoater[self.STANDBY].top())
 
     def dispense_onto_chuck(self, pipette, height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
@@ -196,10 +266,13 @@ class ListenerWebsocket:
         if rate is None:
             rate = self.SPINCOATING_DISPENSE_RATE
 
-        p = self._parse_pipette(pipette)
-        relative_rate = rate / p.flow_rate
-        p.move_to(self.spincoater["Chuck"].top(height))
-        pipette.dispense(location=self.spincoater[self.CHUCK_WELL], rate=relative_rate)
+        p = self.parse_pipette(pipette)
+        # p = self.pipettes["left"]
+        # relative_rate = rate / p.flow_rate
+        relative_rate = 1
+        # p.move_to(self.spincoater[self.CHUCK].top(height))
+        p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
+        p.blow_out()
 
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""

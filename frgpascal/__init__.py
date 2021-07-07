@@ -1,2 +1,2 @@
-# import frgpascal.maestro
-# import frgpascal.hardware
+import frgpascal.maestro
+import frgpascal.hardware
