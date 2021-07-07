@@ -65,6 +65,7 @@ class ListenerWebsocket:
                 await self.update_status(websocket)
             if "complete" in maestro:
                 finished = True
+                self.status = STATUS_ALL_DONE
 
     async def worker(self):
         while True:
@@ -219,26 +220,31 @@ metadata = {
 def run(protocol_context):
     # define your hardware
     tips = [
-        protocol_context.load_labware("sartorius_safetyspace_tiprack_200ul", slot=slot)
-        for slot in ["8"]
+        protocol_context.load_labware(
+            "sartorius_safetyspace_tiprack_200ul", location=location
+        )
+        for location in ["8"]
     ]
 
     # note that each stock tray name must match the names from experiment designer!
     stocks = {
         "StockTray1": protocol_context.load_labware(
-            "frg_12_wellplate_15000ul", slot="9"
+            "frg_12_wellplate_15000ul", location="9"
         )
     }
 
-    empty_wells_for_dummy_moves = [
-        stocks["StockTray1"]["B2"],
-    ]
+    wellplates = {
+        "Plate1": protocol_context.load_labware(
+            "greiner_96_wellplate_360ul", location="6"
+        )
+    }
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
         tips=tips,
         stocks=stocks,
-        spincoater=protocol_context.load_labware("frg_spincoater_v1", slot="3"),
+        mixing=wellplates,
+        spincoater=protocol_context.load_labware("frg_spincoater_v1", location="3"),
     )
 
     # each piece of labware has to be involved in some dummy moves to be included in protocol
@@ -246,28 +252,17 @@ def run(protocol_context):
     for side, p in listener.pipettes.items():
         p.pick_up_tip()
         volume = 0
-        for name, labware in stocks.items():
+        for name, labware in {**stocks, **wellplates}.items():
             p.aspirate(10, labware["A1"].top(10))
             volume += 10
-        p.dispense(volume, listener.spincoater["Chuck"])
+        p.dispense(volume, listener.spincoater[listener.CHUCK])
         p.return_tip()
         p.reset_tipracks()
 
-    if (
-        protocol_context.is_simulating()
-    ):  # without this, the protocol simulation gets stuck in loop forever.
+    if protocol_context.is_simulating():  # stop here during simulation
         return
 
-    experiment_in_progress = True
-    timeout = 5 * 60  # timeout, seconds
-    time_of_last_response = time.time()
-    while experiment_in_progress:
-        try:
-            experiment_in_progress = listener.check_for_instructions()
-            time_of_last_response = time.time()
-        except:
-            if time.time() - time_of_last_response > timeout:
-                print("Timeout")
-                experiment_in_progress = False
-
-        time.sleep(0.1)
+    # listen for instructions from maestro
+    listener.start()
+    while listener.status != STATUS_ALL_DONE:
+        time.sleep(0.2)
