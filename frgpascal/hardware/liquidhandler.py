@@ -6,6 +6,7 @@ import json
 import os
 import yaml
 import websockets
+import threading
 import uuid
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -20,7 +21,7 @@ class OT2:
 
     def drop_perovskite(self, height=None, rate=None, **kwargs):
         self.server.add_to_queue(
-            function="dispense_onto_chuck",
+            task="dispense_onto_chuck",
             pipette="perovskite",
             height=height,
             rate=rate,
@@ -30,7 +31,7 @@ class OT2:
 
     def drop_antisolvent(self, height=None, rate=None, **kwargs):
         self.server.add_to_queue(
-            function="dispense_onto_chuck",
+            task="dispense_onto_chuck",
             pipette="antisolvent",
             height=height,
             rate=rate,
@@ -50,7 +51,7 @@ class OT2:
         **kwargs,
     ):
         self.server.add_to_queue(
-            function="aspirate_for_spincoating",
+            task="aspirate_for_spincoating",
             tray=tray,
             well=well,
             volume=volume,
@@ -76,7 +77,7 @@ class OT2:
         **kwargs,
     ):
         self.server.add_to_queue(
-            function="aspirate_both_for_spincoating",
+            task="aspirate_both_for_spincoating",
             psk_tray=psk_tray,
             psk_well=psk_well,
             psk_volume=psk_volume,
@@ -90,12 +91,20 @@ class OT2:
         )
         self._wait_for_task_complete()
 
-    def cleanup(self):
-        self.server.add_to_queue(function="cleanup")
+    def stage_perovskite(self):
+        self.server.add_to_queue(task="stage_for_dispense", pipette="perovskite")
         self._wait_for_task_complete()
 
-    def end(self):
-        self.server.add_to_queue(function="None", all_done="all_done")
+    def stage_antisolvent(self):
+        self.server.add_to_queue(task="stage_for_dispense", pipette="antisolvent")
+        self._wait_for_task_complete()
+
+    def cleanup(self):
+        self.server.add_to_queue(task="cleanup")
+        self._wait_for_task_complete()
+
+    # def end(self):
+    #     self.server.add_to_queue(task="None", all_done="all_done")
 
     def _wait_for_task_complete(self):
         while len(self.server.pending_tasks) > 0:
@@ -113,6 +122,7 @@ class OT2Server:
     def __init__(self):
         self.__calibrate_time_to_nist()
         self.loop = asyncio.get_event_loop()
+        self.localloop = asyncio.new_event_loop()
         self.connected = False
         self.ip = constants["liquidhandler"]["server"]["ip"]
         self.port = constants["liquidhandler"]["server"]["port"]
@@ -139,6 +149,11 @@ class OT2Server:
     async def __connect_to_websocket(self):
         self.websocket = await websockets.connect(self.uri)
 
+    def _start_workers(self):
+        # self.localloop.run_forever()
+        self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
+        self._checker = self.loop.create_task(self.checker(), name="maestro_checker")
+
     def start(self, ip=None, port=None):
         if ip is not None:
             self.ip = ip
@@ -150,16 +165,20 @@ class OT2Server:
         if str.lower(flag) == "y":
             self.loop.run_until_complete(self.__connect_to_websocket())
             self.connected = True
-            self._worker = asyncio.create_task(self.worker(), name="maestro_worker")
-            self._checker = asyncio.create_task(self.checker(), name="maestro_checker")
+            # self.thread = threading.Thread(target=self._start_workers, args=())
+            # self.thread.start()
+            self._start_workers()
         else:
             print(
                 "User indicated that Listener protocol is not running - did not attempt to connect to OT2 websocket."
             )
 
     def stop(self):
-        self.mark_completed
+        self.mark_completed()
         self.connected = False
+        asyncio.gather(self._worker, self._checker)
+        self.loop.close()
+        self.thread.join()
         return
 
     def _update_completed_tasklist(self, tasklist):
@@ -172,7 +191,7 @@ class OT2Server:
     async def worker(self):
         while self.connected:
             ot2 = json.loads(await self.websocket.recv())
-            #             print(f"maestro recieved {ot2}")
+            print(f"maestro recieved {ot2}")
             if "acknowledged" in ot2:
                 print(f'{ot2["acknowledged"]} acknowledged by OT2')
                 self.pending_tasks.append(ot2["acknowledged"])
@@ -189,7 +208,9 @@ class OT2Server:
         await self.websocket.send(json.dumps(task))
 
     def _add_task(self, task):
-        self.loop.run_until_complete(self.__add_task(task))
+        self.localloop.run_until_complete(self.__add_task(task))
+        # # asyncio.create_task(self.__add_task(task))
+        # asyncio.run_coroutine_threadsafe(self.__add_task(task), self.loop)
 
     def add_to_queue(self, task, taskid=None, nist_time=None, *args, **kwargs):
         if taskid in kwargs:

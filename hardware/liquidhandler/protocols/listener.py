@@ -13,8 +13,9 @@ class Listener:
         protocol_context,
         tips,
         stocks,
+        mixing,
         spincoater,
-        address="http://132.239.93.24:8080/update",
+        address="http://132.239.93.30:8080/update",
     ):
         self.address = address
         self.protocol_context = protocol_context
@@ -23,9 +24,12 @@ class Listener:
         self.currenttask = None
         self.tips = tips
         self.stocks = stocks
-        self.mixing = {}  # TODO intermediate mixing wells
+        self.mixing = mixing  # TODO intermediate mixing wells
         self._sources = {**self.stocks, **self.mixing}
         self.spincoater = spincoater
+        self.CHUCK = "A1"
+        self.STANDBY = "B1"
+
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", side, tip_racks=self.tips
@@ -49,7 +53,9 @@ class Listener:
         # tasklist contains all methods to control liquid handler
         self.tasklist = {
             "aspirate_for_spincoating": self.aspirate_for_spincoating,
+            "aspirate_both_for_spincoating": self.aspirate_both_for_spincoating,
             "dispense_onto_chuck": self.dispense_onto_chuck,
+            "stage_for_dispense": self.stage_for_dispense,
             "cleanup": self.cleanup,
         }
 
@@ -103,14 +109,11 @@ class Listener:
             self.status = STATUS_IDLE
 
     def parse_pipette(self, pipette):
-        if type(pipette) is int:
-            return self.pipettes[pipette]
-
         if type(pipette) is str:
             pipette = pipette.lower()
-        if pipette in ["psk", "perovskite", "p", "left", "l"]:
+        if pipette in ["psk", "perovskite", "p", "left", "l", 0]:
             return self.PSK_PIPETTE
-        elif pipette in ["as", "antisolvent", "a", "right", "r"]:
+        elif pipette in ["as", "antisolvent", "a", "right", "r", 1]:
             return self.ANTISOLVENT_PIPETTE
         else:
             raise ValueError("Invalid pipette name given!")
@@ -143,6 +146,7 @@ class Listener:
         touch_tip=True,
     ):
         p = self.parse_pipette(pipette=pipette)
+        # p = self.pipettes["left"]
         self._aspirate_from_well(
             tray=tray,
             well=well,
@@ -152,7 +156,7 @@ class Listener:
             air_gap=air_gap,
             touch_tip=touch_tip,
         )
-        p.move_to(self.spincoater["Standby"].top())
+        p.move_to(self.spincoater[self.STANDBY].top())
 
     def aspirate_both_for_spincoating(
         self,
@@ -166,8 +170,8 @@ class Listener:
         air_gap=True,
         touch_tip=True,
     ):
-        for p in self.pipettes.values():
-            p.pick_up_tip()
+        # for p in self.pipettes.values():
+        #     p.pick_up_tip()
 
         self._aspirate_from_well(
             tray=psk_tray,
@@ -188,7 +192,11 @@ class Listener:
             touch_tip=touch_tip,
         )
 
-        self.PSK_PIPETTE.move_to(self.spincoater["Standby"].top())
+        self.PSK_PIPETTE.move_to(self.spincoater[self.STANDBY].top())
+
+    def stage_for_dispense(self, pipette):
+        p = self.parse_pipette(pipette)
+        p.moveto(self.spincoater[self.STANDBY].top())
 
     def dispense_onto_chuck(self, pipette, height=None, rate=None):
         if height is None:
@@ -199,12 +207,15 @@ class Listener:
             rate = self.SPINCOATING_DISPENSE_RATE
 
         p = self.parse_pipette(pipette)
-        relative_rate = rate / p.flow_rate
-        p.move_to(self.spincoater["Chuck"].top(height))
-        pipette.dispense(location=self.spincoater[self.CHUCK_WELL], rate=relative_rate)
+        # p = self.pipettes["left"]
+        # relative_rate = rate / p.flow_rate
+        relative_rate = 1
+        # p.move_to(self.spincoater[self.CHUCK].top(height))
+        p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
+        p.blow_out()
 
     def cleanup(self):
-        for p in self.pipettes:
+        for p in self.pipettes.values():
             p.drop_tip()
         # for p in self.pipettes:
         #     p.pick_up_tip()
