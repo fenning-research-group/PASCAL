@@ -19,22 +19,22 @@ class OT2:
         self.server = OT2Server()
         self.server.start()
 
-    def drop_perovskite(self, height=None, rate=None, **kwargs):
+    def drop_perovskite(self, **kwargs):
         self.server.add_to_queue(
             task="dispense_onto_chuck",
             pipette="perovskite",
-            height=height,
-            rate=rate,
+            # height=height,
+            # rate=rate,
             **kwargs,
         )
         self._wait_for_task_complete()
 
-    def drop_antisolvent(self, height=None, rate=None, **kwargs):
+    def drop_antisolvent(self, **kwargs):
         self.server.add_to_queue(
             task="dispense_onto_chuck",
             pipette="antisolvent",
-            height=height,
-            rate=rate,
+            # height=height,
+            # rate=rate,
             **kwargs,
         )
         self._wait_for_task_complete()
@@ -44,7 +44,7 @@ class OT2:
         tray,
         well,
         volume,
-        pipette="right",
+        pipette="perovskite",
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
@@ -228,6 +228,7 @@ class OT2Server:
             await self.websocket.send(json.dumps(maestro))
 
     async def __add_task(self, task):
+        print(task)
         await self.websocket.send(json.dumps(task))
 
     def _add_task(self, task):
