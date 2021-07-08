@@ -121,8 +121,6 @@ class OT2:
 class OT2Server:
     def __init__(self):
         self.__calibrate_time_to_nist()
-        self.loop = asyncio.get_event_loop()
-        self.localloop = asyncio.new_event_loop()
         self.connected = False
         self.ip = constants["liquidhandler"]["server"]["ip"]
         self.port = constants["liquidhandler"]["server"]["port"]
@@ -149,10 +147,13 @@ class OT2Server:
     async def __connect_to_websocket(self):
         self.websocket = await websockets.connect(self.uri)
 
-    def _start_workers(self):
+    async def _start_workers(self):
         # self.localloop.run_forever()
-        self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
-        self._checker = self.loop.create_task(self.checker(), name="maestro_checker")
+        self._worker = self.worker()
+        self._checker = self.checker()
+        await asyncio.gather(self.__connect_to_websocket(), self._worker, self._checker)
+        # self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
+        # self._checker = self.loop.create_task(self.checker(), name="maestro_checker")
 
     def start(self, ip=None, port=None):
         if ip is not None:
@@ -163,11 +164,33 @@ class OT2Server:
 
         flag = input("confirm that the Listener protocol is running on OT2 (y/n):")
         if str.lower(flag) == "y":
+            self.loop = asyncio.new_event_loop()
             self.loop.run_until_complete(self.__connect_to_websocket())
+
+            self.thread = threading.Thread(target=self.loop.run_forever)
+            self.thread.daemon = True
+            self.thread.start()
+
+            # self.loop.run_forever()
             self.connected = True
+            self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
+            self._checker = self.loop.create_task(
+                self.checker(), name="maestro_checker"
+            )
+            # def f():
+            #     self.loop = asyncio.new_event_loop()
+            #     self.loop.run_until_complete(self._start_workers())
+            #     # self.loop.run_forever()
+
+            # self.thread = threading.Thread(target=f, args=())
+            # self.thread.run()
+            # self.loop.run_until_complete(self.__connect_to_websocket())
+            # self.loop.run_forever()
+            # self._worker = asyncio.create_task(self.worker(), name="maestro_worker")
+            # self._checker = asyncio.create_task(self.checker(), name="maestro_checker")
             # self.thread = threading.Thread(target=self._start_workers, args=())
             # self.thread.start()
-            self._start_workers()
+            # self._start_workers()
         else:
             print(
                 "User indicated that Listener protocol is not running - did not attempt to connect to OT2 websocket."
@@ -208,7 +231,7 @@ class OT2Server:
         await self.websocket.send(json.dumps(task))
 
     def _add_task(self, task):
-        self.localloop.run_until_complete(self.__add_task(task))
+        asyncio.run_coroutine_threadsafe(self.__add_task(task), loop=self.loop)
         # # asyncio.create_task(self.__add_task(task))
         # asyncio.run_coroutine_threadsafe(self.__add_task(task), self.loop)
 
