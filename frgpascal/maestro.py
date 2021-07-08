@@ -1,10 +1,6 @@
 # from termios import error
-import numpy as np
 import os
-from aiohttp import web  # You can install aiohttp with pip
-import json
-import threading
-import asyncio
+from threading import Lock
 import time
 import yaml
 
@@ -14,8 +10,16 @@ from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import CharacterizationLine
+from frgpascal.hardware.characterizationline import (
+    CharacterizationAxis,
+    CharacterizationLine,
+)
 from frgpascal.experimentaldesign.recipes import SpincoatRecipe, AnnealRecipe, Sample
+from frgpascal.workers import (
+    Worker_GantryGripper,
+    Worker_Characterization,
+    Worker_SpincoaterLiquidHandler,
+)
 
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
@@ -77,8 +81,31 @@ class Maestro:
         )
         # Stock Solutions
 
+        self._load_calibrations()  # load coordinate calibrations for labware
+        self.__calibrate_time_to_nist()  # for sync with other hardware
         # Status
         self.manifest = {}  # store all sample info, key is sample storage slot
+
+        # worker thread coordination
+        self.pending_tasks = []
+        self.completed_tasks = {}
+        self.lock_pendingtasks = Lock()
+        self.lock_completedtasks = Lock()
+
+    ### Time Synchronization with NIST
+    def __calibrate_time_to_nist(self):
+        client = ntplib.NTPClient()
+        response = None
+        while response is None:
+            try:
+                response = client.request("europe.pool.ntp.org", version=3)
+            except:
+                pass
+        t_local = time.time()
+        self.__local_nist_offset = response.tx_time - t_local
+
+    def nist_time(self):
+        return time.time() + self.__local_nist_offset
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
@@ -106,6 +133,9 @@ class Maestro:
 
     def _load_calibrations(self):
         """Load previous gantry positions, assume that hardware hasn't moved since last time."""
+        print(
+            "Loading labware coordinate calibrations - if any labware has moved, be sure to .calibrate() it!"
+        )
         for component in [
             self.hotplate,
             self.storage,
@@ -116,65 +146,6 @@ class Maestro:
 
     ### Physical Methods
     # Compound Movements
-    def transfer(self, p1, p2, zhop=True):
-        self.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
-
-    def spincoat(self, recipe: SpincoatRecipe):
-        """executes a series of spin coating steps. A final "stop" step is inserted
-        at the end to bring the rotor to a halt.
-
-        Args:
-            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
-
-        Returns:
-            record: dictionary of recorded spincoating process.
-        """
-
-        perovskite_dropped = False
-        antisolvent_dropped = False
-        record = {}
-
-        self.spincoater.start_logging()
-        spincoating_in_progress = True
-        t0 = time.time()
-        tnext = 0
-        for start_time, (rpm, acceleration, duration) in zip(
-            recipe.start_times, recipe.steps
-        ):
-            tnext += start_time
-            tnow = time.time() - t0  # time relative to recipe start
-            while (
-                tnow <= tnext
-            ):  # loop and check for drop times until next spin step is reached
-                if not perovskite_dropped and tnow >= recipe.perovskite_droptime:
-                    self.liquidhandler.drop_perovskite
-                    perovskite_dropped = True
-                    record["perovskite_drop"] = tnow
-                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
-                    self.liquidhandler.drop_antisolvent
-                    antisolvent_dropped = True
-                    record["antisolvent_drop"] = tnow
-                time.sleep(0.25)
-
-            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
-
-        self.spincoater.stop()
-        record.update(self.spincoater.finish_logging())
-
-        return record
 
     def catch(self):
         """
@@ -218,6 +189,66 @@ class Maestro:
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
         self.gantry.moveto(self.IDLECOORDINATES)
         self.gripper.close()
+
+    def transfer(self, p1, p2, zhop=True):
+        self.release()  # open the grippers
+        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
+        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+        )  # move just above destination
+        if self.gripper.is_under_load():
+            raise ValueError("Sample dropped in transit!")
+        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.release()  # drop the sample
+        self.gantry.moverel(
+            z=self.gantry.ZHOP_HEIGHT
+        )  # move up a bit, mostly to avoid resting gripper on hotplate
+        self.gripper.close()  # fully close gripper to reduce servo strain
+
+    def spincoat(self, recipe: SpincoatRecipe):
+        """executes a series of spin coating steps. A final "stop" step is inserted
+        at the end to bring the rotor to a halt.
+
+        Args:
+            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
+
+        Returns:
+            record: dictionary of recorded spincoating process.
+        """
+
+        perovskite_dropped = False
+        antisolvent_dropped = False
+        record = {}
+
+        self.spincoater.start_logging()
+        spincoating_in_progress = True
+        t0 = self.nist_time()
+        tnext = 0
+        for start_time, (rpm, acceleration, duration) in zip(
+            recipe.start_times, recipe.steps
+        ):
+            tnext += start_time
+            tnow = self.nist_time() - t0  # time relative to recipe start
+            while (
+                tnow <= tnext
+            ):  # loop and check for drop times until next spin step is reached
+                if not perovskite_dropped and tnow >= recipe.perovskite_droptime:
+                    self.liquidhandler.drop_perovskite()
+                    perovskite_dropped = True
+                    record["perovskite_drop"] = tnow
+                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
+                    self.liquidhandler.drop_antisolvent()
+                    antisolvent_dropped = True
+                    record["antisolvent_drop"] = tnow
+                time.sleep(0.25)
+
+            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
+
+        self.spincoater.stop()
+        record.update(self.spincoater.finish_logging())
+
+        return record
 
     # Complete Sample
     # def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
@@ -285,89 +316,80 @@ class Maestro:
     #         },
     #     }
 
+    def run_list(self, tasklist):
+        self.worker_gg = Worker_GantryGripper(
+            maestro=self, gantry=self.gantry, gripper=self.gripper
+        )
+        self.worker_sclh = Worker_SpincoaterLiquidHandler(
+            maestro=self, spincoater=self.spincoater, liquidhandler=self.liquidhandler
+        )
+        self.worker_cl = Worker_Characterization(
+            maestro=self,
+            characterizationline=self.characterization,
+            characterizationaxis=self.characterization.axis,
+        )
+
+        queuedict = {
+            "GantryGripper": self.worker_gg.queue,
+            "SpincoaterLiquidHandler": self.worker_sclh.queue,
+            "Characterization": self.worker_cl.queue,
+        }
+
+        for task in tasklist:
+            queue = queuedict[task["worker"]]
+            queue.put(task["contents"])
+
+        self._t0 = self.nist_time()
+        for worker in [self.worker_cl, self.worker_sclh, self.worker.gg]:
+            self.start()
+
     def __del__(self):
         self.liquidhandler.server.stop()
 
 
-# OT2 Communication + Reporting Server
+# class Worker_Hotplate:
+#     def __init__(self, maestro: Maestro, hotplate: HotPlate, n_workers: int):
+#         self.nist_time = self.maestro.nist_time
+#         self.queue = Queue()
+#         self.functions = {
+#             "anneal": self.anneal_timer
+#         }  # this must be filled in by each method to map tasks to functions
 
-# class Reporter:
-# 	def __init__(self, parent, host = '0.0.0.0', port = 80):
-# 		self.host = host
-# 		self.port = port
-# 		self.loop = None
-# 		self.parent = parent
+#     def start(self):
+#         self.thread = Thread(target=self.worker)
+#         self.thread.start()
 
-# 	def start(self):
-# 		if self.loop is None:
-# 			self.loop = asyncio.new_event_loop()
-# 		asyncio.set_event_loop(self.loop)
-# 		asyncio.ensure_future(self.main())
-# 		self.thread = threading.Thread(
-# 			target = self.loop.run_forever,
-# 			args = ()
-# 			)
-# 		self.thread.start()
+#     def worker(self):
+#         """process items from the queue + keep the maestro lists updated"""
+#         while True:
+#             task = self.queue.get()  # blocking wait for next task
+#             if task is None:
+#                 break  # None signals all tasks complete
 
-# 	def stop(self):
-# 		asyncio.run(self.__stop_routine())
-# 		# self.loop.stop()
-# 		# self.loop.close()
-# 		# asyncio.get_event_loop().stop()
-# 		# asyncio.get_event_loop().close()
+#             # wait for all previous tasks to complete
+#             with self.maestro.lock_pendingtasks:
+#                 self.maestro.pending_tasks.append(task["taskid"])
+#             for precedent in task["preceding_tasks"]:
+#                 with self.maestrto.lock_completedtasks:
+#                     found = precedent in self.maestro.completed_tasks
+#                 if found:
+#                     continue
+#                 else:
+#                     time.sleep(0.25)
 
+#             # wait for this task's target start time
+#             wait_for = (
+#                 self.maestro.nist_time() - task["nist_time"]
+#             )  # how long to wait before executing
+#             if wait_for > 0:
+#                 time.sleep(wait_for)
 
-# 	async def __stop_routine(self):
-# 		await self.site.stop()
-# 		await self.runner.cleanup()
+#             # execute this task
+#             function = self.functions[task["function"]]
+#             function(*task["args"], **task["kwargs"])
 
-# 	def build_app(self):
-# 		self.app = web.Application()
-# 		self.app.router.add_post('/update', self.update)
-
-# 	async def main(self):
-# 		self.build_app()
-# 		self.runner = web.AppRunner(self.app)
-# 		await self.runner.setup()
-# 		self.site = web.TCPSite(
-# 			self.runner,
-# 			host = self.host,
-# 			port = self.port
-# 			)
-# 		await self.site.start()
-
-# 	# async def close(self):
-# 	# 	await self.runner.cleanup()
-# 	# 	self.loop.close()
-
-# 	async def update(self, request):
-# 		"""
-# 		This function serves POST /update.
-
-# 		The request should have a json body with a "step" key that at some point
-# 		has the value "done-aspirating".
-
-# 		It will return a json message with appropriate HTTP status.
-# 		"""
-# 		try:
-# 			body = await request.json()
-# 		except json.JSONDecodeError:
-# 			text = await body.text()
-# 			print(f"Request was not json: {text}")
-# 			return web.json_response(status=400, # Bad Request
-# 									 data={'error': 'bad-request'})
-
-# 		if 'step' not in body:
-# 			print(f"Body did not have a 'step' key")
-# 			return web.json_response(status=400, # Bad Request
-# 									 data={'error': 'no-step'})
-# 		if body['step'] == 'done-aspirating':
-# 		   # Here you might for instance check a balance
-# 		   # attached to the computer to validate apsiration
-# 		   print("Robot is done aspirating")
-# 		   return web.json_response(status=200, # OK
-# 									data={'done': True})
-
-# 		if body['step'] == 'query':
-# 			return web.json_response(status=200, # OK
-# 									data={'parent': self.parent})
+#             # update task lists
+#             with self.lock_completedtasks:
+#                 self.completed_tasks["taskid"] = self.nist_time()
+#             with self.lock_pendingtasks:
+#                 self.pending_tasks.remove(task["taskid"])
