@@ -153,7 +153,7 @@ class ListenerWebsocket:
         self.thread.start()
 
     ### Helper Methods
-    def _parse_pipette(self, pipette):
+    def _get_pipette(self, pipette):
         if type(pipette) is int:
             return self.pipettes[pipette]
         if type(pipette) is str:
@@ -201,7 +201,7 @@ class ListenerWebsocket:
         touch_tip=True,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
-        p = self._parse_pipette(pipette=pipette)
+        p = self._get_pipette(pipette=pipette)
         if p.has_tip:
             p.drop_tip()
         p.pick_up_tip()
@@ -239,7 +239,7 @@ class ListenerWebsocket:
             tray=psk_tray,
             well=psk_well,
             volume=psk_volume,
-            pipette=self._parse_pipette("perovksite"),
+            pipette=self._get_pipette("perovskite"),
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
@@ -248,7 +248,7 @@ class ListenerWebsocket:
             tray=as_tray,
             well=as_well,
             volume=as_volume,
-            pipette=self._parse_pipette("antisolvent"),
+            pipette=self._get_pipette("antisolvent"),
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
@@ -257,7 +257,7 @@ class ListenerWebsocket:
         self.stage_for_dispense(pipette="perovskite")
 
     def stage_for_dispense(self, pipette):
-        p = self._parse_pipette(pipette)
+        p = self._get_pipette(pipette)
         p.move_to(self.spincoater[self.STANDBY].top())
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
@@ -271,7 +271,7 @@ class ListenerWebsocket:
         # if rate is None:
         #     rate = self.SPINCOATING_DISPENSE_RATE
 
-        p = self._parse_pipette(pipette)
+        p = self._get_pipette(pipette)
         # if not p.has_tip():
         #     return
         # p = self.pipettes["left"]
@@ -285,7 +285,8 @@ class ListenerWebsocket:
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""
         for p in self.pipettes.values():
-            p.drop_tip()
+            if p.has_tip:
+                p.drop_tip()
         # for p in self.pipettes:
         #     p.pick_up_tip()
 

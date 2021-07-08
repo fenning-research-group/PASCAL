@@ -8,6 +8,7 @@ import yaml
 import websockets
 import threading
 import uuid
+import traceback
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -164,19 +165,35 @@ class OT2Server:
 
         flag = input("confirm that the Listener protocol is running on OT2 (y/n):")
         if str.lower(flag) == "y":
-            self.loop = asyncio.new_event_loop()
-            self.loop.run_until_complete(self.__connect_to_websocket())
 
-            self.thread = threading.Thread(target=self.loop.run_forever)
+            def run_loop(loop):
+                asyncio.set_event_loop(loop)
+                loop.run_forever()
+
+            self.loop = asyncio.new_event_loop()
+            self.thread = threading.Thread(target=run_loop, args=(self.loop,))
             self.thread.daemon = True
             self.thread.start()
+            asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
+            # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
+            while not hasattr(self, "websocket"):
+                time.sleep(0.2)  # wait to connect
+            self.connected = True
+            self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
+            self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
+            # self.loop.call_soon_threadsafe(self.worker)
+            # self.loop.call_soon_threadsafe(self.checker)
+            # self.loop.run_until_complete(self.__connect_to_websocket())
+
+            # self.thread.daemon = True
+            # self.thread.start()
 
             # self.loop.run_forever()
-            self.connected = True
-            self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
-            self._checker = self.loop.create_task(
-                self.checker(), name="maestro_checker"
-            )
+
+            # self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
+            # self._checker = self.loop.create_task(
+            #     self.checker(), name="maestro_checker"
+            # )
             # def f():
             #     self.loop = asyncio.new_event_loop()
             #     self.loop.run_until_complete(self._start_workers())
@@ -197,9 +214,10 @@ class OT2Server:
             )
 
     def stop(self):
-        self.mark_completed()
+        # self.mark_completed()
         self.connected = False
         asyncio.gather(self._worker, self._checker)
+        # asyncio.
         self.loop.close()
         self.thread.join()
         return
@@ -214,7 +232,7 @@ class OT2Server:
     async def worker(self):
         while self.connected:
             ot2 = json.loads(await self.websocket.recv())
-            print(f"maestro recieved {ot2}")
+            # print(f"maestro recieved {ot2}")
             if "acknowledged" in ot2:
                 print(f'{ot2["acknowledged"]} acknowledged by OT2')
                 self.pending_tasks.append(ot2["acknowledged"])

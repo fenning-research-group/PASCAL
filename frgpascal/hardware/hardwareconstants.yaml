@@ -14,7 +14,7 @@ gantry:
   speed_max: 10000 #max gantry speed, mm/min
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 5 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
-  idle_coordinates: [459,211,85] #coordinates to move the gantry to when idle, mainly to avoid cameras
+  idle_coordinates: [192.25, 27.4, 82] #coordinates to move the gantry to when idle, mainly to avoid cameras
   opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
   opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
   opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
@@ -57,7 +57,7 @@ gripper:
   slow_interval: 10 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
-  springs_loaded_threshold: 525 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
+  springs_loaded_threshold: 635 #if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 
 hotplate:
@@ -66,7 +66,7 @@ hotplate:
 liquidhandler:
   pollingrate: 0.5 #delay (seconds) between checks for new commands to push to liquid handler server
   server:
-    ip: '169.254.228.236' #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    ip: '169.254.170.23' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
 sampletray:
   p0: [420,14.2,54.6] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions

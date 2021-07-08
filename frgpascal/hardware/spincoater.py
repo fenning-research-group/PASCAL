@@ -57,11 +57,11 @@ class SpinCoater:
 
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
+        self.connect()
 
     def connect(self, **kwargs):
         # connect to odrive BLDC controller
         print("Connecting to odrive")
-
         # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
         try:
             self.odrv0 = odrive.find_any(timeout=10)
@@ -77,7 +77,8 @@ class SpinCoater:
         except:
             raise ValueError("Could not find odrive! confirm that 24V PSU is on")
 
-        print("Found motor, now calibrating. This takes 10-20 seconds.")
+        print("\tFound motor, now calibrating. This takes 10-20 seconds.")
+        input("\tPress enter once shroud is out of the way: ")
         self.axis = self.odrv0.axis0
         self.axis.requested_state = (
             AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
