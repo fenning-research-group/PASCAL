@@ -1,7 +1,8 @@
 from threading import Thread, Lock
 from queue import Queue
 from abc import ABC, abstractmethod
-from frgpascal.maestro import Maestro
+
+# from frgpascal.maestro import Maestro
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.spincoater import SpinCoater
@@ -15,7 +16,7 @@ from frgpascal.hardware.characterizationline import (
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro: Maestro):
+    def __init__(self, maestro):
         self.maestro = maestro
         self.queue = Queue()
         self.functions = (
@@ -65,7 +66,7 @@ class WorkerTemplate(ABC):
 
 
 class Worker_GantryGripper(WorkerTemplate):
-    def __init__(self, maestro: Maestro, gantry: Gantry, gripper: Gripper):
+    def __init__(self, maestro, gantry: Gantry, gripper: Gripper):
         super().__init__(maestro=maestro)
         self.functions = {
             "moveto": gantry.moveto,
@@ -78,7 +79,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
-    def __init__(self, maestro: Maestro, spincoater: SpinCoater, liquidhandler: OT2):
+    def __init__(self, maestro, spincoater: SpinCoater, liquidhandler: OT2):
         super().__init__(maestro=maestro)
         self.functions = {
             "vacuum_on": spincoater.vacuum_on,
@@ -102,7 +103,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 class Worker_Characterization(WorkerTemplate):
     def __init__(
         self,
-        maestro: Maestro,
+        maestro,
         characterizationline: CharacterizationLine,
         characterizationaxis: CharacterizationAxis,
     ):

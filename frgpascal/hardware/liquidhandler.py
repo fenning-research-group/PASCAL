@@ -117,7 +117,9 @@ class OT2:
 
     def _wait_for_task_complete(self, taskid):
         while taskid not in self.server.completed_tasks:
-            time.sleep(self.server.POLLINGRATE)
+            time.sleep(0.2)
+        # while taskid not in self.server.completed_tasks:
+        #     time.sleep(self.server.POLLINGRATE)
         # while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
         #     time.sleep(self.INTERVAL)
         # while self.server.OT2_status != 0:  # wait for task to be marked complete by ot2
@@ -154,7 +156,9 @@ class OT2Server:
 
     ### Server Methods
     async def __connect_to_websocket(self):
-        self.websocket = await websockets.connect(self.uri)
+        self.websocket = await websockets.connect(
+            self.uri, ping_interval=20, ping_timeout=300
+        )
 
     async def _start_workers(self):
         # self.localloop.run_forever()
@@ -188,7 +192,7 @@ class OT2Server:
                 time.sleep(0.2)  # wait to connect
             self.connected = True
             self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
-            self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
+            # self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
             # self.loop.call_soon_threadsafe(self.worker)
             # self.loop.call_soon_threadsafe(self.checker)
             # self.loop.run_until_complete(self.__connect_to_websocket())
@@ -224,7 +228,7 @@ class OT2Server:
     def stop(self):
         # self.mark_completed()
         self.connected = False
-        asyncio.gather(self._worker, self._checker)
+        # asyncio.gather(self._worker, self._checker)
         # asyncio.
         self.loop.close()
         self.thread.join()
@@ -283,6 +287,7 @@ class OT2Server:
             }
         }
         self._add_task(task)
+        return taskid
 
     def status_update(self):
         maestro = {"status": 0}

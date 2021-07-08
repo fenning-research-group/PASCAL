@@ -4,6 +4,7 @@ import json
 import time
 import ntplib
 from threading import Thread
+from opentrons import types
 
 # import nest_asyncio
 
@@ -47,7 +48,7 @@ class ListenerWebsocket:
         self.CHUCK = "A1"
         self.STANDBY = "B1"
         self.CLEARCHUCKPOSITION = (
-            100,
+            150,
             100,
             100,
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
@@ -131,13 +132,21 @@ class ListenerWebsocket:
             self.status = STATUS_IDLE
 
             self.completed_tasks[task["taskid"]] = self.nist_time()
+            task["finished_event"].set()
             # print(f"{task['taskid']} ({task['task']}) finished")
 
     async def __process_task(self, task, websocket):
         # print(f"> received new task {task['taskid']}")
         time = task.pop("nist_time")
-        ot2 = {"acknowledged": task["taskid"]}
+        task["finished_event"] = asyncio.Event()
         await self.q.put((time, task))
+
+        ot2 = {"acknowledged": task["taskid"]}
+        await websocket.send(json.dumps(ot2))
+
+        await task["finished_event"].wait()
+
+        ot2 = {"completed": self.completed_tasks}
         await websocket.send(json.dumps(ot2))
 
     async def __update_status(self, websocket):
@@ -288,7 +297,11 @@ class ListenerWebsocket:
         p.blow_out()
 
     def clear_chuck(self):
-        self.pipettes["right"].move_to(self.CLEARCHUCKPOSITION)
+        self.pipettes["right"].move_to(
+            location=types.Location(
+                point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
+            )
+        )
 
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""

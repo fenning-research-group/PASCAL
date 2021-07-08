@@ -1,8 +1,9 @@
 # from termios import error
 import os
-from threading import Lock
+from threading import Thread, Lock
 import time
 import yaml
+import ntplib
 
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
@@ -125,7 +126,7 @@ class Maestro:
             self.characterization.axis.gohome,
             self.spincoater.connect,
         ]:
-            thread = threading.Thread(target=task)
+            thread = Thread(target=task)
             threads.append(thread)
             thread.start()
         for thread in threads:
