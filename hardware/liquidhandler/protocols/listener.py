@@ -9,20 +9,25 @@ STATUS_TASK_INPROGRESS = 2
 
 class Listener:
     def __init__(
-        self,
-        protocol_context,
-        tips,
-        stocks,
-        mixing,
-        spincoater,
-        address="http://132.239.93.30:8080/update",
+        self, protocol_context, tips, stocks, spincoater, ip="132.239", port=8765
     ):
-        self.address = address
-        self.protocol_context = protocol_context
-        self.experiment_in_progress = True
-        self.status = STATUS_IDLE  # liquid handler status key: 0 = idle, 1 = actively working on task, 2 = completed task, waiting for maestro to acknowlegde
-        self.currenttask = None
+        ## Server constants
+        self.ip = ip
+        self.port = port
+        self.address = f"http://{ip}:{port}/update"
+
+        ## Task Tracking
+        self.completed_tasks = {}
+        self.status = STATUS_IDLE
+
+        ## Labware
         self.tips = tips
+        self.pipettes = {
+            side: protocol_context.load_instrument(
+                "p300_single_gen2", side, tip_racks=self.tips
+            )
+            for side in ["left", "right"]
+        }
         self.stocks = stocks
         self.mixing = mixing  # TODO intermediate mixing wells
         self._sources = {**self.stocks, **self.mixing}
@@ -30,12 +35,7 @@ class Listener:
         self.CHUCK = "A1"
         self.STANDBY = "B1"
 
-        self.pipettes = {
-            side: protocol_context.load_instrument(
-                "p300_single_gen2", side, tip_racks=self.tips
-            )
-            for side in ["left", "right"]
-        }
+        ## Dispense Constants
         self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
             1  # mm, distance between tip and bottom of wells while dispensing
@@ -50,14 +50,48 @@ class Listener:
         ]  # default left pipette for antisolvent
         self.PSK_PIPETTE = self.pipettes["right"]  # default right for psk
 
-        # tasklist contains all methods to control liquid handler
-        self.tasklist = {
+        self.__calibrate_time_to_nist()
+
+        self.tasks = {
             "aspirate_for_spincoating": self.aspirate_for_spincoating,
             "aspirate_both_for_spincoating": self.aspirate_both_for_spincoating,
             "dispense_onto_chuck": self.dispense_onto_chuck,
             "stage_for_dispense": self.stage_for_dispense,
             "cleanup": self.cleanup,
         }
+
+    ### Time Synchronization with NIST
+
+    def __calibrate_time_to_nist(self):
+        client = ntplib.NTPClient()
+        response = None
+        while response is None:
+            try:
+                response = client.request("europe.pool.ntp.org", version=3)
+            except:
+                pass
+        t_local = time.time()
+        self.__local_nist_offset = response.tx_time - t_local
+
+    def nist_time(self):
+        return time.time() + self.__local_nist_offset
+
+    ### Communication with Maestro
+    def send(self, payload: dict):
+        return requests.post(self.address, json=payload)
+
+    def main(self):
+        finished = False
+        while not finished:
+            # ping for new tasks
+            maestro = json.loads(websocket.recv())
+            if "task" in maestro:
+                self.process_task(maestro["task"], websocket)
+            if "status" in maestro or len(self.completed_tasks) > 0:
+                self.update_status(websocket)
+            if "complete" in maestro:
+                finished = True
+                self.status = STATUS_ALL_DONE
 
     def check_for_instructions(self):
         payload = {
@@ -78,27 +112,31 @@ class Listener:
             print("identified request")
             self.process_request(
                 taskid=r["taskid"],
-                function=r["function"],
+                task=r["task"],
                 args=r["args"],
                 kwargs=r["kwargs"],  # keyword arguments
             )
 
         return True  # flag to indicate whether experiment is completed
 
-    def process_request(self, taskid, function, args, kwargs):
-        if function in self.tasklist:
-            function = self.tasklist[function]
+    def process_request(self, task):
+        if task["task"] not in self.tasklist:
+            return
         else:
-            pipette = self.parse_pipette(kwargs["pipette"])
-            function = getattr(pipette, function)
-
-        self.taskid = taskid
+            function = self._task
+        execution_time = task.pop("nist_time")
         self.status = STATUS_TASK_RECEIVED
+        sleep_for = execution_time - self.nist_time()
+        if sleep_for > 0:
+            time.sleep(sleep_for)
+        self.status = STATUS_TASK_INPROGRESS
+        function(*task["args"], **task["kwargs"])
+        self.status = STATUS_IDLE
+        self.completed_tasks[task["taskid"]] = self.nist_time()
+
         payload = {"status": STATUS_TASK_RECEIVED, "taskid": taskid}
         r = requests.post(self.address, json=payload)
         r = r.json()
-
-        function(*args, **kwargs)
 
         self.status = STATUS_TASK_INPROGRESS
         payload = {"status": STATUS_TASK_INPROGRESS, "taskid": taskid}
@@ -109,11 +147,14 @@ class Listener:
             self.status = STATUS_IDLE
 
     def parse_pipette(self, pipette):
+        if type(pipette) is int:
+            return self.pipettes[pipette]
+
         if type(pipette) is str:
             pipette = pipette.lower()
-        if pipette in ["psk", "perovskite", "p", "left", "l", 0]:
+        if pipette in ["psk", "perovskite", "p", "left", "l"]:
             return self.PSK_PIPETTE
-        elif pipette in ["as", "antisolvent", "a", "right", "r", 1]:
+        elif pipette in ["as", "antisolvent", "a", "right", "r"]:
             return self.ANTISOLVENT_PIPETTE
         else:
             raise ValueError("Invalid pipette name given!")
@@ -146,7 +187,6 @@ class Listener:
         touch_tip=True,
     ):
         p = self.parse_pipette(pipette=pipette)
-        # p = self.pipettes["left"]
         self._aspirate_from_well(
             tray=tray,
             well=well,
@@ -156,7 +196,7 @@ class Listener:
             air_gap=air_gap,
             touch_tip=touch_tip,
         )
-        p.move_to(self.spincoater[self.STANDBY].top())
+        p.move_to(self.spincoater["Standby"].top())
 
     def aspirate_both_for_spincoating(
         self,
@@ -170,8 +210,8 @@ class Listener:
         air_gap=True,
         touch_tip=True,
     ):
-        # for p in self.pipettes.values():
-        #     p.pick_up_tip()
+        for p in self.pipettes.values():
+            p.pick_up_tip()
 
         self._aspirate_from_well(
             tray=psk_tray,
@@ -192,11 +232,7 @@ class Listener:
             touch_tip=touch_tip,
         )
 
-        self.PSK_PIPETTE.move_to(self.spincoater[self.STANDBY].top())
-
-    def stage_for_dispense(self, pipette):
-        p = self.parse_pipette(pipette)
-        p.moveto(self.spincoater[self.STANDBY].top())
+        self.PSK_PIPETTE.move_to(self.spincoater["Standby"].top())
 
     def dispense_onto_chuck(self, pipette, height=None, rate=None):
         if height is None:
@@ -207,15 +243,12 @@ class Listener:
             rate = self.SPINCOATING_DISPENSE_RATE
 
         p = self.parse_pipette(pipette)
-        # p = self.pipettes["left"]
-        # relative_rate = rate / p.flow_rate
-        relative_rate = 1
-        # p.move_to(self.spincoater[self.CHUCK].top(height))
-        p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        p.blow_out()
+        relative_rate = rate / p.flow_rate
+        p.move_to(self.spincoater["Chuck"].top(height))
+        pipette.dispense(location=self.spincoater[self.CHUCK_WELL], rate=relative_rate)
 
     def cleanup(self):
-        for p in self.pipettes.values():
+        for p in self.pipettes:
             p.drop_tip()
         # for p in self.pipettes:
         #     p.pick_up_tip()
