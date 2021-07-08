@@ -21,24 +21,24 @@ class OT2:
         self.server.start()
 
     def drop_perovskite(self, **kwargs):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
             pipette="perovskite",
             # height=height,
             # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        self._wait_for_task_complete(taskid)
 
     def drop_antisolvent(self, **kwargs):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
             pipette="antisolvent",
             # height=height,
             # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        self._wait_for_task_complete(taskid)
 
     def aspirate_for_spincoating(
         self,
@@ -51,7 +51,7 @@ class OT2:
         touch_tip=True,
         **kwargs,
     ):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="aspirate_for_spincoating",
             tray=tray,
             well=well,
@@ -62,7 +62,7 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        self._wait_for_task_complete(taskid)
 
     def aspirate_both_for_spincoating(
         self,
@@ -77,7 +77,7 @@ class OT2:
         touch_tip=True,
         **kwargs,
     ):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="aspirate_both_for_spincoating",
             psk_tray=psk_tray,
             psk_well=psk_well,
@@ -90,25 +90,33 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        self._wait_for_task_complete(taskid)
 
     def stage_perovskite(self):
-        self.server.add_to_queue(task="stage_for_dispense", pipette="perovskite")
-        self._wait_for_task_complete()
+        taskid = self.server.add_to_queue(
+            task="stage_for_dispense", pipette="perovskite"
+        )
+        self._wait_for_task_complete(taskid)
 
     def stage_antisolvent(self):
-        self.server.add_to_queue(task="stage_for_dispense", pipette="antisolvent")
-        self._wait_for_task_complete()
+        taskid = self.server.add_to_queue(
+            task="stage_for_dispense", pipette="antisolvent"
+        )
+        self._wait_for_task_complete(taskid)
+
+    def clear_chuck(self):
+        taskid = self.server.add_to_queue(task="clear_chuck")
+        self._wait_for_task_complete(taskid)
 
     def cleanup(self):
-        self.server.add_to_queue(task="cleanup")
-        self._wait_for_task_complete()
+        taskid = self.server.add_to_queue(task="cleanup")
+        self._wait_for_task_complete(taskid)
 
     # def end(self):
     #     self.server.add_to_queue(task="None", all_done="all_done")
 
-    def _wait_for_task_complete(self):
-        while len(self.server.pending_tasks) > 0:
+    def _wait_for_task_complete(self, taskid):
+        while taskid not in self.server.completed_tasks:
             time.sleep(self.server.POLLINGRATE)
         # while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
         #     time.sleep(self.INTERVAL)

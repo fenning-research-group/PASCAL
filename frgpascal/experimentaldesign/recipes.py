@@ -1,11 +1,19 @@
 import numpy as np
 import yaml
 from uuid import uuid4  # for unique sample identifiers
+import json
 
 
 class SpincoatRecipe:
     def __init__(
-        self, steps: list, perovskite_droptime: float, antisolvent_droptime: float
+        self,
+        steps: list,
+        solution_volume: float,
+        solution_droptime: float,
+        antisolvent: str = None,
+        antisolvent_volume: float = 0,
+        antisolvent_droptime: float = np.inf,
+        solution: str = None,
     ):
         """
 
@@ -20,40 +28,57 @@ class SpincoatRecipe:
             where speed = rpm, acceleration = rpm/s, duration = s (including the acceleration ramp!)
 
             perovskite_drop_time (float): timing (seconds) relative to first spin step start to drop precursor solution on substrate. negative values imply dropping the solution prior to spinning (static spincoat)
-            antisolvent_drop_time (float): timing (seconds) relative to first spin step start to drop antisolvent on substrate.
+            antisolvent (str): species of antisolvent. default = None
+            antisolvent_drop_time (float): timing (seconds) relative to first spin step start to drop antisolvent on substrate. default = None
         """
-        self.steps = np.asarray(steps)
+        self.steps = np.asarray(steps, dtype=float)
         if self.steps.shape[1] != 3:
             raise ValueError(
                 "steps must be an nx3 nested list/array where each row = [speed, acceleration, duration]."
             )
 
-        self.perovskite_droptime = perovskite_droptime
-        self.antisolvent_droptime = antisolvent_droptime
-        first_drop_time = min(perovskite_droptime, antisolvent_droptime)
+        self.solution = (
+            solution  # default None, will be filled by combination with solution mesh
+        )
+        self.solution_volume = solution_volume
+        self.solution_droptime = solution_droptime
 
+        self.antisolvent = antisolvent
+        self.antisolvent_volume = antisolvent_volume
+        self.antisolvent_droptime = antisolvent_droptime
+
+        first_drop_time = min(solution_droptime, antisolvent_droptime)
         self.start_times = [
             max(0, -first_drop_time)
         ]  # push back spinning times to allow static drop beforehand
         for duration in self.steps[:-1, 2]:
             self.start_times.append(self.start_times[-1] + duration)
+        self.duration = self.steps[:, 2].sum() + self.start_times[0]
 
-        self.duration = (
-            self.steps[:, 2].sum() + 10
-        )  # total duration + 10 seconds for stopping
-
-    def export(self, filepath):
-        steps_dict = [
-            {"rpm": s[0], "acceleration": s[1], "duration": s[2], "start_time": st}
-            for s, st in zip(self.steps, self.start_times)
+    def to_json(self):
+        steps = [
+            {"rpm": rpm, "acceleration": accel, "duration": duration}
+            for rpm, accel, duration in self.steps
         ]
-        output = {
-            "steps": steps_dict,
-            "perovskite_drop_time": self.perovskite_droptime,
-            "antisolvent_drop_time": self.antisolvent_droptime,
+        solution = {
+            "solution": self.solution,
+            "volume": self.solution_volume,
+            "droptime": self.solution_droptime,
         }
-        with open(filepath, "w") as f:
-            yaml.dump(output, f)
+        antisolvent = {
+            "solution": self.antisolvent,
+            "volume": self.antisolvent_volume,
+            "droptime": self.antisolvent_droptime,
+        }
+
+        out = {
+            "steps": steps,
+            "start_times": self.start_times,
+            "duration": self.duration,
+            "solution": solution,
+            "antisolvent": antisolvent,
+        }
+        return json.dumps(out)
 
     def __repr__(self):
         output = "<SpincoatingRecipe>\n"
@@ -65,7 +90,7 @@ class SpincoatRecipe:
         for (rpm, accel, duration) in self.steps:
             output += f"{currenttime}-{currenttime+duration}s:\t{rpm:.0f} rpm, {accel:.0f} rpm/s"
             currenttime += duration
-            if not psk_dropped and self.perovskite_droptime <= currenttime:
+            if not psk_dropped and self.solution_droptime <= currenttime:
                 output += " (perovskite dropped)"
                 psk_dropped = True
             if not as_dropped and self.antisolvent_droptime <= currenttime:
@@ -73,6 +98,22 @@ class SpincoatRecipe:
                 as_dropped = True
             output += "\n"
         return output[:-1]
+
+
+def spincoatrecipe_fromjson(s: str):
+    p = json.loads(s)
+
+    steps = [[s["rpm"], s["acceleration"], s["duration"]] for s in p["steps"]]
+
+    return SpincoatRecipe(
+        steps=steps,
+        solution=p["solution"]["solution"],
+        solution_volume=p["solution"]["volume"],
+        solution_droptime=p["solution"]["droptime"],
+        antisolvent=p["antisolvent"]["solution"],
+        antisolvent_volume=p["antisolvent"]["volume"],
+        antisolvent_droptime=p["antisolvent"]["droptime"],
+    )
 
 
 class AnnealRecipe:

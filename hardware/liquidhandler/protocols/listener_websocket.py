@@ -46,7 +46,11 @@ class ListenerWebsocket:
         self.spincoater = spincoater
         self.CHUCK = "A1"
         self.STANDBY = "B1"
-
+        self.CLEARCHUCKPOSITION = (
+            100,
+            100,
+            100,
+        )  # mm, 0,0,0 = front left floor corner of gantry volume.
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", mount=side, tip_racks=self.tips
@@ -187,6 +191,7 @@ class ListenerWebsocket:
             "aspirate_both_for_spincoating": self.aspirate_both_for_spincoating,
             "dispense_onto_chuck": self.dispense_onto_chuck,
             "stage_for_dispense": self.stage_for_dispense,
+            "clear_chuck": self.clear_chuck,
             "cleanup": self.cleanup,
         }
 
@@ -281,6 +286,9 @@ class ListenerWebsocket:
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         # p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         p.blow_out()
+
+    def clear_chuck(self):
+        self.pipettes["right"].move_to(self.CLEARCHUCKPOSITION)
 
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""

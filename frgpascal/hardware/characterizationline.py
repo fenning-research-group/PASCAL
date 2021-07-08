@@ -277,6 +277,9 @@ class CharacterizationAxis:
                     break
         self.position = x
 
+    def movetotransfer(self):
+        self.moveto(self.TRANSFERPOSITION)
+
 
 ### Station Methods
 
