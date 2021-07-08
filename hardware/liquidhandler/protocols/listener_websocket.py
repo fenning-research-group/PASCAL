@@ -49,14 +49,15 @@ class ListenerWebsocket:
 
         self.pipettes = {
             side: protocol_context.load_instrument(
-                "p300_single_gen2", side, tip_racks=self.tips
+                "p300_single_gen2", mount=side, tip_racks=self.tips
             )
             for side in ["left", "right"]
         }
-        self.pipettes["left"], self.pipettes["right"] = (
-            self.pipettes["right"],
-            self.pipettes["left"],
-        )  # idk why these flip
+
+        # self.pipettes["left"], self.pipettes["right"] = (
+        #     self.pipettes["right"],
+        #     self.pipettes["left"],
+        # )  # idk why these flip
 
         self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
@@ -66,11 +67,6 @@ class ListenerWebsocket:
         self.SPINCOATING_DISPENSE_HEIGHT = 6  # mm, distance between tip and chuck
         self.SPINCOATING_DISPENSE_RATE = 50  # uL/s
         self.SLOW_Z_RATE = 20  # mm/s
-
-        self.ANTISOLVENT_PIPETTE = self.pipettes[
-            "left"
-        ]  # default left pipette for antisolvent
-        self.PSK_PIPETTE = self.pipettes["right"]  # default right for psk
 
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
@@ -92,54 +88,31 @@ class ListenerWebsocket:
         return time.time() + self.__local_nist_offset
 
     ### Server Methods
-    def _start_worker_thread(self):
-        def f():
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
-            self.loop.run_until_complete(self.total())
-            # start_server = websockets.serve(self.main, self.ip, self.port)
-            # self.loop.run_until_complete(start_server)
-
-        #             self.create_
-        #             self.loop.run_until_complete(self._start_server())
-        #             self.loop.create_task(self.worker())
-        #             self.q = asyncio.PriorityQueue()
-
-        # self.loop = asyncio.new_event_loop()
-        self.thread = Thread(target=f, args=())
-        self.thread.start()
-
-    async def process_task(self, task, websocket):
-        # print(f"> received new task {task['taskid']}")
-        time = task.pop("nist_time")
-        ot2 = {"acknowledged": task["taskid"]}
-        await self.q.put((time, task))
-        await websocket.send(json.dumps(ot2))
-
-    async def update_status(self, websocket):
-        # print("> updating task status")
-        ot2 = {"completed": self.completed_tasks}
-        await websocket.send(json.dumps(ot2))
-        self.completed_tasks = {}
-
-    async def total(self):
+    # Running the server
+    async def __main(self):
         self.q = asyncio.PriorityQueue()
-        await asyncio.gather(self._start_server(), self.worker())
+        await asyncio.gather(self.__start_server(), self.__worker())
 
-    async def main(self, websocket, path):
+    async def __start_server(self):
+        self.__stop = asyncio.Event()
+        async with websockets.serve(self.__receive_messages, self.ip, self.port):
+            await self.__stop.wait()
+
+    async def __receive_messages(self, websocket, path):
         finished = False
         while not finished:
             maestro = json.loads(await websocket.recv())
             if "task" in maestro:
-                await self.process_task(maestro["task"], websocket)
+                await self.__process_task(maestro["task"], websocket)
             if "status" in maestro or len(self.completed_tasks) > 0:
-                await self.update_status(websocket)
+                await self.__update_status(websocket)
             if "complete" in maestro:
                 finished = True
                 self.__stop.set()  # flag the websocket to close
                 self.status = STATUS_ALL_DONE
 
-    async def worker(self):
+    # Processing tasks
+    async def __worker(self):
         while True:
             # Get a "work item" out of the queue.
             execution_time, task = await self.q.get()
@@ -156,22 +129,28 @@ class ListenerWebsocket:
             self.completed_tasks[task["taskid"]] = self.nist_time()
             # print(f"{task['taskid']} ({task['task']}) finished")
 
-    async def _start_server(self):
-        self.__stop = asyncio.Event()
-        async with websockets.serve(self.main, self.ip, self.port):
-            await self.__stop.wait()
+    async def __process_task(self, task, websocket):
+        # print(f"> received new task {task['taskid']}")
+        time = task.pop("nist_time")
+        ot2 = {"acknowledged": task["taskid"]}
+        await self.q.put((time, task))
+        await websocket.send(json.dumps(ot2))
 
+    async def __update_status(self, websocket):
+        # print("> updating task status")
+        ot2 = {"completed": self.completed_tasks}
+        await websocket.send(json.dumps(ot2))
+        self.completed_tasks = {}
+
+    # start it all
     def start(self):
-        self._start_worker_thread()
-        # self.loop = asyncio.new_event_loop()
-        # start_server = websockets.serve(self.main, self.ip, self.port)
-        # asyncio.get_event_loop().run_until_complete(start_server)
-        # asyncio.get_event_loop().run_forever()
-        # asyncio.create_task(self.worker())
-        # _start_server = websockets.serve(self.main, self.ip, self.port)
-        # self.__stop = asyncio.Event()
-        # self.loop.create_task(self._start_server())
-        # self.loop.call_soon_threadsafe(self._start_server())
+        def f():
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+            self.loop.run_until_complete(self.__main())
+
+        self.thread = Thread(target=f, args=())
+        self.thread.start()
 
     ### Helper Methods
     def _parse_pipette(self, pipette):
@@ -180,10 +159,10 @@ class ListenerWebsocket:
         if type(pipette) is str:
             pipette = pipette.lower()
 
-        if pipette in ["psk", "perovskite", "p", "left", "l"]:
-            return self.PSK_PIPETTE
-        elif pipette in ["as", "antisolvent", "a", "right", "r"]:
-            return self.ANTISOLVENT_PIPETTE
+        if pipette in ["psk", "perovskite", "p", "right", "r"]:
+            return self.pipettes["right"]
+        elif pipette in ["as", "antisolvent", "a", "left", "l"]:
+            return self.pipettes["left"]
         else:
             raise ValueError("Invalid pipette name given!")
 
@@ -260,7 +239,7 @@ class ListenerWebsocket:
             tray=psk_tray,
             well=psk_well,
             volume=psk_volume,
-            pipette=self.PSK_PIPETTE,
+            pipette=self._parse_pipette("perovksite"),
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
@@ -269,7 +248,7 @@ class ListenerWebsocket:
             tray=as_tray,
             well=as_well,
             volume=as_volume,
-            pipette=self.ANTISOLVENT_PIPETTE,
+            pipette=self._parse_pipette("antisolvent"),
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
