@@ -2,6 +2,35 @@ import numpy as np
 import yaml
 from uuid import uuid4  # for unique sample identifiers
 import json
+from frgpascal.experimentaldesign.helpers import name_to_components
+
+### Recipes to define a sample
+
+
+class SolutionRecipe:
+    def __init__(self, solutes: str, molarity: float, solvent: str):
+        self.solutes = solutes
+        self.molarity = molarity
+        self.solvent = solvent
+
+        self.solute_dict = name_to_components(solutes, factor=molarity, delimiter="_")
+        self.solvent_dict = name_to_components(solvent, factor=1, delimiter="_")
+        total_solvent_amt = sum(self.solvent_dict.values())
+        self.solvent_dict = {
+            k: v / total_solvent_amt for k, v in self.solvent_dict.items()
+        }  # normalize so total solvent amount is 1.0
+
+    def to_json(self):
+        out = {
+            "solutes": self.solutes,
+            "molarity": self.molarity,
+            "solvent": self.solvent,
+        }
+
+        return json.dumps(out)
+
+    def __repr__(self):
+        return f"<SolutionRecipe> {self.molarity:.2f}M {self.solutes} in {self.solvent}"
 
 
 class SpincoatRecipe:
@@ -72,6 +101,7 @@ class SpincoatRecipe:
         }
 
         out = {
+            "type": "spincoat",
             "steps": steps,
             "start_times": self.start_times,
             "duration": self.duration,
@@ -82,7 +112,7 @@ class SpincoatRecipe:
 
     def __repr__(self):
         output = "<SpincoatingRecipe>\n"
-        output += f"Perovskite drops at {self.perovskite_droptime} s\n"
+        output += f"Solution drops at {self.solution_droptime} s\n"
         output += f"Antisolvent drops at {self.antisolvent_droptime} s\n"
         currenttime = 0
         psk_dropped = False
@@ -91,29 +121,13 @@ class SpincoatRecipe:
             output += f"{currenttime}-{currenttime+duration}s:\t{rpm:.0f} rpm, {accel:.0f} rpm/s"
             currenttime += duration
             if not psk_dropped and self.solution_droptime <= currenttime:
-                output += " (perovskite dropped)"
+                output += " (solution dropped)"
                 psk_dropped = True
             if not as_dropped and self.antisolvent_droptime <= currenttime:
                 output += " (antisolvent dropped)"
                 as_dropped = True
             output += "\n"
         return output[:-1]
-
-
-def spincoatrecipe_fromjson(s: str):
-    p = json.loads(s)
-
-    steps = [[s["rpm"], s["acceleration"], s["duration"]] for s in p["steps"]]
-
-    return SpincoatRecipe(
-        steps=steps,
-        solution=p["solution"]["solution"],
-        solution_volume=p["solution"]["volume"],
-        solution_droptime=p["solution"]["droptime"],
-        antisolvent=p["antisolvent"]["solution"],
-        antisolvent_volume=p["antisolvent"]["volume"],
-        antisolvent_droptime=p["antisolvent"]["droptime"],
-    )
 
 
 class AnnealRecipe:
@@ -128,69 +142,50 @@ class AnnealRecipe:
         self.temperature = temperature
 
     def __repr__(self):
-        output = "<AnnealRecipe>\n"
-        output += f"{self.temperature:.2f} C\n"
-        if self.duration >= 3600:
-            output += f"{self.duration/3600:.2f} hours"
-        elif self.duration >= 60:
-            output += f"{self.duration/60:.2f} minutes"
-        else:
-            output += f"{self.duration:.2f} seconds"
-        return output
+        duration = self.duration
+        units = "seconds"
+        if duration > 60:
+            duration /= 60
+            units = "minutes"
+        if duration > 60:
+            duration /= 60
+            units = "hours"
 
-    def export(self, filepath):
-        output = {"temperature": self.temperature, "duration": self.duration}
-        with open(filepath, "w") as f:
-            yaml.dump(output, f)
+        return f"<AnnealRecipe> {self.temperature:.1f}C for {duration:.1f} {units}"
+
+    def to_json(self):
+        output = {
+            "type": "anneal",
+            "temperature": self.temperature,
+            "duration": self.duration,
+        }
+        return json.dumps(output)
 
 
 class Sample:
     def __init__(
         self,
         name: str,
+        substrate: str,
         spincoat_recipe: SpincoatRecipe,
         anneal_recipe: AnnealRecipe,
-        hashid: str = None,
+        sampleid: str = None,
     ):
         self.name = name
+        self.substrate = substrate
         if hash is None:
-            self._hashid = str(uuid4())
+            self._sampleid = str(uuid4())
         else:
-            self._hashid = hashid
+            self._sampleid = sampleid
         self.storage_slot = {
             "tray": None,
             "slot": None,
         }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
         self.spincoat_recipe = spincoat_recipe
         self.anneal_recipe = anneal_recipe
-        # self._generate_moves()
         self.status = "not_started"
 
-    # def _generate_moves(self):
-    #     """
-    #     dictionary of all steps this sample will go through for experiment
-    #     """
-    #     self.moves = collections.OrderedDict()
-
-    #     self.moves['storagetospincoater'] = move_type(machines=["Gantry", "Spincoater"], duration=30)
-    #     self.moves['spincoat'] = move_type(machines=["Spincoater"], duration=self.spincoat_recipe.duration)
-    #     self.moves['spincoatertohotplate'] = move_type(machines=["Gantry", "Spincoater"], duration=30)
-    #     self.moves['anneal'] = move_type(machines=["Hotplate"], duration=self.anneal_recipe.duration)
-    #     self.moves['hotplatetostorage'] = move_type(machines=["Gantry"], duration=30)
-    #     self.moves['cooldown'] = move_type(machines=["Storage"], duration=60*2)
-    #     self.moves['storagetocharacterization'] = move_type(machines=["Gantry", "Characterization"], duration=30)
-    #     self.moves['characterization'] = move_type(machines=["Characterization"], duration=60*4)
-    #     self.moves['characterizationtostorage'] = move_type(machines=["Gantry", "Characterization"], duration=30)
-
-    def __repr__(self):
-        output = "<Sample>\n"
-        output += f"name:\t{self.name}\n"
-        output += f"status:\t{self.status}\n"
-        output += f"{self.storage_slot}\n"
-        output += f"\n{sc[0]}\n\n{an[0]}"
-        return output
-
-    def export(self, filepath):
+    def to_json(self):
         steps_dict = [
             {"rpm": s[0], "acceleration": s[1], "duration": s[2], "start_time": st}
             for s, st in zip(
@@ -209,8 +204,125 @@ class Sample:
 
         out = {
             "name": self.name,
-            "hashid": self._hashid,
+            "sampleid": self._sampleid,
+            "substrate": self.substrate,
             "storage_slot": self.storage_slot,
             "spincoat_recipe": self.spincoat_recipe,
             "anneal_recipe": self.anneal_recipe,
         }
+
+        return json.dumps(out)
+
+    def __repr__(self):
+        output = f"<Sample> {self.name}\n"
+        output += f"<Substrate> {self.substrate}\n"
+        output += f"{self.spincoat_recipe.solution}\n"
+        output += f"{self.spincoat_recipe}\n"
+        output += f"{self.anneal_recipe}\n"
+        return output
+
+
+### Json -> recipe methods
+
+
+def solutionrecipe_fromjson(s: str):
+    """
+    Loads a solution recipe from a json string
+    Args:
+        s (str): json string
+    Returns:
+        SolutionRecipe
+    """
+    p = json.loads(s)
+
+    return SolutionRecipe(
+        solution=p["solution"],
+        solution_volume=p["solution_volume"],
+        solution_droptime=p["solution_droptime"],
+    )
+
+
+def spincoatrecipe_fromjson(s: str):
+    """given an input json string, return a new SpincoatRecipe object.
+
+    Args:
+        s (str): json string
+
+    Returns:
+        SpincoatRecipe: spincoat recipe
+    """
+    p = json.loads(s)
+
+    steps = [[s["rpm"], s["acceleration"], s["duration"]] for s in p["steps"]]
+    if p["solution"] is not None:
+        p["solution"] = SolutionRecipe(
+            solution=p["solution"]["solution"],
+        )
+
+    return SpincoatRecipe(
+        steps=steps,
+        solution=p["solution"]["solution"],
+        solution_volume=p["solution"]["volume"],
+        solution_droptime=p["solution"]["droptime"],
+        antisolvent=p["antisolvent"]["solution"],
+        antisolvent_volume=p["antisolvent"]["volume"],
+        antisolvent_droptime=p["antisolvent"]["droptime"],
+    )
+
+
+def annealrecipe_fromjson(s: str):
+    """given an input json string
+    return an AnnealRecipe object.
+
+    Args:
+        s (str): json string
+
+    Returns:
+        AnnealRecipe: anneal recipe
+    """
+    p = json.loads(s)
+
+    return AnnealRecipe(
+        duration=p["duration"],
+        temperature=p["temperature"],
+    )
+
+
+def sample_fromjson(s: str):
+    """given an input json string, return a new Sample object.
+
+    Args:
+        s (str): json string
+    Returns:
+        Sample: sample
+    """
+    p = json.loads(s)
+
+    return Sample(
+        name=p["name"],
+        storage_slot=p["storage_slot"],
+        substrate=p["substrate"],
+        spincoat_recipe=spincoatrecipe_fromjson(p["spincoat_recipe"]),
+        anneal_recipe=annealrecipe_fromjson(p["anneal_recipe"]),
+        sampleid=p["hashid"],
+    )
+
+
+def from_json(s: str):
+    """
+    given an input json string s of any recipe type, return a new instance of that recipe in the proper class
+    """
+    p = json.loads(s)
+
+    recipe_key = {
+        "solution": solutionrecipe_fromjson,
+        "spincoat": spincoatrecipe_fromjson,
+        "anneal": annealrecipe_fromjson,
+        "sample": sample_fromjson,
+    }
+    if p["type"] in recipe_key:
+        return recipe_key[p["type"]](p)
+    else:
+        raise ValueError(
+            f"{p['type']} is not a valid recipe type. Supported types are {list(recipe_key.keys())}"
+        )
