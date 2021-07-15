@@ -35,6 +35,8 @@ def name_to_components(
                 break
             except:
                 pass
+        if species == "":
+            continue
         components[species] = count * factor
     return components
 

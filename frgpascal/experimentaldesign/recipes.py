@@ -30,7 +30,23 @@ class SolutionRecipe:
         return json.dumps(out)
 
     def __repr__(self):
-        return f"<SolutionRecipe> {self.molarity:.2f}M {self.solutes} in {self.solvent}"
+        return f"<SolutionRecipe> {round(self.molarity,2)}M {self.solutes} in {self.solvent}"
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.solutes == other.solutes
+                and self.molarity == other.molarity
+                and self.solvent == other.solvent
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.solutes, self.molarity, self.solvent)
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 class SpincoatRecipe:
@@ -118,7 +134,7 @@ class SpincoatRecipe:
         psk_dropped = False
         as_dropped = False
         for (rpm, accel, duration) in self.steps:
-            output += f"{currenttime}-{currenttime+duration}s:\t{rpm:.0f} rpm, {accel:.0f} rpm/s"
+            output += f"{round(currenttime,2)}-{round(currenttime+duration,2)}s:\t{round(rpm,2)} rpm, {round(accel,2):.0f} rpm/s"
             currenttime += duration
             if not psk_dropped and self.solution_droptime <= currenttime:
                 output += " (solution dropped)"
@@ -128,6 +144,34 @@ class SpincoatRecipe:
                 as_dropped = True
             output += "\n"
         return output[:-1]
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                (self.steps == other.steps).all()
+                and self.solution == other.solution
+                and self.solution_volume == other.solution_volume
+                and self.solution_droptime == other.solution_droptime
+                and self.antisolvent == other.antisolvent
+                and self.antisolvent_volume == other.antisolvent_volume
+                and self.antisolvent_droptime == other.antisolvent_droptime
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (
+            self.steps.tostring(),
+            self.solution,
+            self.solution_volume,
+            self.solution_droptime,
+            self.antisolvent,
+            self.antisolvent_volume,
+            self.antisolvent_droptime,
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 class AnnealRecipe:
@@ -151,7 +195,7 @@ class AnnealRecipe:
             duration /= 60
             units = "hours"
 
-        return f"<AnnealRecipe> {self.temperature:.1f}C for {duration:.1f} {units}"
+        return f"<AnnealRecipe> {round(self.temperature,1)}C for {round(duration,1)} {units}"
 
     def to_json(self):
         output = {
@@ -160,6 +204,21 @@ class AnnealRecipe:
             "duration": self.duration,
         }
         return json.dumps(output)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.duration == other.duration
+                and self.temperature == other.temperature
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.duration, self.temperature)
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 class Sample:
@@ -220,6 +279,27 @@ class Sample:
         output += f"{self.spincoat_recipe}\n"
         output += f"{self.anneal_recipe}\n"
         return output
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.name == other.name
+                and self.substrate == other.substrate
+                and self.spincoat_recipe == other.spincoat_recipe
+                and self.anneal_recipe == other.anneal_recipe
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (
+            self.substrate,
+            *self.spincoat_recipe._SpincoatRecipe__key(),
+            *self.anneal_recipe._AnnealRecipe__key(),
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 ### Json -> recipe methods
