@@ -8,7 +8,13 @@ from frgpascal.experimentaldesign.helpers import name_to_components
 
 
 class SolutionRecipe:
-    def __init__(self, solutes: str, molarity: float, solvent: str):
+    def __init__(
+        self, solvent: str, solutes: str = "", molarity: float = 0,
+    ):
+        if solutes != "" and molarity == 0:
+            raise ValueError(
+                "If the solution contains solutes, the molarity must be >0!"
+            )
         self.solutes = solutes
         self.molarity = molarity
         self.solvent = solvent
@@ -30,6 +36,8 @@ class SolutionRecipe:
         return json.dumps(out)
 
     def __repr__(self):
+        if self.solutes == "":  # no solutes, just a solvent
+            return f"<SolutionRecipe> {self.solvent}"
         return f"<SolutionRecipe> {round(self.molarity,2)}M {self.solutes} in {self.solvent}"
 
     def __eq__(self, other):
@@ -55,10 +63,10 @@ class SpincoatRecipe:
         steps: list,
         solution_volume: float,
         solution_droptime: float,
-        antisolvent: str = None,
+        antisolvent: SolutionRecipe = None,
         antisolvent_volume: float = 0,
         antisolvent_droptime: float = np.inf,
-        solution: str = None,
+        solution: SolutionRecipe = None,
     ):
         """
 
@@ -88,7 +96,7 @@ class SpincoatRecipe:
         self.solution_volume = solution_volume
         self.solution_droptime = solution_droptime
 
-        self.antisolvent = antisolvent
+        self.antisolvent = antisolvent  # default None = no antisolvent
         self.antisolvent_volume = antisolvent_volume
         self.antisolvent_droptime = antisolvent_droptime
 
@@ -106,12 +114,14 @@ class SpincoatRecipe:
             for rpm, accel, duration in self.steps
         ]
         solution = {
-            "solution": self.solution,
+            "solution": self.solution.to_json() if self.solution is not None else None,
             "volume": self.solution_volume,
             "droptime": self.solution_droptime,
         }
         antisolvent = {
-            "solution": self.antisolvent,
+            "solution": self.antisolvent.to_json()
+            if self.antisolvent is not None
+            else None,
             "volume": self.antisolvent_volume,
             "droptime": self.antisolvent_droptime,
         }
@@ -335,9 +345,7 @@ def spincoatrecipe_fromjson(s: str):
 
     steps = [[s["rpm"], s["acceleration"], s["duration"]] for s in p["steps"]]
     if p["solution"] is not None:
-        p["solution"] = SolutionRecipe(
-            solution=p["solution"]["solution"],
-        )
+        p["solution"] = SolutionRecipe(solution=p["solution"]["solution"],)
 
     return SpincoatRecipe(
         steps=steps,
@@ -362,10 +370,7 @@ def annealrecipe_fromjson(s: str):
     """
     p = json.loads(s)
 
-    return AnnealRecipe(
-        duration=p["duration"],
-        temperature=p["temperature"],
-    )
+    return AnnealRecipe(duration=p["duration"], temperature=p["temperature"],)
 
 
 def sample_fromjson(s: str):
