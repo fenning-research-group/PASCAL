@@ -35,7 +35,7 @@ class Maestro:
         self,
         numsamples: int = 1,
         samplewidth: float = 10,
-        rootdir="C:\\Users\\Admin\\Desktop\\SampleExperiment",
+        rootdir="C:\\Users\\Admin\\Desktop\\20210719_Moses_UVOvsTime",
     ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
@@ -124,7 +124,7 @@ class Maestro:
         for task in [
             self.gantry.gohome,
             self.characterization.axis.gohome,
-            self.spincoater.connect,
+            # self.spincoater.connect,
         ]:
             thread = Thread(target=task)
             threads.append(thread)
@@ -155,7 +155,7 @@ class Maestro:
         self.CATCHATTEMPTS = 3
         caught_successfully = False
         while not caught_successfully and self.CATCHATTEMPTS > 0:
-            self.gripper.close()
+            self.gripper.close(slow=True)
             self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
             self.gripper.open(self.SAMPLEWIDTH - 2)
             self.gripper.open(self.SAMPLEWIDTH - 1)
