@@ -52,7 +52,7 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     :type z_clearance: int, optional
     """
 
-    points = np.asarray(points)  # destination coordinates
+    points = np.asarray(points).round(2)  # destination coordinates
     p_prev = points[0]
 
     points_source_guess = points

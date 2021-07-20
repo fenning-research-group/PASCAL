@@ -35,7 +35,7 @@ class Maestro:
         self,
         numsamples: int = 1,
         samplewidth: float = 10,
-        rootdir="C:\\Users\\Admin\\Desktop\\20210719_Moses_UVOvsTime",
+        rootdir="C:\\Users\\Admin\\Desktop\\20210719_Moses_UVOvsTime_v2withlaseronbottom",
     ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 

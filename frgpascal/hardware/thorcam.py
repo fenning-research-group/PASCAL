@@ -11,6 +11,7 @@ from thorlabs_tsi_sdk.tl_color_enums import FORMAT
 from thorlabs_tsi_sdk.tl_camera_enums import SENSOR_TYPE
 
 import numpy as np
+import time
 
 """
     The MonoToColorProcessorSDK and MonoToColorProcessor objects can be used with context managers for automatic 
@@ -83,7 +84,8 @@ class Thorcam:
         Args:
             exposure (int): Exposure time (microseconds)
         """
-        self.camera.exposure_time_us = exposure
+        self.camera.exposure_time_us = int(exposure)
+        time.sleep(0.5)
 
     @property
     def frames(self):
@@ -99,7 +101,7 @@ class Thorcam:
         """
         if frames == 0:
             raise ValueError("Frames must be >0!")
-        self.camera.frames_per_trigger_zero_for_unlimited = frames
+        self.camera.frames_per_trigger_zero_for_unlimited = int(frames)
         self.__frames = frames
 
     def capture(self):
