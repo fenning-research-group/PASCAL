@@ -238,6 +238,7 @@ class Sample:
         substrate: str,
         spincoat_recipe: SpincoatRecipe,
         anneal_recipe: AnnealRecipe,
+        storage_slot=None,
         sampleid: str = None,
     ):
         self.name = name
@@ -246,10 +247,13 @@ class Sample:
             self._sampleid = str(uuid4())
         else:
             self._sampleid = sampleid
-        self.storage_slot = {
-            "tray": None,
-            "slot": None,
-        }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
+        if storage_slot is None:
+            self.storage_slot = {
+                "tray": None,
+                "slot": None,
+            }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
+        else:
+            self.storage_slot = storage_slot
         self.spincoat_recipe = spincoat_recipe
         self.anneal_recipe = anneal_recipe
         self.status = "not_started"

@@ -14,13 +14,7 @@ AVAILABLE_VERSIONS = {
 
 class SampleTray(Workspace):
     def __init__(
-        self,
-        name,
-        num,
-        version,
-        gantry: Gantry,
-        gripper: Gripper,
-        p0=[None, None, None],
+        self, name, version, gantry: Gantry, gripper: Gripper, p0=[None, None, None],
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
@@ -28,20 +22,7 @@ class SampleTray(Workspace):
         )
 
         # only consider slots with blanks loaded
-        self.slots = {
-            slotname: {"coordinates": coord, "payload": "blank substrate"}
-            for _, (slotname, coord) in zip(range(num), self._coordinates.items())
-        }
-
-        self.__queue = iter(self.slots.keys())
-        self.exhausted = False
-
-    def __next__(self):
-        nextslot = next(self.__queue, None)  # if no more slots left, return None
-        if nextslot is None:
-            self.exhausted = True
-
-        return nextslot
+        self.contents = {}
 
     def _load_version(self, version):
         if version not in AVAILABLE_VERSIONS:

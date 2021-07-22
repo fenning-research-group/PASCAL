@@ -128,6 +128,12 @@ characterizationline:
   transmission: #spectroscopy
     position: 313 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 6 #switchbox plug index for light source (lamp shutter)
+    shutter:
+      device_identifiers:
+      # serialid: TODO
+        vid:  #WINDOWS ONLY
+        pid:  #WINDOWS ONLY
+      pollingrate: 0.1
 
   
   
