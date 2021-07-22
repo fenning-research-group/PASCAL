@@ -10,7 +10,7 @@ from tifffile import imwrite
 import csv
 
 from frgpascal.hardware.helpers import get_port
-from frgpascal.hardware.thorcam import ThorcamHost
+from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import Switchbox
 
@@ -26,6 +26,8 @@ class CharacterizationLine:
     def __init__(self, rootdir, gantry):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
+        if not os.path.exists(self.rootdir):
+            os.mkdir(self.rootdir)
         self.switchbox = Switchbox()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
@@ -152,6 +154,7 @@ class CharacterizationAxis:
             raise Exception(
                 f"Need to calibrate characterization axis position before use!"
             )
+        self.movetotransfer()
         return self.coordinates
 
     # gantry transfer position calibration methods
@@ -179,10 +182,11 @@ class CharacterizationAxis:
         self.__calibrated = True
 
     def set_defaults(self):
+        self.write("M501")  # load settings from EEPROM
         self.write("G90")  # absolute coordinate system
-        self.write(
-            "M92 X320.00"  # TODO Set default values here
-        )  # set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write(
+        #     "M92 X320.00"  # TODO Set default values here
+        # )  # set steps/mm, randomly resets to defaults sometimes idk why
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -221,11 +225,12 @@ class CharacterizationAxis:
             raise Exception(
                 "Stage has not been homed! Home with self.gohome() before moving please."
             )
-
         if x > self.XLIM[1] or x < self.XLIM[0]:
             raise Exception(f"Invalid move - {x:.2f} is out of bounds")
 
         self.__targetposition = x
+        if self.__targetposition == self.position:
+            return False  # already at target position
         return True
 
     def moveto(self, x: float):
@@ -325,6 +330,7 @@ class DarkfieldImaging(StationTemplate):
         self.lightswitch = lightswitch
 
     def capture(self):
+        self.camera.exposure = 5e4  # 50 ms dwell time, in microseconds
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
@@ -336,7 +342,7 @@ class DarkfieldImaging(StationTemplate):
 
 
 class PLImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
+    def __init__(self, position, rootdir, camera: Thorcam, lightswitch):
         savedir = os.path.join(rootdir, "PLImaging")
 
         super().__init__(position=position, savedir=savedir)
@@ -344,6 +350,7 @@ class PLImaging(StationTemplate):
         self.lightswitch = lightswitch
 
     def capture(self):
+        self.camera.exposure = 5e5  #  dwell time, in microseconds
         self.lightswitch.on()
         time.sleep(1)  # takes a little longer for PL lamp to turn on
         img = self.camera.capture()
@@ -370,7 +377,7 @@ class BrightfieldImaging(StationTemplate):
         return img
 
     def save(self, img, sample):
-        fname = f"{sample}_darkfield.tif"
+        fname = f"{sample}_brightfield.tif"
         imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
 
 
@@ -404,11 +411,30 @@ class PLSpectroscopy(StationTemplate):
         super().__init__(position=position, savedir=savedir)
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
+        self.hdrdwelltimes = [100, 250, 500, 1000]  # ms
 
     def capture(self):
+        """
+        captures high-depth resolution (HDR) PL spectrum with a few increasing dwell times.
+        data at each wavelength uses the longest dwell time that didnt blow out the detector
+        """
         self.lightswitch.on()
-        spectrum = self.spectrometer.capture()
+        threshold = (2 ** 16) * 0.95  # a little below 16 bit depth of camera
+        for idx, dwell in enumerate(self.hdrdwelltimes):
+            self.spectrometer.integrationtime = dwell  # ms
+            spectrum = self.spectrometer.capture()
+            wl = spectrum[:, 0]
+            cts = spectrum[:, 1]  # raw counts
+            cps = cts / (dwell / 1000)  # counts per second
+            if idx == 0:
+                cps_hdr = cps
+            mask = cts <= threshold  # data that isnt peaking
+            cps_hdr[mask] = cps[
+                mask
+            ]  # fill in wavelengths that arent saturated on detector
+
         self.lightswitch.off()
+        spectrum = np.vstack([wl, cps_hdr]).T  # build back into an nx2 spectrum array
         return spectrum
 
     def save(self, spectrum, sample):

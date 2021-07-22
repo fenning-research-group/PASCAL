@@ -1,6 +1,7 @@
 from threading import Thread, Lock
 from queue import Queue
 from abc import ABC, abstractmethod
+import time
 
 # from frgpascal.maestro import Maestro
 from frgpascal.hardware.gantry import Gantry

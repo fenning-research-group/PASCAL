@@ -52,7 +52,7 @@ gripper:
   width_min: 5.6 #minimum opening width (mm)
   pwm_max: 1400  #pulse width (us) corresponding to minimum width
   pwm_min: 650   #pulse width (us) corresponding to maximum width
-  extra_opening_width: 4 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width: 3.5 #extra width (mm) to open gripper when moving to pick up a sample
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 10 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
@@ -112,11 +112,11 @@ characterizationline:
     relayresponsetime: 2 #seconds between telling relay to do something + relay doing it
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
-    position: 88.15 #position (mm) at which characterization axis centers sample in FOV
+    position: 93.15 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 2 #switchbox plug index for light source (ring light)
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-    position: 88.15 #position (mm) at which characterization axis centers sample in FOV
+    position: 93.15 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 3 #switchbox plug index for light source (blue LED lamp)
   brightfield:
     cameraid: '12519' #serial number for Thorlabs Camera
