@@ -9,7 +9,12 @@ TRAY_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "sampletrays")
 AVAILABLE_VERSIONS = {
     os.path.splitext(f)[0]: os.path.join(TRAY_VERSIONS_DIR, f)
     for f in os.listdir(TRAY_VERSIONS_DIR)
+    if ".yaml" in f
 }
+
+
+def available_versions(self):
+    return AVAILABLE_VERSIONS
 
 
 class SampleTray(Workspace):

@@ -1,8 +1,6 @@
 import numpy as np
-import yaml
 from uuid import uuid4  # for unique sample identifiers
 import json
-from frgpascal.experimentaldesign.helpers import name_to_components
 
 ### Recipes to define a sample
 
@@ -19,21 +17,54 @@ class SolutionRecipe:
         self.molarity = molarity
         self.solvent = solvent
 
-        self.solute_dict = name_to_components(solutes, factor=molarity, delimiter="_")
-        self.solvent_dict = name_to_components(solvent, factor=1, delimiter="_")
+        self.solute_dict = self.name_to_components(
+            solutes, factor=molarity, delimiter="_"
+        )
+        self.solvent_dict = self.name_to_components(solvent, factor=1, delimiter="_")
         total_solvent_amt = sum(self.solvent_dict.values())
         self.solvent_dict = {
             k: v / total_solvent_amt for k, v in self.solvent_dict.items()
         }  # normalize so total solvent amount is 1.0
+        self.well = {
+            "tray": None,
+            "slot": None,
+        }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
 
-    def to_json(self):
+    def name_to_components(
+        self, name, factor=1, delimiter="_",
+    ):
+        """
+        given a chemical formula, returns dictionary with individual components/amounts
+        expected name format = 'MA0.5_FA0.5_Pb1_I2_Br1'.
+        would return dictionary with keys ['MA, FA', 'Pb', 'I', 'Br'] and values [0.5,.05,1,2,1]*factor
+        """
+        components = {}
+        for part in name.split(delimiter):
+            species = part
+            count = 1.0
+            for l in range(len(part), 0, -1):
+                try:
+                    count = float(part[-l:])
+                    species = part[:-l]
+                    break
+                except:
+                    pass
+            if species == "":
+                continue
+            components[species] = count * factor
+        return components
+
+    def to_dict(self):
         out = {
             "solutes": self.solutes,
             "molarity": self.molarity,
             "solvent": self.solvent,
+            "well": self.well,
         }
+        return out
 
-        return json.dumps(out)
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __repr__(self):
         if self.solutes == "":  # no solutes, just a solvent
@@ -108,18 +139,18 @@ class SpincoatRecipe:
             self.start_times.append(self.start_times[-1] + duration)
         self.duration = self.steps[:, 2].sum() + self.start_times[0]
 
-    def to_json(self):
+    def to_dict(self):
         steps = [
             {"rpm": rpm, "acceleration": accel, "duration": duration}
             for rpm, accel, duration in self.steps
         ]
         solution = {
-            "solution": self.solution.to_json() if self.solution is not None else None,
+            "solution": self.solution.to_dict() if self.solution is not None else None,
             "volume": self.solution_volume,
             "droptime": self.solution_droptime,
         }
         antisolvent = {
-            "solution": self.antisolvent.to_json()
+            "solution": self.antisolvent.to_dict()
             if self.antisolvent is not None
             else None,
             "volume": self.antisolvent_volume,
@@ -134,7 +165,10 @@ class SpincoatRecipe:
             "solution": solution,
             "antisolvent": antisolvent,
         }
-        return json.dumps(out)
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __repr__(self):
         output = "<SpincoatingRecipe>\n"
@@ -207,13 +241,16 @@ class AnnealRecipe:
 
         return f"<AnnealRecipe> {round(self.temperature,1)}C for {round(duration,1)} {units}"
 
-    def to_json(self):
-        output = {
+    def to_dict(self):
+        out = {
             "type": "anneal",
             "temperature": self.temperature,
             "duration": self.duration,
         }
-        return json.dumps(output)
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -257,34 +294,25 @@ class Sample:
         self.spincoat_recipe = spincoat_recipe
         self.anneal_recipe = anneal_recipe
         self.status = "not_started"
+        self.tasks = []
 
-    def to_json(self):
-        steps_dict = [
-            {"rpm": s[0], "acceleration": s[1], "duration": s[2], "start_time": st}
-            for s, st in zip(
-                self.spincoat_recipe.steps, self.spincoat_recipe.start_times
-            )
-        ]
-        spincoat_output = {
-            "steps": steps_dict,
-            "perovskite_drop_time": self.spincoat_recipe.perovskite_droptime,
-            "antisolvent_drop_time": self.spincoat_recipe.antisolvent_droptime,
-        }
-        anneal_output = {
-            "temperature": self.anneal_recipe.temperature,
-            "duration": self.anneal_recipe.duration,
-        }
+    def to_dict(self):
+        task_output = [task.to_dict() for task in self.tasks]
 
         out = {
             "name": self.name,
             "sampleid": self._sampleid,
             "substrate": self.substrate,
             "storage_slot": self.storage_slot,
-            "spincoat_recipe": self.spincoat_recipe,
-            "anneal_recipe": self.anneal_recipe,
+            "spincoat_recipe": self.spincoat_recipe.to_dict(),
+            "anneal_recipe": self.anneal_recipe.to_dict(),
+            "tasks": task_output,
         }
 
-        return json.dumps(out)
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __repr__(self):
         output = f"<Sample> {self.name}\n"
@@ -330,9 +358,7 @@ def solutionrecipe_fromjson(s: str):
     p = json.loads(s)
 
     return SolutionRecipe(
-        solution=p["solution"],
-        solution_volume=p["solution_volume"],
-        solution_droptime=p["solution_droptime"],
+        solutes=p["solutes"], solvent=p["solvent"], molarity=p["molarity"],
     )
 
 
@@ -349,7 +375,17 @@ def spincoatrecipe_fromjson(s: str):
 
     steps = [[s["rpm"], s["acceleration"], s["duration"]] for s in p["steps"]]
     if p["solution"] is not None:
-        p["solution"] = SolutionRecipe(solution=p["solution"]["solution"],)
+        p["solution"] = SolutionRecipe(
+            solutes=p["solution"]["solution"]["solutes"],
+            molarity=p["solution"]["solution"]["molarity"],
+            solvent=p["solution"]["solution"]["solvent"],
+        )
+    if p["antisolvent"] is not None:
+        p["antisolvent"] = SolutionRecipe(
+            solutes=p["antisolvent"]["solution"]["solutes"],
+            molarity=p["antisolvent"]["solution"]["molarity"],
+            solvent=p["antisolvent"]["solution"]["solvent"],
+        )
 
     return SpincoatRecipe(
         steps=steps,

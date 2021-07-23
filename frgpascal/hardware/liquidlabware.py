@@ -6,7 +6,12 @@ LL_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "liquidlabware")
 AVAILABLE_VERSIONS = {
     os.path.splitext(f)[0]: os.path.join(LL_VERSIONS_DIR, f)
     for f in os.listdir(LL_VERSIONS_DIR)
+    if ".json" in f
 }
+
+
+def available_versions(self):
+    return AVAILABLE_VERSIONS
 
 
 class LiquidLabware:

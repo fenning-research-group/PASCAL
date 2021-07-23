@@ -1,0 +1,7 @@
+Tray,Slot,Volume (uL),Solutes,Molarity (M),Solvent
+4mL_Tray1,A1,Empty Vial,FA0.25_MA0.75_Pb_I3,1,DMF9_DMSO1
+4mL_Tray1,A2,Empty Vial,MA0.5_FA0.5_Pb_I3,1,DMF9_DMSO1
+4mL_Tray1,A3,3000.0,MA_Pb_I3,1,DMF9_DMSO1
+4mL_Tray1,A4,3000.0,FA_Pb_I3,1,DMF9_DMSO1
+4mL_Tray1,A5,Empty Vial,FA0.75_MA0.25_Pb_I3,1,DMF9_DMSO1
+15mL_Tray1,A1,6000.0,,1,Chlorobenzene
