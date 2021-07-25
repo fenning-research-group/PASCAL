@@ -1,4 +1,5 @@
 from threading import Thread, Lock
+import asyncio
 from queue import Queue
 from abc import ABC, abstractmethod
 import time
@@ -17,20 +18,22 @@ from frgpascal.hardware.characterizationline import (
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro):
+    def __init__(self, maestro, functions, n_workers=1):
         self.maestro = maestro
         self.queue = Queue()
         self.functions = (
-            {}
-        )  # this must be filled in by each method to map tasks to functions
+            functions  # this must be filled in by each method to map tasks to functions
+        )
+        self.working = False
 
     def start(self):
+        self.working = True
         self.thread = Thread(target=self.worker)
         self.thread.start()
 
     def worker(self):
         """process items from the queue + keep the maestro lists updated"""
-        while True:
+        while self.working:
             task = self.queue.get()  # blocking wait for next task
             if task is None:
                 break  # None signals all tasks complete
@@ -39,7 +42,7 @@ class WorkerTemplate(ABC):
             with self.maestro.lock_pendingtasks:
                 self.maestro.pending_tasks.append(task["taskid"])
             for precedent in task["preceding_tasks"]:
-                with self.maestrto.lock_completedtasks:
+                with self.maestro.lock_completedtasks:
                     found = precedent in self.maestro.completed_tasks
                 if found:
                     continue

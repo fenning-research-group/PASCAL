@@ -251,71 +251,142 @@ class Maestro:
 
         return record
 
-    # Complete Sample
-    # def run_sample(self, storage_slot, spincoat_instructions, hotplate_instructions):
-    #     """
-    #     storage_slot: slot name for storage location
-    #     spincoat_instructions:
-    #         {
-    #             'source_wells': [
-    #                                 [plate_psk, well_psk, vol_psk], 	 (stock/mix, name, uL)
-    #                                 [plate_antisolvent, well_antisolvent, vol_antisolvent],
-    #                             ],
-    #             'recipe':   [
-    #                             [speed, acceleration, duration], 	(rpm, rpm/s, s)
-    #                             [speed, acceleration, duration],
-    #                             ...,
-    #                             [speed, acceleration, duration]
-    #                         ],
-    #             'drop_times':    [time_psk, time_antisolvent]	 (s)
-    #         }
+    ### Compound tasks
 
-    #     hotplate_instructions:
-    #         {
-    #             'temperature': temp 	(C),
-    #             'slot': slot name on hotplate,
-    #             'duration': time to anneal 	(s)
-    #         }
-    #     """
+    def storage_to_spincoater(self, sample):
+        tray, slot = (
+            sample["storage"]["storage_location"]["tray"],
+            sample["storage"]["storage_location"]["slot"],
+        )
+        p1 = self.maestro.storage[tray](slot)
+        p2 = self.maestro.spincoater()
 
-    #     # aspirate liquids, move pipettes next to spincoater
-    #     self.liquidhandler.aspirate_for_spincoating(
-    #         psk_well=spincoat_instructions["source_wells"]["well_psk"],
-    #         psk_volume=spincoat_instructions["source_wells"]["volume_psk"],
-    #         antisolvent_well=spincoat_instructions["source_wells"]["well_antisolvent"],
-    #         antisolvent_volume=spincoat_instructions["source_wells"][
-    #             "volume_antisolvent"
-    #         ],
-    #     )
+        self.maestro.release()  # open the grippers
+        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
+        )  # move just above destination
+        if self.gripper.is_under_load():
+            raise ValueError("Sample dropped in transit!")
+        self.spincoater.vacuum_on()
+        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.release()  # drop the sample
+        self.gantry.moverel(
+            z=self.gantry.ZHOP_HEIGHT
+        )  # move up a bit, mostly to avoid resting gripper on hotplate
+        self.gripper.close()  # fully close gripper to reduce servo strain
 
-    #     # load sample onto chuck
-    #     self.spincoater.lock()
-    #     self.spincoater.vacuum_on()
-    #     self.transfer(self.storage(storage_slot), self.spincoater())
-    #     self.idle_gantry()
+    def spincoat(self, sample):
+        recipe = sample["spincoat_recipe"]
 
-    #     # spincoat
-    #     spincoating_record = self.spincoat(
-    #         recipe=spincoat_instructions["recipe"],
-    #         drops=spincoat_instructions["drop_times"],
-    #     )
+    def spincoater_to_hotplate(self, sample):
+        p1 = self.spincoater()
+        for hotplate_name, hp in self.hotplates.items():
+            try:
+                slot = hp.get_open_slot()
+                break
+            except:
+                slot = None
+        if slot is None:
+            raise ValueError("No slots available on any hotplate!")
+        self.hotplates[hotplate_name].load(slot, sample)
+        p2 = self.hotplates[hotplate_name](slot)
 
-    #     # move sample to hotplate
-    #     self.liquidhandler.cleanup()
-    #     self.spincoater.vacuum_off()
-    #     self.transfer(self.spincoater(), self.hotplate(hotplate_instructions["slot"]))
-    #     self.spincoater.unlock()
-    #     ### TODO - start timer for anneal removal
+        self.release()  # open the grippers
+        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+        self.spincoater.vacuum_off()
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
+        )  # move just above destination
+        if self.gripper.is_under_load():
+            raise ValueError("Sample dropped in transit!")
+        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.release()  # drop the sample
+        self.gantry.moverel(
+            z=self.gantry.ZHOP_HEIGHT
+        )  # move up a bit, mostly to avoid resting gripper on hotplate
+        self.gripper.close()  # fully close gripper to reduce servo strain
 
-    #     self.idle_gantry()
+        self.sample["anneal_recipe"]["location"] = {
+            "hotplate": hotplate_name,
+            "slot": slot,
+        }
 
-    #     self.manifest[storage_slot] = {
-    #         "hotplate": {"instructions": hotplate_instructions},
-    #         "spincoat": {
-    #             "instructions": spincoat_instructions,
-    #             "record": spincoating_record,
-    #         },
-    #     }
+    def anneal(self, sample):
+        time.sleep(sample["anneal_recipe"]["duration"])
+
+    def hotplate_to_storage(self, sample):
+        hotplate, slot = (
+            self.sample["anneal_recipe"]["location"]["hotplate"],
+            self.sample["anneal_recipe"]["location"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](slot)
+
+        tray, slot = (
+            sample["storage"]["storage_location"]["tray"],
+            sample["storage"]["storage_location"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+
+        self.transfer(p1, p2)
+        self.hotplates[hotplate].unload(sample)
+
+    def cooldown(self, sample):
+        time.sleep(180)  # TODO - make this a variable
+
+    def storage_to_characterization(self, sample):
+        tray, slot = (
+            sample["storage"]["storage_location"]["tray"],
+            sample["storage"]["storage_location"]["slot"],
+        )
+        p1 = self.storage[tray](slot)
+        p2 = self.characterization.axis()
+
+        self.transfer(p1, p2)
+
+    def characterize(self, sample):
+        self.characterization.run(sample)
+
+    def characterization_to_storage(self, sample):
+        p1 = self.characterization.axis()
+        tray, slot = (
+            sample["storage"]["storage_location"]["tray"],
+            sample["storage"]["storage_location"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+
+        self.transfer(p1, p2)
+
+    ### Workers
+    ## Gantry + Gripper
+    def gantry_gripper(self):
+        """Consumer for tasks involving transfer of samples with gantry+gripper
+        """
+        tasklist = {
+            "storage_to_spincoater": self.storage_to_spincoater,
+            "spincoater_to_hotplate": self.spincoater_to_hotplate,
+            "hotplate_to_storage": self.hotplate_to_storage,
+            "storage_to_characterization": self.storage_to_characterization,
+            "characterization_to_storage": self.characterization_to_storage,
+        }
+        while self.run_in_progress:
+            start_time, task, precedent_taskids = await self.gantry_queue.get()
+            time_until_start = self.t0_nist + start_time - self.nist_time()
+            await asyncio.sleep(time_until_start)  # wait until start time
+            for (
+                precedent
+            ) in precedent_taskids:  # wait until all preceding tasks are complete
+                while precedent not in self.completed_tasks:
+                    await asyncio.sleep(0.1)
+
+            sample = task["sample"]
+            func = tasklist[task["task"]]
+            await func(sample)
+
+        self.completed_tasks[task["taskid"]] = self.nist_time()
+        self.gantry_queue.task_done()
 
     def run_list(self, tasklist):
         self.worker_gg = Worker_GantryGripper(
