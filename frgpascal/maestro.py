@@ -148,65 +148,6 @@ class Maestro:
     ### Physical Methods
     # Compound Movements
 
-    def catch(self):
-        """
-        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float
-        """
-        self.CATCHATTEMPTS = 3
-        caught_successfully = False
-        while not caught_successfully and self.CATCHATTEMPTS > 0:
-            self.gripper.close(slow=True)
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-            self.gripper.open(self.SAMPLEWIDTH - 2)
-            self.gripper.open(self.SAMPLEWIDTH - 1)
-            time.sleep(0.1)
-            if (
-                not self.gripper.is_under_load()
-            ):  # if springs not pulling on grippers, assume that the sample is grabbed
-                caught_successfully = True
-                break
-            else:
-                self.CATCHATTEMPTS -= 1
-                # lets jog the gripper position and try again.
-                self.gripper.close()
-                self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False)
-                # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-                self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
-
-        if not caught_successfully:
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-            self.gripper.close()
-            raise ValueError("Failed to pick up sample!")
-
-    def release(self):
-        """
-        Open gripper slowly release sample without jogging position
-        """
-        self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
-        )  # slow to prevent sample position shifting upon release
-
-    def idle_gantry(self):
-        """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
-        self.gantry.moveto(self.IDLECOORDINATES)
-        self.gripper.close()
-
-    def transfer(self, p1, p2, zhop=True):
-        self.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
-
     def spincoat(self, recipe: SpincoatRecipe):
         """executes a series of spin coating steps. A final "stop" step is inserted
         at the end to bring the rotor to a halt.
@@ -253,111 +194,11 @@ class Maestro:
 
     ### Compound tasks
 
-    def storage_to_spincoater(self, sample):
-        tray, slot = (
-            sample["storage"]["storage_location"]["tray"],
-            sample["storage"]["storage_location"]["slot"],
-        )
-        p1 = self.maestro.storage[tray](slot)
-        p2 = self.maestro.spincoater()
-
-        self.maestro.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.spincoater.vacuum_on()
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
-
-    def spincoat(self, sample):
-        recipe = sample["spincoat_recipe"]
-
-    def spincoater_to_hotplate(self, sample):
-        p1 = self.spincoater()
-        for hotplate_name, hp in self.hotplates.items():
-            try:
-                slot = hp.get_open_slot()
-                break
-            except:
-                slot = None
-        if slot is None:
-            raise ValueError("No slots available on any hotplate!")
-        self.hotplates[hotplate_name].load(slot, sample)
-        p2 = self.hotplates[hotplate_name](slot)
-
-        self.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.spincoater.vacuum_off()
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
-
-        self.sample["anneal_recipe"]["location"] = {
-            "hotplate": hotplate_name,
-            "slot": slot,
-        }
-
     def anneal(self, sample):
         time.sleep(sample["anneal_recipe"]["duration"])
 
-    def hotplate_to_storage(self, sample):
-        hotplate, slot = (
-            self.sample["anneal_recipe"]["location"]["hotplate"],
-            self.sample["anneal_recipe"]["location"]["slot"],
-        )
-        p1 = self.hotplates[hotplate](slot)
-
-        tray, slot = (
-            sample["storage"]["storage_location"]["tray"],
-            sample["storage"]["storage_location"]["slot"],
-        )
-        p2 = self.storage[tray](slot)
-
-        self.transfer(p1, p2)
-        self.hotplates[hotplate].unload(sample)
-
     def cooldown(self, sample):
         time.sleep(180)  # TODO - make this a variable
-
-    def storage_to_characterization(self, sample):
-        tray, slot = (
-            sample["storage"]["storage_location"]["tray"],
-            sample["storage"]["storage_location"]["slot"],
-        )
-        p1 = self.storage[tray](slot)
-        p2 = self.characterization.axis()
-
-        self.transfer(p1, p2)
-
-    def characterize(self, sample):
-        self.characterization.run(sample)
-
-    def characterization_to_storage(self, sample):
-        p1 = self.characterization.axis()
-        tray, slot = (
-            sample["storage"]["storage_location"]["tray"],
-            sample["storage"]["storage_location"]["slot"],
-        )
-        p2 = self.storage[tray](slot)
-
-        self.transfer(p1, p2)
 
     ### Workers
     ## Gantry + Gripper
