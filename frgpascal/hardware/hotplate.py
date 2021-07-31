@@ -17,25 +17,21 @@ HOTPLATE_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "hotplates")
 AVAILABLE_VERSIONS = {
     os.path.splitext(f)[0]: os.path.join(HOTPLATE_VERSIONS_DIR, f)
     for f in os.listdir(HOTPLATE_VERSIONS_DIR)
+    if ".yaml" in f
 }
+
+
+def available_versions(self):
+    return AVAILABLE_VERSIONS
 
 
 class HotPlate(Workspace):
     def __init__(
-        self,
-        name,
-        version,
-        gantry: Gantry,
-        gripper: Gripper,
-        p0=[None, None, None],
+        self, name, version, gantry: Gantry, gripper: Gripper, p0=[None, None, None],
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
-            name=name,
-            gantry=gantry,
-            gripper=gripper,
-            p0=p0,
-            **workspace_kwargs,
+            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs,
         )
 
         self.TLIM = (constants["temperature_min"], constants["temperature_max"])

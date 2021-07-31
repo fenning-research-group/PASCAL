@@ -1,7 +1,22 @@
+from ortools.sat.python import cp_model
+import matplotlib.pyplot as plt
+import numpy as np
+import uuid
+
+from frgpascal.experimentaldesign.recipes import (
+    Sample,
+    SpincoatRecipe,
+    AnnealRecipe,
+)
+
+### Define workers for PASCAL
 class Worker:
     def __init__(self, name, capacity):
         self.name = name
         self.capacity = capacity
+
+    def __repr__(self):
+        return f"<Worker> {self.name}"
 
 
 gg = Worker(name="gantry_gripper", capacity=1)
@@ -10,135 +25,309 @@ hp = Worker(name="hotplate", capacity=25)
 st = Worker(name="storage", capacity=45)
 cl = Worker(name="characterizationline", capacity=1)
 
+workers = [gg, sclh, hp, st, cl]
 
+
+### Base Class for PASCAL Tasks
 class Task:
     def __init__(
-        self, task, workers, duration, start_time=0, task_details={}, precedents=[]
+        self,
+        sample,
+        task,
+        workers,
+        duration,
+        task_details="",
+        precedents=[],
+        reservoir=[],
     ):
-        self.worker = worker
+        self.sample = sample
+        self.workers = workers
         self.task = task
         self.task_details = task_details
         self.taskid = f"{task}-{str(uuid.uuid4())}"
-        self.precedentids = precedents
-        self.start_time = start_time
+        self.precedents = precedents
+        self.reservoir = []
+        if sum([immediate for task, immediate in precedents]) > 1:
+            raise ValueError("Only one precedent can be immediate!")
+        self.duration = int(duration)
 
-    @property
-    def start_time(self):
-        return self.__start_time
-
-    @start_time.setter
-    def start_time(self, t):
-        self.__start_time = t
-        self.end_time = t + duration
+    def __repr__(self):
+        return f"<Task> {self.sample.name}, {self.task}"
 
     def __eq__(self, other):
         return other == self.taskid
 
+    def to_dict(self):
+        out = {
+            "start": self.start,
+            "task": self.task,
+            "details": self.task_details,
+            "id": self.taskid,
+            "precedents": [
+                precedent.taskid for precedent, immediate in self.precedents
+            ],
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+
+### Unit Tasks for PASCAL
+
 
 class StorageToSpincoater(Task):
-    def __init__(self, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="storage_to_spincoater",
             workers=[gg, sclh],
             duration=30,
-            task_details="",
             precedents=precedents,
         )
 
 
 class Spincoat(Task):
-    def __init__(self, recipe: SpincoatRecipe, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, recipe: SpincoatRecipe, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="spincoat",
             workers=[sclh],
             duration=recipe.duration + 45,
-            task_details=recipe.to_json(),
+            task_details=recipe.to_dict(),
             precedents=precedents,
         )
 
 
 class SpincoaterToHotplate(Task):
-    def __init__(self, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="spincoater_to_hotplate",
             workers=[gg, sclh],
             duration=30,
-            task_details="",
             precedents=precedents,
         )
 
 
 class Anneal(Task):
-    def __init__(self, recipe: AnnealRecipe, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, recipe: AnnealRecipe, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="anneal",
             workers=[hp],
             duration=recipe.duration,
-            task_details=recipe.to_json(),
+            task_details=recipe.to_dict(),
             precedents=precedents,
         )
 
 
 class HotplateToStorage(Task):
-    def __init__(
-        self, hotplatetray, hotplateslot, storagetray, storageslot, precedents=[]
-    ):
-        super.__init__(
-            task="hot",
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
+            task="hotplate_to_storage",
             workers=[gg],
             duration=30,
-            task_details=json.dumps(
-                {
-                    "hotplatetray": hotplatetray,
-                    "hotplateslot": hotplateslot,
-                    "storagetray": storagetray,
-                    "storageslot": storageslot,
-                }
-            ),
             precedents=precedents,
         )
 
 
 class Cooldown(Task):
-    def __init__(self, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="cooldown",
             workers=[st],
-            duration=300,
-            task_details="",
+            duration=180,
             precedents=precedents,
         )
 
 
 class StorageToCharacterization(Task):
-    def __init__(self, tray, slot, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="storage_to_characterization",
             workers=[gg, cl],
             duration=30,
-            task_details=json.dumps({"tray": tray, "slot": slot}),
             precedents=precedents,
         )
 
 
 class Characterize(Task):
-    def __init__(self, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="characterize",
             workers=[cl],
-            duration=120,
-            task_details="",
+            duration=200,
             precedents=precedents,
         )
 
 
 class CharacterizationToStorage(Task):
-    def __init__(self, tray, slot, precedents=[]):
-        super.__init__(
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
             task="characterization_to_storage",
             workers=[gg, cl],
             duration=30,
-            task_details=json.dumps({"tray": tray, "slot": slot}),
             precedents=precedents,
         )
+
+
+### build task list for a sample
+def generate_tasks_for_sample(sample: Sample):
+    tasks = []
+
+    tasks.append(StorageToSpincoater(sample=sample, precedents=[]))
+
+    tasks.append(
+        Spincoat(
+            sample=sample,
+            recipe=sample.spincoat_recipe,
+            precedents=[(tasks[-1], False)],  # (task, (bool)immediate)
+        )
+    )
+
+    tasks[-1]
+
+    tasks.append(SpincoaterToHotplate(sample=sample, precedents=[(tasks[-1], True)]))
+
+    tasks.append(
+        Anneal(
+            sample=sample, recipe=sample.anneal_recipe, precedents=[(tasks[-1], True)]
+        )
+    )
+
+    tasks.append(HotplateToStorage(sample=sample, precedents=[(tasks[-1], True)]))
+
+    tasks.append(Cooldown(sample=sample, precedents=[(tasks[-1], True)]))
+
+    tasks.append(
+        StorageToCharacterization(sample=sample, precedents=[(tasks[-1], False)])
+    )
+
+    tasks.append(Characterize(sample=sample, precedents=[(tasks[-1], False)]))
+
+    tasks.append(
+        CharacterizationToStorage(sample=sample, precedents=[(tasks[-1], False)])
+    )
+
+    return tasks
+
+
+### Task Scheduler
+
+
+class Scheduler:
+    def __init__(self, samples, spanning_tasks=[]):
+        self.workers = workers
+        self.samples = samples
+        self.tasks = {s: s.tasks for s in samples}
+        self.tasklist = [
+            t for sample_tasks in self.tasks.values() for t in sample_tasks
+        ]
+        self.horizon = int(sum([t.duration for t in self.tasklist]))
+        self.spanning_tasks = spanning_tasks
+        self.initialize_model()
+
+    def initialize_model(self):
+        self.model = cp_model.CpModel()
+        ending_variables = []
+        machine_intervals = {w: [] for w in self.workers}
+        reservoirs = {}
+        ### Task Constraints
+        for task in self.tasklist:
+            task.end_var = self.model.NewIntVar(
+                task.duration, self.horizon, "end" + str(task)
+            )
+            ending_variables.append(task.end_var)
+
+        for task in self.tasklist:
+            ## connect to preceding tasks
+            immediate_precedent = [
+                precedent for precedent, immediate in task.precedents if immediate
+            ]  # list of immediate precedents
+            if len(immediate_precedent) == 0:
+                task.start_var = self.model.NewIntVar(
+                    0, self.horizon, "start" + str(task)
+                )
+            else:
+                precedent = immediate_precedent[0]
+                task.start_var = precedent.end_var
+
+            for precedent, immediate in task.precedents:
+                if not immediate:
+                    self.model.Add(task.start_var >= precedent.end_var)
+
+            ## mark workers as occupied during this task
+            interval_var = self.model.NewIntervalVar(
+                task.start_var, task.duration, task.end_var, "interval" + str(task)
+            )
+            for w in task.workers:
+                machine_intervals[w].append(interval_var)
+
+        ### Force sequential tasks to preserve order even if not immediate
+        spanning_tasks = {c: [] for c in self.spanning_tasks}
+        for sample, tasks in self.tasks.items():
+            for start_class, end_class in spanning_tasks:
+                start_var = [t for t in tasks if t.__class__ == start_class][
+                    0
+                ].start_var
+                end_var = [t for t in tasks if t.__class__ == end_class][0].end_var
+
+                duration = self.model.NewIntVar(0, self.horizon, "duration")
+                interval = self.model.NewIntervalVar(
+                    start_var, duration, end_var, "sampleinterval"
+                )
+                spanning_tasks[(start_class, end_class)].append(interval)
+        for intervals in spanning_tasks.values():
+            self.model.AddNoOverlap(intervals)
+
+        ### Worker Constraints
+        for w in workers:
+            intervals = machine_intervals[w]
+            if w.capacity > 1:
+                demands = [1 for _ in machine_intervals[w]]
+                self.model.AddCumulative(intervals, demands, w.capacity)
+            else:
+                self.model.AddNoOverlap(intervals)
+        for w, r in reservoirs.items():
+            self.modelAddReservoirConstraint(r["times"], r["demands"], 0, w.capacity)
+        objective_var = self.model.NewIntVar(0, self.horizon, "makespan")
+        self.model.AddMaxEquality(objective_var, ending_variables)
+        self.model.Minimize(objective_var)
+
+    def solve(self, solve_time=5):
+        self.solver = cp_model.CpSolver()
+        self.solver.parameters.max_time_in_seconds = solve_time
+        status = self.solver.Solve(self.model)
+        for s in self.samples:
+            for task in s.tasks:
+                task.start = self.solver.Value(task.start_var)
+                task.end = self.solver.Value(task.end_var)
+        self.plot_solution()
+
+    def plot_solution(self, ax=None):
+        plt.figure(figsize=(14, 5))
+        for idx, (sample, tasklist) in enumerate(self.tasks.items()):
+            color = plt.cm.tab20(idx % 20)
+            offset = np.random.random() * 0.5 - 0.25
+            for t in tasklist:
+                for w in t.workers:
+                    y = [self.workers.index(w) + offset] * 2
+                    x = [t.start / 60, t.end / 60]
+                    plt.plot(x, y, color=color)
+
+        plt.yticks(range(len(self.workers)), labels=[w.name for w in self.workers])
+        plt.xlabel("Time (minutes)")
+
+    # def _set_start_time(self, task):
+    #     for pid in task.precedents:
+    #         ptidx = self.tasks.index(pid)
+    #         pt = self.tasks[ptidx]
+    #         if pt.end_time < task.start_time:
+    #             task.start_time = pt.end_time
 
