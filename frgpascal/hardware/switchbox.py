@@ -12,7 +12,11 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class Switchbox:
-    """Interfaces with arduino to toggle relays for characterization hardware (relays, light sources, shutters, etc)"""
+    """Interfaces with numato 16 relay board to toggle relays for
+    characterization hardware (relays, light sources, shutters, etc)
+
+    https://numato.com/product/16-channel-usb-relay-module/
+    """
 
     def __init__(self, port=None):
         if port is None:
@@ -25,18 +29,36 @@ class Switchbox:
         self.RELAYRESPONSETIME = constants["switchbox"][
             "relayresponsetime"
         ]  # delay between changing relay state and relay open/closing
-        self.__available_switches = [2, 3, 4, 5, 6, 7, 8, 9]
+        self._relay_key = {
+            0: "0",  # number in GB3: number of relay on numato board
+            1: "1",
+            2: "1",
+            3: "1",
+            4: "1",
+            5: "1",
+            6: "1",
+            7: "1",
+            8: "1",
+            9: "1",
+            10: "1",
+            11: "1",
+            12: "1",
+            13: "1",
+            14: "1",
+        }
         self.connect()
 
     def connect(self):
-        self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        self._handle = serial.Serial(port=self.port, timeout=1)
+        for relay in self._relay_key:
+            self.set_low(relay)  # turn all relays off to start
         print("Connected to characterization switchbox")
 
-    def __check_switch(self, switch):
-        if switch not in self.__available_switches:
+    def _get_relay(self, switch):
+        if switch not in self._relay_key:
             raise ValueError(f"Switch {switch} does not exist!")
         else:
-            return True
+            return self._relay_key[switch]
 
     def set_low(self, switch: int):
         """sets a switch LOW
@@ -44,9 +66,9 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
-        if self.__check_switch(switch):
-            self._handle.write(f"l{switch}\n".encode())
-            time.sleep(self.RELAYRESPONSETIME)
+        relay = self._get_relay(switch)
+        self._handle.write(f"relay off {relay}\n\r".encode())
+        time.sleep(self.RELAYRESPONSETIME)
 
     def set_high(self, switch: int):
         """sets a switch HIGH
@@ -54,9 +76,9 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
-        if self.__check_switch(switch):
-            self._handle.write(f"h{switch}\n".encode())
-            time.sleep(self.RELAYRESPONSETIME)
+        relay = self._get_relay(switch)
+        self._handle.write(f"relay on {relay}\n\r".encode())
+        time.sleep(self.RELAYRESPONSETIME)
 
     def Switch(self, switch: int):
         """Returns a SingleSwitch object that controls single switch state

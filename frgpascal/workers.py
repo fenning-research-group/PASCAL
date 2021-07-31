@@ -3,6 +3,7 @@ import asyncio
 from queue import Queue
 from abc import ABC, abstractmethod
 import time
+from functools import partial
 
 from frgpascal.maestro import Maestro
 from frgpascal.hardware.gantry import Gantry
@@ -18,7 +19,7 @@ from frgpascal.hardware.characterizationline import (
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro: Maestro, functions):
+    def __init__(self, maestro: Maestro, n_workers=1):
         self.maestro = maestro
         self.gantry = maestro.gantry
         self.gripper = maestro.gripper
@@ -28,27 +29,36 @@ class WorkerTemplate(ABC):
         self.hotplates = maestro.hotplates
         self.storage = maestro.storage
 
-        self.queue = Queue()
-        self.functions = (
-            functions  # this must be filled in by each method to map tasks to functions
-        )
+        self.loop = asyncio.get_event_loop()
+        self.queue = asyncio.Queue()
         self.working = False
         self.POLLINGRATE = 0.1
 
-    def start(self):
+    def main(self, workers):
         self.working = True
-        self.thread = Thread(target=self.worker)
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(asyncio.wait(workers))
+
+    def start(self):
+        self.thread = Thread(
+            target=self.main, args=[self.worker() for _ in range(self.n_workers)]
+        )
         self.thread.start()
 
-    def stop(self):
+    def stop_workers(self):
         self.working = False
-        self.queue.put(None)
+        self.thread.join()
 
-    def worker(self):
+    def add_to_queue(self, payload):
+        if not self.workers_running:
+            raise RuntimeError("Cannot add to queue, workers not running!")
+        self.loop.call_soon_threadsafe(self.queue.put_nowait, payload)
+
+    async def worker(self):
         """process items from the queue + keep the maestro lists updated"""
         while self.working:
-            task = self.queue.get()  # blocking wait for next task
-            if task is None:
+            task = await self.queue.get()  # blocking wait for next task
+            if task is None:  # finished flag
                 break
 
             # wait for all previous tasks to complete
@@ -60,26 +70,34 @@ class WorkerTemplate(ABC):
                 if found:
                     continue
                 else:
-                    time.sleep(self.POLLINGRATE)
+                    await asyncio.sleep(self.POLLINGRATE)
 
             # wait for this task's target start time
             wait_for = (
                 self.maestro.nist_time() - task["time"] - self.maestro.t0
             )  # how long to wait before executing
             if wait_for > 0:
-                time.sleep(wait_for)
+                await asyncio.sleep(wait_for)
 
             # execute this task
-            function = self.functions[task["function"]]
-            function(*task["args"], **task["kwargs"])
+            function = partial(
+                self.functions[task["function"]],
+                args=task["args"],
+                kwargs=task["kwargs"],
+            )
+            if asyncio.iscoroutinefunction(function):
+                await function()
+            else:
+                await self.loop.run_in_executor(None, function)
 
             # update task lists
-            with self.lock_completedtasks:
-                self.completed_tasks["taskid"] = (
+            with self.maestro.lock_completedtasks:
+                self.maestro.completed_tasks["taskid"] = (
                     self.maestro.nist_time() - self.maestro.t0
                 )
-            with self.lock_pendingtasks:
-                self.pending_tasks.remove(task["taskid"])
+            with self.maestro.lock_pendingtasks:
+                self.maestro.pending_tasks.remove(task["taskid"])
+            await self.queue.task_done()
 
 
 class Worker_GantryGripper(WorkerTemplate):
@@ -252,6 +270,28 @@ class Worker_GantryGripper(WorkerTemplate):
         self.transfer(p1, p2)
 
 
+class Worker_Hotplate(WorkerTemplate):
+    def __init__(self, maestro, n_workers):
+        super().__init__(maestro=maestro)
+        self.functions = {
+            "anneal": self.anneal,
+        }
+
+    async def anneal(self, sample):
+        await asyncio.sleep(sample["anneal_recipe"]["duration"])
+
+
+class Worker_Storage(WorkerTemplate):
+    def __init__(self, maestro, n_workers):
+        super().__init__(maestro=maestro)
+        self.functions = {
+            "cooldown": self.cooldown,
+        }
+
+    async def anneal(self, sample):
+        await asyncio.sleep(180)
+
+
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro):
         super().__init__(maestro=maestro)
@@ -274,7 +314,48 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         }
 
     def spincoat(self, sample):
+        """executes a series of spin coating steps. A final "stop" step is inserted
+        at the end to bring the rotor to a halt.
+
+        Args:
+            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
+
+        Returns:
+            record: dictionary of recorded spincoating process.
+        """
         recipe = sample["spincoat_recipe"]
+        solution_dropped = False
+        antisolvent_dropped = False
+        record = {}
+
+        self.spincoater.start_logging()
+        spincoating_in_progress = True
+        t0 = self.nist_time()
+        tnext = 0
+        for start_time, (rpm, acceleration, duration) in zip(
+            recipe.start_times, recipe.steps
+        ):
+            tnext += start_time
+            tnow = self.nist_time() - t0  # time relative to recipe start
+            while (
+                tnow <= tnext
+            ):  # loop and check for drop times until next spin step is reached
+                if not solution_dropped and tnow >= recipe.solution_droptime:
+                    self.liquidhandler.drop_perovskite()
+                    solution_dropped = True
+                    record["solution_drop"] = tnow
+                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
+                    self.liquidhandler.drop_antisolvent()
+                    antisolvent_dropped = True
+                    record["antisolvent_drop"] = tnow
+                time.sleep(0.1)
+
+            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
+
+        self.spincoater.stop()
+        record.update(self.spincoater.finish_logging())
+
+        sample["spincoat_recipe"]["record"] = record
 
 
 class Worker_Characterization(WorkerTemplate):
@@ -286,9 +367,6 @@ class Worker_Characterization(WorkerTemplate):
             "movetotransfer": self.characterization.axis.movetotransfer,
             "characterize": self.characterization.run,
         }
-
-    def characterize(self, sample):
-        self.characterization.run(sample)
 
 
 # class Worker_Hotplate:

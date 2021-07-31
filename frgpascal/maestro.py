@@ -65,21 +65,25 @@ class Maestro:
         self.liquidhandler = OT2()
 
         # Labware
-        self.hotplate = HotPlate(
-            name="Hotplate1",
-            version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
-            gantry=self.gantry,
-            gripper=self.gripper,
-            p0=constants["hotplate"]["p0"],
-        )
-        self.storage = SampleTray(
-            name="SampleTray1",
-            version="storage_v1",  # TODO #3
-            num=numsamples,  # number of substrates loaded
-            gantry=self.gantry,
-            gripper=self.gripper,
-            p0=constants["sampletray"]["p0"],
-        )
+        self.hotplates = {
+            "HotPlate1": HotPlate(
+                name="Hotplate1",
+                version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["hotplate"]["p0"],
+            )
+        }
+        self.storage = {
+            "SampleTray1": SampleTray(
+                name="SampleTray1",
+                version="storage_v1",  # TODO #3
+                num=numsamples,  # number of substrates loaded
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["sampletray"]["p0"],
+            )
+        }
         # Stock Solutions
 
         self._load_calibrations()  # load coordinate calibrations for labware
@@ -147,50 +151,6 @@ class Maestro:
 
     ### Physical Methods
     # Compound Movements
-
-    def spincoat(self, recipe: SpincoatRecipe):
-        """executes a series of spin coating steps. A final "stop" step is inserted
-        at the end to bring the rotor to a halt.
-
-        Args:
-            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
-
-        Returns:
-            record: dictionary of recorded spincoating process.
-        """
-
-        perovskite_dropped = False
-        antisolvent_dropped = False
-        record = {}
-
-        self.spincoater.start_logging()
-        spincoating_in_progress = True
-        t0 = self.nist_time()
-        tnext = 0
-        for start_time, (rpm, acceleration, duration) in zip(
-            recipe.start_times, recipe.steps
-        ):
-            tnext += start_time
-            tnow = self.nist_time() - t0  # time relative to recipe start
-            while (
-                tnow <= tnext
-            ):  # loop and check for drop times until next spin step is reached
-                if not perovskite_dropped and tnow >= recipe.perovskite_droptime:
-                    self.liquidhandler.drop_perovskite()
-                    perovskite_dropped = True
-                    record["perovskite_drop"] = tnow
-                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
-                    self.liquidhandler.drop_antisolvent()
-                    antisolvent_dropped = True
-                    record["antisolvent_drop"] = tnow
-                time.sleep(0.25)
-
-            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
-
-        self.spincoater.stop()
-        record.update(self.spincoater.finish_logging())
-
-        return record
 
     ### Compound tasks
 

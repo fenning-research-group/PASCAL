@@ -105,9 +105,8 @@ characterizationline:
   #individual stations
   switchbox:
     device_identifiers:
-      vid: 9025
-      pid: 67
-      serial_number: '558383339323513140D1'
+      vid: 10777
+      pid: 3075
     pollingrate: 0.2
     relayresponsetime: 2 #seconds between telling relay to do something + relay doing it
   darkfield:
