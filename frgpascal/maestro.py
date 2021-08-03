@@ -65,21 +65,25 @@ class Maestro:
         self.liquidhandler = OT2()
 
         # Labware
-        self.hotplate = HotPlate(
-            name="Hotplate1",
-            version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
-            gantry=self.gantry,
-            gripper=self.gripper,
-            p0=constants["hotplate"]["p0"],
-        )
-        self.storage = SampleTray(
-            name="SampleTray1",
-            version="storage_v1",  # TODO #3
-            num=numsamples,  # number of substrates loaded
-            gantry=self.gantry,
-            gripper=self.gripper,
-            p0=constants["sampletray"]["p0"],
-        )
+        self.hotplates = {
+            "HotPlate1": HotPlate(
+                name="Hotplate1",
+                version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["hotplate"]["p0"],
+            )
+        }
+        self.storage = {
+            "SampleTray1": SampleTray(
+                name="SampleTray1",
+                version="storage_v1",  # TODO #3
+                num=numsamples,  # number of substrates loaded
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["sampletray"]["p0"],
+            )
+        }
         # Stock Solutions
 
         self._load_calibrations()  # load coordinate calibrations for labware
@@ -148,50 +152,6 @@ class Maestro:
     ### Physical Methods
     # Compound Movements
 
-    def spincoat(self, recipe: SpincoatRecipe):
-        """executes a series of spin coating steps. A final "stop" step is inserted
-        at the end to bring the rotor to a halt.
-
-        Args:
-            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
-
-        Returns:
-            record: dictionary of recorded spincoating process.
-        """
-
-        perovskite_dropped = False
-        antisolvent_dropped = False
-        record = {}
-
-        self.spincoater.start_logging()
-        spincoating_in_progress = True
-        t0 = self.nist_time()
-        tnext = 0
-        for start_time, (rpm, acceleration, duration) in zip(
-            recipe.start_times, recipe.steps
-        ):
-            tnext += start_time
-            tnow = self.nist_time() - t0  # time relative to recipe start
-            while (
-                tnow <= tnext
-            ):  # loop and check for drop times until next spin step is reached
-                if not perovskite_dropped and tnow >= recipe.perovskite_droptime:
-                    self.liquidhandler.drop_perovskite()
-                    perovskite_dropped = True
-                    record["perovskite_drop"] = tnow
-                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
-                    self.liquidhandler.drop_antisolvent()
-                    antisolvent_dropped = True
-                    record["antisolvent_drop"] = tnow
-                time.sleep(0.25)
-
-            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
-
-        self.spincoater.stop()
-        record.update(self.spincoater.finish_logging())
-
-        return record
-
     ### Compound tasks
 
     def anneal(self, sample):
@@ -202,59 +162,59 @@ class Maestro:
 
     ### Workers
     ## Gantry + Gripper
-    def gantry_gripper(self):
-        """Consumer for tasks involving transfer of samples with gantry+gripper
-        """
-        tasklist = {
-            "storage_to_spincoater": self.storage_to_spincoater,
-            "spincoater_to_hotplate": self.spincoater_to_hotplate,
-            "hotplate_to_storage": self.hotplate_to_storage,
-            "storage_to_characterization": self.storage_to_characterization,
-            "characterization_to_storage": self.characterization_to_storage,
-        }
-        while self.run_in_progress:
-            start_time, task, precedent_taskids = await self.gantry_queue.get()
-            time_until_start = self.t0_nist + start_time - self.nist_time()
-            await asyncio.sleep(time_until_start)  # wait until start time
-            for (
-                precedent
-            ) in precedent_taskids:  # wait until all preceding tasks are complete
-                while precedent not in self.completed_tasks:
-                    await asyncio.sleep(0.1)
+    # def gantry_gripper(self):
+    #     """Consumer for tasks involving transfer of samples with gantry+gripper
+    #     """
+    #     tasklist = {
+    #         "storage_to_spincoater": self.storage_to_spincoater,
+    #         "spincoater_to_hotplate": self.spincoater_to_hotplate,
+    #         "hotplate_to_storage": self.hotplate_to_storage,
+    #         "storage_to_characterization": self.storage_to_characterization,
+    #         "characterization_to_storage": self.characterization_to_storage,
+    #     }
+    #     while self.run_in_progress:
+    #         start_time, task, precedent_taskids = await self.gantry_queue.get()
+    #         time_until_start = self.t0_nist + start_time - self.nist_time()
+    #         await asyncio.sleep(time_until_start)  # wait until start time
+    #         for (
+    #             precedent
+    #         ) in precedent_taskids:  # wait until all preceding tasks are complete
+    #             while precedent not in self.completed_tasks:
+    #                 await asyncio.sleep(0.1)
 
-            sample = task["sample"]
-            func = tasklist[task["task"]]
-            await func(sample)
+    #         sample = task["sample"]
+    #         func = tasklist[task["task"]]
+    #         await func(sample)
 
-        self.completed_tasks[task["taskid"]] = self.nist_time()
-        self.gantry_queue.task_done()
+    #     self.completed_tasks[task["taskid"]] = self.nist_time()
+    #     self.gantry_queue.task_done()
 
-    def run_list(self, tasklist):
-        self.worker_gg = Worker_GantryGripper(
-            maestro=self, gantry=self.gantry, gripper=self.gripper
-        )
-        self.worker_sclh = Worker_SpincoaterLiquidHandler(
-            maestro=self, spincoater=self.spincoater, liquidhandler=self.liquidhandler
-        )
-        self.worker_cl = Worker_Characterization(
-            maestro=self,
-            characterizationline=self.characterization,
-            characterizationaxis=self.characterization.axis,
-        )
+    # def run_list(self, tasklist):
+    #     self.worker_gg = Worker_GantryGripper(
+    #         maestro=self, gantry=self.gantry, gripper=self.gripper
+    #     )
+    #     self.worker_sclh = Worker_SpincoaterLiquidHandler(
+    #         maestro=self, spincoater=self.spincoater, liquidhandler=self.liquidhandler
+    #     )
+    #     self.worker_cl = Worker_Characterization(
+    #         maestro=self,
+    #         characterizationline=self.characterization,
+    #         characterizationaxis=self.characterization.axis,
+    #     )
 
-        queuedict = {
-            "GantryGripper": self.worker_gg.queue,
-            "SpincoaterLiquidHandler": self.worker_sclh.queue,
-            "Characterization": self.worker_cl.queue,
-        }
+    #     queuedict = {
+    #         "GantryGripper": self.worker_gg.queue,
+    #         "SpincoaterLiquidHandler": self.worker_sclh.queue,
+    #         "Characterization": self.worker_cl.queue,
+    #     }
 
-        for task in tasklist:
-            queue = queuedict[task["worker"]]
-            queue.put(task["contents"])
+    #     for task in tasklist:
+    #         queue = queuedict[task["worker"]]
+    #         queue.put(task["contents"])
 
-        self._t0 = self.nist_time()
-        for worker in [self.worker_cl, self.worker_sclh, self.worker.gg]:
-            self.start()
+    #     self._t0 = self.nist_time()
+    #     for worker in [self.worker_cl, self.worker_sclh, self.worker.gg]:
+    #         self.start()
 
     def __del__(self):
         self.liquidhandler.server.stop()
