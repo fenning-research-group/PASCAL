@@ -30,21 +30,22 @@ class Switchbox:
             "relayresponsetime"
         ]  # delay between changing relay state and relay open/closing
         self._relay_key = {
-            0: "0",  # number in GB3: number of relay on numato board
             1: "1",
-            2: "1",
-            3: "1",
-            4: "1",
-            5: "1",
-            6: "1",
-            7: "1",
-            8: "1",
-            9: "1",
-            10: "1",
-            11: "1",
-            12: "1",
-            13: "1",
-            14: "1",
+            2: "2",
+            3: "3",
+            4: "C",
+            5: "D",
+            6: "E",
+            7: "F",
+            8: "0",
+            9: "4",
+            10: "5",
+            11: "6",
+            12: "9",
+            13: "A",
+            14: "B",
+            "unused_1": "7",  # relay 8 and 9 are not being used for switchboard
+            "unused_2": "8",
         }
         self.connect()
 

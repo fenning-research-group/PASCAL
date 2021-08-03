@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import time
 from functools import partial
 
-from frgpascal.maestro import Maestro
+# from frgpascal.maestro import Maestro
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.spincoater import SpinCoater
@@ -19,7 +19,7 @@ from frgpascal.hardware.characterizationline import (
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro: Maestro, n_workers=1):
+    def __init__(self, maestro, n_workers=1):
         self.maestro = maestro
         self.gantry = maestro.gantry
         self.gripper = maestro.gripper
@@ -101,7 +101,7 @@ class WorkerTemplate(ABC):
 
 
 class Worker_GantryGripper(WorkerTemplate):
-    def __init__(self, maestro: Maestro):
+    def __init__(self, maestro):
         super().__init__(maestro=maestro)
         self.functions = {
             "moveto": self.gantry.moveto,
