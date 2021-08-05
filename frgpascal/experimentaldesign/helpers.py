@@ -25,13 +25,15 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name, factor=1, delimiter="_",
+    name,
+    factor=1,
+    delimiter="_",
 ):
     """
-        given a chemical formula, returns dictionary with individual components/amounts
-        expected name format = 'MA0.5_FA0.5_Pb1_I2_Br1'.
-        would return dictionary with keys ['MA, FA', 'Pb', 'I', 'Br'] and values [0.5,.05,1,2,1]*factor
-        """
+    given a chemical formula, returns dictionary with individual components/amounts
+    expected name format = 'MA0.5_FA0.5_Pb1_I2_Br1'.
+    would return dictionary with keys ['MA, FA', 'Pb', 'I', 'Br'] and values [0.5,.05,1,2,1]*factor
+    """
     components = {}
     for part in name.split(delimiter):
         species = part
@@ -79,7 +81,7 @@ def calculate_mix(
     the volumes needed from individual stocks to achieve target composition
 
     tolerance (float): maximum error for single site (relative, not absolute) allowed.
-    
+
     """
     # get possible solution components from stock list
     components = set()
