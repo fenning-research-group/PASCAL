@@ -59,6 +59,7 @@ class Task:
 
     def to_dict(self):
         out = {
+            "sample": self.sample.name,
             "start": self.start,
             "task": self.task,
             "details": self.task_details,
