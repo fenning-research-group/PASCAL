@@ -1,25 +1,24 @@
-from threading import Thread, Lock
 import asyncio
-from queue import Queue
 from abc import ABC, abstractmethod
 import time
 from functools import partial
 
-# from frgpascal.maestro import Maestro
-from frgpascal.hardware.gantry import Gantry
-from frgpascal.hardware.gripper import Gripper
-from frgpascal.hardware.spincoater import SpinCoater
-from frgpascal.hardware.liquidhandler import OT2
-from frgpascal.hardware.hotplate import HotPlate
-from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import (
-    CharacterizationAxis,
-    CharacterizationLine,
-)
+from frgpascal.maestro import Maestro
+
+# from frgpascal.hardware.gantry import Gantry
+# from frgpascal.hardware.gripper import Gripper
+# from frgpascal.hardware.spincoater import SpinCoater
+# from frgpascal.hardware.liquidhandler import OT2
+# from frgpascal.hardware.hotplate import HotPlate
+# from frgpascal.hardware.sampletray import SampleTray
+# from frgpascal.hardware.characterizationline import (
+#     CharacterizationAxis,
+#     CharacterizationLine,
+# )
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro, n_workers=1):
+    def __init__(self, maestro: Maestro, n_workers=1):
         self.maestro = maestro
         self.gantry = maestro.gantry
         self.gripper = maestro.gripper
@@ -29,86 +28,112 @@ class WorkerTemplate(ABC):
         self.hotplates = maestro.hotplates
         self.storage = maestro.storage
 
-        self.loop = asyncio.get_event_loop()
-        self.queue = asyncio.Queue()
         self.working = False
-        self.POLLINGRATE = 0.1
+        self.POLLINGRATE = 0.0001  # seconds
+        self.n_workers = n_workers
 
-    def main(self, workers):
-        self.working = True
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(asyncio.wait(workers))
+    # def main(self, workers):
+    #     self.working = True
+    #     asyncio.set_event_loop(self.loop)
+    #     if not self.loop.is_running():
+    #         self.loop.run_until_complete(asyncio.wait(workers))
+    # else:
+    #     self.loop.call_soon_threadsafe(asyncio.wait(workers))
+
+    def prime(self, loop):
+        asyncio.set_event_loop(loop)
+        self.loop = loop
+        self.queue = asyncio.PriorityQueue()
 
     def start(self):
-        self.thread = Thread(
-            target=self.main, args=[self.worker() for _ in range(self.n_workers)]
-        )
-        self.thread.start()
+        self.working = True
+        for _ in range(self.n_workers):
+            asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
 
     def stop_workers(self):
         self.working = False
-        self.thread.join()
+        # self.thread.join()
 
-    def add_to_queue(self, payload):
-        if not self.workers_running:
-            raise RuntimeError("Cannot add to queue, workers not running!")
+    def add_task(self, task):
+        # if not self.working:
+        #     raise RuntimeError("Cannot add to queue, workers not running!")
+        payload = (task["start"], task)
         self.loop.call_soon_threadsafe(self.queue.put_nowait, payload)
 
     async def worker(self):
         """process items from the queue + keep the maestro lists updated"""
         while self.working:
-            task = await self.queue.get()  # blocking wait for next task
+            _, task = await self.queue.get()  # blocking wait for next task
+            task_description = f'{task["task"]}, {task["sample"]}'
+            sample = self.maestro.samples[task["sample"]]
+            sample_task = [t for t in sample["tasks"] if t["task"] == task["task"]][0]
+            # print(f"starting {task_description}")
             if task is None:  # finished flag
                 break
 
             # wait for all previous tasks to complete
+
             with self.maestro.lock_pendingtasks:
-                self.maestro.pending_tasks.append(task["taskid"])
-            for precedent in task["preceding_tasks"]:
-                with self.maestro.lock_completedtasks:
-                    found = precedent in self.maestro.completed_tasks
-                if found:
-                    continue
-                else:
-                    await asyncio.sleep(self.POLLINGRATE)
+                self.maestro.pending_tasks.append(task["id"])
+            for precedent in task["precedents"]:
+                found = False
+                first = True
+                while not found:
+                    with self.maestro.lock_completedtasks:
+                        found = precedent in self.maestro.completed_tasks
+                    if found:
+                        break
+                    else:
+                        if first:
+                            print(f"waiting for precedents of {task_description}")
+                        await asyncio.sleep(self.POLLINGRATE)
+                        first = False
 
             # wait for this task's target start time
-            wait_for = (
-                self.maestro.nist_time() - task["time"] - self.maestro.t0
-            )  # how long to wait before executing
+            wait_for = task["start"] - (self.maestro.nist_time() - self.maestro.t0)
             if wait_for > 0:
+                print(f"\twaiting {wait_for} seconds for {task_description} start time")
                 await asyncio.sleep(wait_for)
 
             # execute this task
-            function = partial(
-                self.functions[task["function"]],
-                args=task["args"],
-                kwargs=task["kwargs"],
-            )
+            # function = partial(
+            #     self.functions[task["function"]],
+            #     args=task["args"],
+            #     kwargs=task["kwargs"],
+            # )
+
+            sample_task["start_actual"] = self.maestro.nist_time() - self.maestro.t0
+            function = self.functions[task["task"]]
             if asyncio.iscoroutinefunction(function):
-                await function()
+                print(f"\t\texecuting {task_description} as coro")
+                await function(task)
             else:
-                await self.loop.run_in_executor(None, function)
+                print(f"\t\texecuting {task_description} as thread")
+                await self.loop.run_in_executor(
+                    self.maestro.threadpool, partial(function, task)
+                )
 
             # update task lists
+            sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
+            print(f"\t\t\tfinished {task_description}")
             with self.maestro.lock_completedtasks:
-                self.maestro.completed_tasks["taskid"] = (
+                self.maestro.completed_tasks[task["id"]] = (
                     self.maestro.nist_time() - self.maestro.t0
                 )
             with self.maestro.lock_pendingtasks:
-                self.maestro.pending_tasks.remove(task["taskid"])
-            await self.queue.task_done()
+                self.maestro.pending_tasks.remove(task["id"])
+            self.queue.task_done()
 
 
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro):
         super().__init__(maestro=maestro)
         self.functions = {
-            "moveto": self.gantry.moveto,
-            "moverel": self.gantry.moverel,
-            "open": self.gripper.open,
-            "close": self.gripper.close,
-            "transfer": self.maestro.transfer,
+            # "moveto": self.gantry.moveto,
+            # "moverel": self.gantry.moverel,
+            # "open": self.gripper.open,
+            # "close": self.gripper.close,
+            # "transfer": self.maestro.transfer,
             "idle_gantry": self.maestro.idle_gantry,
             "storage_to_spincoater": self.storage_to_spincoater,
             "spincoater_to_hotplate": self.spincoater_to_hotplate,
@@ -116,64 +141,6 @@ class Worker_GantryGripper(WorkerTemplate):
             "storage_to_characterization": self.storage_to_characterization,
             "characterization_to_storage": self.characterization_to_storage,
         }
-
-    def catch(self):
-        """
-        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float
-        """
-        caught_successfully = False
-        while not caught_successfully and self.maestro.CATCHATTEMPTS > 0:
-            self.gripper.close(slow=True)
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-            self.gripper.open(self.SAMPLEWIDTH - 2)
-            self.gripper.open(self.SAMPLEWIDTH - 1)
-            time.sleep(0.1)
-            if (
-                not self.gripper.is_under_load()
-            ):  # if springs not pulling on grippers, assume that the sample is grabbed
-                caught_successfully = True
-                break
-            else:
-                self.CATCHATTEMPTS -= 1
-                # lets jog the gripper position and try again.
-                self.gripper.close()
-                self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False)
-                # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-                self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
-
-        if not caught_successfully:
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-            self.gripper.close()
-            raise ValueError("Failed to pick up sample!")
-
-    def release(self):
-        """
-        Open gripper slowly release sample without jogging position
-        """
-        self.gripper.open(
-            self.maestro.SAMPLEWIDTH + self.maestro.SAMPLETOLERANCE, slow=True
-        )  # slow to prevent sample position shifting upon release
-
-    def idle_gantry(self):
-        """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
-        self.gantry.moveto(self.maestro.IDLECOORDINATES)
-        self.gripper.close()
-
-    def transfer(self, p1, p2, zhop=True):
-        self.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
 
     def storage_to_spincoater(self, sample):
         tray, slot = (
@@ -288,7 +255,7 @@ class Worker_Storage(WorkerTemplate):
             "cooldown": self.cooldown,
         }
 
-    async def anneal(self, sample):
+    async def cooldown(self, sample):
         await asyncio.sleep(180)
 
 
@@ -296,22 +263,46 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro):
         super().__init__(maestro=maestro)
         self.functions = {
-            "vacuum_on": self.spincoater.vacuum_on,
-            "vacuum_off": self.spincoater.vacuum_off,
-            "set_rpm": self.spincoater.set_rpm,
-            "stop": self.spincoater.stop,
-            "start_logging": self.spincoater.start_logging,
-            "finish_logging": self.spincoater.finish_logging,
-            "aspirate_for_spincoating": self.liquidhandler.aspirate_for_spincoating,
-            "aspirate_both_for_spincoating": self.liquidhandler.aspirate_both_for_spincoating,
-            "stage_perovskite": self.liquidhandler.stage_perovskite,
-            "stage_antisolvent": self.liquidhandler.stage_antisolvent,
-            "drop_perovskite": self.liquidhandler.drop_perovskite,
-            "drop_antisolvent": self.liquidhandler.drop_antisolvent,
-            "clear_chuck": self.liquidhandler.clear_chuck,
-            "cleanup": self.liquidhandler.cleanup,
+            # "vacuum_on": self.spincoater.vacuum_on,
+            # "vacuum_off": self.spincoater.vacuum_off,
+            # "set_rpm": self.spincoater.set_rpm,
+            # "stop": self.spincoater.stop,
+            # "start_logging": self.spincoater.start_logging,
+            # "finish_logging": self.spincoater.finish_logging,
+            # "aspirate_for_spincoating": self.liquidhandler.aspirate_for_spincoating,
+            # "aspirate_both_for_spincoating": self.liquidhandler.aspirate_both_for_spincoating,
+            # "stage_perovskite": self.liquidhandler.stage_perovskite,
+            # "stage_antisolvent": self.liquidhandler.stage_antisolvent,
+            # "drop_perovskite": self.liquidhandler.drop_perovskite,
+            # "drop_antisolvent": self.liquidhandler.drop_antisolvent,
+            # "clear_chuck": self.liquidhandler.clear_chuck,
+            # "cleanup": self.liquidhandler.cleanup,
             "spincoat": self.spincoat,
         }
+
+    async def _monitor_droptimes(self, liquidhandlertasks):
+        completed_tasks = {}
+        while len(liquidhandlertasks) > 0:
+            for task, taskid in liquidhandlertasks.items():
+                if taskid in self.liquidhandler.server.completed_tasks:
+                    completed_tasks[task] = self.liquidhandler.server.completed_tasks[
+                        taskid
+                    ]
+                    del liquidhandlertasks[task]
+                await asyncio.sleep(0.05)
+        return completed_tasks
+
+    async def _set_spinspeeds(self, steps, t0, headstart):
+        await asyncio.sleep(headstart)
+        tnext = headstart
+        self.spincoater.start_logging()
+        for step in steps:
+            self.spincoater.set_rpm(rpm=step["rpm"], acceleration=step["acceleration"])
+            tnext += step["duration"]
+            while self.nist_time() - t0 <= tnext:
+                await asyncio.sleep(0.1)
+        self.spincoater.stop()
+        return self.spincoater.finish_logging()
 
     def spincoat(self, sample):
         """executes a series of spin coating steps. A final "stop" step is inserted
@@ -324,49 +315,106 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             record: dictionary of recorded spincoating process.
         """
         recipe = sample["spincoat_recipe"]
-        solution_dropped = False
-        antisolvent_dropped = False
-        record = {}
 
-        self.spincoater.start_logging()
-        spincoating_in_progress = True
+        headstart = max(
+            self.liquidhandler.ASPIRATE_TIME
+            + self.liquidhandler.DISPENSE_DELAY
+            + recipe["solution"]["droptime"]
+            - recipe["start_times"][0],
+            0,
+        )
         t0 = self.nist_time()
-        tnext = 0
-        for start_time, (rpm, acceleration, duration) in zip(
-            recipe.start_times, recipe.steps
+
+        ### set up liquid handler tasks
+        liquidhandlertasks = {}
+        ## Aspirations
+        # if drop times are close, pipette up both solutions at the beginning
+        if (
+            recipe["antisolvent"]["droptime"] - recipe["solution"]["droptime"]
+            > (self.liquidhandler.ASPIRATION_DELAY + self.liquidhandler.DISPENSE_DELAY)
+            * 1.5
         ):
-            tnext += start_time
-            tnow = self.nist_time() - t0  # time relative to recipe start
-            while (
-                tnow <= tnext
-            ):  # loop and check for drop times until next spin step is reached
-                if not solution_dropped and tnow >= recipe.solution_droptime:
-                    self.liquidhandler.drop_perovskite()
-                    solution_dropped = True
-                    record["solution_drop"] = tnow
-                if not antisolvent_dropped and tnow >= recipe.antisolvent_droptime:
-                    self.liquidhandler.drop_antisolvent()
-                    antisolvent_dropped = True
-                    record["antisolvent_drop"] = tnow
-                time.sleep(0.1)
+            liquidhandlertasks[
+                "aspirate_both"
+            ] = self.liquidhandler.aspirate_both_for_spincoating(
+                nist_time=t0
+                + recipe["solution"]["droptime"]
+                - self.liquidhandler.ASPIRATION_DELAY
+                + headstart,
+                psk_tray=recipe["solution"]["well"]["tray"],
+                psk_well=recipe["solution"]["well"]["slot"],
+                psk_volume=recipe["solution"]["volume"],
+                as_tray=recipe["antisolvent"]["well"]["tray"],
+                as_slot=recipe["antisolvent"]["well"]["slot"],
+                as_volume=recipe["antisolvent"]["volume"],
+            )
+            liquidhandlertasks[
+                "stage_antisolvent"
+            ] = self.liquidhandler.stage_antisolvent(
+                nist_time=t0 + recipe["solution"]["droptime"] + self.DISPENSE_DELAY,
+            )
+        else:
+            liquidhandlertasks[
+                "aspirate_solution"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time=t0
+                + recipe["solution"]["droptime"]
+                - self.liquidhandler.ASPIRATION_DELAY
+                + headstart,
+                tray=recipe["solution"]["well"]["tray"],
+                well=recipe["solution"]["well"]["slot"],
+                volume=recipe["solution"]["volume"],
+                pipette="perovskite",
+            )
 
-            self.spincoater.set_rpm(rpm=rpm, acceleration=acceleration)
+            liquidhandlertasks[
+                "aspirate_antisolvent"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time=t0
+                + recipe["antisolvent"]["droptime"]
+                - self.liquidhandler.ASPIRATION_DELAY
+                + headstart,
+                tray=recipe["antisolvent"]["well"]["tray"],
+                well=recipe["antisolvent"]["well"]["slot"],
+                volume=recipe["antisolvent"]["volume"],
+                pipette="antisolvent",
+            )
+        # Dispenses
+        liquidhandlertasks["dispense_solution"] = self.liquidhandler.drop_perovskite(
+            nist_time=t0 + recipe["solution"]["droptime"] + headstart,
+        )
 
-        self.spincoater.stop()
-        record.update(self.spincoater.finish_logging())
+        liquidhandlertasks[
+            "dispense_antisolvent"
+        ] = self.liquidhandler.drop_antisolvent()(
+            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart,
+        )
 
-        sample["spincoat_recipe"]["record"] = record
+        drop_times, rpm_log = self.loop.run_until_complete(
+            asyncio.gather(
+                self._monitor_droptimes(liquidhandlertasks),
+                self._set_spinspeeds(recipe["steps"], t0, headstart),
+            )
+        )
+
+        self.maestro.samples[sample["name"]]["spincoat_recipe"]["record"] = {
+            **drop_times,
+            **rpm_log,
+        }
 
 
 class Worker_Characterization(WorkerTemplate):
     def __init__(self, maestro):
         super().__init__(maestro=maestro)
         self.functions = {
-            "moveto": self.characterization.axis.moveto,
-            "moverel": self.characterization.axis.moverel,
-            "movetotransfer": self.characterization.axis.movetotransfer,
-            "characterize": self.characterization.run,
+            # "moveto": self.characterization.axis.moveto,
+            # "moverel": self.characterization.axis.moverel,
+            # "movetotransfer": self.characterization.axis.movetotransfer,
+            "characterize": self.characterize,
         }
+
+    def characterize(self, sample):
+        self.characterization.run(samplename=sample["name"])
 
 
 # class Worker_Hotplate:

@@ -72,13 +72,14 @@ class CharacterizationLine:
                 position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
                 spectrometer=self.spectrometer,
-                shutter=None,  # TODO add shutter handle here for ELL6 sliders
+                shutter=self.shutter,
             ),
             PLSpectroscopy(
                 position=constants["pl_red"]["position"],
                 rootdir=self.rootdir,
                 subdir="PL_635",
                 spectrometer=self.spectrometer,
+                shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
             ),
             PLSpectroscopy(
@@ -86,6 +87,7 @@ class CharacterizationLine:
                 rootdir=self.rootdir,
                 subdir="PL_405",
                 spectrometer=self.spectrometer,
+                shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
         ]

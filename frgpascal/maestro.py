@@ -1,6 +1,7 @@
 # from termios import error
 import os
 from threading import Thread, Lock
+from concurrent.futures import ThreadPoolExecutor
 import time
 import yaml
 import ntplib
@@ -87,13 +88,23 @@ class Maestro:
         self._load_calibrations()  # load coordinate calibrations for labware
         self.__calibrate_time_to_nist()  # for sync with other hardware
         # Status
-        self.manifest = {}  # store all sample info, key is sample storage slot
+        self.samples = {}
+        self.tasks = {}
 
         # worker thread coordination
+        self.threadpool = ThreadPoolExecutor(max_workers=40)
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
         self.lock_completedtasks = Lock()
+
+        self.workers = {
+            "gantry_gripper": Worker_GantryGripper(self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(self),
+            "characterization": Worker_Characterization(self),
+            "hotplates": Worker_Hotplate(self, n_workers=25),
+            "storage": Worker_Storage(self, n_workers=45),
+        }
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -150,72 +161,112 @@ class Maestro:
         ]:  # , self.spincoater]:
             component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 
-    ### Physical Methods
-    # Compound Movements
+    ### Compound Movements
 
-    ### Compound tasks
+    def catch(self):
+        """
+        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float
+        """
+        caught_successfully = False
+        catch_attempts = self.CATCHATTEMPTS
+        while not caught_successfully and catch_attempts > 0:
+            self.gripper.close(slow=True)
+            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+            self.gripper.open(self.SAMPLEWIDTH - 2)
+            self.gripper.open(self.SAMPLEWIDTH - 1)
+            time.sleep(0.1)
+            if (
+                not self.gripper.is_under_load()
+            ):  # if springs not pulling on grippers, assume that the sample is grabbed
+                caught_successfully = True
+                break
+            else:
+                catch_attempts -= 1
+                # lets jog the gripper position and try again.
+                self.gripper.close()
+                self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False)
+                # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
 
-    def anneal(self, sample):
-        time.sleep(sample["anneal_recipe"]["duration"])
+        if not caught_successfully:
+            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+            self.gripper.close()
+            raise ValueError("Failed to pick up sample!")
 
-    def cooldown(self, sample):
-        time.sleep(180)  # TODO - make this a variable
+    def release(self):
+        """
+        Open gripper slowly release sample without jogging position
+        """
+        self.gripper.open(
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
+        )  # slow to prevent sample position shifting upon release
 
-    ### Workers
-    ## Gantry + Gripper
-    # def gantry_gripper(self):
-    #     """Consumer for tasks involving transfer of samples with gantry+gripper
-    #     """
-    #     tasklist = {
-    #         "storage_to_spincoater": self.storage_to_spincoater,
-    #         "spincoater_to_hotplate": self.spincoater_to_hotplate,
-    #         "hotplate_to_storage": self.hotplate_to_storage,
-    #         "storage_to_characterization": self.storage_to_characterization,
-    #         "characterization_to_storage": self.characterization_to_storage,
-    #     }
-    #     while self.run_in_progress:
-    #         start_time, task, precedent_taskids = await self.gantry_queue.get()
-    #         time_until_start = self.t0_nist + start_time - self.nist_time()
-    #         await asyncio.sleep(time_until_start)  # wait until start time
-    #         for (
-    #             precedent
-    #         ) in precedent_taskids:  # wait until all preceding tasks are complete
-    #             while precedent not in self.completed_tasks:
-    #                 await asyncio.sleep(0.1)
+    def idle_gantry(self):
+        """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
+        self.gantry.moveto(self.IDLECOORDINATES)
+        self.gripper.close()
 
-    #         sample = task["sample"]
-    #         func = tasklist[task["task"]]
-    #         await func(sample)
+    def transfer(self, p1, p2, zhop=True):
+        self.release()  # open the grippers
+        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
+        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+        )  # move just above destination
+        if self.gripper.is_under_load():
+            raise ValueError("Sample dropped in transit!")
+        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.release()  # drop the sample
+        self.gantry.moverel(
+            z=self.gantry.ZHOP_HEIGHT
+        )  # move up a bit, mostly to avoid resting gripper on hotplate
+        self.gripper.close()  # fully close gripper to reduce servo strain
 
-    #     self.completed_tasks[task["taskid"]] = self.nist_time()
-    #     self.gantry_queue.task_done()
+    ### Batch Sample Execution
+    def load_netlist(self, filepath):
+        self.samples, self.tasks = load_netlist(filepath)
 
-    # def run_list(self, tasklist):
-    #     self.worker_gg = Worker_GantryGripper(
-    #         maestro=self, gantry=self.gantry, gripper=self.gripper
-    #     )
-    #     self.worker_sclh = Worker_SpincoaterLiquidHandler(
-    #         maestro=self, spincoater=self.spincoater, liquidhandler=self.liquidhandler
-    #     )
-    #     self.worker_cl = Worker_Characterization(
-    #         maestro=self,
-    #         characterizationline=self.characterization,
-    #         characterizationaxis=self.characterization.axis,
-    #     )
+    def make_background_event_loop(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(self._keep_loop_running())
 
-    #     queuedict = {
-    #         "GantryGripper": self.worker_gg.queue,
-    #         "SpincoaterLiquidHandler": self.worker_sclh.queue,
-    #         "Characterization": self.worker_cl.queue,
-    #     }
+    async def _keep_loop_running(self):
+        while self.working:
+            await asyncio.sleep(1)
 
-    #     for task in tasklist:
-    #         queue = queuedict[task["worker"]]
-    #         queue.put(task["contents"])
+    def run(self, filepath):
+        self.load_netlist(filepath)
+        self.working = True
+        self.thread = Thread(target=self.make_background_event_loop)
+        self.thread.start()  # generates asyncio event loop in background thread (self.loop)
+        time.sleep(0.5)
+        # self.loop = asyncio.new_event_loop()
+        self.loop.set_debug(True)
+        self.t0 = self.nist_time()
 
-    #     self._t0 = self.nist_time()
-    #     for worker in [self.worker_cl, self.worker_sclh, self.worker.gg]:
-    #         self.start()
+        for worker in self.workers.values():
+            worker.prime(loop=self.loop)
+        for t in self.tasks:
+            assigned = False
+            t["start"] /= speedup_factor
+            for workername, worker in self.workers.items():
+                if t["task"] in worker.functions:
+                    worker.add_task(t)
+                    assigned = True
+                    continue
+            if not assigned:
+                raise Exception(f"No worker assigned to task {t['task']}")
+
+        for worker in self.workers.values():
+            worker.start()
+        # self.loop.run_forever()
+
+    def stop(self):
+        self.working = False
+        self.thread.join()
 
     def __del__(self):
+        if self.working:
+            self.stop()
         self.liquidhandler.server.stop()
