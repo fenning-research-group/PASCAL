@@ -5,7 +5,12 @@ sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import stellarnet_driver3 as sn  # usb driver
-from scipy.optimize import minimize
+
+### https://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
+# os.environ[
+#     "FOR_DISABLE_CONSOLE_CTRL_HANDLER"
+# ] = "1"  # to preserve ctrl-c with scipy loaded
+# from scipy.optimize import minimize
 
 
 class Spectrometer:
@@ -63,8 +68,7 @@ class Spectrometer:
         return spectrum
 
     def capture_hdr(self):
-        """captures an HDR spectrum
-        """
+        """captures an HDR spectrum"""
         threshold = 2 ** 16 * 0.95  # counts above this are considered saturated
 
         for i, t in enumerate(self._hdr_times):
@@ -82,8 +86,7 @@ class Spectrometer:
         return spectrum
 
     def transmission_hdr(self):
-        """captures an HDR transmission spectrum
-        """
+        """captures an HDR transmission spectrum"""
         if self._baseline_light is None:
             raise ValueError(
                 "Baselines not taken! .take_light_baseline(), .take_dark_baseline()"
@@ -145,8 +148,7 @@ class Spectrometer:
         return np.polyval(p, target).astype(int)
 
     def take_light_baseline(self):
-        """takes an illuminated baseline at each integration time from HDR timings
-        """
+        """takes an illuminated baseline at each integration time from HDR timings"""
         self._baseline_light = {}
         for t in self._hdr_times:
             self.integrationtime = t
@@ -154,11 +156,9 @@ class Spectrometer:
             self._baseline_light[t] = spectrum[:, 1]
 
     def take_dark_baseline(self):
-        """takes an dark baseline at each integration time from HDR timings
-        """
+        """takes an dark baseline at each integration time from HDR timings"""
         self._baseline_dark = {}
         for t in self._hdr_times:
             self.integrationtime = t
             spectrum = self.capture()
             self._baseline_dark[t] = spectrum[:, 1]
-

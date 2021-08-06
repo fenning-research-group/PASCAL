@@ -41,6 +41,7 @@ gantry:
     z_min: 0
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
   transition_coordinates: [192.25, 27.4, 82] #spincoater in deck slot 3
+
 gripper:
   #communication
   device_identifiers:
@@ -68,6 +69,7 @@ liquidhandler:
   server:
     ip: '169.254.197.107' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
+
 sampletray:
   p0: [420,14.2,54.6] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
@@ -108,31 +110,26 @@ characterizationline:
       vid: 10777
       pid: 3075
     pollingrate: 0.2
-    relayresponsetime: 2 #seconds between telling relay to do something + relay doing it
+    relayresponsetime: 0.01 #seconds between telling relay to do something + relay doing it
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
     position: 93.15 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 2 #switchbox plug index for light source (ring light)
+    switchindex: 9 #switchbox plug index for light source (ring light)
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
     position: 93.15 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 3 #switchbox plug index for light source (blue LED lamp)
+    switchindex: 12 #switchbox plug index for light source (blue LED lamp)
   brightfield:
     cameraid: '12519' #serial number for Thorlabs Camera
-    position: 222.5 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 4 #switchbox plug index for light source (ring light)
-  pl: #spectroscopy
+    position: 165.4 #position (mm) at which characterization axis centers sample in FOV
+    switchindex: 8 #switchbox plug index for light source (ring light)
+  pl_blue: #spectroscopy
+    position: 313
+    switchindex: 5
+  pl_red: #spectroscopy
     position: 313 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 5 #switchbox plug index for light source (red laser)
+    switchindex: 4 #switchbox plug index for light source (red laser)
   transmission: #spectroscopy
     position: 313 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 6 #switchbox plug index for light source (lamp shutter)
-    shutter:
-      device_identifiers:
-      # serialid: TODO
-        vid:  #WINDOWS ONLY
-        pid:  #WINDOWS ONLY
-      pollingrate: 0.1
-
   
   

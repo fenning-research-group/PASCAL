@@ -51,8 +51,6 @@ class Switchbox:
 
     def connect(self):
         self._handle = serial.Serial(port=self.port, timeout=1)
-        for relay in self._relay_key:
-            self.set_low(relay)  # turn all relays off to start
         print("Connected to characterization switchbox")
 
     def _get_relay(self, switch):
@@ -61,7 +59,7 @@ class Switchbox:
         else:
             return self._relay_key[switch]
 
-    def set_low(self, switch: int):
+    def off(self, switch: int):
         """sets a switch LOW
 
         Args:
@@ -71,7 +69,7 @@ class Switchbox:
         self._handle.write(f"relay off {relay}\n\r".encode())
         time.sleep(self.RELAYRESPONSETIME)
 
-    def set_high(self, switch: int):
+    def on(self, switch: int):
         """sets a switch HIGH
 
         Args:
@@ -80,6 +78,13 @@ class Switchbox:
         relay = self._get_relay(switch)
         self._handle.write(f"relay on {relay}\n\r".encode())
         time.sleep(self.RELAYRESPONSETIME)
+
+    def all_off(self):
+        """
+        sets all relays low
+        """
+        for relay in self._relay_key:
+            self.off(relay)  # turn all relays off to start
 
     def Switch(self, switch: int):
         """Returns a SingleSwitch object that controls single switch state
@@ -98,7 +103,7 @@ class SingleSwitch:
         self.switchbox = switchbox
 
     def on(self):
-        self.switchbox.set_high(self.switchid)
+        self.switchbox.on(self.switchid)
 
     def off(self):
-        self.switchbox.set_low(self.switchid)
+        self.switchbox.off(self.switchid)

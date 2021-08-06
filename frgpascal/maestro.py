@@ -33,9 +33,8 @@ with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") a
 class Maestro:
     def __init__(
         self,
-        numsamples: int = 1,
         samplewidth: float = 10,
-        rootdir="C:\\Users\\Admin\\Desktop\\20210719_Moses_UVOvsTime_v2withlaseronbottom",
+        rootdir="C:\\Users\\Admin\\Desktop\\dummyexperiment",
     ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
@@ -78,7 +77,6 @@ class Maestro:
             "SampleTray1": SampleTray(
                 name="SampleTray1",
                 version="storage_v1",  # TODO #3
-                num=numsamples,  # number of substrates loaded
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p0"],
@@ -114,13 +112,16 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
+        components = [self.spincoater, self.characterization.axis]
+        components += list(self.hotplates.values())
+        components += list(self.storage.values())
         for component in [
-            self.hotplate,
-            self.storage,
+            *self.hotplates.values(),
+            *self.storage.values(),
             self.spincoater,
             self.characterization.axis,
         ]:
-            self.release()  # open gripper to open width
+            # self.release()  # open gripper to open width
             component.calibrate()
 
     def gohome(self):
@@ -142,8 +143,8 @@ class Maestro:
             "Loading labware coordinate calibrations - if any labware has moved, be sure to .calibrate() it!"
         )
         for component in [
-            self.hotplate,
-            self.storage,
+            *self.hotplates.values(),
+            *self.storage.values(),
             self.spincoater,
             self.characterization.axis,
         ]:  # , self.spincoater]:

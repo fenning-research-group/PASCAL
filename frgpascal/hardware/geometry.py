@@ -1,8 +1,14 @@
 import numpy as np
+import os
+
+### https://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
+os.environ[
+    "FOR_DISABLE_CONSOLE_CTRL_HANDLER"
+] = "1"  # to preserve ctrl-c with scipy loaded
+
 from scipy.interpolate import LinearNDInterpolator
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
-import os
 import yaml
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -202,7 +208,11 @@ class Workspace:
         self.gantry.moveto(*self.p0)
         self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
-            self.name, self.testslots, self.testpoints, self.gantry, self.z_clearance,
+            self.name,
+            self.testslots,
+            self.testpoints,
+            self.gantry,
+            self.z_clearance,
         )
         self.__calibrated = True
 
@@ -227,7 +237,7 @@ class Workspace:
             contents (object): SolutionRecipe or a string representing the solution
 
         Raises:
-            IndexError: If the labware is full  
+            IndexError: If the labware is full
 
         Returns:
             (str): which slot has been allocated to the new contents
@@ -240,8 +250,8 @@ class Workspace:
             raise IndexError("This labware is full!")
 
     def unload(self, slot: str):
-        """Unload contents from a slot in the labware. 
-            Sorts the list of open slots so we always fill the lowest index open slot. 
+        """Unload contents from a slot in the labware.
+            Sorts the list of open slots so we always fill the lowest index open slot.
 
         Args:
             slot (str): which slot to unload

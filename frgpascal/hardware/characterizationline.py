@@ -36,7 +36,8 @@ class CharacterizationLine:
         self.brightfieldcamera = self.camerahost.spawn_camera(
             camid=constants["brightfield"]["cameraid"]
         )
-        self.spectrometer = Spectrometer()
+        # self.spectrometer = Spectrometer()
+        self.spectrometer = None
 
         # all characterization stations (in order of measurement!)
         self.stations = [
