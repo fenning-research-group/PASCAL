@@ -69,13 +69,21 @@ class CharacterizationLine:
                 position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
                 spectrometer=self.spectrometer,
-                shutter=self.switchbox.Switch(constants["transmission"]["switchindex"]),
+                shutter=None,  # TODO add shutter handle here for ELL6 sliders
             ),
             PLSpectroscopy(
-                position=constants["pl"]["position"],
+                position=constants["pl_red"]["position"],
                 rootdir=self.rootdir,
+                subdir="PL_635",
                 spectrometer=self.spectrometer,
-                lightswitch=self.switchbox.Switch(constants["pl"]["switchindex"]),
+                lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
+            ),
+            PLSpectroscopy(
+                position=constants["pl_blue"]["position"],
+                rootdir=self.rootdir,
+                subdir="PL_405",
+                spectrometer=self.spectrometer,
+                lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
         ]
 
@@ -406,8 +414,8 @@ class TransmissionSpectroscopy(StationTemplate):
 
 
 class PLSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, spectrometer, lightswitch):
-        savedir = os.path.join(rootdir, "PL")
+    def __init__(self, position, rootdir, subdir, spectrometer, lightswitch):
+        savedir = os.path.join(rootdir, subdir)
 
         super().__init__(position=position, savedir=savedir)
         self.spectrometer = spectrometer

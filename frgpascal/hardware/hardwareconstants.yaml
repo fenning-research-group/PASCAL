@@ -102,34 +102,36 @@ characterizationline:
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
-    transfer_position: 20 #x coordinate to transfer samples to/from gantry
+    transfer_position: 2 #x coordinate to transfer samples to/from gantry
     p0: [563, 268, 56.7] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
-  #individual stations
+  #hardware shared across stations
   switchbox:
     device_identifiers:
       vid: 10777
       pid: 3075
     pollingrate: 0.2
     relayresponsetime: 0.01 #seconds between telling relay to do something + relay doing it
+  #individual stations
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
-    position: 93.15 #position (mm) at which characterization axis centers sample in FOV
+    position: 54.4 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 9 #switchbox plug index for light source (ring light)
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-    position: 93.15 #position (mm) at which characterization axis centers sample in FOV
+    position: 54.4 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 12 #switchbox plug index for light source (blue LED lamp)
   brightfield:
     cameraid: '12519' #serial number for Thorlabs Camera
     position: 165.4 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 8 #switchbox plug index for light source (ring light)
   pl_blue: #spectroscopy
-    position: 313
+    position: 285
     switchindex: 5
   pl_red: #spectroscopy
-    position: 313 #position (mm) at which characterization axis centers sample in FOV
+    position: 285 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 4 #switchbox plug index for light source (red laser)
   transmission: #spectroscopy
-    position: 313 #position (mm) at which characterization axis centers sample in FOV
-  
+    position: 285 #position (mm) at which characterization axis centers sample in FOV
+  #fourpointprobe:
+    # position:397.5
   

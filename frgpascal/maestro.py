@@ -5,9 +5,9 @@ import time
 import yaml
 import ntplib
 
+from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
-from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
