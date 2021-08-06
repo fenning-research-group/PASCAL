@@ -2,6 +2,7 @@ import yaml
 from frgpascal.hardware.helpers import get_port
 import os
 import serial
+import time
 
 # https://github.com/cdbaird/TL-rotation-control/blob/759dc3fc58efd975c37c7ee954fa6152618cd58e/elliptec/rotation.py
 
@@ -19,30 +20,44 @@ class Shutter:
             self.port = port
         self.POLLINGDELAY = constants[
             "pollingrate"
-        ]  # delay between sending a command and reading a response, in seconds
+        ]  # delay (seconds) between sending a command and reading a response
+        self.SHUTTERRESPONSETIME = constants[
+            "shutterresponsetime"
+        ]  # delay (seconds) between telling shutter to move -> shutter completing the move
+        self.ADDRESS_TOP = constants["top"]
+        self.ADDRESS_BOTTOM = constants["bottom"]
 
     def connect(self):
         self._handle = serial.Serial(self.port, timeout=1, baudrate=9600)
 
-    def write(self, request, data=None, address="0"):
+    def write(self, address, request):
         command = address.encode("utf-8") + request.encode("utf-8")
-        if data is not None:
-            command += data.encode("utf-8")
         self._handle.write(command)
+        response = self._handle.readline().decode("utf-8")
+        if (len(response) == 0) or (response[0] != address):
+            raise ValueError("Shutter did not complete move!")
 
-    def gohome(self):
-        """homes the motor"""
-        self.write("i2")
-        response = self.read_until(terminator=b"\n")
+    # def gohome(self):
+    #     """homes the motor"""
+    #     self.write("i2")
+    #     response = self.read_until(terminator=b"\n")
 
-    def left(self):
-        """
-        Move shutter to left position
-        """
-        self.write("f1")
+    def top_left(self):
+        """Move top shutter to left position"""
+        self.write(address=self.ADDRESS_TOP, request="fw")
+        time.sleep(self.SHUTTERRESPONSETIME)
 
-    def right(self):
-        """
-        Move shutter to right position
-        """
-        self.write("b1")
+    def top_right(self):
+        """Move top shutter to right position"""
+        self.write(address=self.ADDRESS_TOP, request="bw")
+        time.sleep(self.SHUTTERRESPONSETIME)
+
+    def bottom_left(self):
+        """Move bottom shutter to left position"""
+        self.write(address=self.ADDRESS_BOTTOM, request="bw")
+        time.sleep(self.SHUTTERRESPONSETIME)
+
+    def bottom_right(self):
+        """Move bottom shutter to right position"""
+        self.write(address=self.ADDRESS_BOTTOM, request="fw")
+        time.sleep(self.SHUTTERRESPONSETIME)

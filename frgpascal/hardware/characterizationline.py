@@ -11,13 +11,15 @@ import csv
 
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
-from frgpascal.hardware.spectrometer import Spectrometer
+from frgpascal.hardware.spectrometer import DummySpectrometer
 from frgpascal.hardware.switchbox import Switchbox
+from frgpascal.hardware.shutter import Shutter
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
+
 
 ## Line Methods
 class CharacterizationLine:
@@ -29,6 +31,7 @@ class CharacterizationLine:
         if not os.path.exists(self.rootdir):
             os.mkdir(self.rootdir)
         self.switchbox = Switchbox()
+        self.shutter = Shutter()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
             camid=constants["darkfield"]["cameraid"]
@@ -37,7 +40,7 @@ class CharacterizationLine:
             camid=constants["brightfield"]["cameraid"]
         )
         # self.spectrometer = Spectrometer()
-        self.spectrometer = None
+        self.spectrometer = DummySpectrometer()
 
         # all characterization stations (in order of measurement!)
         self.stations = [
@@ -399,9 +402,10 @@ class TransmissionSpectroscopy(StationTemplate):
         self.shutter = shutter
 
     def capture(self):
-        self.shutter.on()  # opens the shutter
+        self.shutter.top_left()  # moves longpass filter out of the transmitted path
+        self.shutter.bottom_left()  # moves shutter out of the way, puts ND filter in incident path
         spectrum = self.spectrometer.capture()  # TODO - make this the HDR capture
-        self.shutter.off()  # closes the shutter
+        self.shutter.bottom_right()  # closes the shutter
         return spectrum
 
     def save(self, spectrum, sample):
@@ -414,12 +418,13 @@ class TransmissionSpectroscopy(StationTemplate):
 
 
 class PLSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, subdir, spectrometer, lightswitch):
+    def __init__(self, position, rootdir, subdir, spectrometer, lightswitch, shutter):
         savedir = os.path.join(rootdir, subdir)
 
         super().__init__(position=position, savedir=savedir)
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
+        self.shutter = shutter
         self.hdrdwelltimes = [100, 250, 500, 1000]  # ms
 
     def capture(self):
@@ -427,7 +432,10 @@ class PLSpectroscopy(StationTemplate):
         captures high-depth resolution (HDR) PL spectrum with a few increasing dwell times.
         data at each wavelength uses the longest dwell time that didnt blow out the detector
         """
-        self.lightswitch.on()
+        self.shutter.top_right()  # moves longpass filter into the detector path
+        self.shutter.bottom_right()  # closes shutter to block transmission lamp
+        self.lightswitch.on()  # turn on the laser
+
         threshold = (2 ** 16) * 0.95  # a little below 16 bit depth of camera
         for idx, dwell in enumerate(self.hdrdwelltimes):
             self.spectrometer.integrationtime = dwell  # ms
@@ -442,7 +450,7 @@ class PLSpectroscopy(StationTemplate):
                 mask
             ]  # fill in wavelengths that arent saturated on detector
 
-        self.lightswitch.off()
+        self.lightswitch.off()  # turn off the laser
         spectrum = np.vstack([wl, cps_hdr]).T  # build back into an nx2 spectrum array
         return spectrum
 

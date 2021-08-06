@@ -47,6 +47,7 @@ gripper:
   device_identifiers:
       vid: 1027 #WINDOWS ONLY
       pid: 24597 #WINDOWS ONLY
+      serial_number: "DN066QRWA" 
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 28.2  #maximum opening width (mm)
@@ -110,7 +111,16 @@ characterizationline:
       vid: 10777
       pid: 3075
     pollingrate: 0.2
-    relayresponsetime: 0.01 #seconds between telling relay to do something + relay doing it
+    relayresponsetime: 0.01 #seconds between telling relay to do something -> relay doing it
+  shutter:
+    device_identifiers:
+      vid: 1027
+      pid: 24597
+      serial_number: "DK0AJS9DA"
+    top: "0" #address/index for top shutter. This should be a string!
+    bottom: "2" #address/index for bottom shutter. This should be a string!
+    pollingrate: 0.2
+    shutterresponsetime: 2 #seconds between telling the shutter to move -> shutter completing the move
   #individual stations
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
