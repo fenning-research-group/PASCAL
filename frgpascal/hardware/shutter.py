@@ -7,9 +7,7 @@ import serial
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
-    constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"][
-        "transmission"
-    ]["shutter"]
+    constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]["shutter"]
 
 
 class Shutter:
@@ -33,8 +31,7 @@ class Shutter:
         self._handle.write(command)
 
     def gohome(self):
-        """homes the motor
-        """
+        """homes the motor"""
         self.write("i2")
         response = self.read_until(terminator=b"\n")
 
@@ -49,4 +46,3 @@ class Shutter:
         Move shutter to right position
         """
         self.write("b1")
-
