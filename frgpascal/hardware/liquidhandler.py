@@ -19,26 +19,33 @@ class OT2:
     def __init__(self):
         self.server = OT2Server()
         self.server.start()
+        self.POLLINGRATE = 0.1
+        self.DISPENSE_DELAY = 0.5  # time (seconds) between initiating a dispense and the completion of the dispense
+        self.ASPIRATION_DELAY = (
+            15  # timee (seconds) to perform an aspiration and stage the pipette
+        )
 
-    def drop_perovskite(self, **kwargs):
+    def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
             pipette="perovskite",
             # height=height,
             # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
-    def drop_antisolvent(self, **kwargs):
+    def drop_antisolvent(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
             pipette="antisolvent",
-            # height=height,
-            # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
     def aspirate_for_spincoating(
         self,
@@ -49,10 +56,14 @@ class OT2:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        taskid=None,
+        nist_time=None,
         **kwargs,
     ):
         taskid = self.server.add_to_queue(
             task="aspirate_for_spincoating",
+            taskid=taskid,
+            nist_time=nist_time,
             tray=tray,
             well=well,
             volume=volume,
@@ -62,7 +73,7 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
     def aspirate_both_for_spincoating(
         self,
@@ -75,10 +86,14 @@ class OT2:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        taskid=None,
+        nist_time=None,
         **kwargs,
     ):
         taskid = self.server.add_to_queue(
             task="aspirate_both_for_spincoating",
+            taskid=taskid,
+            nist_time=nist_time,
             psk_tray=psk_tray,
             psk_well=psk_well,
             psk_volume=psk_volume,
@@ -90,34 +105,52 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
-    def stage_perovskite(self):
+    def stage_perovskite(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="stage_for_dispense", pipette="perovskite"
+            task="stage_for_dispense",
+            taskid=taskid,
+            nist_time=nist_time,
+            pipette="perovskite",
+            **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
-    def stage_antisolvent(self):
+    def stage_antisolvent(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="stage_for_dispense", pipette="antisolvent"
+            task="stage_for_dispense",
+            taskid=taskid,
+            nist_time=nist_time,
+            pipette="antisolvent",
+            **kwargs,
         )
-        self._wait_for_task_complete(taskid)
+        return taskid
 
-    def clear_chuck(self):
-        taskid = self.server.add_to_queue(task="clear_chuck")
-        self._wait_for_task_complete(taskid)
+    def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="clear_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
+            **kwargs,
+        )
+        return taskid
 
-    def cleanup(self):
-        taskid = self.server.add_to_queue(task="cleanup")
-        self._wait_for_task_complete(taskid)
+    def cleanup(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="cleanup",
+            taskid=taskid,
+            nist_time=nist_time,
+            **kwargs,
+        )
+        return taskid
 
     # def end(self):
     #     self.server.add_to_queue(task="None", all_done="all_done")
 
-    def _wait_for_task_complete(self, taskid):
+    def wait_for_task_complete(self, taskid):
         while taskid not in self.server.completed_tasks:
-            time.sleep(0.2)
+            time.sleep(self.POLLINGRATE)
         # while taskid not in self.server.completed_tasks:
         #     time.sleep(self.server.POLLINGRATE)
         # while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
@@ -137,7 +170,7 @@ class OT2Server:
         self.port = constants["liquidhandler"]["server"]["port"]
         self.pending_tasks = []
         self.completed_tasks = {}
-        self.POLLINGRATE = 3  # seconds between status checks to OT2
+        self.POLLINGRATE = 1  # seconds between status checks to OT2
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -267,14 +300,10 @@ class OT2Server:
         # asyncio.run_coroutine_threadsafe(self.__add_task(task), self.loop)
 
     def add_to_queue(self, task, taskid=None, nist_time=None, *args, **kwargs):
-        if taskid in kwargs:
-            taskid = kwargs.pop("taskid")
-        else:
+        if taskid is None:
             taskid = str(uuid.uuid4())
 
-        if nist_time in kwargs:
-            nist_time = kwargs.pop("nist_time")
-        else:
+        if nist_time is None:
             nist_time = self.nist_time()
 
         task = {
