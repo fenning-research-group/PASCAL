@@ -20,9 +20,12 @@ class OT2:
         self.server = OT2Server()
         self.server.start()
         self.POLLINGRATE = 0.1
-        self.DISPENSE_DELAY = 0.5  # time (seconds) between initiating a dispense and the completion of the dispense
+        self.DISPENSE_DELAY = 1  # time (seconds) between initiating a dispense and the completion of the dispense
         self.ASPIRATION_DELAY = (
-            15  # timee (seconds) to perform an aspiration and stage the pipette
+            22.5  # time (seconds) to perform an aspiration and stage the pipette
+        )
+        self.STAGING_DELAY = (
+            1.5  # time (seconds) to move pipette into position for drop staging
         )
 
     def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):

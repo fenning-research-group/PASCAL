@@ -11,7 +11,7 @@ import csv
 
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
-from frgpascal.hardware.spectrometer import DummySpectrometer
+from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import Switchbox
 from frgpascal.hardware.shutter import Shutter
 
@@ -40,7 +40,7 @@ class CharacterizationLine:
             camid=constants["brightfield"]["cameraid"]
         )
         # self.spectrometer = Spectrometer()
-        self.spectrometer = DummySpectrometer()
+        self.spectrometer = Spectrometer()
 
         # all characterization stations (in order of measurement!)
         self.stations = [
@@ -92,11 +92,11 @@ class CharacterizationLine:
             ),
         ]
 
-    def run(self, sample):
+    def run(self, samplename):
         """Pass a sample down the line and measure at each station"""
         for s in self.stations:
             self.axis.moveto(s.position)
-            s.run(sample=sample)  # combines measure + save methods
+            s.run(sample=samplename)  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
 
 

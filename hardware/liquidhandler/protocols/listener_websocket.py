@@ -23,8 +23,7 @@ class ListenerWebsocket:
         self,
         protocol_context,
         tips,
-        stocks,
-        mixing,
+        labwares,
         spincoater,
         ip="0.0.0.0",
         port=8764,
@@ -40,9 +39,7 @@ class ListenerWebsocket:
         self.completed_tasks = {}
         self.status = STATUS_IDLE
         self.tips = tips
-        self.stocks = stocks
-        self.mixing = mixing  # TODO intermediate mixing wells
-        self._sources = {**self.stocks, **self.mixing}
+        self._sources = labwares
 
         self.spincoater = spincoater
         self.CHUCK = "A1"
@@ -86,8 +83,7 @@ class ListenerWebsocket:
                 response = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
-        t_local = time.time()
-        self.__local_nist_offset = response.tx_time - t_local
+        self.__local_nist_offset = response.tx_time - time.time()
 
     def nist_time(self):
         return time.time() + self.__local_nist_offset
@@ -326,34 +322,36 @@ def run(protocol_context):
         protocol_context.load_labware(
             "sartorius_safetyspace_tiprack_200ul", location=location
         )
-        for location in ["8"]
+        for location in ["7", "10"]
     ]
 
     # note that each stock tray name must match the names from experiment designer!
-    stocks = {
-        "StockTray1": protocol_context.load_labware(
-            "frg_12_wellplate_15000ul", location="9"
-        )
+    labwares = {
+        "96_Plate1": protocol_context.load_labware(
+            "greiner_96_wellplate_360ul", location="5"
+        ),
+        "4mL_Tray1": protocol_context.load_labware(
+            "frg_24_wellplate_4000ul", location="1"
+        ),
+        "15mL_Tray1": protocol_context.load_labware(
+            "frg_12_wellplate_15000ul", location="8"
+        ),
     }
 
-    wellplates = {
-        "Plate1": protocol_context.load_labware(
-            "greiner_96_wellplate_360ul", location="6"
-        )
-    }
+    # spincoater
+    spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
         tips=tips,
-        stocks=stocks,
-        mixing=wellplates,
-        spincoater=protocol_context.load_labware("frg_spincoater_v1", location="3"),
+        labwares=labwares,
+        spincoater=spincoater,
     )
 
     # each piece of labware has to be involved in some dummy moves to be included in protocol
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
-        for name, labware in {**stocks, **wellplates}.items():
+        for name, labware in labwares.items():
             p.move_to(labware["A1"].top(30))
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
     listener.pipettes["right"].move_to(tips[0]["A1"].top(10))

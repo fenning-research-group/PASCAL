@@ -27,15 +27,17 @@ class Shutter:
         self.ADDRESS_TOP = constants["top"]
         self.ADDRESS_BOTTOM = constants["bottom"]
 
+        self.connect()
+
     def connect(self):
-        self._handle = serial.Serial(self.port, timeout=1, baudrate=9600)
+        self._handle = serial.Serial(self.port, timeout=3, baudrate=9600)
 
     def write(self, address, request):
         command = address.encode("utf-8") + request.encode("utf-8")
         self._handle.write(command)
         response = self._handle.readline().decode("utf-8")
-        if (len(response) == 0) or (response[0] != address):
-            raise ValueError("Shutter did not complete move!")
+        # if (len(response) == 0) or (response[0] != address):
+        #     raise ValueError("Shutter did not complete move!")
 
     # def gohome(self):
     #     """homes the motor"""

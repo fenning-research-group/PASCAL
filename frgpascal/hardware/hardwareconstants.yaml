@@ -68,7 +68,7 @@ hotplate:
 liquidhandler:
   pollingrate: 0.5 #delay (seconds) between checks for new commands to push to liquid handler server
   server:
-    ip: '169.254.197.107' #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    ip: '169.254.237.41' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
 
 sampletray:
@@ -103,7 +103,7 @@ characterizationline:
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
-    transfer_position: 2 #x coordinate to transfer samples to/from gantry
+    transfer_position: 0 #x coordinate to transfer samples to/from gantry
     p0: [563, 268, 56.7] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
   #hardware shared across stations
   switchbox:

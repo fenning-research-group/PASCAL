@@ -4,7 +4,9 @@ from threading import Thread, Lock
 from concurrent.futures import ThreadPoolExecutor
 import time
 import yaml
+import json
 import ntplib
+import asyncio
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -18,6 +20,8 @@ from frgpascal.hardware.characterizationline import (
 )
 from frgpascal.experimentaldesign.recipes import SpincoatRecipe, AnnealRecipe, Sample
 from frgpascal.workers import (
+    Worker_Hotplate,
+    Worker_Storage,
     Worker_GantryGripper,
     Worker_Characterization,
     Worker_SpincoaterLiquidHandler,
@@ -75,7 +79,7 @@ class Maestro:
             )
         }
         self.storage = {
-            "SampleTray1": SampleTray(
+            "Tray1": SampleTray(
                 name="SampleTray1",
                 version="storage_v1",  # TODO #3
                 gantry=self.gantry,
@@ -93,10 +97,6 @@ class Maestro:
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
-        self.pending_tasks = []
-        self.completed_tasks = {}
-        self.lock_pendingtasks = Lock()
-        self.lock_completedtasks = Lock()
 
         self.workers = {
             "gantry_gripper": Worker_GantryGripper(self),
@@ -115,8 +115,7 @@ class Maestro:
                 response = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
-        t_local = time.time()
-        self.__local_nist_offset = response.tx_time - t_local
+        self.__local_nist_offset = response.tx_time - time.time()
 
     def nist_time(self):
         return time.time() + self.__local_nist_offset
@@ -224,7 +223,10 @@ class Maestro:
 
     ### Batch Sample Execution
     def load_netlist(self, filepath):
-        self.samples, self.tasks = load_netlist(filepath)
+        with open(filepath) as f:
+            netlist = json.load(f)
+        self.tasks = netlist["tasks"]
+        self.samples = netlist["samples"]
 
     def make_background_event_loop(self):
         self.loop = asyncio.new_event_loop()
@@ -235,14 +237,24 @@ class Maestro:
         while self.working:
             await asyncio.sleep(1)
 
-    def run(self, filepath):
-        self.load_netlist(filepath)
+    def _start_loop(self):
         self.working = True
         self.thread = Thread(target=self.make_background_event_loop)
         self.thread.start()  # generates asyncio event loop in background thread (self.loop)
         time.sleep(0.5)
         # self.loop = asyncio.new_event_loop()
-        self.loop.set_debug(True)
+        # self.loop.set_debug(True)
+
+    def run(self, filepath):
+        speedup_factor = 1
+        self.pending_tasks = []
+        self.completed_tasks = {}
+        self.lock_pendingtasks = Lock()
+        self.lock_completedtasks = Lock()
+        self.load_netlist(filepath)
+        self._start_loop()
+        # self.loop = asyncio.new_event_loop()
+        # self.loop.set_debug(True)
         self.t0 = self.nist_time()
 
         for worker in self.workers.values():

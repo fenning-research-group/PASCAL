@@ -83,7 +83,7 @@ class StorageToSpincoater(Task):
             sample=sample,
             task="storage_to_spincoater",
             workers=[gg, sclh],
-            duration=30,
+            duration=25,
             precedents=precedents,
         )
 
@@ -106,7 +106,7 @@ class SpincoaterToHotplate(Task):
             sample=sample,
             task="spincoater_to_hotplate",
             workers=[gg, sclh],
-            duration=30,
+            duration=25,
             precedents=precedents,
         )
 
@@ -129,7 +129,7 @@ class HotplateToStorage(Task):
             sample=sample,
             task="hotplate_to_storage",
             workers=[gg],
-            duration=30,
+            duration=25,
             precedents=precedents,
         )
 
@@ -151,7 +151,7 @@ class StorageToCharacterization(Task):
             sample=sample,
             task="storage_to_characterization",
             workers=[gg, cl],
-            duration=30,
+            duration=25,
             precedents=precedents,
         )
 
@@ -173,7 +173,7 @@ class CharacterizationToStorage(Task):
             sample=sample,
             task="characterization_to_storage",
             workers=[gg, cl],
-            duration=30,
+            duration=25,
             precedents=precedents,
         )
 
@@ -331,4 +331,3 @@ class Scheduler:
     #         pt = self.tasks[ptidx]
     #         if pt.end_time < task.start_time:
     #             task.start_time = pt.end_time
-
