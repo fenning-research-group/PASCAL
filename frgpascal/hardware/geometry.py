@@ -1,8 +1,14 @@
 import numpy as np
+import os
+
+### https://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
+os.environ[
+    "FOR_DISABLE_CONSOLE_CTRL_HANDLER"
+] = "1"  # to preserve ctrl-c with scipy loaded
+
 from scipy.interpolate import LinearNDInterpolator
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
-import os
 import yaml
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -52,7 +58,7 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     :type z_clearance: int, optional
     """
 
-    points = np.asarray(points)  # destination coordinates
+    points = np.asarray(points).round(2)  # destination coordinates
     p_prev = points[0]
 
     points_source_guess = points
@@ -86,12 +92,12 @@ class Workspace:
         name: str,
         pitch: tuple,
         gridsize: tuple,
-        gantry: Gantry,
-        gripper: Gripper,
-        p0=[None, None, None],
+        gantry: Gantry = None,
+        gripper: Gripper = None,
+        p0=[0, 0, 0],
         testslots=None,
         z_clearance: float = 5,
-        openwidth: float = 20,
+        openwidth: float = 14,
     ):
         """
         Args:
@@ -124,6 +130,10 @@ class Workspace:
 
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
+        if gantry is None and gripper is None:
+            self.__is_simulation = True
+        else:
+            self.__is_simulation = False
         self.gantry = gantry
         self.gripper = gripper
         # coordinate system properties
@@ -164,6 +174,7 @@ class Workspace:
             return chr(ord("A") + num)
 
         self._coordinates = {}
+        self._openslots = []
         self._ycoords = [
             letter(self.gridsize[1] - yidx - 1) for yidx in range(self.gridsize[1])
         ]  # lettering +y -> -y = A -> Z
@@ -179,6 +190,8 @@ class Workspace:
                     yidx * self.pitch[1],
                     0,
                 ]
+                self._openslots.append(name)
+                self._openslots.sort()
                 # self._coordinates[name] = [p + poffset for p, poffset in zip(relative_position, self.offset)]
 
     def slot_coordinates(self, name):
@@ -190,6 +203,8 @@ class Workspace:
         return self.slot_coordinates(name)
 
     def calibrate(self):
+        if self.__is_simulation:
+            raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
         self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
@@ -214,3 +229,48 @@ class Workspace:
             pts = yaml.load(f, Loader=yaml.FullLoader)
         self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
         self.__calibrated = True
+
+    def load(self, contents) -> str:
+        """Load new contents into the labware. Returns the next empty slot, or error if none exists.
+
+        Args:
+            contents (object): SolutionRecipe or a string representing the solution
+
+        Raises:
+            IndexError: If the labware is full
+
+        Returns:
+            (str): which slot has been allocated to the new contents
+        """
+        try:
+            slot = self._openslots.pop(0)  # take the next open slot
+            self.contents[slot] = contents
+            return slot
+        except IndexError as e:
+            raise IndexError("This labware is full!")
+
+    def unload(self, slot: str):
+        """Unload contents from a slot in the labware.
+            Sorts the list of open slots so we always fill the lowest index open slot.
+
+        Args:
+            slot (str): which slot to unload
+
+        Raises:
+            ValueError: If that slot either does not exist, or is already empty
+        """
+        if slot not in self._coordinates:
+            raise ValueError(f"{slot} is not a valid slot")
+        if slot in self._openslots:
+            raise ValueError(f"Cannot unload {slot}, it's already empty!")
+        self._openslots.append(slot)
+        self._openslots.sort()
+        return self.contents.pop(slot)  # remove the slot from the contents dictionary
+
+    def unload_all(self):
+        """
+        resets the labware to an empty state
+        """
+        self._openslots = list(self._coordinates.keys())
+        self._openslots.sort()
+        self.contents = {}

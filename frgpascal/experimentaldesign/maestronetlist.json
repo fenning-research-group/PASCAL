@@ -1,0 +1,1374 @@
+{
+    "samples": {
+        "sample0": {
+            "anneal_recipe": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "name": "sample0",
+            "sampleid": null,
+            "spincoat_recipe": {
+                "antisolvent": {
+                    "droptime": 40,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "storage_slot": {
+                "slot": "A1",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm_FTO",
+            "tasks": [
+                {
+                    "details": "",
+                    "id": "storage_to_spincoater-4610bfc5-bc3b-4902-919c-6e1cd96a0cf5",
+                    "precedents": [],
+                    "sample": "sample0",
+                    "start": 0,
+                    "task": "storage_to_spincoater"
+                },
+                {
+                    "details": {
+                        "antisolvent": {
+                            "droptime": 40,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "",
+                                "solvent": "Chlorobenzene",
+                                "well": {
+                                    "slot": "A1",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 40
+                        },
+                        "duration": 55.0,
+                        "solution": {
+                            "droptime": -5,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "MA_Pb_I3",
+                                "solvent": "DMF9_DMSO1",
+                                "well": {
+                                    "slot": "A2",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 20
+                        },
+                        "start_times": [
+                            5,
+                            25.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ],
+                        "type": "spincoat"
+                    },
+                    "id": "spincoat-73ff96ca-2d20-4e8c-a5a4-c458eb7f6eb8",
+                    "precedents": [
+                        "storage_to_spincoater-4610bfc5-bc3b-4902-919c-6e1cd96a0cf5"
+                    ],
+                    "sample": "sample0",
+                    "start": 25,
+                    "task": "spincoat"
+                },
+                {
+                    "details": "",
+                    "id": "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4",
+                    "precedents": [
+                        "spincoat-73ff96ca-2d20-4e8c-a5a4-c458eb7f6eb8"
+                    ],
+                    "sample": "sample0",
+                    "start": 125,
+                    "task": "spincoater_to_hotplate"
+                },
+                {
+                    "details": {
+                        "duration": 240,
+                        "temperature": 100,
+                        "type": "anneal"
+                    },
+                    "id": "anneal-66381c15-c28e-4756-945c-303a31a78901",
+                    "precedents": [
+                        "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4"
+                    ],
+                    "sample": "sample0",
+                    "start": 150,
+                    "task": "anneal"
+                },
+                {
+                    "details": "",
+                    "id": "hotplate_to_storage-e1c7bcad-a5e1-4de4-9317-a675f7ed2d47",
+                    "precedents": [
+                        "anneal-66381c15-c28e-4756-945c-303a31a78901",
+                        "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a"
+                    ],
+                    "sample": "sample0",
+                    "start": 390,
+                    "task": "hotplate_to_storage"
+                },
+                {
+                    "details": "",
+                    "id": "cooldown-1894fe03-6fe2-4f71-ba92-01e69356a5f4",
+                    "precedents": [
+                        "hotplate_to_storage-e1c7bcad-a5e1-4de4-9317-a675f7ed2d47"
+                    ],
+                    "sample": "sample0",
+                    "start": 415,
+                    "task": "cooldown"
+                },
+                {
+                    "details": "",
+                    "id": "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a",
+                    "precedents": [
+                        "cooldown-1894fe03-6fe2-4f71-ba92-01e69356a5f4"
+                    ],
+                    "sample": "sample0",
+                    "start": 595,
+                    "task": "storage_to_characterization"
+                },
+                {
+                    "details": "",
+                    "id": "characterize-94f5ceab-e85d-4f7b-90e7-caaa9eed6d7e",
+                    "precedents": [
+                        "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a"
+                    ],
+                    "sample": "sample0",
+                    "start": 620,
+                    "task": "characterize"
+                },
+                {
+                    "details": "",
+                    "id": "characterization_to_storage-cb289c7d-c31a-469d-8adf-edf270f6f42d",
+                    "precedents": [
+                        "characterize-94f5ceab-e85d-4f7b-90e7-caaa9eed6d7e"
+                    ],
+                    "sample": "sample0",
+                    "start": 820,
+                    "task": "characterization_to_storage"
+                }
+            ]
+        },
+        "sample1": {
+            "anneal_recipe": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "name": "sample1",
+            "sampleid": null,
+            "spincoat_recipe": {
+                "antisolvent": {
+                    "droptime": 40,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "storage_slot": {
+                "slot": "A2",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm_FTO",
+            "tasks": [
+                {
+                    "details": "",
+                    "id": "storage_to_spincoater-457e6482-9899-4483-ba79-a6daea1cca76",
+                    "precedents": [
+                        "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4"
+                    ],
+                    "sample": "sample1",
+                    "start": 150,
+                    "task": "storage_to_spincoater"
+                },
+                {
+                    "details": {
+                        "antisolvent": {
+                            "droptime": 40,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "",
+                                "solvent": "Chlorobenzene",
+                                "well": {
+                                    "slot": "A1",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 40
+                        },
+                        "duration": 55.0,
+                        "solution": {
+                            "droptime": -5,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "MA_Pb_I3",
+                                "solvent": "DMF9_DMSO1",
+                                "well": {
+                                    "slot": "A2",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 20
+                        },
+                        "start_times": [
+                            5,
+                            25.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ],
+                        "type": "spincoat"
+                    },
+                    "id": "spincoat-20f3d04f-e890-42f8-b836-f856af565b83",
+                    "precedents": [
+                        "storage_to_spincoater-457e6482-9899-4483-ba79-a6daea1cca76"
+                    ],
+                    "sample": "sample1",
+                    "start": 175,
+                    "task": "spincoat"
+                },
+                {
+                    "details": "",
+                    "id": "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05",
+                    "precedents": [
+                        "spincoat-20f3d04f-e890-42f8-b836-f856af565b83"
+                    ],
+                    "sample": "sample1",
+                    "start": 275,
+                    "task": "spincoater_to_hotplate"
+                },
+                {
+                    "details": {
+                        "duration": 240,
+                        "temperature": 100,
+                        "type": "anneal"
+                    },
+                    "id": "anneal-b02cfc8e-51f2-45bf-bead-fbfda862483c",
+                    "precedents": [
+                        "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05"
+                    ],
+                    "sample": "sample1",
+                    "start": 300,
+                    "task": "anneal"
+                },
+                {
+                    "details": "",
+                    "id": "hotplate_to_storage-5f466eee-bda0-46bc-8e49-38c538e2744b",
+                    "precedents": [
+                        "anneal-b02cfc8e-51f2-45bf-bead-fbfda862483c",
+                        "spincoat-d3e7d51a-31f8-4be2-840b-1ce80691462b"
+                    ],
+                    "sample": "sample1",
+                    "start": 540,
+                    "task": "hotplate_to_storage"
+                },
+                {
+                    "details": "",
+                    "id": "cooldown-1f91037d-0329-4fc0-a836-dd0d6caf6a4f",
+                    "precedents": [
+                        "hotplate_to_storage-5f466eee-bda0-46bc-8e49-38c538e2744b"
+                    ],
+                    "sample": "sample1",
+                    "start": 565,
+                    "task": "cooldown"
+                },
+                {
+                    "details": "",
+                    "id": "storage_to_characterization-d16e74a3-4cd7-4eb7-b0dc-1fc231116133",
+                    "precedents": [
+                        "cooldown-1f91037d-0329-4fc0-a836-dd0d6caf6a4f",
+                        "characterization_to_storage-cb289c7d-c31a-469d-8adf-edf270f6f42d"
+                    ],
+                    "sample": "sample1",
+                    "start": 845,
+                    "task": "storage_to_characterization"
+                },
+                {
+                    "details": "",
+                    "id": "characterize-880911e4-7963-448b-af0e-a28398571024",
+                    "precedents": [
+                        "storage_to_characterization-d16e74a3-4cd7-4eb7-b0dc-1fc231116133"
+                    ],
+                    "sample": "sample1",
+                    "start": 870,
+                    "task": "characterize"
+                },
+                {
+                    "details": "",
+                    "id": "characterization_to_storage-8b5efd23-427e-4562-8559-eeff6f82b728",
+                    "precedents": [
+                        "characterize-880911e4-7963-448b-af0e-a28398571024"
+                    ],
+                    "sample": "sample1",
+                    "start": 1070,
+                    "task": "characterization_to_storage"
+                }
+            ]
+        },
+        "sample2": {
+            "anneal_recipe": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "name": "sample2",
+            "sampleid": null,
+            "spincoat_recipe": {
+                "antisolvent": {
+                    "droptime": 45,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "storage_slot": {
+                "slot": "A3",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm_FTO",
+            "tasks": [
+                {
+                    "details": "",
+                    "id": "storage_to_spincoater-faeaf47f-8077-4767-9736-19d2782eefb7",
+                    "precedents": [
+                        "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05"
+                    ],
+                    "sample": "sample2",
+                    "start": 300,
+                    "task": "storage_to_spincoater"
+                },
+                {
+                    "details": {
+                        "antisolvent": {
+                            "droptime": 45,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "",
+                                "solvent": "Chlorobenzene",
+                                "well": {
+                                    "slot": "A1",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 40
+                        },
+                        "duration": 55.0,
+                        "solution": {
+                            "droptime": -5,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "MA_Pb_I3",
+                                "solvent": "DMF9_DMSO1",
+                                "well": {
+                                    "slot": "A2",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 20
+                        },
+                        "start_times": [
+                            5,
+                            25.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ],
+                        "type": "spincoat"
+                    },
+                    "id": "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a",
+                    "precedents": [
+                        "storage_to_spincoater-faeaf47f-8077-4767-9736-19d2782eefb7"
+                    ],
+                    "sample": "sample2",
+                    "start": 325,
+                    "task": "spincoat"
+                },
+                {
+                    "details": "",
+                    "id": "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f",
+                    "precedents": [
+                        "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a"
+                    ],
+                    "sample": "sample2",
+                    "start": 425,
+                    "task": "spincoater_to_hotplate"
+                },
+                {
+                    "details": {
+                        "duration": 240,
+                        "temperature": 100,
+                        "type": "anneal"
+                    },
+                    "id": "anneal-109ccb0c-0d7c-4337-b8ab-2c254884ae6b",
+                    "precedents": [
+                        "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f"
+                    ],
+                    "sample": "sample2",
+                    "start": 450,
+                    "task": "anneal"
+                },
+                {
+                    "details": "",
+                    "id": "hotplate_to_storage-d60bb15b-25bf-4d35-8cf5-e658eafb46e3",
+                    "precedents": [
+                        "anneal-109ccb0c-0d7c-4337-b8ab-2c254884ae6b"
+                    ],
+                    "sample": "sample2",
+                    "start": 690,
+                    "task": "hotplate_to_storage"
+                },
+                {
+                    "details": "",
+                    "id": "cooldown-df6adfdc-9e0e-4fa9-893e-eec609f39802",
+                    "precedents": [
+                        "hotplate_to_storage-d60bb15b-25bf-4d35-8cf5-e658eafb46e3"
+                    ],
+                    "sample": "sample2",
+                    "start": 715,
+                    "task": "cooldown"
+                },
+                {
+                    "details": "",
+                    "id": "storage_to_characterization-fb7d2663-ec5b-47c0-8fe0-986e50a1385b",
+                    "precedents": [
+                        "cooldown-df6adfdc-9e0e-4fa9-893e-eec609f39802",
+                        "characterization_to_storage-8b5efd23-427e-4562-8559-eeff6f82b728"
+                    ],
+                    "sample": "sample2",
+                    "start": 1095,
+                    "task": "storage_to_characterization"
+                },
+                {
+                    "details": "",
+                    "id": "characterize-bb60e9d2-3e00-46ed-afe1-1dec8bd8add9",
+                    "precedents": [
+                        "storage_to_characterization-fb7d2663-ec5b-47c0-8fe0-986e50a1385b"
+                    ],
+                    "sample": "sample2",
+                    "start": 1120,
+                    "task": "characterize"
+                },
+                {
+                    "details": "",
+                    "id": "characterization_to_storage-63ca8956-7d75-4ad4-bc61-e226ebe78694",
+                    "precedents": [
+                        "characterize-bb60e9d2-3e00-46ed-afe1-1dec8bd8add9"
+                    ],
+                    "sample": "sample2",
+                    "start": 1320,
+                    "task": "characterization_to_storage"
+                }
+            ]
+        },
+        "sample3": {
+            "anneal_recipe": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "name": "sample3",
+            "sampleid": null,
+            "spincoat_recipe": {
+                "antisolvent": {
+                    "droptime": 45,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "storage_slot": {
+                "slot": "A4",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm_FTO",
+            "tasks": [
+                {
+                    "details": "",
+                    "id": "storage_to_spincoater-795644da-a3ee-4895-b010-d435a49cd933",
+                    "precedents": [
+                        "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f"
+                    ],
+                    "sample": "sample3",
+                    "start": 450,
+                    "task": "storage_to_spincoater"
+                },
+                {
+                    "details": {
+                        "antisolvent": {
+                            "droptime": 45,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "",
+                                "solvent": "Chlorobenzene",
+                                "well": {
+                                    "slot": "A1",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 40
+                        },
+                        "duration": 55.0,
+                        "solution": {
+                            "droptime": -5,
+                            "solution": {
+                                "molarity": 1,
+                                "solutes": "MA_Pb_I3",
+                                "solvent": "DMF9_DMSO1",
+                                "well": {
+                                    "slot": "A2",
+                                    "tray": "4mL_Tray1"
+                                }
+                            },
+                            "volume": 20
+                        },
+                        "start_times": [
+                            5,
+                            25.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ],
+                        "type": "spincoat"
+                    },
+                    "id": "spincoat-d3e7d51a-31f8-4be2-840b-1ce80691462b",
+                    "precedents": [
+                        "storage_to_spincoater-795644da-a3ee-4895-b010-d435a49cd933"
+                    ],
+                    "sample": "sample3",
+                    "start": 520,
+                    "task": "spincoat"
+                },
+                {
+                    "details": "",
+                    "id": "spincoater_to_hotplate-53249a3d-dd69-40fc-930d-2afbab8243fd",
+                    "precedents": [
+                        "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a"
+                    ],
+                    "sample": "sample3",
+                    "start": 620,
+                    "task": "spincoater_to_hotplate"
+                },
+                {
+                    "details": {
+                        "duration": 240,
+                        "temperature": 100,
+                        "type": "anneal"
+                    },
+                    "id": "anneal-5785f30a-ae80-4d92-a5a5-cb489d7ba4a8",
+                    "precedents": [
+                        "spincoater_to_hotplate-53249a3d-dd69-40fc-930d-2afbab8243fd"
+                    ],
+                    "sample": "sample3",
+                    "start": 645,
+                    "task": "anneal"
+                },
+                {
+                    "details": "",
+                    "id": "hotplate_to_storage-b2400b9a-fb16-4e3b-9e64-6843acb12e2a",
+                    "precedents": [
+                        "anneal-5785f30a-ae80-4d92-a5a5-cb489d7ba4a8",
+                        "characterize-880911e4-7963-448b-af0e-a28398571024"
+                    ],
+                    "sample": "sample3",
+                    "start": 885,
+                    "task": "hotplate_to_storage"
+                },
+                {
+                    "details": "",
+                    "id": "cooldown-0b617c93-6c39-4402-baea-ca8a17254da1",
+                    "precedents": [
+                        "hotplate_to_storage-b2400b9a-fb16-4e3b-9e64-6843acb12e2a"
+                    ],
+                    "sample": "sample3",
+                    "start": 910,
+                    "task": "cooldown"
+                },
+                {
+                    "details": "",
+                    "id": "storage_to_characterization-244ad159-b978-4057-a917-d27cb56c0576",
+                    "precedents": [
+                        "cooldown-0b617c93-6c39-4402-baea-ca8a17254da1",
+                        "characterization_to_storage-63ca8956-7d75-4ad4-bc61-e226ebe78694"
+                    ],
+                    "sample": "sample3",
+                    "start": 1345,
+                    "task": "storage_to_characterization"
+                },
+                {
+                    "details": "",
+                    "id": "characterize-63d6b58a-7e7b-4169-ba07-972a5903cde9",
+                    "precedents": [
+                        "storage_to_characterization-244ad159-b978-4057-a917-d27cb56c0576"
+                    ],
+                    "sample": "sample3",
+                    "start": 1370,
+                    "task": "characterize"
+                },
+                {
+                    "details": "",
+                    "id": "characterization_to_storage-19fd128e-43f5-4507-861f-cc48b863b534",
+                    "precedents": [
+                        "characterize-63d6b58a-7e7b-4169-ba07-972a5903cde9"
+                    ],
+                    "sample": "sample3",
+                    "start": 1570,
+                    "task": "characterization_to_storage"
+                }
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "details": "",
+            "id": "storage_to_spincoater-4610bfc5-bc3b-4902-919c-6e1cd96a0cf5",
+            "precedents": [],
+            "sample": "sample0",
+            "start": 0,
+            "task": "storage_to_spincoater"
+        },
+        {
+            "details": {
+                "antisolvent": {
+                    "droptime": 40,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "id": "spincoat-73ff96ca-2d20-4e8c-a5a4-c458eb7f6eb8",
+            "precedents": [
+                "storage_to_spincoater-4610bfc5-bc3b-4902-919c-6e1cd96a0cf5"
+            ],
+            "sample": "sample0",
+            "start": 25,
+            "task": "spincoat"
+        },
+        {
+            "details": "",
+            "id": "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4",
+            "precedents": [
+                "spincoat-73ff96ca-2d20-4e8c-a5a4-c458eb7f6eb8"
+            ],
+            "sample": "sample0",
+            "start": 125,
+            "task": "spincoater_to_hotplate"
+        },
+        {
+            "details": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "id": "anneal-66381c15-c28e-4756-945c-303a31a78901",
+            "precedents": [
+                "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4"
+            ],
+            "sample": "sample0",
+            "start": 150,
+            "task": "anneal"
+        },
+        {
+            "details": "",
+            "id": "storage_to_spincoater-457e6482-9899-4483-ba79-a6daea1cca76",
+            "precedents": [
+                "spincoater_to_hotplate-7ce2a337-deba-4155-8f5b-b3d20ab4aec4"
+            ],
+            "sample": "sample1",
+            "start": 150,
+            "task": "storage_to_spincoater"
+        },
+        {
+            "details": {
+                "antisolvent": {
+                    "droptime": 40,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "id": "spincoat-20f3d04f-e890-42f8-b836-f856af565b83",
+            "precedents": [
+                "storage_to_spincoater-457e6482-9899-4483-ba79-a6daea1cca76"
+            ],
+            "sample": "sample1",
+            "start": 175,
+            "task": "spincoat"
+        },
+        {
+            "details": "",
+            "id": "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05",
+            "precedents": [
+                "spincoat-20f3d04f-e890-42f8-b836-f856af565b83"
+            ],
+            "sample": "sample1",
+            "start": 275,
+            "task": "spincoater_to_hotplate"
+        },
+        {
+            "details": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "id": "anneal-b02cfc8e-51f2-45bf-bead-fbfda862483c",
+            "precedents": [
+                "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05"
+            ],
+            "sample": "sample1",
+            "start": 300,
+            "task": "anneal"
+        },
+        {
+            "details": "",
+            "id": "storage_to_spincoater-faeaf47f-8077-4767-9736-19d2782eefb7",
+            "precedents": [
+                "spincoater_to_hotplate-0fc23547-c368-4cb3-9250-645d77bdad05"
+            ],
+            "sample": "sample2",
+            "start": 300,
+            "task": "storage_to_spincoater"
+        },
+        {
+            "details": {
+                "antisolvent": {
+                    "droptime": 45,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "id": "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a",
+            "precedents": [
+                "storage_to_spincoater-faeaf47f-8077-4767-9736-19d2782eefb7"
+            ],
+            "sample": "sample2",
+            "start": 325,
+            "task": "spincoat"
+        },
+        {
+            "details": "",
+            "id": "hotplate_to_storage-e1c7bcad-a5e1-4de4-9317-a675f7ed2d47",
+            "precedents": [
+                "anneal-66381c15-c28e-4756-945c-303a31a78901",
+                "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a"
+            ],
+            "sample": "sample0",
+            "start": 390,
+            "task": "hotplate_to_storage"
+        },
+        {
+            "details": "",
+            "id": "cooldown-1894fe03-6fe2-4f71-ba92-01e69356a5f4",
+            "precedents": [
+                "hotplate_to_storage-e1c7bcad-a5e1-4de4-9317-a675f7ed2d47"
+            ],
+            "sample": "sample0",
+            "start": 415,
+            "task": "cooldown"
+        },
+        {
+            "details": "",
+            "id": "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f",
+            "precedents": [
+                "spincoat-dd5707c4-cc61-43fa-a0a3-2a569e2ed75a"
+            ],
+            "sample": "sample2",
+            "start": 425,
+            "task": "spincoater_to_hotplate"
+        },
+        {
+            "details": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "id": "anneal-109ccb0c-0d7c-4337-b8ab-2c254884ae6b",
+            "precedents": [
+                "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f"
+            ],
+            "sample": "sample2",
+            "start": 450,
+            "task": "anneal"
+        },
+        {
+            "details": "",
+            "id": "storage_to_spincoater-795644da-a3ee-4895-b010-d435a49cd933",
+            "precedents": [
+                "spincoater_to_hotplate-4c2b41ae-8aa3-46e3-ac07-9fa453529f2f"
+            ],
+            "sample": "sample3",
+            "start": 450,
+            "task": "storage_to_spincoater"
+        },
+        {
+            "details": {
+                "antisolvent": {
+                    "droptime": 45,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "",
+                        "solvent": "Chlorobenzene",
+                        "well": {
+                            "slot": "A1",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 40
+                },
+                "duration": 55.0,
+                "solution": {
+                    "droptime": -5,
+                    "solution": {
+                        "molarity": 1,
+                        "solutes": "MA_Pb_I3",
+                        "solvent": "DMF9_DMSO1",
+                        "well": {
+                            "slot": "A2",
+                            "tray": "4mL_Tray1"
+                        }
+                    },
+                    "volume": 20
+                },
+                "start_times": [
+                    5,
+                    25.0
+                ],
+                "steps": [
+                    {
+                        "acceleration": 1000.0,
+                        "duration": 20.0,
+                        "rpm": 500.0
+                    },
+                    {
+                        "acceleration": 4000.0,
+                        "duration": 30.0,
+                        "rpm": 4000.0
+                    }
+                ],
+                "type": "spincoat"
+            },
+            "id": "spincoat-d3e7d51a-31f8-4be2-840b-1ce80691462b",
+            "precedents": [
+                "storage_to_spincoater-795644da-a3ee-4895-b010-d435a49cd933"
+            ],
+            "sample": "sample3",
+            "start": 520,
+            "task": "spincoat"
+        },
+        {
+            "details": "",
+            "id": "hotplate_to_storage-5f466eee-bda0-46bc-8e49-38c538e2744b",
+            "precedents": [
+                "anneal-b02cfc8e-51f2-45bf-bead-fbfda862483c",
+                "spincoat-d3e7d51a-31f8-4be2-840b-1ce80691462b"
+            ],
+            "sample": "sample1",
+            "start": 540,
+            "task": "hotplate_to_storage"
+        },
+        {
+            "details": "",
+            "id": "cooldown-1f91037d-0329-4fc0-a836-dd0d6caf6a4f",
+            "precedents": [
+                "hotplate_to_storage-5f466eee-bda0-46bc-8e49-38c538e2744b"
+            ],
+            "sample": "sample1",
+            "start": 565,
+            "task": "cooldown"
+        },
+        {
+            "details": "",
+            "id": "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a",
+            "precedents": [
+                "cooldown-1894fe03-6fe2-4f71-ba92-01e69356a5f4"
+            ],
+            "sample": "sample0",
+            "start": 595,
+            "task": "storage_to_characterization"
+        },
+        {
+            "details": "",
+            "id": "characterize-94f5ceab-e85d-4f7b-90e7-caaa9eed6d7e",
+            "precedents": [
+                "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a"
+            ],
+            "sample": "sample0",
+            "start": 620,
+            "task": "characterize"
+        },
+        {
+            "details": "",
+            "id": "spincoater_to_hotplate-53249a3d-dd69-40fc-930d-2afbab8243fd",
+            "precedents": [
+                "storage_to_characterization-b346398f-4fd7-4ca0-ad8f-fc8fb2fd7a2a"
+            ],
+            "sample": "sample3",
+            "start": 620,
+            "task": "spincoater_to_hotplate"
+        },
+        {
+            "details": {
+                "duration": 240,
+                "temperature": 100,
+                "type": "anneal"
+            },
+            "id": "anneal-5785f30a-ae80-4d92-a5a5-cb489d7ba4a8",
+            "precedents": [
+                "spincoater_to_hotplate-53249a3d-dd69-40fc-930d-2afbab8243fd"
+            ],
+            "sample": "sample3",
+            "start": 645,
+            "task": "anneal"
+        },
+        {
+            "details": "",
+            "id": "hotplate_to_storage-d60bb15b-25bf-4d35-8cf5-e658eafb46e3",
+            "precedents": [
+                "anneal-109ccb0c-0d7c-4337-b8ab-2c254884ae6b"
+            ],
+            "sample": "sample2",
+            "start": 690,
+            "task": "hotplate_to_storage"
+        },
+        {
+            "details": "",
+            "id": "cooldown-df6adfdc-9e0e-4fa9-893e-eec609f39802",
+            "precedents": [
+                "hotplate_to_storage-d60bb15b-25bf-4d35-8cf5-e658eafb46e3"
+            ],
+            "sample": "sample2",
+            "start": 715,
+            "task": "cooldown"
+        },
+        {
+            "details": "",
+            "id": "characterization_to_storage-cb289c7d-c31a-469d-8adf-edf270f6f42d",
+            "precedents": [
+                "characterize-94f5ceab-e85d-4f7b-90e7-caaa9eed6d7e"
+            ],
+            "sample": "sample0",
+            "start": 820,
+            "task": "characterization_to_storage"
+        },
+        {
+            "details": "",
+            "id": "storage_to_characterization-d16e74a3-4cd7-4eb7-b0dc-1fc231116133",
+            "precedents": [
+                "cooldown-1f91037d-0329-4fc0-a836-dd0d6caf6a4f",
+                "characterization_to_storage-cb289c7d-c31a-469d-8adf-edf270f6f42d"
+            ],
+            "sample": "sample1",
+            "start": 845,
+            "task": "storage_to_characterization"
+        },
+        {
+            "details": "",
+            "id": "characterize-880911e4-7963-448b-af0e-a28398571024",
+            "precedents": [
+                "storage_to_characterization-d16e74a3-4cd7-4eb7-b0dc-1fc231116133"
+            ],
+            "sample": "sample1",
+            "start": 870,
+            "task": "characterize"
+        },
+        {
+            "details": "",
+            "id": "hotplate_to_storage-b2400b9a-fb16-4e3b-9e64-6843acb12e2a",
+            "precedents": [
+                "anneal-5785f30a-ae80-4d92-a5a5-cb489d7ba4a8",
+                "characterize-880911e4-7963-448b-af0e-a28398571024"
+            ],
+            "sample": "sample3",
+            "start": 885,
+            "task": "hotplate_to_storage"
+        },
+        {
+            "details": "",
+            "id": "cooldown-0b617c93-6c39-4402-baea-ca8a17254da1",
+            "precedents": [
+                "hotplate_to_storage-b2400b9a-fb16-4e3b-9e64-6843acb12e2a"
+            ],
+            "sample": "sample3",
+            "start": 910,
+            "task": "cooldown"
+        },
+        {
+            "details": "",
+            "id": "characterization_to_storage-8b5efd23-427e-4562-8559-eeff6f82b728",
+            "precedents": [
+                "characterize-880911e4-7963-448b-af0e-a28398571024"
+            ],
+            "sample": "sample1",
+            "start": 1070,
+            "task": "characterization_to_storage"
+        },
+        {
+            "details": "",
+            "id": "storage_to_characterization-fb7d2663-ec5b-47c0-8fe0-986e50a1385b",
+            "precedents": [
+                "cooldown-df6adfdc-9e0e-4fa9-893e-eec609f39802",
+                "characterization_to_storage-8b5efd23-427e-4562-8559-eeff6f82b728"
+            ],
+            "sample": "sample2",
+            "start": 1095,
+            "task": "storage_to_characterization"
+        },
+        {
+            "details": "",
+            "id": "characterize-bb60e9d2-3e00-46ed-afe1-1dec8bd8add9",
+            "precedents": [
+                "storage_to_characterization-fb7d2663-ec5b-47c0-8fe0-986e50a1385b"
+            ],
+            "sample": "sample2",
+            "start": 1120,
+            "task": "characterize"
+        },
+        {
+            "details": "",
+            "id": "characterization_to_storage-63ca8956-7d75-4ad4-bc61-e226ebe78694",
+            "precedents": [
+                "characterize-bb60e9d2-3e00-46ed-afe1-1dec8bd8add9"
+            ],
+            "sample": "sample2",
+            "start": 1320,
+            "task": "characterization_to_storage"
+        },
+        {
+            "details": "",
+            "id": "storage_to_characterization-244ad159-b978-4057-a917-d27cb56c0576",
+            "precedents": [
+                "cooldown-0b617c93-6c39-4402-baea-ca8a17254da1",
+                "characterization_to_storage-63ca8956-7d75-4ad4-bc61-e226ebe78694"
+            ],
+            "sample": "sample3",
+            "start": 1345,
+            "task": "storage_to_characterization"
+        },
+        {
+            "details": "",
+            "id": "characterize-63d6b58a-7e7b-4169-ba07-972a5903cde9",
+            "precedents": [
+                "storage_to_characterization-244ad159-b978-4057-a917-d27cb56c0576"
+            ],
+            "sample": "sample3",
+            "start": 1370,
+            "task": "characterize"
+        },
+        {
+            "details": "",
+            "id": "characterization_to_storage-19fd128e-43f5-4507-861f-cc48b863b534",
+            "precedents": [
+                "characterize-63d6b58a-7e7b-4169-ba07-972a5903cde9"
+            ],
+            "sample": "sample3",
+            "start": 1570,
+            "task": "characterization_to_storage"
+        }
+    ]
+}

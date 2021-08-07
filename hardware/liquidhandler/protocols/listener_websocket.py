@@ -4,6 +4,7 @@ import json
 import time
 import ntplib
 from threading import Thread
+from opentrons import types
 
 # import nest_asyncio
 
@@ -22,8 +23,7 @@ class ListenerWebsocket:
         self,
         protocol_context,
         tips,
-        stocks,
-        mixing,
+        labwares,
         spincoater,
         ip="0.0.0.0",
         port=8764,
@@ -39,14 +39,16 @@ class ListenerWebsocket:
         self.completed_tasks = {}
         self.status = STATUS_IDLE
         self.tips = tips
-        self.stocks = stocks
-        self.mixing = mixing  # TODO intermediate mixing wells
-        self._sources = {**self.stocks, **self.mixing}
+        self._sources = labwares
 
         self.spincoater = spincoater
         self.CHUCK = "A1"
         self.STANDBY = "B1"
-
+        self.CLEARCHUCKPOSITION = (
+            150,
+            100,
+            100,
+        )  # mm, 0,0,0 = front left floor corner of gantry volume.
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", mount=side, tip_racks=self.tips
@@ -81,8 +83,7 @@ class ListenerWebsocket:
                 response = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
-        t_local = time.time()
-        self.__local_nist_offset = response.tx_time - t_local
+        self.__local_nist_offset = response.tx_time - time.time()
 
     def nist_time(self):
         return time.time() + self.__local_nist_offset
@@ -127,13 +128,21 @@ class ListenerWebsocket:
             self.status = STATUS_IDLE
 
             self.completed_tasks[task["taskid"]] = self.nist_time()
+            task["finished_event"].set()
             # print(f"{task['taskid']} ({task['task']}) finished")
 
     async def __process_task(self, task, websocket):
         # print(f"> received new task {task['taskid']}")
         time = task.pop("nist_time")
-        ot2 = {"acknowledged": task["taskid"]}
+        task["finished_event"] = asyncio.Event()
         await self.q.put((time, task))
+
+        ot2 = {"acknowledged": task["taskid"]}
+        await websocket.send(json.dumps(ot2))
+
+        await task["finished_event"].wait()
+
+        ot2 = {"completed": self.completed_tasks}
         await websocket.send(json.dumps(ot2))
 
     async def __update_status(self, websocket):
@@ -187,6 +196,7 @@ class ListenerWebsocket:
             "aspirate_both_for_spincoating": self.aspirate_both_for_spincoating,
             "dispense_onto_chuck": self.dispense_onto_chuck,
             "stage_for_dispense": self.stage_for_dispense,
+            "clear_chuck": self.clear_chuck,
             "cleanup": self.cleanup,
         }
 
@@ -282,6 +292,13 @@ class ListenerWebsocket:
         # p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         p.blow_out()
 
+    def clear_chuck(self):
+        self.pipettes["right"].move_to(
+            location=types.Location(
+                point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
+            )
+        )
+
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""
         for p in self.pipettes.values():
@@ -305,34 +322,36 @@ def run(protocol_context):
         protocol_context.load_labware(
             "sartorius_safetyspace_tiprack_200ul", location=location
         )
-        for location in ["8"]
+        for location in ["7", "10"]
     ]
 
     # note that each stock tray name must match the names from experiment designer!
-    stocks = {
-        "StockTray1": protocol_context.load_labware(
-            "frg_12_wellplate_15000ul", location="9"
-        )
+    labwares = {
+        "96_Plate1": protocol_context.load_labware(
+            "greiner_96_wellplate_360ul", location="5"
+        ),
+        "4mL_Tray1": protocol_context.load_labware(
+            "frg_24_wellplate_4000ul", location="1"
+        ),
+        "15mL_Tray1": protocol_context.load_labware(
+            "frg_12_wellplate_15000ul", location="8"
+        ),
     }
 
-    wellplates = {
-        "Plate1": protocol_context.load_labware(
-            "greiner_96_wellplate_360ul", location="6"
-        )
-    }
+    # spincoater
+    spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
         tips=tips,
-        stocks=stocks,
-        mixing=wellplates,
-        spincoater=protocol_context.load_labware("frg_spincoater_v1", location="3"),
+        labwares=labwares,
+        spincoater=spincoater,
     )
 
     # each piece of labware has to be involved in some dummy moves to be included in protocol
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
-        for name, labware in {**stocks, **wellplates}.items():
+        for name, labware in labwares.items():
             p.move_to(labware["A1"].top(30))
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
     listener.pipettes["right"].move_to(tips[0]["A1"].top(10))

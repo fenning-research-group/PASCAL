@@ -19,26 +19,36 @@ class OT2:
     def __init__(self):
         self.server = OT2Server()
         self.server.start()
+        self.POLLINGRATE = 0.1
+        self.DISPENSE_DELAY = 1  # time (seconds) between initiating a dispense and the completion of the dispense
+        self.ASPIRATION_DELAY = (
+            22.5  # time (seconds) to perform an aspiration and stage the pipette
+        )
+        self.STAGING_DELAY = (
+            1.5  # time (seconds) to move pipette into position for drop staging
+        )
 
-    def drop_perovskite(self, **kwargs):
-        self.server.add_to_queue(
+    def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
             pipette="perovskite",
             # height=height,
             # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        return taskid
 
-    def drop_antisolvent(self, **kwargs):
-        self.server.add_to_queue(
+    def drop_antisolvent(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
             pipette="antisolvent",
-            # height=height,
-            # rate=rate,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        return taskid
 
     def aspirate_for_spincoating(
         self,
@@ -49,10 +59,14 @@ class OT2:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        taskid=None,
+        nist_time=None,
         **kwargs,
     ):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="aspirate_for_spincoating",
+            taskid=taskid,
+            nist_time=nist_time,
             tray=tray,
             well=well,
             volume=volume,
@@ -62,7 +76,7 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        return taskid
 
     def aspirate_both_for_spincoating(
         self,
@@ -75,10 +89,14 @@ class OT2:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        taskid=None,
+        nist_time=None,
         **kwargs,
     ):
-        self.server.add_to_queue(
+        taskid = self.server.add_to_queue(
             task="aspirate_both_for_spincoating",
+            taskid=taskid,
+            nist_time=nist_time,
             psk_tray=psk_tray,
             psk_well=psk_well,
             psk_volume=psk_volume,
@@ -90,26 +108,54 @@ class OT2:
             touch_tip=touch_tip,
             **kwargs,
         )
-        self._wait_for_task_complete()
+        return taskid
 
-    def stage_perovskite(self):
-        self.server.add_to_queue(task="stage_for_dispense", pipette="perovskite")
-        self._wait_for_task_complete()
+    def stage_perovskite(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="stage_for_dispense",
+            taskid=taskid,
+            nist_time=nist_time,
+            pipette="perovskite",
+            **kwargs,
+        )
+        return taskid
 
-    def stage_antisolvent(self):
-        self.server.add_to_queue(task="stage_for_dispense", pipette="antisolvent")
-        self._wait_for_task_complete()
+    def stage_antisolvent(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="stage_for_dispense",
+            taskid=taskid,
+            nist_time=nist_time,
+            pipette="antisolvent",
+            **kwargs,
+        )
+        return taskid
 
-    def cleanup(self):
-        self.server.add_to_queue(task="cleanup")
-        self._wait_for_task_complete()
+    def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="clear_chuck",
+            taskid=taskid,
+            nist_time=nist_time,
+            **kwargs,
+        )
+        return taskid
+
+    def cleanup(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="cleanup",
+            taskid=taskid,
+            nist_time=nist_time,
+            **kwargs,
+        )
+        return taskid
 
     # def end(self):
     #     self.server.add_to_queue(task="None", all_done="all_done")
 
-    def _wait_for_task_complete(self):
-        while len(self.server.pending_tasks) > 0:
-            time.sleep(self.server.POLLINGRATE)
+    def wait_for_task_complete(self, taskid):
+        while taskid not in self.server.completed_tasks:
+            time.sleep(self.POLLINGRATE)
+        # while taskid not in self.server.completed_tasks:
+        #     time.sleep(self.server.POLLINGRATE)
         # while self.server.OT2_status == 0:  # wait for task to be acknowledged by ot2
         #     time.sleep(self.INTERVAL)
         # while self.server.OT2_status != 0:  # wait for task to be marked complete by ot2
@@ -127,7 +173,7 @@ class OT2Server:
         self.port = constants["liquidhandler"]["server"]["port"]
         self.pending_tasks = []
         self.completed_tasks = {}
-        self.POLLINGRATE = 3  # seconds between status checks to OT2
+        self.POLLINGRATE = 1  # seconds between status checks to OT2
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -146,7 +192,9 @@ class OT2Server:
 
     ### Server Methods
     async def __connect_to_websocket(self):
-        self.websocket = await websockets.connect(self.uri)
+        self.websocket = await websockets.connect(
+            self.uri, ping_interval=20, ping_timeout=300
+        )
 
     async def _start_workers(self):
         # self.localloop.run_forever()
@@ -180,7 +228,7 @@ class OT2Server:
                 time.sleep(0.2)  # wait to connect
             self.connected = True
             self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
-            self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
+            # self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
             # self.loop.call_soon_threadsafe(self.worker)
             # self.loop.call_soon_threadsafe(self.checker)
             # self.loop.run_until_complete(self.__connect_to_websocket())
@@ -216,7 +264,7 @@ class OT2Server:
     def stop(self):
         # self.mark_completed()
         self.connected = False
-        asyncio.gather(self._worker, self._checker)
+        # asyncio.gather(self._worker, self._checker)
         # asyncio.
         self.loop.close()
         self.thread.join()
@@ -255,14 +303,10 @@ class OT2Server:
         # asyncio.run_coroutine_threadsafe(self.__add_task(task), self.loop)
 
     def add_to_queue(self, task, taskid=None, nist_time=None, *args, **kwargs):
-        if taskid in kwargs:
-            taskid = kwargs.pop("taskid")
-        else:
+        if taskid is None:
             taskid = str(uuid.uuid4())
 
-        if nist_time in kwargs:
-            nist_time = kwargs.pop("nist_time")
-        else:
+        if nist_time is None:
             nist_time = self.nist_time()
 
         task = {
@@ -275,6 +319,7 @@ class OT2Server:
             }
         }
         self._add_task(task)
+        return taskid
 
     def status_update(self):
         maestro = {"status": 0}

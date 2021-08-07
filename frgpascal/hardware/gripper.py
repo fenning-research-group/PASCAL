@@ -46,7 +46,7 @@ class Gripper:
         self.currentwidth = self.MINWIDTH
         self.currentpwm = self.MINPWM
         self.connect()  # connect to gripper by default
-        self.close()  # close gripper by default
+        # self.close()  # close gripper by default
         # self.write(f"S{self.MINPWM} {self.SLOWGRIPPERINTERVAL}")
 
     def connect(self):

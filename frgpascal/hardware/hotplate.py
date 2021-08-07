@@ -17,7 +17,12 @@ HOTPLATE_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "hotplates")
 AVAILABLE_VERSIONS = {
     os.path.splitext(f)[0]: os.path.join(HOTPLATE_VERSIONS_DIR, f)
     for f in os.listdir(HOTPLATE_VERSIONS_DIR)
+    if ".yaml" in f
 }
+
+
+def available_versions(self):
+    return AVAILABLE_VERSIONS
 
 
 class HotPlate(Workspace):
@@ -37,27 +42,74 @@ class HotPlate(Workspace):
             p0=p0,
             **workspace_kwargs,
         )
+        xmean = np.mean([p[0] for p in self._coordinates.values()])
+        ymean = np.mean([p[1] for p in self._coordinates.values()])
+        self._centerproximity = {
+            slot: np.linalg.norm([p[0] - xmean, p[1] - ymean])
+            for slot, p in self._coordinates.items()
+        }
 
         self.TLIM = (constants["temperature_min"], constants["temperature_max"])
-
         # only consider slots with blanks loaded
         self.slots = {
             slotname: {"coordinates": coord, "payload": None}
             for slotname, coord in self._coordinates.items()
         }
+        self.emptyslots = list(self.slots.keys())
+        self.filledslots = []
         self._capacity = len(self.slots)
         self.full = False
 
+        xmean = np.mean([p[0] for p in self._coordinates.values()])
+        ymean = np.mean([p[1] for p in self._coordinates.values()])
+        self._centerproximity = {
+            slot: np.linalg.norm([p[0] - xmean, p[1] - ymean])
+            for slot, p in self._coordinates.items()
+        }
+
     def get_open_slot(self):
-        openslot = None
-        for i, (slot, v) in enumerate(self.slots.items()):
-            if v["payload"] is None:
-                openslot = slot
-                break
-        if i + 1 == self._capacity or openslot is None:
-            self.full = True
-            return None
-        return openslot
+        if len(self.emptyslots) == 0:
+            raise ValueError("No empty slots!")
+
+        centerproximity = [self._centerproximity[slot] for slot in self.emptyslots]
+        closest_slot_to_center = [
+            slot for _, slot in sorted(zip(centerproximity, self.emptyslots))
+        ][0]
+        return closest_slot_to_center
+
+    def load(self, slot, sample):
+        if slot not in self.slots:
+            raise ValueError(f"{slot} is an invalid slot!")
+        elif slot in self.filledslots:
+            raise ValueError(f"{slot} is already filled!")
+        else:
+            self.slots[slot]["payload"] = sample
+            self.emptyslots.remove(slot)
+            self.filledslots.append(slot)
+
+    def unload(self, slot=None, sample=None):
+        if sample is not None:
+            found_sample = False
+            for k, v in self.slots.items():
+                if v["payload"] == sample:
+                    found_sample = True
+                    slot = k
+            if not found_sample:
+                raise ValueError(
+                    f"Sample {sample.name} is not currently on the hotplate!"
+                )
+        else:
+            if slot is None:
+                raise ValueError("No slot defined?")
+            if slot not in self.slots:
+                raise ValueError(f"{slot} is an invalid slot!")
+            elif slot in self.emptyslots:
+                raise ValueError(f"{slot} is already empty!")
+
+        self.slots[slot]["payload"] = None
+        self.filledslots.remove(slot)
+        self.emptyslots.append(slot)
+        return sample
 
     def _load_version(self, version):
         if version not in AVAILABLE_VERSIONS:

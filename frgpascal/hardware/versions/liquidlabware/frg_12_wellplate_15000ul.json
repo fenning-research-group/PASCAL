@@ -1,0 +1,187 @@
+{
+    "ordering": [
+        [
+            "A1",
+            "B1",
+            "C1"
+        ],
+        [
+            "A2",
+            "B2",
+            "C2"
+        ],
+        [
+            "A3",
+            "B3",
+            "C3"
+        ],
+        [
+            "A4",
+            "B4",
+            "C4"
+        ]
+    ],
+    "brand": {
+        "brand": "3x4x15mL",
+        "brandId": [
+            "FRG_Rishi"
+        ]
+    },
+    "metadata": {
+        "displayName": "3x4x15mL 12 Well Plate 15000 µL",
+        "displayCategory": "wellPlate",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127,
+        "yDimension": 85,
+        "zDimension": 70.18
+    },
+    "wells": {
+        "A1": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 18.88,
+            "y": 69.26,
+            "z": 1.38
+        },
+        "B1": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 18.88,
+            "y": 42.26,
+            "z": 1.38
+        },
+        "C1": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 18.88,
+            "y": 15.26,
+            "z": 1.38
+        },
+        "A2": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 48.88,
+            "y": 69.26,
+            "z": 1.38
+        },
+        "B2": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 48.88,
+            "y": 42.26,
+            "z": 1.38
+        },
+        "C2": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 48.88,
+            "y": 15.26,
+            "z": 1.38
+        },
+        "A3": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 78.88,
+            "y": 69.26,
+            "z": 1.38
+        },
+        "B3": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 78.88,
+            "y": 42.26,
+            "z": 1.38
+        },
+        "C3": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 78.88,
+            "y": 15.26,
+            "z": 1.38
+        },
+        "A4": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 108.88,
+            "y": 69.26,
+            "z": 1.38
+        },
+        "B4": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 108.88,
+            "y": 42.26,
+            "z": 1.38
+        },
+        "C4": {
+            "depth": 68.8,
+            "totalLiquidVolume": 15000,
+            "shape": "circular",
+            "diameter": 11.5,
+            "x": 108.88,
+            "y": 15.26,
+            "z": 1.38
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "wellBottomShape": "flat"
+            },
+            "wells": [
+                "A1",
+                "B1",
+                "C1",
+                "A2",
+                "B2",
+                "C2",
+                "A3",
+                "B3",
+                "C3",
+                "A4",
+                "B4",
+                "C4"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "frg_12_wellplate_15000ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}

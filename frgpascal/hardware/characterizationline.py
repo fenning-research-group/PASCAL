@@ -10,14 +10,16 @@ from tifffile import imwrite
 import csv
 
 from frgpascal.hardware.helpers import get_port
-from frgpascal.hardware.thorcam import ThorcamHost
+from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import Switchbox
+from frgpascal.hardware.shutter import Shutter
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
+
 
 ## Line Methods
 class CharacterizationLine:
@@ -26,7 +28,10 @@ class CharacterizationLine:
     def __init__(self, rootdir, gantry):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
+        if not os.path.exists(self.rootdir):
+            os.mkdir(self.rootdir)
         self.switchbox = Switchbox()
+        self.shutter = Shutter()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
             camid=constants["darkfield"]["cameraid"]
@@ -34,6 +39,7 @@ class CharacterizationLine:
         self.brightfieldcamera = self.camerahost.spawn_camera(
             camid=constants["brightfield"]["cameraid"]
         )
+        # self.spectrometer = Spectrometer()
         self.spectrometer = Spectrometer()
 
         # all characterization stations (in order of measurement!)
@@ -66,21 +72,31 @@ class CharacterizationLine:
                 position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
                 spectrometer=self.spectrometer,
-                shutter=self.switchbox.Switch(constants["transmission"]["switchindex"]),
+                shutter=self.shutter,
             ),
             PLSpectroscopy(
-                position=constants["pl"]["position"],
+                position=constants["pl_red"]["position"],
                 rootdir=self.rootdir,
+                subdir="PL_635",
                 spectrometer=self.spectrometer,
-                lightswitch=self.switchbox.Switch(constants["pl"]["switchindex"]),
+                shutter=self.shutter,
+                lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
+            ),
+            PLSpectroscopy(
+                position=constants["pl_blue"]["position"],
+                rootdir=self.rootdir,
+                subdir="PL_405",
+                spectrometer=self.spectrometer,
+                shutter=self.shutter,
+                lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
         ]
 
-    def run(self, sample):
+    def run(self, samplename):
         """Pass a sample down the line and measure at each station"""
         for s in self.stations:
             self.axis.moveto(s.position)
-            s.run(sample=sample)  # combines measure + save methods
+            s.run(sample=samplename)  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
 
 
@@ -152,6 +168,7 @@ class CharacterizationAxis:
             raise Exception(
                 f"Need to calibrate characterization axis position before use!"
             )
+        self.movetotransfer()
         return self.coordinates
 
     # gantry transfer position calibration methods
@@ -179,10 +196,11 @@ class CharacterizationAxis:
         self.__calibrated = True
 
     def set_defaults(self):
+        self.write("M501")  # load settings from EEPROM
         self.write("G90")  # absolute coordinate system
-        self.write(
-            "M92 X320.00"  # TODO Set default values here
-        )  # set steps/mm, randomly resets to defaults sometimes idk why
+        # self.write(
+        #     "M92 X320.00"  # TODO Set default values here
+        # )  # set steps/mm, randomly resets to defaults sometimes idk why
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -221,11 +239,12 @@ class CharacterizationAxis:
             raise Exception(
                 "Stage has not been homed! Home with self.gohome() before moving please."
             )
-
         if x > self.XLIM[1] or x < self.XLIM[0]:
             raise Exception(f"Invalid move - {x:.2f} is out of bounds")
 
         self.__targetposition = x
+        if self.__targetposition == self.position:
+            return False  # already at target position
         return True
 
     def moveto(self, x: float):
@@ -277,6 +296,9 @@ class CharacterizationAxis:
                     break
         self.position = x
 
+    def movetotransfer(self):
+        self.moveto(self.TRANSFERPOSITION)
+
 
 ### Station Methods
 
@@ -322,6 +344,7 @@ class DarkfieldImaging(StationTemplate):
         self.lightswitch = lightswitch
 
     def capture(self):
+        self.camera.exposure = 5e4  # 50 ms dwell time, in microseconds
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
@@ -333,7 +356,7 @@ class DarkfieldImaging(StationTemplate):
 
 
 class PLImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
+    def __init__(self, position, rootdir, camera: Thorcam, lightswitch):
         savedir = os.path.join(rootdir, "PLImaging")
 
         super().__init__(position=position, savedir=savedir)
@@ -341,6 +364,7 @@ class PLImaging(StationTemplate):
         self.lightswitch = lightswitch
 
     def capture(self):
+        self.camera.exposure = 5e5  #  dwell time, in microseconds
         self.lightswitch.on()
         time.sleep(1)  # takes a little longer for PL lamp to turn on
         img = self.camera.capture()
@@ -367,7 +391,7 @@ class BrightfieldImaging(StationTemplate):
         return img
 
     def save(self, img, sample):
-        fname = f"{sample}_darkfield.tif"
+        fname = f"{sample}_brightfield.tif"
         imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
 
 
@@ -380,9 +404,10 @@ class TransmissionSpectroscopy(StationTemplate):
         self.shutter = shutter
 
     def capture(self):
-        self.shutter.on()  # opens the shutter
+        self.shutter.top_left()  # moves longpass filter out of the transmitted path
+        self.shutter.bottom_left()  # moves shutter out of the way, puts ND filter in incident path
         spectrum = self.spectrometer.capture()  # TODO - make this the HDR capture
-        self.shutter.off()  # closes the shutter
+        self.shutter.bottom_right()  # closes the shutter
         return spectrum
 
     def save(self, spectrum, sample):
@@ -395,17 +420,40 @@ class TransmissionSpectroscopy(StationTemplate):
 
 
 class PLSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, spectrometer, lightswitch):
-        savedir = os.path.join(rootdir, "PL")
+    def __init__(self, position, rootdir, subdir, spectrometer, lightswitch, shutter):
+        savedir = os.path.join(rootdir, subdir)
 
         super().__init__(position=position, savedir=savedir)
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
+        self.shutter = shutter
+        self.hdrdwelltimes = [100, 250, 500, 1000]  # ms
 
     def capture(self):
-        self.lightswitch.on()
-        spectrum = self.spectrometer.capture()
-        self.lightswitch.off()
+        """
+        captures high-depth resolution (HDR) PL spectrum with a few increasing dwell times.
+        data at each wavelength uses the longest dwell time that didnt blow out the detector
+        """
+        self.shutter.top_right()  # moves longpass filter into the detector path
+        self.shutter.bottom_right()  # closes shutter to block transmission lamp
+        self.lightswitch.on()  # turn on the laser
+
+        threshold = (2 ** 16) * 0.95  # a little below 16 bit depth of camera
+        for idx, dwell in enumerate(self.hdrdwelltimes):
+            self.spectrometer.integrationtime = dwell  # ms
+            spectrum = self.spectrometer.capture()
+            wl = spectrum[:, 0]
+            cts = spectrum[:, 1]  # raw counts
+            cps = cts / (dwell / 1000)  # counts per second
+            if idx == 0:
+                cps_hdr = cps
+            mask = cts <= threshold  # data that isnt peaking
+            cps_hdr[mask] = cps[
+                mask
+            ]  # fill in wavelengths that arent saturated on detector
+
+        self.lightswitch.off()  # turn off the laser
+        spectrum = np.vstack([wl, cps_hdr]).T  # build back into an nx2 spectrum array
         return spectrum
 
     def save(self, spectrum, sample):
