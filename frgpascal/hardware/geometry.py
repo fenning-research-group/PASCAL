@@ -37,9 +37,6 @@ class CoordinateMapper:
         p[2] = self.zinterp(p[:2])
         pmap = p - self.xyoffset
 
-        # z interpolated to nan if all z points are 0 during calibration. nice tramming!
-        # if np.isnan(pmap[2]):
-        #     pmap[2] = 0
         return pmap
 
 
