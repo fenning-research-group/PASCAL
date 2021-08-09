@@ -75,7 +75,7 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
 
     # save calibration
     with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
-        out = {"p0": points_source_meas, "p1": points.tolist()}
+        out = {"p0": points_source_meas, "p1": np.asarray(points).round(2).tolist()}
         yaml.dump(out, f)
 
     return CoordinateMapper(p0=points_source_meas, p1=points)

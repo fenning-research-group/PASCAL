@@ -160,7 +160,7 @@ class SpinCoater:
         return ValueError("No response from vacuum solenoid control arduino!")
 
     def vacuum_on(self):
-        self.arduino.write(b"h")  # send command to engage/open vacuum solenoid
+        self.arduino.write(b"h\n")  # send command to engage/open vacuum solenoid
         self._wait_for_arduino()
 
     def vacuum_off(self):

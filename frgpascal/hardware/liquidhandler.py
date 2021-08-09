@@ -272,7 +272,7 @@ class OT2Server:
 
     def _update_completed_tasklist(self, tasklist):
         for taskid, nisttime in tasklist.items():
-            print(f"{taskid} completed at {nisttime}")
+            # print(f"{taskid} completed at {nisttime}")
             if taskid in self.pending_tasks:
                 self.pending_tasks.remove(taskid)
         self.completed_tasks.update(tasklist)
@@ -282,7 +282,7 @@ class OT2Server:
             ot2 = json.loads(await self.websocket.recv())
             # print(f"maestro recieved {ot2}")
             if "acknowledged" in ot2:
-                print(f'{ot2["acknowledged"]} acknowledged by OT2')
+                # print(f'{ot2["acknowledged"]} acknowledged by OT2')
                 self.pending_tasks.append(ot2["acknowledged"])
             if "completed" in ot2:
                 self._update_completed_tasklist(ot2["completed"])
@@ -294,7 +294,7 @@ class OT2Server:
             await self.websocket.send(json.dumps(maestro))
 
     async def __add_task(self, task):
-        print(task)
+        # print(task)
         await self.websocket.send(json.dumps(task))
 
     def _add_task(self, task):

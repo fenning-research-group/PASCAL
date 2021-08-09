@@ -94,6 +94,7 @@ class Gantry:
         del self._handle
 
     def set_defaults(self):
+        self.write("M501")  # load defaults from EEPROM
         self.write("G90")  # absolute coordinate system
         # self.write(
         #     "M92 X26.667 Y26.667 Z200.0"
@@ -102,10 +103,13 @@ class Gantry:
         #     "M92 X53.333 Y53.333 Z200.0"
         # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
+            "M906 X800 Y800 Z800 E1"
+        )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
+        self.write(
             "M84 S0"
         )  # disable stepper timeout, steppers remain engaged all the time
         self.write(
-            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z15.00"
+            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max
 
