@@ -7,6 +7,8 @@ import yaml
 import json
 import ntplib
 import asyncio
+import datetime
+import logging
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -34,12 +36,13 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
+ROOTDIR = ("C:\\Users\\Admin\\Desktop\\PASCAL Runs",)
+
 
 class Maestro:
     def __init__(
         self,
         samplewidth: float = 10,
-        rootdir="C:\\Users\\Admin\\Desktop\\dummyexperiment",
     ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
@@ -64,7 +67,7 @@ class Maestro:
         self.gripper = Gripper()
         self.spincoater = SpinCoater(gantry=self.gantry)
         self.characterization = CharacterizationLine(
-            gantry=self.gantry, rootdir=rootdir
+            gantry=self.gantry, rootdir=ROOTDIR
         )
         self.liquidhandler = OT2()
 
@@ -97,14 +100,6 @@ class Maestro:
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
-
-        self.workers = {
-            "gantry_gripper": Worker_GantryGripper(self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(self),
-            "characterization": Worker_Characterization(self),
-            "hotplates": Worker_Hotplate(self, n_workers=25),
-            "storage": Worker_Storage(self, n_workers=45),
-        }
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -222,7 +217,7 @@ class Maestro:
         self.gripper.close()  # fully close gripper to reduce servo strain
 
     ### Batch Sample Execution
-    def load_netlist(self, filepath):
+    def _load_netlist(self, filepath):
         with open(filepath) as f:
             netlist = json.load(f)
         self.tasks = netlist["tasks"]
@@ -245,13 +240,42 @@ class Maestro:
         # self.loop = asyncio.new_event_loop()
         # self.loop.set_debug(True)
 
-    def run(self, filepath):
+    def _set_up_experiment_folder(self, name):
+        todays_date = datetime.datetime.now().strftime("%Y%m%d")
+        folder_name = f"{todays_date}_{name}"
+        folder = os.path.join(ROOTDIR, folder_name)
+        os.mkdir(folder)
+        for station in self.characterization.stations:
+            station.set_directory(rootdir=folder)
+        self.experiment_folder = folder
+        logging.basicConfig(
+            filename=f"{folder_name}.log",
+            level=logging.DEBUG,
+            format="%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+        )
+
+    def run(self, filepath, name):
         speedup_factor = 1
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
         self.lock_completedtasks = Lock()
-        self.load_netlist(filepath)
+        self._load_netlist(filepath)
+        self._set_up_experiment_folder(name)
+
+        self.workers = {
+            "gantry_gripper": Worker_GantryGripper(self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(self),
+            "characterization": Worker_Characterization(self),
+            "hotplates": Worker_Hotplate(
+                self, n_workers=25
+            ),  # TODO dont hardcode hotplate workers
+            "storage": Worker_Storage(
+                self, n_workers=45
+            ),  # TODO dont hardcode storage workers
+        }
+
         self._start_loop()
         # self.loop = asyncio.new_event_loop()
         # self.loop.set_debug(True)
