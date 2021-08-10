@@ -1,5 +1,5 @@
-# from termios import error
 import os
+import sys
 from threading import Thread, Lock
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -253,12 +253,20 @@ class Maestro:
         fh = logging.FileHandler(
             os.path.join(self.experiment_folder, f"{folder_name}.log")
         )
-        formatter = logging.Formatter(
+        sh = logging.StreamHandler(sys.stdout)
+        sh.setLevel(logging.INFO)
+        fh_formatter = logging.Formatter(
             "%(asctime)s %(levelname)s: %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        fh.setFormatter(formatter)
+        sh_formatter = logging.Formatter(
+            "%(asctime)s %(message)s",
+            datefmt="%I:%M:%S",
+        )
+        fh.setFormatter(fh_formatter)
+        sh.setFormatter(sh_formatter)
         self.logger.addHandler(fh)
+        self.logger.addHandler(sh)
 
     def run(self, filepath, name):
         speedup_factor = 1
