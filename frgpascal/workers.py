@@ -20,6 +20,7 @@ import logging
 
 class WorkerTemplate(ABC):
     def __init__(self, maestro, n_workers=1):
+        self.logger = logging.getLogger("PASCAL")
         self.maestro = maestro
         self.gantry = maestro.gantry
         self.gripper = maestro.gripper
@@ -86,7 +87,7 @@ class WorkerTemplate(ABC):
                         break
                     else:
                         if first:
-                            logging.info(
+                            self.logger.info(
                                 f"waiting for precedents of {task_description}"
                             )
                         await asyncio.sleep(self.POLLINGRATE)
@@ -95,7 +96,7 @@ class WorkerTemplate(ABC):
             # wait for this task's target start time
             wait_for = task["start"] - (self.maestro.nist_time() - self.maestro.t0)
             if wait_for > 0:
-                logging.info(
+                self.logger.info(
                     f"waiting {wait_for} seconds for {task_description} start time"
                 )
                 await asyncio.sleep(wait_for)
@@ -110,20 +111,22 @@ class WorkerTemplate(ABC):
             sample_task["start_actual"] = self.maestro.nist_time() - self.maestro.t0
             function = self.functions[task["task"]]
             if asyncio.iscoroutinefunction(function):
-                logging.info(f"executing {task_description} as coroutine")
-                future = function(sample)
+                self.logger.info(f"executing {task_description} as coroutine")
+                await function(sample)
             else:
-                logging.info(f"executing {task_description} as thread")
+                self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(self.maestro.threadpool, function, sample)
                 )
-            await future
-            if future.exception() is not None:
-                logging.error(f"{task_description} failed: {future.exception()}")
+                await future
+                if future.exception() is not None:
+                    self.logger.error(
+                        f"{task_description} failed: {future.exception()}"
+                    )
 
             # update task lists
             sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
-            logging.info(f"finished {task_description}")
+            self.logger.info(f"finished {task_description}")
             with self.maestro.lock_completedtasks:
                 self.maestro.completed_tasks[task["id"]] = (
                     self.maestro.nist_time() - self.maestro.t0

@@ -68,7 +68,7 @@ hotplate:
 liquidhandler:
   pollingrate: 0.5 #delay (seconds) between checks for new commands to push to liquid handler server
   server:
-    ip: '169.254.167.78' #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    ip: '169.254.160.20' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
 
 sampletray:

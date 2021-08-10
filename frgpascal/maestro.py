@@ -36,7 +36,7 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
-ROOTDIR = ("C:\\Users\\Admin\\Desktop\\PASCAL Runs",)
+ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL Runs"
 
 
 class Maestro:
@@ -52,6 +52,7 @@ class Maestro:
         """
 
         # Constants
+        self.logger = logging.getLogger("PASCAL")
         self.SAMPLEWIDTH = samplewidth  # mm
         self.SAMPLETOLERANCE = constants["gripper"][
             "extra_opening_width"
@@ -84,7 +85,7 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="SampleTray1",
-                version="storage_v1",  # TODO #3
+                version="storage_v3",  # TODO #3
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p0"],
@@ -248,12 +249,16 @@ class Maestro:
         for station in self.characterization.stations:
             station.set_directory(rootdir=folder)
         self.experiment_folder = folder
-        logging.basicConfig(
-            filename=f"{folder_name}.log",
-            level=logging.DEBUG,
-            format="%(asctime)s %(levelname)s: %(message)s",
+        self.logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler(
+            os.path.join(self.experiment_folder, f"{folder_name}.log")
+        )
+        formatter = logging.Formatter(
+            "%(asctime)s %(levelname)s: %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
         )
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
 
     def run(self, filepath, name):
         speedup_factor = 1

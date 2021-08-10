@@ -305,8 +305,6 @@ class CharacterizationAxis:
         self.moveto(self.TRANSFERPOSITION)
 
 
-å
-
 ### Station Methods
 
 
