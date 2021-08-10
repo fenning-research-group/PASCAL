@@ -249,7 +249,7 @@ class Maestro:
             station.set_directory(rootdir=folder)
         self.experiment_folder = folder
         logging.basicConfig(
-            filename=f"{folder_name}.log",
+            filename=os.path.join(folder, f"{folder_name}.log"),
             level=logging.DEBUG,
             format="%(asctime)s %(levelname)s: %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
