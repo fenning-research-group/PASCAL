@@ -83,7 +83,7 @@ class StorageToSpincoater(Task):
             sample=sample,
             task="storage_to_spincoater",
             workers=[gg, sclh],
-            duration=25,
+            duration=33,
             precedents=precedents,
         )
 
@@ -129,7 +129,18 @@ class HotplateToStorage(Task):
             sample=sample,
             task="hotplate_to_storage",
             workers=[gg],
-            duration=25,
+            duration=18,
+            precedents=precedents,
+        )
+
+
+class IdleGantry(Task):
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
+            task="idle_gantry",
+            workers=[gg],
+            duration=20,
             precedents=precedents,
         )
 
@@ -151,7 +162,7 @@ class StorageToCharacterization(Task):
             sample=sample,
             task="storage_to_characterization",
             workers=[gg, cl],
-            duration=25,
+            duration=18,
             precedents=precedents,
         )
 
@@ -162,7 +173,7 @@ class Characterize(Task):
             sample=sample,
             task="characterize",
             workers=[cl],
-            duration=200,
+            duration=75,
             precedents=precedents,
         )
 
@@ -173,7 +184,7 @@ class CharacterizationToStorage(Task):
             sample=sample,
             task="characterization_to_storage",
             workers=[gg, cl],
-            duration=25,
+            duration=18,
             precedents=precedents,
         )
 
@@ -191,8 +202,6 @@ def generate_tasks_for_sample(sample: Sample):
             precedents=[(tasks[-1], False)],  # (task, (bool)immediate)
         )
     )
-
-    tasks[-1]
 
     tasks.append(SpincoaterToHotplate(sample=sample, precedents=[(tasks[-1], True)]))
 

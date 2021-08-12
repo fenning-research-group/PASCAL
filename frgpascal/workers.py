@@ -19,7 +19,7 @@ import logging
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro, n_workers=1):
+    def __init__(self, maestro, n_workers):
         self.logger = logging.getLogger("PASCAL")
         self.maestro = maestro
         self.gantry = maestro.gantry
@@ -138,20 +138,23 @@ class WorkerTemplate(ABC):
 
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "moveto": self.gantry.moveto,
             # "moverel": self.gantry.moverel,
             # "open": self.gripper.open,
             # "close": self.gripper.close,
             # "transfer": self.maestro.transfer,
-            "idle_gantry": self.maestro.idle_gantry,
+            "idle_gantry": self.idle_gantry,
             "storage_to_spincoater": self.storage_to_spincoater,
             "spincoater_to_hotplate": self.spincoater_to_hotplate,
             "hotplate_to_storage": self.hotplate_to_storage,
             "storage_to_characterization": self.storage_to_characterization,
             "characterization_to_storage": self.characterization_to_storage,
         }
+
+    def idle_gantry(self, sample):
+        self.maestro.idle_gantry()
 
     def storage_to_spincoater(self, sample):
         tray, slot = (
@@ -251,7 +254,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
 class Worker_Hotplate(WorkerTemplate):
     def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
             "anneal": self.anneal,
         }
@@ -262,7 +265,7 @@ class Worker_Hotplate(WorkerTemplate):
 
 class Worker_Storage(WorkerTemplate):
     def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
             "cooldown": self.cooldown,
         }
@@ -273,7 +276,7 @@ class Worker_Storage(WorkerTemplate):
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "vacuum_on": self.spincoater.vacuum_on,
             # "vacuum_off": self.spincoater.vacuum_off,
@@ -452,7 +455,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
 class Worker_Characterization(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "moveto": self.characterization.axis.moveto,
             # "moverel": self.characterization.axis.moverel,
