@@ -63,7 +63,7 @@ gripper:
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 
 hotplate:
-  p0: [254,164,72] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p0: [273.4, 217.5, 88] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
 liquidhandler:
   pollingrate: 0.5 #delay (seconds) between checks for new commands to push to liquid handler server
@@ -72,7 +72,7 @@ liquidhandler:
     port: 8764
 
 sampletray:
-  p0: [420,14.2,54.6] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p0: [494.4,17.5,71] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
 spincoater:
   # communication
@@ -83,7 +83,7 @@ spincoater:
       serial_number: '55838333932351108212'
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
-  p0: [6.3, 27.4, 52.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  p0: [4.3, 34.7, 61.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
   rpm_max: 10000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 300 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 10000 #maximum angular acceleration (rpm/s) the spincoater can hit
@@ -104,7 +104,7 @@ characterizationline:
     x_max: 400.0 #max x position (mm)
     x_min: 0     #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
-    p0: [563, 268, 56.7] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    p0: [565, 250.3, 60.1] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
   #hardware shared across stations
   switchbox:
     device_identifiers:

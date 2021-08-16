@@ -9,4 +9,4 @@ numy: 5           #number of slot rows
 z_clearance: 5    #extra z clearance for gantry to use when calibrating positions
 temperature_max: 300  #max temperature (Celsius)
 temperature_min: 30   #min temperature (Celsius)
-testslots: ['E1', 'A3', 'A5', 'B2', 'B4', 'C1', 'C3', 'C5', 'D2', 'D4', 'A1', 'E3', 'E5'] #slots to touch during calibration
+testslots: ['C3', 'A1', 'A3', 'A5', 'B2', 'B4', 'C1', 'C5', 'D2', 'D4', 'E1', 'E3', 'E5'] #slots to touch during calibration

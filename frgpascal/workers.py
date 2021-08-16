@@ -195,8 +195,11 @@ class Worker_GantryGripper(WorkerTemplate):
         p2 = self.hotplates[hotplate_name](slot)
 
         self.maestro.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
         self.spincoater.vacuum_off()
+        off_time = time.time()
+        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+        while time.time() - off_time < 5:  # 5 seconds to release
+            time.sleep(0.1)  # wait for the vacuum to release
         self.maestro.catch()  # pick up the sample. this function checks to see if gripper picks successfully
         self.gantry.moveto(
             x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
