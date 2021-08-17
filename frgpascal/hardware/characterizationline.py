@@ -25,12 +25,12 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir, gantry):
+    def __init__(self, rootdir, gantry, switchbox: Switchbox):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
         if not os.path.exists(self.rootdir):
             os.mkdir(self.rootdir)
-        self.switchbox = Switchbox()
+        self.switchbox = switchbox
         self.shutter = Shutter()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(

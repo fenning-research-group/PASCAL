@@ -6,8 +6,9 @@ import numpy as np
 import os
 import yaml
 import threading
-from .helpers import get_port
-from .gantry import Gantry
+from frgpascal.hardware.helpers import get_port
+from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.switchbox import SingleSwitch
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
@@ -19,11 +20,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class SpinCoater:
-    def __init__(
-        self,
-        gantry: Gantry,
-        port=None,
-    ):
+    def __init__(self, gantry: Gantry, switch: SingleSwitch):
         """Initialize the spincoater control object
 
         Args:
@@ -32,13 +29,14 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
-        if port is None:
-            self.port = get_port(
-                constants["spincoater"]["device_identifiers"]
-            )  # find port to connect to this device.
-        else:
-            self.port = port
-        self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
+        # if port is None:
+        #     self.port = get_port(
+        #         constants["spincoater"]["device_identifiers"]
+        #     )  # find port to connect to this device.
+        # else:
+        #     self.port = port
+        # self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
+        self.switch = switch
         self.ACCELERATIONRANGE = (
             constants["spincoater"]["acceleration_min"],
             constants["spincoater"]["acceleration_max"],
@@ -100,8 +98,8 @@ class SpinCoater:
         self.axis.trap_traj.config.decel_limit = 1
         self.__lock()
         # connect to arduino for vacuum relay control
-        self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
-        print("Connected to vacuum solenoid arduino")
+        # self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        # print("Connected to vacuum solenoid arduino")
 
     def disconnect(self):
         try:
@@ -160,12 +158,14 @@ class SpinCoater:
         return ValueError("No response from vacuum solenoid control arduino!")
 
     def vacuum_on(self):
-        self.arduino.write(b"h\n")  # send command to engage/open vacuum solenoid
-        self._wait_for_arduino()
+        # self.arduino.write(b"h\n")  # send command to engage/open vacuum solenoid
+        self.switch.on()
+        # self._wait_for_arduino()
 
     def vacuum_off(self):
-        self.arduino.write(b"l\n")  # send command to engage/open vacuum solenoid
-        self._wait_for_arduino()
+        # self.arduino.write(b"l\n")  # send command to engage/open vacuum solenoid
+        self.switch.off()
+        # self._wait_for_arduino()
 
     # odrive BLDC motor control methods
     def set_rpm(self, rpm: int, acceleration: float = 1000):

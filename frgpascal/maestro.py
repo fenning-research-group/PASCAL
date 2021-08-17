@@ -1,3 +1,4 @@
+from frgpascal.hardware.switchbox import Switchbox
 import os
 import sys
 from threading import Thread, Lock
@@ -66,9 +67,13 @@ class Maestro:
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
-        self.spincoater = SpinCoater(gantry=self.gantry)
+        self.switchbox = Switchbox()
+        self.spincoater = SpinCoater(
+            gantry=self.gantry,
+            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+        )
         self.characterization = CharacterizationLine(
-            gantry=self.gantry, rootdir=ROOTDIR
+            gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
         )
         self.liquidhandler = OT2()
 

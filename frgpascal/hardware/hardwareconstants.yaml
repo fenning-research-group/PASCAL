@@ -81,6 +81,7 @@ spincoater:
       vid: 9025 #WINDOWS ONLY
       pid: 67 #WINDOWS ONLY
       serial_number: '55838333932351108212'
+  switchindex: "vacuumsolenoid"
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [4.3, 34.7, 61.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
