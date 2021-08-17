@@ -25,12 +25,12 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir, gantry):
+    def __init__(self, rootdir, gantry, switchbox: Switchbox):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
         if not os.path.exists(self.rootdir):
             os.mkdir(self.rootdir)
-        self.switchbox = Switchbox()
+        self.switchbox = switchbox
         self.shutter = Shutter()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
@@ -98,6 +98,11 @@ class CharacterizationLine:
             self.axis.moveto(s.position)
             s.run(sample=samplename)  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
+
+    def set_directory(self, filepath):
+        self.rootdir = filepath
+        for s in self.stations:
+            s.rootdir = filepath
 
 
 class CharacterizationAxis:
@@ -313,11 +318,18 @@ class StationTemplate(ABC):
     template method itself intact.
     """
 
-    def __init__(self, position, savedir):
+    def __init__(self, position, rootdir, subdir):
         self.position = position
-        self.savedir = savedir
-        if not os.path.exists(savedir):
-            os.mkdir(savedir)
+        self._rootdir = rootdir
+        self._subdir = subdir
+        self.set_directory(rootdir, subdir)
+
+    def set_directory(self, rootdir, subdir=None):
+        if subdir is None:
+            subdir = self._subdir
+        self.savedir = os.path.join(rootdir, subdir)
+        if not os.path.exists(self.savedir):
+            os.mkdir(self.savedir)
 
     @abstractmethod
     def capture(self) -> None:
@@ -336,10 +348,8 @@ class StationTemplate(ABC):
 
 
 class DarkfieldImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
-        savedir = os.path.join(rootdir, "Darkfield")
-
-        super().__init__(position=position, savedir=savedir)
+    def __init__(self, position, rootdir, camera, lightswitch, subdir="Darkfield"):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.camera = camera
         self.lightswitch = lightswitch
 
@@ -356,10 +366,10 @@ class DarkfieldImaging(StationTemplate):
 
 
 class PLImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera: Thorcam, lightswitch):
-        savedir = os.path.join(rootdir, "PLImaging")
-
-        super().__init__(position=position, savedir=savedir)
+    def __init__(
+        self, position, rootdir, camera: Thorcam, lightswitch, subdir="PLImaging"
+    ):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.camera = camera
         self.lightswitch = lightswitch
 
@@ -377,10 +387,9 @@ class PLImaging(StationTemplate):
 
 
 class BrightfieldImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
-        savedir = os.path.join(rootdir, "Brightfield")
+    def __init__(self, position, rootdir, camera, lightswitch, subdir="Brightfield"):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
 
-        super().__init__(position=position, savedir=savedir)
         self.camera = camera
         self.lightswitch = lightswitch
 
@@ -396,10 +405,9 @@ class BrightfieldImaging(StationTemplate):
 
 
 class TransmissionSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, spectrometer, shutter):
-        savedir = os.path.join(rootdir, "Transmission")
+    def __init__(self, position, rootdir, spectrometer, shutter, subdir="Transmission"):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
 
-        super().__init__(position=position, savedir=savedir)
         self.spectrometer = spectrometer
         self.shutter = shutter
 
@@ -420,10 +428,10 @@ class TransmissionSpectroscopy(StationTemplate):
 
 
 class PLSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, subdir, spectrometer, lightswitch, shutter):
-        savedir = os.path.join(rootdir, subdir)
-
-        super().__init__(position=position, savedir=savedir)
+    def __init__(
+        self, position, rootdir, spectrometer, lightswitch, shutter, subdir="PL"
+    ):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
         self.shutter = shutter

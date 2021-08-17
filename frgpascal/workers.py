@@ -2,6 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 import time
 from functools import partial
+import logging
 
 # from frgpascal.maestro import Maestro
 
@@ -18,7 +19,8 @@ from functools import partial
 
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro, n_workers=1):
+    def __init__(self, maestro, n_workers):
+        self.logger = logging.getLogger("PASCAL")
         self.maestro = maestro
         self.gantry = maestro.gantry
         self.gripper = maestro.gripper
@@ -85,14 +87,18 @@ class WorkerTemplate(ABC):
                         break
                     else:
                         if first:
-                            print(f"waiting for precedents of {task_description}")
+                            self.logger.info(
+                                f"waiting for precedents of {task_description}"
+                            )
                         await asyncio.sleep(self.POLLINGRATE)
                         first = False
 
             # wait for this task's target start time
             wait_for = task["start"] - (self.maestro.nist_time() - self.maestro.t0)
             if wait_for > 0:
-                print(f"\twaiting {wait_for} seconds for {task_description} start time")
+                self.logger.info(
+                    f"waiting {wait_for} seconds for {task_description} start time"
+                )
                 await asyncio.sleep(wait_for)
 
             # execute this task
@@ -105,17 +111,22 @@ class WorkerTemplate(ABC):
             sample_task["start_actual"] = self.maestro.nist_time() - self.maestro.t0
             function = self.functions[task["task"]]
             if asyncio.iscoroutinefunction(function):
-                print(f"\t\texecuting {task_description} as coro")
+                self.logger.info(f"executing {task_description} as coroutine")
                 await function(sample)
             else:
-                print(f"\t\texecuting {task_description} as thread")
-                await self.loop.run_in_executor(
-                    self.maestro.threadpool, partial(function, sample)
+                self.logger.info(f"executing {task_description} as thread")
+                future = asyncio.gather(
+                    self.loop.run_in_executor(self.maestro.threadpool, function, sample)
                 )
+                await future
+                if future.exception() is not None:
+                    self.logger.error(
+                        f"{task_description} failed: {future.exception()}"
+                    )
 
             # update task lists
             sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
-            print(f"\t\t\tfinished {task_description}")
+            self.logger.info(f"finished {task_description}")
             with self.maestro.lock_completedtasks:
                 self.maestro.completed_tasks[task["id"]] = (
                     self.maestro.nist_time() - self.maestro.t0
@@ -127,20 +138,23 @@ class WorkerTemplate(ABC):
 
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "moveto": self.gantry.moveto,
             # "moverel": self.gantry.moverel,
             # "open": self.gripper.open,
             # "close": self.gripper.close,
             # "transfer": self.maestro.transfer,
-            "idle_gantry": self.maestro.idle_gantry,
+            "idle_gantry": self.idle_gantry,
             "storage_to_spincoater": self.storage_to_spincoater,
             "spincoater_to_hotplate": self.spincoater_to_hotplate,
             "hotplate_to_storage": self.hotplate_to_storage,
             "storage_to_characterization": self.storage_to_characterization,
             "characterization_to_storage": self.characterization_to_storage,
         }
+
+    def idle_gantry(self, sample):
+        self.maestro.idle_gantry()
 
     def storage_to_spincoater(self, sample):
         tray, slot = (
@@ -181,8 +195,11 @@ class Worker_GantryGripper(WorkerTemplate):
         p2 = self.hotplates[hotplate_name](slot)
 
         self.maestro.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
         self.spincoater.vacuum_off()
+        off_time = time.time()
+        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+        while time.time() - off_time < 5:  # 5 seconds to release
+            time.sleep(0.1)  # wait for the vacuum to release
         self.maestro.catch()  # pick up the sample. this function checks to see if gripper picks successfully
         self.gantry.moveto(
             x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
@@ -240,7 +257,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
 class Worker_Hotplate(WorkerTemplate):
     def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
             "anneal": self.anneal,
         }
@@ -251,7 +268,7 @@ class Worker_Hotplate(WorkerTemplate):
 
 class Worker_Storage(WorkerTemplate):
     def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
             "cooldown": self.cooldown,
         }
@@ -262,7 +279,7 @@ class Worker_Storage(WorkerTemplate):
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "vacuum_on": self.spincoater.vacuum_on,
             # "vacuum_off": self.spincoater.vacuum_off,
@@ -441,7 +458,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
 class Worker_Characterization(WorkerTemplate):
     def __init__(self, maestro):
-        super().__init__(maestro=maestro)
+        super().__init__(maestro=maestro, n_workers=1)
         self.functions = {
             # "moveto": self.characterization.axis.moveto,
             # "moverel": self.characterization.axis.moverel,

@@ -44,7 +44,7 @@ class Switchbox:
             12: "9",
             13: "A",
             14: "B",
-            "unused_1": "7",  # relay 8 and 9 are not being used for switchboard
+            "vacuumsolenoid": "7",  # relay 8 and 9 are not being used for switchboard
             "unused_2": "8",
         }
         self.connect()

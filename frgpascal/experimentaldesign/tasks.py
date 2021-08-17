@@ -83,7 +83,7 @@ class StorageToSpincoater(Task):
             sample=sample,
             task="storage_to_spincoater",
             workers=[gg, sclh],
-            duration=25,
+            duration=33,
             precedents=precedents,
         )
 
@@ -94,7 +94,7 @@ class Spincoat(Task):
             sample=sample,
             task="spincoat",
             workers=[sclh],
-            duration=recipe.duration + 45,
+            duration=recipe.duration + 30,
             task_details=recipe.to_dict(),
             precedents=precedents,
         )
@@ -129,7 +129,18 @@ class HotplateToStorage(Task):
             sample=sample,
             task="hotplate_to_storage",
             workers=[gg],
-            duration=25,
+            duration=18,
+            precedents=precedents,
+        )
+
+
+class IdleGantry(Task):
+    def __init__(self, sample, precedents=[], start_time=0):
+        super().__init__(
+            sample=sample,
+            task="idle_gantry",
+            workers=[gg],
+            duration=20,
             precedents=precedents,
         )
 
@@ -151,7 +162,7 @@ class StorageToCharacterization(Task):
             sample=sample,
             task="storage_to_characterization",
             workers=[gg, cl],
-            duration=25,
+            duration=18,
             precedents=precedents,
         )
 
@@ -162,7 +173,7 @@ class Characterize(Task):
             sample=sample,
             task="characterize",
             workers=[cl],
-            duration=200,
+            duration=75,
             precedents=precedents,
         )
 
@@ -173,7 +184,7 @@ class CharacterizationToStorage(Task):
             sample=sample,
             task="characterization_to_storage",
             workers=[gg, cl],
-            duration=25,
+            duration=18,
             precedents=precedents,
         )
 
@@ -191,8 +202,6 @@ def generate_tasks_for_sample(sample: Sample):
             precedents=[(tasks[-1], False)],  # (task, (bool)immediate)
         )
     )
-
-    tasks[-1]
 
     tasks.append(SpincoaterToHotplate(sample=sample, precedents=[(tasks[-1], True)]))
 
@@ -223,7 +232,7 @@ def generate_tasks_for_sample(sample: Sample):
 
 
 class Scheduler:
-    def __init__(self, samples, spanning_tasks=[]):
+    def __init__(self, samples, spanning_tasks=[], enforce_sample_order=False):
         self.workers = workers
         self.samples = samples
         self.tasks = {s: s.tasks for s in samples}
@@ -232,9 +241,9 @@ class Scheduler:
         ]
         self.horizon = int(sum([t.duration for t in self.tasklist]))
         self.spanning_tasks = spanning_tasks
-        self.initialize_model()
+        self.initialize_model(enforce_sample_order=enforce_sample_order)
 
-    def initialize_model(self):
+    def initialize_model(self, enforce_sample_order: bool):
         self.model = cp_model.CpModel()
         ending_variables = []
         machine_intervals = {w: [] for w in self.workers}
@@ -286,6 +295,13 @@ class Scheduler:
                 spanning_tasks[(start_class, end_class)].append(interval)
         for intervals in spanning_tasks.values():
             self.model.AddNoOverlap(intervals)
+
+        ### Force sample order if flagged
+        if enforce_sample_order:
+            for preceding_sample, sample in zip(self.samples, self.samples[1:]):
+                self.model.Add(
+                    sample.tasks[0].start_var > preceding_sample.tasks[0].start_var
+                )
 
         ### Worker Constraints
         for w in workers:
