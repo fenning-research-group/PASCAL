@@ -27,6 +27,10 @@ class Spectrometer:
             2000,
             15000,
         ]  # duration times (ms) for high dynamic range measurements
+        self.HDR_THRESHOLD = (
+            2 ** 16 * 0.95
+        )  # counts above this are considered saturated
+
         print("Connected to spectrometer")
         self.integrationtime = self._hdr_times[0]  # ms
         self.numscans = 1  # one scan per spectrum
@@ -62,25 +66,30 @@ class Spectrometer:
     def capture(self):
         """
         captures a spectrum from the usb spectrometer
+
+        returns raw counts
         """
         spectrum = sn.array_spectrum(self.id, self.__wl)
-        spectrum[:, 1] /= self.integrationtime  # convert to counts per second
+        # spectrum[:, 1] /= self.integrationtime / 1000  # convert to counts per second
         return spectrum
 
     def capture_hdr(self):
-        """captures an HDR spectrum"""
-        threshold = 2 ** 16 * 0.95  # counts above this are considered saturated
+        """captures an HDR spectrum by combining acquisitions at multiple integration times
+
+        returns spectrum in *counts per second*
+        """
 
         for i, t in enumerate(self._hdr_times):
-            self.integrationtime = t
+            self.integrationtime = t  # milliseconds
             spectrum = self.capture()
             wl = spectrum[:, 0]
             cts = spectrum[:, 1]
-            cps = cts / t  # counts per second
+            cps = cts / (t / 1000)  # counts per second
             if i == 0:
                 cps_overall = cps
-            mask = cts < threshold
-            cps_overall[mask] = cps[mask]
+            else:
+                mask = cts < self.HDR_THRESHOLD
+                cps_overall[mask] = cps[mask]
 
         spectrum = np.array([wl, cps_overall]).T
         return spectrum
@@ -119,7 +128,7 @@ class Spectrometer:
             )
 
         for i, t in enumerate(self._hdr_times):
-            self.integrationtime = t
+            self.integrationtime = t  # milliseconds
             spectrum = self.capture()
             wl = spectrum[:, 0]
             cts = spectrum[:, 1]
@@ -128,8 +137,9 @@ class Spectrometer:
             )
             if i == 0:
                 transmission_overall = transmission
-            mask = cts < t
-            transmission_overall[mask] = transmission[mask]
+            else:
+                mask = cts < self.HDR_THRESHOLD
+                transmission_overall[mask] = transmission[mask]
 
         spectrum = np.array([wl, transmission_overall]).T
         return spectrum

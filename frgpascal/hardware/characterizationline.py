@@ -362,7 +362,7 @@ class DarkfieldImaging(StationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
+        imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
 class PLImaging(StationTemplate):
@@ -383,7 +383,7 @@ class PLImaging(StationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
+        imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
 class BrightfieldImaging(StationTemplate):
@@ -401,7 +401,7 @@ class BrightfieldImaging(StationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_brightfield.tif"
-        imwrite(os.path.join(self.savedir, fname), img, photometric="rgb")
+        imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
 class TransmissionSpectroscopy(StationTemplate):
@@ -435,7 +435,7 @@ class PLSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
         self.shutter = shutter
-        self.hdrdwelltimes = [100, 250, 500, 1000]  # ms
+        self.hdrdwelltimes = [100, 250, 500, 2000, 15000]  # ms
 
     def capture(self):
         """
@@ -446,23 +446,11 @@ class PLSpectroscopy(StationTemplate):
         self.shutter.bottom_right()  # closes shutter to block transmission lamp
         self.lightswitch.on()  # turn on the laser
 
-        threshold = (2 ** 16) * 0.95  # a little below 16 bit depth of camera
-        for idx, dwell in enumerate(self.hdrdwelltimes):
-            self.spectrometer.integrationtime = dwell  # ms
-            spectrum = self.spectrometer.capture()
-            wl = spectrum[:, 0]
-            cts = spectrum[:, 1]  # raw counts
-            cps = cts / (dwell / 1000)  # counts per second
-            if idx == 0:
-                cps_hdr = cps
-            mask = cts <= threshold  # data that isnt peaking
-            cps_hdr[mask] = cps[
-                mask
-            ]  # fill in wavelengths that arent saturated on detector
-
+        self.spectrometer._hdr_times = self.hdrdwelltimes
+        spectrum = self.spectrometer.capture_hdr()
         self.lightswitch.off()  # turn off the laser
-        spectrum = np.vstack([wl, cps_hdr]).T  # build back into an nx2 spectrum array
-        return spectrum
+
+        return spectrum  # [wl, cps]
 
     def save(self, spectrum, sample):
         fname = f"{sample}_pl.csv"
