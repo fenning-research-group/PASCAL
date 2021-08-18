@@ -273,8 +273,9 @@ class Maestro:
         self.logger.addHandler(fh)
         self.logger.addHandler(sh)
 
-    def run(self, filepath, name):
+    def run(self, filepath, name, ot2_ip):
         speedup_factor = 1
+        self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
@@ -318,6 +319,7 @@ class Maestro:
 
     def stop(self):
         self.working = False
+        self.liquidhandler.server.mark_completed()  # tell liquid handler to complete the protocol.
         self.thread.join()
 
     def __del__(self):

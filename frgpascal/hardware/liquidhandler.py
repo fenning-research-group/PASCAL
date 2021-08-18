@@ -18,7 +18,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class OT2:
     def __init__(self):
         self.server = OT2Server()
-        self.server.start()
+        # self.server.start()
         self.POLLINGRATE = 0.1
         self.DISPENSE_DELAY = 1  # time (seconds) between initiating a dispense and the completion of the dispense
         self.ASPIRATION_DELAY = (

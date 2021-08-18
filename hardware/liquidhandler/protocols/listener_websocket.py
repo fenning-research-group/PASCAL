@@ -66,8 +66,8 @@ class ListenerWebsocket:
             1  # mm, distance between tip and bottom of wells while dispensing
         )
         self.DISPENSE_RATE = 150  # uL/s
-        self.SPINCOATING_DISPENSE_HEIGHT = 6  # mm, distance between tip and chuck
-        self.SPINCOATING_DISPENSE_RATE = 50  # uL/s
+        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
+        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
         self.SLOW_Z_RATE = 20  # mm/s
 
         self.__calibrate_time_to_nist()
@@ -184,7 +184,13 @@ class ListenerWebsocket:
         if slow_retract:
             p.move_to(self._sources[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if air_gap:
-            p.air_gap(self.AIRGAP)
+            relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
+            p.aspirate(
+                volume=self.AIRGAP,
+                location=self._sources[tray][well].top(2),
+                rate=relative_rate,
+            )  # force a slow airgap
+            # p.air_gap(self.AIRGAP)
         if touch_tip:
             p.touch_tip()
 
