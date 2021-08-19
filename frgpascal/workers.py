@@ -453,6 +453,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         self.maestro.samples[sample["name"]]["spincoat_recipe"]["record"] = {
             **drop_times,
             **rpm_log,
+            "headstart": headstart,
         }
 
 
