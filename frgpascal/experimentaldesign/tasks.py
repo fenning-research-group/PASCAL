@@ -17,6 +17,7 @@ from frgpascal.workers import (
     Worker_Storage,
 )
 
+
 gg = Worker_GantryGripper(planning=True)
 sclh = Worker_SpincoaterLiquidHandler(planning=True)
 hp = Worker_Hotplate(n_workers=25, planning=True)
