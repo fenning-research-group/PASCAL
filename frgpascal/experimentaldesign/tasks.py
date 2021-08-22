@@ -2,6 +2,7 @@ from ortools.sat.python import cp_model
 import matplotlib.pyplot as plt
 import numpy as np
 import uuid
+import json
 
 from frgpascal.experimentaldesign.recipes import (
     Sample,
@@ -16,42 +17,52 @@ from frgpascal.workers import (
     Worker_Storage,
 )
 
+
 gg = Worker_GantryGripper(planning=True)
 sclh = Worker_SpincoaterLiquidHandler(planning=True)
 hp = Worker_Hotplate(n_workers=25, planning=True)
 st = Worker_Storage(n_workers=45, planning=True)
 cl = Worker_Characterization(planning=True)
-workers = {type(w): w for w in [gg, sclh, hp, st, cl]}
+workers = [gg, sclh, hp, st, cl]
+
+ALL_TASKS = {
+    task: {
+        "workers": [type(worker)]
+        + details.other_workers,  # list of workers required to perform task
+        "estimated_duration": details.estimated_duration,  # time (s) to complete task
+    }
+    for worker in workers
+    for task, details in worker.functions.items()
+}
 
 # transition_tasks[source_worker][destination_worker] = Worker_GantryGripper task to move from source to destination
-available_tasks = {
-    func: taskdetails
-    for w in workers.values()
-    for func, taskdetails in w.functions.items()
-}  # all tasks available
-transition_tasks = {
-    sclh: {
-        hp: "spincoater_to_hotplate",
-        st: "spincoater_to_storage",
-        cl: "spincoater_to_characterization",
+TRANSITION_TASKS = {
+    Worker_SpincoaterLiquidHandler: {
+        Worker_Hotplate: "spincoater_to_hotplate",
+        Worker_Storage: "spincoater_to_storage",
+        Worker_Characterization: "spincoater_to_characterization",
     },
-    hp: {
-        sclh: "hotplate_to_spincoater",
-        st: "hotplate_to_storage",
-        cl: "hotplate_to_characterization",
+    Worker_Hotplate: {
+        Worker_SpincoaterLiquidHandler: "hotplate_to_spincoater",
+        Worker_Storage: "hotplate_to_storage",
+        Worker_Characterization: "hotplate_to_characterization",
     },
-    st: {
-        sclh: "storage_to_spincoater",
-        hp: "storage_to_hotplate",
-        cl: "storage_to_characterization",
+    Worker_Storage: {
+        Worker_SpincoaterLiquidHandler: "storage_to_spincoater",
+        Worker_Hotplate: "storage_to_hotplate",
+        Worker_Characterization: "storage_to_characterization",
     },
-    cl: {
-        sclh: "characterization_to_spincoater",
-        hp: "characterization_to_hotplate",
-        st: "characterization_to_storage",
+    Worker_Characterization: {
+        Worker_SpincoaterLiquidHandler: "characterization_to_spincoater",
+        Worker_Hotplate: "characterization_to_hotplate",
+        Worker_Storage: "characterization_to_storage",
     },
 }
 
+hide_me = [task for p1 in TRANSITION_TASKS.values() for task in p1.values()]
+AVAILABLE_TASKS = {
+    task: details for task, details in AVAILABLE_TASKS.items() if task not in hide_me
+}
 ### Base Class for PASCAL Tasks
 class Task:
     def __init__(
@@ -60,17 +71,17 @@ class Task:
         task,
         workers,
         duration,
-        task_details="",
+        # task_details="",
         precedents=[],
-        reservoir=[],
+        # reservoir=[],
     ):
         self.sample = sample
         self.workers = workers
         self.task = task
-        self.task_details = task_details
+        # self.task_details = task_details
         self.taskid = f"{task}-{str(uuid.uuid4())}"
         self.precedents = precedents
-        self.reservoir = []
+        # self.reservoir = []
         if sum([immediate for task, immediate in precedents]) > 1:
             raise ValueError("Only one precedent can be immediate!")
         self.duration = int(duration)
@@ -86,7 +97,7 @@ class Task:
             "sample": self.sample.name,
             "start": self.start,
             "task": self.task,
-            "details": self.task_details,
+            # "details": self.task_details,
             "id": self.taskid,
             "precedents": [
                 precedent.taskid for precedent, immediate in self.precedents
@@ -98,43 +109,51 @@ class Task:
         return json.dumps(self.to_dict())
 
 
+# def task_builder(sample, task, precedents=[]):
+#     return Task(
+#         sample=sample,
+#         task=task,
+#         workers=ALL_TASKS[task]["workers"],
+#         duration=ALL_TASKS[task]["estimated_duration"],
+#         precedents=precedents,
+#     )
+
+
 ### build task list for a sample
-def generate_tasks_for_sample(sample: Sample):
-    tasks = []
-
-    tasks.append(StorageToSpincoater(sample=sample, precedents=[]))
-
-    tasks.append(
-        Spincoat(
+def generate_sample_worklist(sample: Sample):
+    sample_worklist = []
+    p0 = Worker_Storage  # sample begins at storage
+    for task in sample.tasks:
+        p1 = task["workers"][0]
+        transition_task = ALL_TASKS[TRANSITION_TASKS[p0][p1]]
+        sample_worklist.append(
+            Task(
+                sample=sample,
+                task=transition_task,
+                workers=transition_task["workers"],
+                duration=transition_task["estimated_duration"],
+            )
+        )
+        sample_worklist.append(
+            Task(
+                sample=sample,
+                task=task,
+                workers=ALL_TASKS[task]["workers"],
+                duration=ALL_TASKS[task]["estimated_duration"],
+            )
+        )
+        p0 = p1  # update location for next task
+    p1 = Worker_Storage
+    transition_task = ALL_TASKS[TRANSITION_TASKS[p0][p1]]
+    sample_worklist.append(
+        Task(
             sample=sample,
-            recipe=sample.spincoat_recipe,
-            precedents=[(tasks[-1], False)],  # (task, (bool)immediate)
+            task=transition_task,
+            workers=transition_task["workers"],
+            duration=transition_task["estimated_duration"],
         )
-    )
-
-    tasks.append(SpincoaterToHotplate(sample=sample, precedents=[(tasks[-1], True)]))
-
-    tasks.append(
-        Anneal(
-            sample=sample, recipe=sample.anneal_recipe, precedents=[(tasks[-1], True)]
-        )
-    )
-
-    tasks.append(HotplateToStorage(sample=sample, precedents=[(tasks[-1], True)]))
-
-    tasks.append(Cooldown(sample=sample, precedents=[(tasks[-1], True)]))
-
-    tasks.append(
-        StorageToCharacterization(sample=sample, precedents=[(tasks[-1], False)])
-    )
-
-    tasks.append(Characterize(sample=sample, precedents=[(tasks[-1], False)]))
-
-    tasks.append(
-        CharacterizationToStorage(sample=sample, precedents=[(tasks[-1], False)])
-    )
-
-    return tasks
+    )  # sample ends at storage
+    return sample_worklist
 
 
 ### Task Scheduler
@@ -156,7 +175,7 @@ class Scheduler:
         self.model = cp_model.CpModel()
         ending_variables = []
         machine_intervals = {w: [] for w in self.workers.values()}
-        reservoirs = {}
+        # reservoirs = {}
         ### Task Constraints
         for task in self.tasklist:
             task.end_var = self.model.NewIntVar(
@@ -220,8 +239,8 @@ class Scheduler:
                 self.model.AddCumulative(intervals, demands, w.capacity)
             else:
                 self.model.AddNoOverlap(intervals)
-        for w, r in reservoirs.items():
-            self.modelAddReservoirConstraint(r["times"], r["demands"], 0, w.capacity)
+        # for w, r in reservoirs.items():
+        #     self.modelAddReservoirConstraint(r["times"], r["demands"], 0, w.capacity)
         objective_var = self.model.NewIntVar(0, self.horizon, "makespan")
         self.model.AddMaxEquality(objective_var, ending_variables)
         self.model.Minimize(objective_var)
