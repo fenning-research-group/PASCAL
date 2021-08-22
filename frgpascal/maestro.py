@@ -207,20 +207,43 @@ class Maestro:
         self.gripper.close()
 
     def transfer(self, p1, p2, zhop=True):
+        """Move a sample from one location (source) to another (destination)
+
+        Args:
+            p1: coordinates of source location
+            p2: cooordinates of destination location
+            zhop (bool, optional): Whether to "hop" in z to avoid collisions. Defaults to True.
+
+        Raises:
+            ValueError: Sample has been dropped during transit
+        """
         self.release()  # open the grippers
-        self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
+        if p1 == self.spincoater():  # moving off of the spincoater
+            self.spincoater.vacuum_off()
+            off_time = time.time()
+            self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+            while time.time() - off_time < self.spincoater.VACUUM_DISENGAGEMENT_TIME:
+                time.sleep(0.2)  # wait for vacuum to release
+        else:
+            self.gantry.moveto(p1, zhop=zhop)
         self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
         self.gantry.moveto(
             x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
         )  # move just above destination
         if self.gripper.is_under_load():
             raise ValueError("Sample dropped in transit!")
+        if p2 == self.spincoater():  # moving onto the spincoater
+            self.spincoater.vacuum_on()
         self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
         self.release()  # drop the sample
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
         self.gripper.close()  # fully close gripper to reduce servo strain
+        if p2 == self.spincoater():
+            self.gantry._transition_to_frame(
+                "workspace"
+            )  # move gantry out of the liquid handler
 
     ### Batch Sample Execution
     def _load_netlist(self, filepath):
