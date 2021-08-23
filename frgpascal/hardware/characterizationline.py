@@ -372,9 +372,10 @@ class PLImaging(StationTemplate):
         super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.camera = camera
         self.lightswitch = lightswitch
+        self.exposure_time = 2e5
 
     def capture(self):
-        self.camera.exposure = 5e5  #  dwell time, in microseconds
+        self.camera.exposure = self.exposure_time  #  dwell time, in microseconds
         self.lightswitch.on()
         time.sleep(1)  # takes a little longer for PL lamp to turn on
         img = self.camera.capture()
