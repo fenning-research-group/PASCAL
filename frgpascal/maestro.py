@@ -235,8 +235,24 @@ class Maestro:
         self.loop.run_until_complete(self._keep_loop_running())
 
     async def _keep_loop_running(self):
-        while self.working:
-            await asyncio.sleep(1)
+        while True:  # wait for the task list to start being populated
+            with self.lock_pendingtasks:
+                if len(self.pending_tasks) > 0:
+                    break
+            await asyncio.sleep(30)
+        while True:  # wait for all tasks to complete
+            with self.lock_pendingtasks:
+                if len(self.pending_tasks) == 0:
+                    break
+            await asyncio.sleep(5)
+
+        # clean up the experiment, save log of actual timings
+        with open(
+            os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
+        ) as f:
+            json.dump(self.samples, f)
+
+        self.stop()
 
     def _start_loop(self):
         self.working = True
@@ -251,8 +267,7 @@ class Maestro:
         folder_name = f"{todays_date}_{name}"
         folder = os.path.join(ROOTDIR, folder_name)
         os.mkdir(folder)
-        for station in self.characterization.stations:
-            station.set_directory(rootdir=folder)
+        self.characterization.set_directory(folder)
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(
@@ -274,7 +289,6 @@ class Maestro:
         self.logger.addHandler(sh)
 
     def run(self, filepath, name, ot2_ip):
-        speedup_factor = 1
         self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []
         self.completed_tasks = {}
@@ -304,7 +318,6 @@ class Maestro:
             worker.prime(loop=self.loop)
         for t in self.tasks:
             assigned = False
-            t["start"] /= speedup_factor
             for workername, worker in self.workers.items():
                 if t["task"] in worker.functions:
                     worker.add_task(t)
@@ -315,7 +328,6 @@ class Maestro:
 
         for worker in self.workers.values():
             worker.start()
-        # self.loop.run_forever()
 
     def stop(self):
         self.working = False

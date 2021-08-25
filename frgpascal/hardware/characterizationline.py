@@ -99,10 +99,18 @@ class CharacterizationLine:
             s.run(sample=samplename)  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
 
+    def calibrate(self):
+        """calibrate any stations that require it"""
+        for s in self.stations:
+            if hasattr(s, "calibrate"):
+                self.axis.moveto(s.position)
+                s.calibrate()
+        self.axis.moveto(self.axis.TRANSFERPOSITION)
+
     def set_directory(self, filepath):
         self.rootdir = filepath
         for s in self.stations:
-            s.rootdir = filepath
+            s.set_directory(filepath)
 
 
 class CharacterizationAxis:
@@ -322,7 +330,7 @@ class StationTemplate(ABC):
         self.position = position
         self._rootdir = rootdir
         self._subdir = subdir
-        self.set_directory(rootdir, subdir)
+        # self.set_directory(rootdir, subdir)
 
     def set_directory(self, rootdir, subdir=None):
         if subdir is None:
@@ -415,17 +423,27 @@ class TransmissionSpectroscopy(StationTemplate):
     def capture(self):
         self.shutter.top_left()  # moves longpass filter out of the transmitted path
         self.shutter.bottom_left()  # moves shutter out of the way, puts ND filter in incident path
-        spectrum = self.spectrometer.capture()  # TODO - make this the HDR capture
+        wl, t = self.spectrometer.transmission_hdr()
         self.shutter.bottom_right()  # closes the shutter
-        return spectrum
+        return wl, t
 
-    def save(self, spectrum, sample):
+    def save(self, wl, t, sample):
         fname = f"{sample}_transmission.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Wavelength (nm)", "Transmittance"])
-            for wl, t in spectrum:
-                writer.writerow([wl, t])
+            writer.writerow(["Wavelength (nm)", "Transmission (0-1)"])
+            for wl_, t_ in zip(wl, t):
+                writer.writerow([wl_, t_])
+
+    def calibrate(self):
+        self.shutter.top_left()  # moves longpass filter out of the transmitted path
+        self.shutter.bottom_right()  # close the shutter
+        self.spectrometer.take_dark_baseline()
+        print("spectrometer dark baselines taken")
+        self.shutter.bottom_left()  # open the shutter
+        self.spectrometer.take_light_baseline()
+        print("spectrometer light baselines taken")
+        self.shutter.bottom_right()  # closes the shutter
 
 
 class PLSpectroscopy(StationTemplate):
@@ -436,7 +454,6 @@ class PLSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
         self.shutter = shutter
-        self.hdrdwelltimes = [100, 250, 500, 2000, 15000]  # ms
 
     def capture(self):
         """
@@ -446,17 +463,15 @@ class PLSpectroscopy(StationTemplate):
         self.shutter.top_right()  # moves longpass filter into the detector path
         self.shutter.bottom_right()  # closes shutter to block transmission lamp
         self.lightswitch.on()  # turn on the laser
-
-        self.spectrometer._hdr_times = self.hdrdwelltimes
-        spectrum = self.spectrometer.capture_hdr()
+        wl, cts = self.spectrometer.capture_hdr()
         self.lightswitch.off()  # turn off the laser
 
-        return spectrum  # [wl, cps]
+        return wl, cts
 
-    def save(self, spectrum, sample):
+    def save(self, wl, cts, sample):
         fname = f"{sample}_pl.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(["Wavelength (nm)", "PL (counts/second)"])
-            for wl, t in spectrum:
-                writer.writerow([wl, t])
+            for wl_, cts_ in zip(wl, cts):
+                writer.writerow([wl_, t_])
