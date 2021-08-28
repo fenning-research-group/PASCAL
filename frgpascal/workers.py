@@ -64,6 +64,14 @@ class WorkerTemplate(ABC):
 
     async def worker(self):
         """process items from the queue + keep the maestro lists updated"""
+        def future_callback(future):
+            try:
+                future.result()
+            except Exception as e:
+                self.logger.exception(f'Exception in {self}')
+                # if future.exception(): #your long thing had an exception
+                #     self.logger.error(f'Exception in {self}: {future.exception()}')
+
         while self.working:
             _, task = await self.queue.get()  # blocking wait for next task
             task_description = f'{task["task"]}, {task["sample"]}'
@@ -118,11 +126,14 @@ class WorkerTemplate(ABC):
                 future = asyncio.gather(
                     self.loop.run_in_executor(self.maestro.threadpool, function, sample)
                 )
+                future.add_done_callback(future_callback)
                 await future
-                if future.exception() is not None:
-                    self.logger.error(
-                        f"{task_description} failed: {future.exception()}"
-                    )
+                # try:
+                #     future.result()
+                # except:
+                #     self.logger.info(
+                #         f"{task_description} failed: {future.exception()}"
+                #     )
 
             # update task lists
             sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0

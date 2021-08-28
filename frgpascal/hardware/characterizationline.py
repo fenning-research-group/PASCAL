@@ -427,7 +427,8 @@ class TransmissionSpectroscopy(StationTemplate):
         self.shutter.bottom_right()  # closes the shutter
         return wl, t
 
-    def save(self, wl, t, sample):
+    def save(self, spectrum, sample):
+        wl, t = spectrum
         fname = f"{sample}_transmission.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
@@ -466,12 +467,13 @@ class PLSpectroscopy(StationTemplate):
         wl, cts = self.spectrometer.capture_hdr()
         self.lightswitch.off()  # turn off the laser
 
-        return wl, cts
+        return [wl, cts]
 
-    def save(self, wl, cts, sample):
+    def save(self, spectrum, sample):
+        wl, cts = spectrum
         fname = f"{sample}_pl.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(["Wavelength (nm)", "PL (counts/second)"])
             for wl_, cts_ in zip(wl, cts):
-                writer.writerow([wl_, t_])
+                writer.writerow([wl_, cts_])

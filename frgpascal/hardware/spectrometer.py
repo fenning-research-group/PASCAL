@@ -76,15 +76,15 @@ class Spectrometer:
         """takes an illuminated baseline at each integration time from HDR timings"""
         for t in self._hdr_times:
             self.dwelltime = t
-            spectrum = self.capture()
-            self.__baseline_light[t] = spectrum[:, 1]
+            wl, cts = self._capture_raw()
+            self.__baseline_light[t] = cts
 
     def take_dark_baseline(self):
         """takes an dark baseline at each integration time from HDR timings"""
         for t in self._hdr_times:
             self.dwelltime = t
-            spectrum = self.capture()
-            self.__baseline_dark[t] = spectrum[:, 1]
+            wl, cts = self._capture_raw()
+            self.__baseline_dark[t] = cts
 
     def __is_dark_baseline_taken(self, dwelltime=None):
         """Check whether a baseline has been taken at the current integration time
@@ -152,12 +152,13 @@ class Spectrometer:
 
         for i, t in enumerate(self._hdr_times):
             self.dwelltime = t  # milliseconds
-            wl, cts = self.capture()
+            wl, cts_raw = self._capture_raw()
+            cts = cts_raw - self.__baseline_dark[t]
             cps = cts / (t / 1000)  # counts per second
             if i == 0:
                 cps_overall = cps
             else:
-                mask = cts < self.HDR_THRESHOLD
+                mask = cts_raw < self.HDR_THRESHOLD
                 cps_overall[mask] = cps[mask]
 
         return wl, cps_overall

@@ -230,7 +230,12 @@ class Maestro:
         self.samples = netlist["samples"]
 
     def make_background_event_loop(self):
+        def exception_handler(loop, context):
+            print('Exception raised in Maestro loop')
+            self.logger.error(json.dumps(context))
+            
         self.loop = asyncio.new_event_loop()
+        self.loop.set_exception_handler(exception_handler)
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self._keep_loop_running())
 
