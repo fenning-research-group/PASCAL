@@ -174,6 +174,7 @@ class OT2Server:
         self.pending_tasks = []
         self.completed_tasks = {}
         self.POLLINGRATE = 1  # seconds between status checks to OT2
+        self.loop = asyncio.new_event_loop()
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -268,7 +269,6 @@ class OT2Server:
             asyncio.set_event_loop(loop)
             loop.run_forever()
 
-        self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=run_loop, args=(self.loop,))
         self.thread.daemon = True
         self.thread.start()
@@ -282,11 +282,10 @@ class OT2Server:
     def stop(self):
         # self.mark_completed()
         self.connected = False
+        self.loop.call_soon_threadsafe(self.loop.stop)
         # asyncio.gather(self._worker, self._checker)
-        # asyncio.
         self.loop.close()
         self.thread.join()
-        return
 
     def _update_completed_tasklist(self, tasklist):
         for taskid, nisttime in tasklist.items():
