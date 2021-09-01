@@ -231,32 +231,32 @@ class Maestro:
 
     def make_background_event_loop(self):
         def exception_handler(loop, context):
-            print('Exception raised in Maestro loop')
+            print("Exception raised in Maestro loop")
             self.logger.error(json.dumps(context))
-            
+
         self.loop = asyncio.new_event_loop()
         self.loop.set_exception_handler(exception_handler)
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self._keep_loop_running())
 
     async def _keep_loop_running(self):
-        while True:  # wait for the task list to start being populated
-            with self.lock_pendingtasks:
-                if len(self.pending_tasks) > 0:
-                    break
-            await asyncio.sleep(30)
-        while True:  # wait for all tasks to complete
-            with self.lock_pendingtasks:
-                if len(self.pending_tasks) == 0:
-                    break
-            await asyncio.sleep(5)
-
-        # clean up the experiment, save log of actual timings
-        with open(
-            os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
-        ) as f:
-            json.dump(self.samples, f)
-
+        experiment_started = False
+        experiment_completed = False
+        while self.working:
+            if (
+                not experiment_started
+            ):  # wait for the task list to start being populated
+                with self.lock_pendingtasks:
+                    if len(self.pending_tasks) > 0:
+                        experiment_started = True
+                await asyncio.sleep(30)
+            elif not experiment_completed:
+                with self.lock_pendingtasks:
+                    if len(self.pending_tasks) == 0:
+                        experiment_completed = True
+                await asyncio.sleep(5)
+            else:
+                break
         self.stop()
 
     def _start_loop(self):
@@ -294,6 +294,10 @@ class Maestro:
         self.logger.addHandler(sh)
 
     def run(self, filepath, name, ot2_ip):
+        if not self.characterization._calibrated:
+            raise Exception(
+                "Characterization line must be calibrated before starting a run! (cl.calibrate())"
+            )
         self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []
         self.completed_tasks = {}
@@ -338,6 +342,11 @@ class Maestro:
         self.working = False
         self.liquidhandler.server.mark_completed()  # tell liquid handler to complete the protocol.
         self.thread.join()
+        # clean up the experiment, save log of actual timings
+        with open(
+            os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
+        ) as f:
+            json.dump(self.samples, f)
 
     def __del__(self):
         if self.working:

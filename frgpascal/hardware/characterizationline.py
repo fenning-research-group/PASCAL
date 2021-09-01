@@ -12,7 +12,7 @@ import csv
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
-from frgpascal.hardware.switchbox import Switchbox
+from frgpascal.hardware.switchbox import SingleSwitch, Switchbox
 from frgpascal.hardware.shutter import Shutter
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -92,6 +92,9 @@ class CharacterizationLine:
             ),
         ]
 
+        # state variables
+        self._calibrated = False
+
     def run(self, samplename):
         """Pass a sample down the line and measure at each station"""
         for s in self.stations:
@@ -106,6 +109,8 @@ class CharacterizationLine:
                 self.axis.moveto(s.position)
                 s.calibrate()
         self.axis.moveto(self.axis.TRANSFERPOSITION)
+
+        self._calibrated = True
 
     def set_directory(self, filepath):
         self.rootdir = filepath
@@ -449,7 +454,13 @@ class TransmissionSpectroscopy(StationTemplate):
 
 class PLSpectroscopy(StationTemplate):
     def __init__(
-        self, position, rootdir, spectrometer, lightswitch, shutter, subdir="PL"
+        self,
+        position,
+        rootdir,
+        spectrometer: Spectrometer,
+        lightswitch: SingleSwitch,
+        shutter: Shutter,
+        subdir="PL",
     ):
         super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.spectrometer = spectrometer
@@ -464,16 +475,25 @@ class PLSpectroscopy(StationTemplate):
         self.shutter.top_right()  # moves longpass filter into the detector path
         self.shutter.bottom_right()  # closes shutter to block transmission lamp
         self.lightswitch.on()  # turn on the laser
-        wl, cts = self.spectrometer.capture_hdr()
+        all_cts = {}
+        for t in self.spectrometer._hdr_times:
+            self.spectrometer.exposure = t
+            wl, cts = self.spectrometer._capture_raw()
+            all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
 
-        return [wl, cts]
+        return [wl, all_cts]
 
     def save(self, spectrum, sample):
-        wl, cts = spectrum
+        wl, all_cts = spectrum
+        dwells = list(all_cts.keys())
+        dwells.sort()
+        cts = np.array([all_cts[d] for d in dwells]).T
+
         fname = f"{sample}_pl.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Wavelength (nm)", "PL (counts/second)"])
+            writer.writerow(["Dwelltimes (ms)"] + dwells)
+            writer.writerow(["Wavelength (nm)"] + ["PL (counts)"] * len(dwells))
             for wl_, cts_ in zip(wl, cts):
-                writer.writerow([wl_, cts_])
+                writer.writerow([wl_] + cts_)
