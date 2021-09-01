@@ -447,16 +447,16 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             - self.liquidhandler.DISPENSE_DELAY
         )
         liquidhandlertasks["clear_chuck"] = self.liquidhandler.drop_antisolvent(
-            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart + 0.5
+            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart - 0.5
         )  # final task to be done
 
         self.liquidhandler.cleanup(
-            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart + 0.6
+            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart
         )
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        drop_times, _ = loop.run_until_complete(
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
+        drop_times, _ = self.loop.run_until_complete(
             asyncio.gather(
                 self._monitor_droptimes(liquidhandlertasks, t0),
                 self._set_spinspeeds(recipe["steps"], t0, headstart),
