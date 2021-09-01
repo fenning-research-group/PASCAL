@@ -75,7 +75,7 @@ class SpinCoater:
         except:
             raise ValueError("Could not find odrive! confirm that 24V PSU is on")
 
-        # print("\tFound motor, now calibrating. This takes 10-20 seconds.")
+        print("\tFound motor, now calibrating. This takes 10-20 seconds.")
         # input("\tPress enter once shroud is out of the way: ")
         self.axis = self.odrv0.axis0
         self.axis.requested_state = (
@@ -84,7 +84,7 @@ class SpinCoater:
         time.sleep(5)  # wait for calibration to initiate
         while self.axis.current_state != 1:
             time.sleep(1)  # wait for calibration to complete
-        print("Done calibrating odrive!")
+        print("\tDone calibrating odrive!")
         self.axis.requested_state = (
             AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
         )

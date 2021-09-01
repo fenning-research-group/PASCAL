@@ -224,7 +224,6 @@ class OT2Server:
             self.thread.daemon = True
             self.thread.start()
             asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
-            # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
             while not hasattr(self, "websocket"):
                 time.sleep(0.2)  # wait to connect
             self.connected = True
@@ -275,17 +274,20 @@ class OT2Server:
         asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
         # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
         while not hasattr(self, "websocket"):
-            time.sleep(0.2)  # wait to connect
+            time.sleep(0.1)  # wait to connect
         self.connected = True
         self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
 
     def stop(self):
         # self.mark_completed()
         self.connected = False
+        time.sleep(1)
+        self._worker.cancel()
         self.loop.call_soon_threadsafe(self.loop.stop)
         # asyncio.gather(self._worker, self._checker)
-        self.loop.close()
+        # self.loop.close()
         self.thread.join()
+        del self.websocket
 
     def _update_completed_tasklist(self, tasklist):
         for taskid, nisttime in tasklist.items():
@@ -296,19 +298,25 @@ class OT2Server:
 
     async def worker(self):
         while self.connected:
-            ot2 = json.loads(await self.websocket.recv())
+            try:
+                response = await asyncio.wait_for(self.websocket.recv(), timeout=0.5)
+                ot2 = json.loads(response)
+            except asyncio.TimeoutError:
+                ot2 = {}
             # print(f"maestro recieved {ot2}")
             if "acknowledged" in ot2:
                 # print(f'{ot2["acknowledged"]} acknowledged by OT2')
                 self.pending_tasks.append(ot2["acknowledged"])
             if "completed" in ot2:
                 self._update_completed_tasklist(ot2["completed"])
+        return
 
     async def checker(self):
         while self.connected:
             await asyncio.sleep(self.POLLINGRATE)
             maestro = {"status": 0}  # query the status, 0 is just a placeholder values
             await self.websocket.send(json.dumps(maestro))
+        return
 
     async def __add_task(self, task):
         # print(task)

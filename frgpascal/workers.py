@@ -320,7 +320,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                     completed_tasks[task] = (
                         self.liquidhandler.server.completed_tasks[taskid] - t0
                     )  # save the completion time of the liquidhandler task
-                await asyncio.sleep(0.05)
+                await asyncio.sleep(0.1)
         return completed_tasks
 
     async def _set_spinspeeds(self, steps, t0, headstart):
@@ -454,14 +454,23 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart
         )
 
-        # loop = asyncio.new_event_loop()
-        # asyncio.set_event_loop(loop)
-        drop_times, _ = self.loop.run_until_complete(
-            asyncio.gather(
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        tasks_future = asyncio.gather(
                 self._monitor_droptimes(liquidhandlertasks, t0),
                 self._set_spinspeeds(recipe["steps"], t0, headstart),
             )
-        )
+        def future_callback(future):
+            try:
+                future.result()
+            except Exception as e:
+                self.logger.exception(f"Exception in {self}")
+                # if future.exception(): #your long thing had an exception
+                #     self.logger.error(f'Exception in {self}: {future.exception()}')
+        tasks_future.add_done_callback(future_callback)
+
+        
+        drop_times, _ = loop.run_until_complete(tasks_future)
         rpm_log = self.spincoater.finish_logging()
         self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
 

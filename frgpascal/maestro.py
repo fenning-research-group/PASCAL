@@ -294,6 +294,8 @@ class Maestro:
         self.logger.addHandler(sh)
 
     def run(self, filepath, name, ot2_ip):
+        if not self.characterization._calibrated:
+            raise Exception('Cannot start until characterization line has been calibrated!')
         self.liquidhandler.server.ip = ot2_ip
         # self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []
