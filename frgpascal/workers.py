@@ -64,11 +64,12 @@ class WorkerTemplate(ABC):
 
     async def worker(self):
         """process items from the queue + keep the maestro lists updated"""
+
         def future_callback(future):
             try:
                 future.result()
             except Exception as e:
-                self.logger.exception(f'Exception in {self}')
+                self.logger.exception(f"Exception in {self}")
                 # if future.exception(): #your long thing had an exception
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
@@ -342,6 +343,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         Returns:
             record: dictionary of recorded spincoating process.
         """
+        self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
+
         recipe = sample["spincoat_recipe"]
         t0 = self.maestro.nist_time()
         self.spincoater.start_logging()
@@ -460,6 +463,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
         )
         rpm_log = self.spincoater.finish_logging()
+        self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
 
         self.maestro.samples[sample["name"]]["spincoat_recipe"]["record"] = {
             **drop_times,

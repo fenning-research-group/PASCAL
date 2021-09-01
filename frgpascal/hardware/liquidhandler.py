@@ -261,6 +261,24 @@ class OT2Server:
                 "User indicated that Listener protocol is not running - did not attempt to connect to OT2 websocket."
             )
 
+    def _start_directly(self):
+        self.uri = f"ws://{self.ip}:{self.port}"
+
+        def run_loop(loop):
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(target=run_loop, args=(self.loop,))
+        self.thread.daemon = True
+        self.thread.start()
+        asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
+        # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
+        while not hasattr(self, "websocket"):
+            time.sleep(0.2)  # wait to connect
+        self.connected = True
+        self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
+
     def stop(self):
         # self.mark_completed()
         self.connected = False

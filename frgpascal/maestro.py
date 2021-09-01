@@ -231,9 +231,9 @@ class Maestro:
 
     def make_background_event_loop(self):
         def exception_handler(loop, context):
-            print('Exception raised in Maestro loop')
+            print("Exception raised in Maestro loop")
             self.logger.error(json.dumps(context))
-            
+
         self.loop = asyncio.new_event_loop()
         self.loop.set_exception_handler(exception_handler)
         asyncio.set_event_loop(self.loop)
@@ -294,7 +294,8 @@ class Maestro:
         self.logger.addHandler(sh)
 
     def run(self, filepath, name, ot2_ip):
-        self.liquidhandler.server.start(ip=ot2_ip)
+        self.liquidhandler.server.ip = ot2_ip
+        # self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
