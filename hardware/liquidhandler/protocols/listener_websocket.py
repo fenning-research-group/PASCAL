@@ -63,7 +63,7 @@ class ListenerWebsocket:
 
         self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
-            1  # mm, distance between tip and bottom of wells while dispensing
+            2  # mm, distance between tip and bottom of wells while dispensing
         )
         self.DISPENSE_RATE = 150  # uL/s
         self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
@@ -305,6 +305,31 @@ class ListenerWebsocket:
             )
         )
 
+    def mix(self, dispense_instructions):
+        p = self._get_pipette(pipette='perovskite')
+        for dispense in dispense_instructions:
+            tray = dispense['tray']
+            well = dispense['well']
+            source_well = self._sources[tray][well]
+            
+            destination_wells = []
+            volumes = []
+            for d in dispense['destinations']:
+                tray = d['tray']
+                for well, volume in zip(d['wells'], d['volumes']):
+                    destination_wells.append(self._sources[tray][well])
+                    volumes.append(volume)
+
+            p.distribute(
+                volumes,
+                source_well,
+                destination_wells,
+                touch_tip=False,
+                blow_out=True,
+                disposal_volume=0
+                )
+
+
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""
         for p in self.pipettes.values():
@@ -361,24 +386,6 @@ def run(protocol_context):
             p.move_to(labware["A1"].top(30))
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
     listener.pipettes["right"].move_to(tips[0]["A1"].top(10))
-
-    # p.pick_up_tip()
-    # for side, p in listener.pipettes.items():
-    #     p.pick_up_tip()
-    #     volume = 0
-    #     for name, labware in {**stocks, **wellplates}.items():
-    #         p.aspirate(10, labware["A1"].top(10))
-    #         volume += 10
-    #     relative_rate = listener.SPINCOATING_DISPENSE_RATE / p.flow_rate.dispense
-    #     # relative_rate = 1.0
-    #     p.dispense(
-    #         location=listener.spincoater[listener.CHUCK].top(
-    #             listener.SPINCOATING_DISPENSE_HEIGHT
-    #         ),
-    #         rate=relative_rate,
-    #     )
-    #     p.return_tip()
-    #     p.reset_tipracks()
 
     if protocol_context.is_simulating():  # stop here during simulation
         return

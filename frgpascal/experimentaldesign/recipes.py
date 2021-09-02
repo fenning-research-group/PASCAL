@@ -7,7 +7,10 @@ import json
 
 class SolutionRecipe:
     def __init__(
-        self, solvent: str, solutes: str = "", molarity: float = 0,
+        self,
+        solvent: str,
+        solutes: str = "",
+        molarity: float = 0,
     ):
         if solutes != "" and molarity == 0:
             raise ValueError(
@@ -31,7 +34,10 @@ class SolutionRecipe:
         }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
 
     def name_to_components(
-        self, name, factor=1, delimiter="_",
+        self,
+        name,
+        factor=1,
+        delimiter="_",
     ):
         """
         given a chemical formula, returns dictionary with individual components/amounts
@@ -66,10 +72,13 @@ class SolutionRecipe:
     def to_json(self):
         return json.dumps(self.to_dict())
 
-    def __repr__(self):
+    def __str__(self):
         if self.solutes == "":  # no solutes, just a solvent
-            return f"<SolutionRecipe> {self.solvent}"
-        return f"<SolutionRecipe> {round(self.molarity,2)}M {self.solutes} in {self.solvent}"
+            return f"{self.solvent}"
+        return f"{round(self.molarity,2)}M {self.solutes} in {self.solvent}"
+
+    def __repr__(self):
+        return f"<SolutionRecipe>" + str(self)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -358,7 +367,9 @@ def solutionrecipe_fromjson(s: str):
     p = json.loads(s)
 
     return SolutionRecipe(
-        solutes=p["solutes"], solvent=p["solvent"], molarity=p["molarity"],
+        solutes=p["solutes"],
+        solvent=p["solvent"],
+        molarity=p["molarity"],
     )
 
 
@@ -410,7 +421,10 @@ def annealrecipe_fromjson(s: str):
     """
     p = json.loads(s)
 
-    return AnnealRecipe(duration=p["duration"], temperature=p["temperature"],)
+    return AnnealRecipe(
+        duration=p["duration"],
+        temperature=p["temperature"],
+    )
 
 
 def sample_fromjson(s: str):

@@ -1,5 +1,8 @@
 import os
 import json
+from natsort import natsorted
+import numpy as np
+import matplotlib.pyplot as plt
 
 MODULE_DIR = os.path.dirname(__file__)
 LL_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "liquidlabware")
@@ -30,7 +33,7 @@ class LiquidLabware:
         self.contents = {}
 
     def _load_version(self, version):
-        """Loads the version file for the labware. 
+        """Loads the version file for the labware.
         This should be the same json file used to define custom labware for opentrons.
         Also extracts coordinates from the json file.
         """
@@ -45,7 +48,9 @@ class LiquidLabware:
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
         self._openslots = list(self._coordinates.keys())
-        self._openslots.sort()  # should already be sorted, but just in case
+        self._openslots = natsorted(
+            self._openslots
+        )  # should already be sorted, but just in case
 
         return constants
 
@@ -56,7 +61,7 @@ class LiquidLabware:
             contents (object): SolutionRecipe or a string representing the solution
 
         Raises:
-            IndexError: If the labware is full  
+            IndexError: If the labware is full
 
         Returns:
             (str): which slot has been allocated to the new contents
@@ -64,13 +69,14 @@ class LiquidLabware:
         try:
             slot = self._openslots.pop(0)  # take the next open slot
             self.contents[slot] = contents
+            self._openslots = natsorted(self._openslots)
             return slot
         except IndexError as e:
             raise IndexError("This labware is full!")
 
     def unload(self, slot: str):
-        """Unload contents from a slot in the labware. 
-            Sorts the list of open slots so we always fill the lowest index open slot. 
+        """Unload contents from a slot in the labware.
+            Sorts the list of open slots so we always fill the lowest index open slot.
 
         Args:
             slot (str): which slot to unload
@@ -83,8 +89,8 @@ class LiquidLabware:
         if slot in self._openslots:
             raise ValueError(f"Cannot unload {slot}, it's already empty!")
         self._openslots.append(slot)
-        self._openslots.sort()
-        return self.condents.pop(slot)
+        self._openslots = natsorted(self._openslots)
+        return self.contents.pop(slot)
 
     def __repr__(self):
         out = f"<LiquidLabware> {self.name}, {self.volume/1e3} mL volume, {self.capacity} wells"
@@ -97,3 +103,56 @@ class LiquidLabware:
         self._openslots = list(self._coordinates.keys())
         self._openslots.sort()
         self.contents = {}
+
+    def plot(self, solution_details=None, ax=None):
+        """
+        plot labware w/ solution occupants
+        """
+        if solution_details is None:
+            label_solution_info = False
+            solution_details = {}
+        else:
+            label_solution_info = True
+
+        if ax is None:
+            fig, ax = plt.subplots()
+
+        xvals = np.unique([x for x, _, _ in self._coordinates.values()])
+        yvals = np.unique([y for _, y, _ in self._coordinates.values()])
+        markersize = 15
+
+        for k, (x, y, z) in self._coordinates.items():
+            if k in self.contents:
+                solution = self.contents[k]
+                label = str(solution)
+                fillstyle = "full"
+                if label_solution_info:
+                    volume = solution_details.get(solution, {}).get(
+                        "initial_volume_required", 0
+                    )
+                    if volume == 0:
+                        label = "Empty well for " + label
+                        fillstyle = "none"
+                    else:
+                        label = f"{volume} uL " + label
+
+                ax.plot(
+                    x,
+                    y,
+                    label=label,
+                    marker="o",
+                    linestyle="none",
+                    markersize=markersize,
+                    fillstyle=fillstyle,
+                )
+            else:
+                ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
+
+        plt.sca(ax)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+        plt.title(self.name)
+        plt.yticks(
+            yvals[::-1],
+            [chr(65 + i) for i in range(len(yvals))],
+        )
+        plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
