@@ -496,4 +496,4 @@ class PLSpectroscopy(StationTemplate):
             writer.writerow(["Dwelltimes (ms)"] + dwells)
             writer.writerow(["Wavelength (nm)"] + ["PL (counts)"] * len(dwells))
             for wl_, cts_ in zip(wl, cts):
-                writer.writerow([wl_] + cts_)
+                writer.writerow([wl_] + list(cts_))
