@@ -1,0 +1,18 @@
+{
+    "4mL_Tray1-A1": {
+        "destinations": [
+            "96_Plate1-A3"
+        ],
+        "volumes": [
+            90.0
+        ]
+    },
+    "4mL_Tray1-A2": {
+        "destinations": [
+            "96_Plate1-A3"
+        ],
+        "volumes": [
+            90.0
+        ]
+    }
+}

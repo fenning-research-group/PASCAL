@@ -7,7 +7,7 @@ from frgpascal.experimentaldesign.recipes import (
 from scipy.optimize import nnls
 from copy import deepcopy
 import uuid
-
+import matplotlib.pyplot as plt
 
 #### General
 def generate_unique_id():
@@ -160,6 +160,47 @@ def calculate_mix(
         )  # {Off by {composition_error*100:.2f}%%')
 
 
+#### Plot contents of sample tray for loading guidance
+
+
+def plot_tray(tray, ax=None):
+    """
+    plot tray w/ substrates to load prior to experiment start
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    xvals = np.unique([x for x, _, _ in tray._coordinates.values()])
+    yvals = np.unique([y for _, y, _ in tray._coordinates.values()])
+    markersize = 30
+
+    unique_substrates = {}
+    empty_slots = {"x": [], "y": []}
+    for k, (x, y, z) in tray._coordinates.items():
+        if k in tray.contents:
+            substrate = tray.contents[k].substrate
+            if substrate not in unique_substrates:
+                unique_substrates[substrate] = {"x": [], "y": []}
+            unique_substrates[substrate]["x"].append(x)
+            unique_substrates[substrate]["y"].append(y)
+        else:
+            empty_slots["x"].append(x)
+            empty_slots["y"].append(y)
+
+    for label, c in unique_substrates.items():
+        plt.scatter(c["x"], c["y"], label=label, marker="s")
+    plt.scatter(empty_slots["x"], empty_slots["y"], c="gray", marker="x", alpha=0.2)
+
+    plt.sca(ax)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+    plt.title(tray.name)
+    plt.yticks(
+        yvals[::-1],
+        [chr(65 + i) for i in range(len(yvals))],
+    )
+    plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
+
+
 #### Construct sample list from experimental mesh
 
 
@@ -206,21 +247,19 @@ def build_sample_list(
         for r in range(n_repeats):
             name = f"sample{idx}"
             idx += 1
-            if ignore_storage:
-                storage_slot = None
-            else:
-                storage_slot, current_tray, trays = get_storage_slot(
-                    name, current_tray, trays
-                )
-            sample_list.append(
-                Sample(
-                    name=name,
-                    substrate=sub,
-                    spincoat_recipe=sc_,
-                    anneal_recipe=an,
-                    storage_slot=storage_slot
-                    # sampleid=sampleid
-                )
+            this_sample = Sample(
+                name=name,
+                substrate=sub,
+                spincoat_recipe=sc_,
+                anneal_recipe=an,
+                storage_slot=None
+                # sampleid=sampleid
             )
+            if not ignore_storage:
+                storage_slot, current_tray, trays = get_storage_slot(
+                    this_sample, current_tray, trays
+                )
+            this_sample.storage_slot = storage_slot
+            sample_list.append(this_sample)
 
     return sample_list
