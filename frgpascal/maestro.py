@@ -10,6 +10,7 @@ import ntplib
 import asyncio
 import datetime
 import logging
+import numpy as np
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -248,9 +249,15 @@ class Maestro:
         #     raise ValueError("Sample dropped in transit!")
 
         if p2 == self.spincoater():  # moving onto the spincoater
+            self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True)
             self.spincoater.vacuum_on()
-            p2[2] -= 0.4  # overshoot z to press sample onto o-ring on spincoater chuck
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+            self.gantry.moveto(
+                x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
+            )  # overshoot z to press sample onto o-ring on spincoater chuck
+        else:
+            self.gantry.moveto(
+                p2, zhop=False
+            )  # if not dropped, move to the final position
         self.release()  # drop the sample
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
