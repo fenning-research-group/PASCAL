@@ -167,9 +167,17 @@ class Maestro:
 
     ### Compound Movements
 
+    def open_to_catch(self):
+        """
+        Open gripper quickly before picking up a sample
+        """
+        self.gripper.open(
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
+        )  # slow to prevent sample position shifting upon release
+
     def catch(self):
         """
-        Close gripper barely enough to pick up sample, not all the way to avoid gripper finger x float
+        Close gripper barely enough to pick up sample
         """
         caught_successfully = False
         catch_attempts = self.CATCHATTEMPTS
@@ -197,14 +205,6 @@ class Maestro:
             self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
             self.gripper.close()
             raise ValueError("Failed to pick up sample!")
-
-    def open_to_catch(self):
-        """
-        Open gripper quickly before picking up a sample
-        """
-        self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
-        )  # slow to prevent sample position shifting upon release
 
     def release(self):
         """

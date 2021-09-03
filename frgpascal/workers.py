@@ -21,6 +21,12 @@ task = namedtuple("task", ["function", "estimated_duration", "other_workers"])
 
 
 class WorkerTemplate(ABC):
+    """Template class for Workers
+    This class contains the nuts and bolts to schedule and execute tasks
+    for each "worker". Workers are considered single units of one or more
+    hardware components that act in unison to complete tasks.
+    """
+
     def __init__(self, n_workers, maestro=None, planning=False):
         if not planning:
             self.logger = logging.getLogger("PASCAL")
