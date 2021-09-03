@@ -238,11 +238,13 @@ class Maestro:
         """
         self.open_to_catch()  # open the grippers
         if p1 == self.spincoater():  # moving off of the spincoater
+            off_thread = Thread(
+                target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME)
+            )
             self.spincoater.vacuum_off()
-            off_time = time.time()
+            off_thread.start()
             self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-            while time.time() - off_time < self.spincoater.VACUUM_DISENGAGEMENT_TIME:
-                time.sleep(0.2)  # wait for vacuum to release
+            off_thread.join()
         else:
             self.gantry.moveto(p1, zhop=zhop)
         self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
@@ -262,7 +264,7 @@ class Maestro:
             )  # overshoot z to press sample onto o-ring on spincoater chuck
         else:
             self.gantry.moveto(
-                p2, zhop=False
+                p2, zhop=zhop
             )  # if not dropped, move to the final position
         self.release()  # drop the sample
         self.gantry.moverel(
