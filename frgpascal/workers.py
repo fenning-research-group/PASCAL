@@ -34,14 +34,6 @@ class WorkerTemplate(ABC):
         self.POLLINGRATE = 0.1  # seconds
         self.n_workers = n_workers
 
-    # def main(self, workers):
-    #     self.working = True
-    #     asyncio.set_event_loop(self.loop)
-    #     if not self.loop.is_running():
-    #         self.loop.run_until_complete(asyncio.wait(workers))
-    # else:
-    #     self.loop.call_soon_threadsafe(asyncio.wait(workers))
-
     def prime(self, loop):
         asyncio.set_event_loop(loop)
         self.loop = loop
@@ -496,51 +488,3 @@ class Worker_Characterization(WorkerTemplate):
 
     def characterize(self, sample):
         self.characterization.run(samplename=sample["name"])
-
-
-# class Worker_Hotplate:
-#     def __init__(self, maestro: Maestro, hotplate: HotPlate, n_workers: int):
-#         self.nist_time = self.maestro.nist_time
-#         self.queue = Queue()
-#         self.functions = {
-#             "anneal": self.anneal_timer
-#         }  # this must be filled in by each method to map tasks to functions
-
-#     def start(self):
-#         self.thread = Thread(target=self.worker)
-#         self.thread.start()
-
-#     def worker(self):
-#         """process items from the queue + keep the maestro lists updated"""
-#         while True:
-#             task = self.queue.get()  # blocking wait for next task
-#             if task is None:
-#                 break  # None signals all tasks complete
-
-#             # wait for all previous tasks to complete
-#             with self.maestro.lock_pendingtasks:
-#                 self.maestro.pending_tasks.append(task["taskid"])
-#             for precedent in task["preceding_tasks"]:
-#                 with self.maestrto.lock_completedtasks:
-#                     found = precedent in self.maestro.completed_tasks
-#                 if found:
-#                     continue
-#                 else:
-#                     time.sleep(0.25)
-
-#             # wait for this task's target start time
-#             wait_for = (
-#                 self.maestro.nist_time() - task["nist_time"]
-#             )  # how long to wait before executing
-#             if wait_for > 0:
-#                 time.sleep(wait_for)
-
-#             # execute this task
-#             function = self.functions[task["function"]]
-#             function(*task["args"], **task["kwargs"])
-
-#             # update task lists
-#             with self.lock_completedtasks:
-#                 self.completed_tasks["taskid"] = self.nist_time()
-#             with self.lock_pendingtasks:
-#                 self.pending_tasks.remove(task["taskid"])
