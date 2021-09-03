@@ -1,8 +1,8 @@
 import asyncio
 from abc import ABC, abstractmethod
 import time
-from functools import partial
 import logging
+from collections import namedtuple
 
 # from frgpascal.maestro import Maestro
 
@@ -17,21 +17,24 @@ import logging
 #     CharacterizationLine,
 # )
 
+task = namedtuple("task", ["function", "estimated_duration", "other_workers"])
+
 
 class WorkerTemplate(ABC):
-    def __init__(self, maestro, n_workers):
-        self.logger = logging.getLogger("PASCAL")
-        self.maestro = maestro
-        self.gantry = maestro.gantry
-        self.gripper = maestro.gripper
-        self.spincoater = maestro.spincoater
-        self.characterization = maestro.characterization
-        self.liquidhandler = maestro.liquidhandler
-        self.hotplates = maestro.hotplates
-        self.storage = maestro.storage
+    def __init__(self, n_workers, maestro=None, planning=False):
+        if not planning:
+            self.logger = logging.getLogger("PASCAL")
+            self.maestro = maestro
+            self.gantry = maestro.gantry
+            self.gripper = maestro.gripper
+            self.spincoater = maestro.spincoater
+            self.characterization = maestro.characterization
+            self.liquidhandler = maestro.liquidhandler
+            self.hotplates = maestro.hotplates
+            self.storage = maestro.storage
 
-        self.working = False
-        self.POLLINGRATE = 0.1  # seconds
+            self.working = False
+            self.POLLINGRATE = 0.1  # seconds
         self.n_workers = n_workers
 
     def prime(self, loop):
@@ -149,43 +152,73 @@ class Worker_GantryGripper(WorkerTemplate):
             # "open": self.gripper.open,
             # "close": self.gripper.close,
             # "transfer": self.maestro.transfer,
-            "idle_gantry": self.idle_gantry,
-            "storage_to_spincoater": self.storage_to_spincoater,
-            "spincoater_to_hotplate": self.spincoater_to_hotplate,
-            "hotplate_to_storage": self.hotplate_to_storage,
-            "storage_to_characterization": self.storage_to_characterization,
-            "characterization_to_storage": self.characterization_to_storage,
+            "idle_gantry": task(
+                function=self.idle_gantry, estimated_duration=20, other_workers=[]
+            ),
+            "spincoater_to_hotplate": task(
+                function=self.spincoater_to_hotplate,
+                estimated_duration=25,
+                other_workers=[Worker_SpincoaterLiquidHandler],
+            ),
+            "spincoater_to_storage": task(
+                function=self.spincoater_to_storage,
+                estimated_duration=25,
+                other_workers=[Worker_SpincoaterLiquidHandler],
+            ),
+            "spincoater_to_characterization": task(
+                function=self.spincoater_to_characterization,
+                estimated_duration=25,
+                other_workers=[Worker_SpincoaterLiquidHandler, Worker_Characterization],
+            ),
+            "hotplate_to_spincoater": task(
+                function=self.hotplate_to_spincoater,
+                estimated_duration=33,
+                other_workers=[Worker_SpincoaterLiquidHandler],
+            ),
+            "hotplate_to_storage": task(
+                function=self.hotplate_to_storage,
+                estimated_duration=18,
+                other_workers=[],
+            ),
+            "hotplate_to_characterization": task(
+                function=self.hotplate_to_characterization,
+                estimated_duration=18,
+                other_workers=[Worker_Characterization],
+            ),
+            "storage_to_spincoater": task(
+                function=self.storage_to_spincoater,
+                estimated_duration=33,
+                other_workers=[Worker_SpincoaterLiquidHandler],
+            ),
+            "storage_to_hotplate": task(
+                function=self.storage_to_hotplate,
+                estimated_duration=18,
+                other_workers=[],
+            ),
+            "storage_to_characterization": task(
+                function=self.storage_to_characterization,
+                estimated_duration=18,
+                other_workers=[Worker_Characterization],
+            ),
+            "characterization_to_spincoater": task(
+                function=self.characterization_to_spincoater,
+                estimated_duration=33,
+                other_workers=[Worker_Characterization, Worker_SpincoaterLiquidHandler],
+            ),
+            "characterization_to_hotplate": task(
+                function=self.characterization_to_hotplate,
+                estimated_duration=18,
+                other_workers=[Worker_Characterization],
+            ),
+            "characterization_to_storage": task(
+                function=self.characterization_to_storage,
+                estimated_duration=18,
+                other_workers=[Worker_Characterization],
+            ),
         }
 
     def idle_gantry(self, sample):
         self.maestro.idle_gantry()
-
-    def storage_to_spincoater(self, sample):
-        tray, slot = (
-            sample["storage_slot"]["tray"],
-            sample["storage_slot"]["slot"],
-        )
-        p1 = self.maestro.storage[tray](slot)
-        p2 = self.maestro.spincoater()
-
-        self.maestro.open_to_catch()  # open the grippers
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-        self.maestro.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.spincoater.vacuum_on()
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
-        )  # if not dropped, move to the final position. overshoot z a bit to make sure sample contacts the o-ring
-        self.maestro.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
-        self.maestro.idle_gantry()  # move out of the way of the liquid handler
 
     def spincoater_to_hotplate(self, sample):
         p1 = self.spincoater()
@@ -197,32 +230,30 @@ class Worker_GantryGripper(WorkerTemplate):
                 slot = None
         if slot is None:
             raise ValueError("No slots available on any hotplate!")
-        self.hotplates[hotplate_name].load(slot, sample)
         p2 = self.hotplates[hotplate_name](slot)
+        self.maestro.transfer(p1, p2)
 
-        self.maestro.open_to_catch()  # open the grippers
-        self.spincoater.vacuum_off()
-        off_time = time.time()
-        self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-        while time.time() - off_time < 5:  # 5 seconds to release
-            time.sleep(0.1)  # wait for the vacuum to release
-        self.maestro.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
-        self.maestro.release()  # drop the sample
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-        # self.gripper.close()  # fully close gripper to reduce servo strain
-
+        self.hotplates[hotplate_name].load(slot, sample)
         sample["anneal_recipe"]["location"] = {
             "hotplate": hotplate_name,
             "slot": slot,
         }
+
+    def spincoater_to_storage(self, sample):
+        p1 = self.spincoater()
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+
+        self.maestro.transfer(p1, p2)
+
+    def spincoater_to_characterization(self, sample):
+        p1 = self.spincoater()
+        p2 = self.characterization.axis()
+
+        self.transfer(p1, p2)
 
     def hotplate_to_storage(self, sample):
         hotplate, hpslot = (
@@ -240,6 +271,57 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate].unload(slot=hpslot)
 
+    def hotplate_to_characterization(self, sample):
+        hotplate, hpslot = (
+            sample["anneal_recipe"]["location"]["hotplate"],
+            sample["anneal_recipe"]["location"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](hpslot)
+        p2 = self.characterization.axis()
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate].unload(slot=hpslot)
+
+    def hotplate_to_spincoater(self, sample):
+        hotplate, hpslot = (
+            sample["anneal_recipe"]["location"]["hotplate"],
+            sample["anneal_recipe"]["location"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](hpslot)
+        p2 = self.spincoater()
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate].unload(slot=hpslot)
+
+    def storage_to_spincoater(self, sample):
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p1 = self.maestro.storage[tray](slot)
+        p2 = self.maestro.spincoater()
+
+        self.maestro.transfer(p1, p2)
+
+    def storage_to_hotplate(self, sample):
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p1 = self.maestro.storage[tray](slot)
+        for hotplate_name, hp in self.hotplates.items():
+            try:
+                slot = hp.get_open_slot()
+                break
+            except:
+                slot = None
+        if slot is None:
+            raise ValueError("No slots available on any hotplate!")
+        p2 = self.hotplates[hotplate_name](slot)
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate_name].load(slot, sample)
+
     def storage_to_characterization(self, sample):
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -249,6 +331,27 @@ class Worker_GantryGripper(WorkerTemplate):
         p2 = self.characterization.axis()
 
         self.maestro.transfer(p1, p2)
+
+    def characterization_to_spincoater(self, sample):
+        p1 = self.characterization.axis()
+        p2 = self.spincoater()
+
+        self.maestro.transfer(p1, p2)
+
+    def characterization_to_hotplate(self, sample):
+        p1 = self.characterization.axis()
+        for hotplate_name, hp in self.hotplates.items():
+            try:
+                slot = hp.get_open_slot()
+                break
+            except:
+                slot = None
+        if slot is None:
+            raise ValueError("No slots available on any hotplate!")
+        p2 = self.hotplates[hotplate_name](slot)
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate_name].load(slot, sample)
 
     def characterization_to_storage(self, sample):
         p1 = self.characterization.axis()
@@ -265,7 +368,9 @@ class Worker_Hotplate(WorkerTemplate):
     def __init__(self, maestro, n_workers):
         super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
-            "anneal": self.anneal,
+            "anneal": task(
+                function=self.anneal, estimated_duration=None, other_workers=[]
+            ),
         }
 
     async def anneal(self, sample):
@@ -276,7 +381,9 @@ class Worker_Storage(WorkerTemplate):
     def __init__(self, maestro, n_workers):
         super().__init__(maestro=maestro, n_workers=n_workers)
         self.functions = {
-            "cooldown": self.cooldown,
+            "cooldown": task(
+                function=self.cooldown, estimated_duration=180, other_workers=[]
+            ),
         }
 
     async def cooldown(self, sample):
@@ -301,7 +408,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             # "drop_antisolvent": self.liquidhandler.drop_antisolvent,
             # "clear_chuck": self.liquidhandler.clear_chuck,
             # "cleanup": self.liquidhandler.cleanup,
-            "spincoat": self.spincoat,
+            "spincoat": task(
+                function=self.spincoat, estimated_duration=None, other_workers=[]
+            ),
         }
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
@@ -483,7 +592,9 @@ class Worker_Characterization(WorkerTemplate):
             # "moveto": self.characterization.axis.moveto,
             # "moverel": self.characterization.axis.moverel,
             # "movetotransfer": self.characterization.axis.movetotransfer,
-            "characterize": self.characterize,
+            "characterize": task(
+                function=self.characterize, estimated_duration=95, other_workers=[]
+            ),
         }
 
     def characterize(self, sample):

@@ -53,6 +53,9 @@ class SpinCoater:
         self.__logdata = {"time": [], "rpm": []}
         self.LOGGINGINTERVAL = constants["spincoater"]["logging_interval"]
 
+        self.VACUUM_DISENGAGEMENT_TIME = constants["spincoater"][
+            "vacuum_disengagement_time"
+        ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
         self.connect()

@@ -8,7 +8,6 @@ import yaml
 import websockets
 import threading
 import uuid
-import traceback
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:

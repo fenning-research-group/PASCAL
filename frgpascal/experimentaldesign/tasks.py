@@ -8,25 +8,49 @@ from frgpascal.experimentaldesign.recipes import (
     SpincoatRecipe,
     AnnealRecipe,
 )
+from frgpascal.workers import (
+    Worker_GantryGripper,
+    Worker_Characterization,
+    Worker_Hotplate,
+    Worker_SpincoaterLiquidHandler,
+    Worker_Storage,
+)
 
-### Define workers for PASCAL
-class Worker:
-    def __init__(self, name, capacity):
-        self.name = name
-        self.capacity = capacity
+gg = Worker_GantryGripper(planning=True)
+sclh = Worker_SpincoaterLiquidHandler(planning=True)
+hp = Worker_Hotplate(n_workers=25, planning=True)
+st = Worker_Storage(n_workers=45, planning=True)
+cl = Worker_Characterization(planning=True)
+workers = {type(w): w for w in [gg, sclh, hp, st, cl]}
 
-    def __repr__(self):
-        return f"<Worker> {self.name}"
-
-
-gg = Worker(name="gantry_gripper", capacity=1)
-sclh = Worker(name="spincoater_liquidhander", capacity=1)
-hp = Worker(name="hotplate", capacity=25)
-st = Worker(name="storage", capacity=45)
-cl = Worker(name="characterizationline", capacity=1)
-
-workers = [gg, sclh, hp, st, cl]
-
+# transition_tasks[source_worker][destination_worker] = Worker_GantryGripper task to move from source to destination
+available_tasks = {
+    func: taskdetails
+    for w in workers.values()
+    for func, taskdetails in w.functions.items()
+}  # all tasks available
+transition_tasks = {
+    sclh: {
+        hp: "spincoater_to_hotplate",
+        st: "spincoater_to_storage",
+        cl: "spincoater_to_characterization",
+    },
+    hp: {
+        sclh: "hotplate_to_spincoater",
+        st: "hotplate_to_storage",
+        cl: "hotplate_to_characterization",
+    },
+    st: {
+        sclh: "storage_to_spincoater",
+        hp: "storage_to_hotplate",
+        cl: "storage_to_characterization",
+    },
+    cl: {
+        sclh: "characterization_to_spincoater",
+        hp: "characterization_to_hotplate",
+        st: "characterization_to_storage",
+    },
+}
 
 ### Base Class for PASCAL Tasks
 class Task:
@@ -72,121 +96,6 @@ class Task:
 
     def to_json(self):
         return json.dumps(self.to_dict())
-
-
-### Unit Tasks for PASCAL
-
-
-class StorageToSpincoater(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="storage_to_spincoater",
-            workers=[gg, sclh],
-            duration=33,
-            precedents=precedents,
-        )
-
-
-class Spincoat(Task):
-    def __init__(self, sample, recipe: SpincoatRecipe, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="spincoat",
-            workers=[sclh],
-            duration=recipe.duration + 30,
-            task_details=recipe.to_dict(),
-            precedents=precedents,
-        )
-
-
-class SpincoaterToHotplate(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="spincoater_to_hotplate",
-            workers=[gg, sclh],
-            duration=25,
-            precedents=precedents,
-        )
-
-
-class Anneal(Task):
-    def __init__(self, sample, recipe: AnnealRecipe, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="anneal",
-            workers=[hp],
-            duration=recipe.duration,
-            task_details=recipe.to_dict(),
-            precedents=precedents,
-        )
-
-
-class HotplateToStorage(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="hotplate_to_storage",
-            workers=[gg],
-            duration=18,
-            precedents=precedents,
-        )
-
-
-class IdleGantry(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="idle_gantry",
-            workers=[gg],
-            duration=20,
-            precedents=precedents,
-        )
-
-
-class Cooldown(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="cooldown",
-            workers=[st],
-            duration=180,
-            precedents=precedents,
-        )
-
-
-class StorageToCharacterization(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="storage_to_characterization",
-            workers=[gg, cl],
-            duration=18,
-            precedents=precedents,
-        )
-
-
-class Characterize(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="characterize",
-            workers=[cl],
-            duration=95,
-            precedents=precedents,
-        )
-
-
-class CharacterizationToStorage(Task):
-    def __init__(self, sample, precedents=[], start_time=0):
-        super().__init__(
-            sample=sample,
-            task="characterization_to_storage",
-            workers=[gg, cl],
-            duration=18,
-            precedents=precedents,
-        )
 
 
 ### build task list for a sample
@@ -246,7 +155,7 @@ class Scheduler:
     def initialize_model(self, enforce_sample_order: bool):
         self.model = cp_model.CpModel()
         ending_variables = []
-        machine_intervals = {w: [] for w in self.workers}
+        machine_intervals = {w: [] for w in self.workers.values()}
         reservoirs = {}
         ### Task Constraints
         for task in self.tasklist:
@@ -329,9 +238,10 @@ class Scheduler:
 
     def plot_solution(self, ax=None):
         plt.figure(figsize=(14, 5))
+
         for idx, (sample, tasklist) in enumerate(self.tasks.items()):
             color = plt.cm.tab20(idx % 20)
-            offset = np.random.random() * 0.5 - 0.25
+            offset = 0.2 + 0.6 * (idx / len(self.tasks))
             for t in tasklist:
                 for w in t.workers:
                     y = [self.workers.index(w) + offset] * 2
