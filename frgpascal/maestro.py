@@ -232,7 +232,7 @@ class Maestro:
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
+        # self.gripper.close()  # fully close gripper to reduce servo strain
 
     ### Batch Sample Execution
     def _load_netlist(self, filepath):

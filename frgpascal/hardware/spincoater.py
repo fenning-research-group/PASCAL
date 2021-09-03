@@ -92,7 +92,7 @@ class SpinCoater:
         self.axis.motor.config.current_lim = 60  # Amps NOT SAME AS POWER SUPPLY CURRENT
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
         self.axis.trap_traj.config.vel_limit = (
-            0.5  # for position moves to lock position
+            0.2  # for position moves to lock position
         )
         self.axis.trap_traj.config.accel_limit = 1
         self.axis.trap_traj.config.decel_limit = 1

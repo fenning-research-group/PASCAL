@@ -55,7 +55,7 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     :type z_clearance: int, optional
     """
 
-    points = np.asarray(points).round(2)  # destination coordinates
+    points = np.asarray(points).astype(float).round(2)  # destination coordinates
     p_prev = points[0]
 
     points_source_guess = points
@@ -72,7 +72,13 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
 
     # save calibration
     with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
-        out = {"p0": points_source_meas, "p1": np.asarray(points).round(2).tolist()}
+        out = {
+            "p0": points_source_meas,
+            "p1": np.asarray(points)
+            .astype(float)
+            .round(2)
+            .tolist(),  # rounding error bs
+        }
         yaml.dump(out, f)
 
     return CoordinateMapper(p0=points_source_meas, p1=points)
@@ -194,6 +200,11 @@ class Workspace:
     def slot_coordinates(self, name):
         if self.__calibrated == False:
             raise Exception(f"Need to calibrate {self.name} before use!")
+        coords = self.transform.map(self._coordinates[name])
+        if any(np.isnan(coords)):
+            raise Exception(
+                "Coordinate was transformed into nan! Check for rounding errors on calibration .yamls"
+            )
         return self.transform.map(self._coordinates[name])
 
     def __call__(self, name):

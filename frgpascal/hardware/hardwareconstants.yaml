@@ -54,8 +54,8 @@ gripper:
   width_min: 5.6 #minimum opening width (mm)
   pwm_max: 1400  #pulse width (us) corresponding to minimum width
   pwm_min: 650   #pulse width (us) corresponding to maximum width
-  extra_opening_width_pick: 3.5 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 1.5 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  extra_opening_width_pick: 3.7 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width_place: 2.2 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
@@ -73,7 +73,7 @@ liquidhandler:
     port: 8764
 
 sampletray:
-  p0: [494.4,17.5,71] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p0: [495.7,17.5,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
 spincoater:
   # communication

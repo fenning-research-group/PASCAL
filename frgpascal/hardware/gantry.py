@@ -311,7 +311,10 @@ class GantryGUI:
     def __init__(self, gantry):
         AlignHCenter = PyQt5.QtCore.Qt.AlignHCenter
         self.gantry = gantry
-        self.app = QApplication(sys.argv)
+        self.app = PyQt5.QtCore.QCoreApplication.instance()
+        if self.app is None:
+            self.app = QApplication([])
+        # self.app = QApplication(sys.argv)
         self.app.aboutToQuit.connect(self.app.deleteLater)
         self.win = QWidget()
         self.grid = QGridLayout()
@@ -426,7 +429,7 @@ class GantryGUI:
         self.win.show()
         self.app.setQuitOnLastWindowClosed(True)
         self.app.exec_()
-        self.app.quit()
+        # self.app.quit()
         # sys.exit(self.app.exec_())
         # self.app.exit()
         # sys.exit(self.app.quit())

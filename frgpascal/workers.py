@@ -185,7 +185,9 @@ class Worker_GantryGripper(WorkerTemplate):
         if self.gripper.is_under_load():
             raise ValueError("Sample dropped in transit!")
         self.spincoater.vacuum_on()
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        self.gantry.moveto(
+            x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
+        )  # if not dropped, move to the final position. overshoot z a bit to make sure sample contacts the o-ring
         self.maestro.release()  # drop the sample
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
@@ -223,7 +225,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
-        self.gripper.close()  # fully close gripper to reduce servo strain
+        # self.gripper.close()  # fully close gripper to reduce servo strain
 
         sample["anneal_recipe"]["location"] = {
             "hotplate": hotplate_name,
