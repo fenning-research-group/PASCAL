@@ -97,11 +97,15 @@ class SpinCoater:
         self.axis.trap_traj.config.accel_limit = 1
         self.axis.trap_traj.config.decel_limit = 1
         self.__lock()
-        # connect to arduino for vacuum relay control
-        # self.arduino = serial.Serial(port=self.port, timeout=1, baudrate=115200)
-        # print("Connected to vacuum solenoid arduino")
+
+        # start libfibre timer watchdog
+        self.__connected = True
+        self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
+        self._libfibre_watchdog.start()
 
     def disconnect(self):
+        self.__connected = False
+        self._libfibre_watchdog.join()
         try:
             self.odrv0._destroy()
         except:
@@ -143,27 +147,15 @@ class SpinCoater:
             raise Exception(f"Need to calibrate spincoater position before use!")
         return self.coordinates
 
-    # arduino/vacuum control methods
-    def _wait_for_arduino(self):
-        # TODO wait for arduino response
-        t0 = time.time()
-        while time.time() - t0 <= self.ARDUINOTIMEOUT:
-            if self.arduino.in_waiting > 0:
-                line = self.arduino.readline().decode("utf-8").strip()
-                if line == "ok":
-                    return
-            time.sleep(0.2)
-        return ValueError("No response from vacuum solenoid control arduino!")
+    # vacuum control methods
 
     def vacuum_on(self):
-        # self.arduino.write(b"h\n")  # send command to engage/open vacuum solenoid
+        """Turn on vacuum solenoid, pull vacuum"""
         self.switch.on()
-        # self._wait_for_arduino()
 
     def vacuum_off(self):
-        # self.arduino.write(b"l\n")  # send command to engage/open vacuum solenoid
+        """Turn off vacuum solenoid, do not pull vacuum"""
         self.switch.off()
-        # self._wait_for_arduino()
 
     # odrive BLDC motor control methods
     def set_rpm(self, rpm: int, acceleration: float = 1000):
@@ -202,8 +194,8 @@ class SpinCoater:
         self.set_rpm(0, 2000)
         # wait until the rotor is nearly stopped
         while (
-            self.axis.encoder.vel_estimate > 0.5
-        ):  # cutoff speed = half rotation/second
+            self.axis.encoder.vel_estimate > 0.1
+        ):  # cutoff speed = 0.1 rotation/second
             time.sleep(0.1)
         self.__lock()
 
@@ -231,6 +223,23 @@ class SpinCoater:
         self.__logging_active = False
         self.__logging_thread.join()
         return self.__logdata
+
+    def __libfibre_timer_worker(self):
+        """To prevent libfibre timers from accumulating, inducing global interpreter lock (GIL)
+
+
+        Note:
+        `odrv0._libfibre.timer_map` is a dictionary that adds a new `<TimerHandle>` entry once per second.
+        As these entries accumulate, the terminal eventually slows down. I assume these are all involved
+        in some background process within `libfibre` that accumulate into GIL. When i clear this dictionary
+        by `odrv0._libfibre.timer_map = {}`, in a second or two (assuming this is the interval of the
+        libfibre background process) the terminal speed goes back to normal. From what I can tell this does
+        not affect operation of the odrive.
+        """
+        while self.__connected:
+            time.sleep(1)
+            if not self.__logging_active and len(self.odrv0._libfibre.timer_map) > 60:
+                self.odrv0._libfibre.timer_map = {}
 
     def __del__(self):
         self.disconnect()
