@@ -55,8 +55,11 @@ class Maestro:
         # Constants
         self.logger = logging.getLogger("PASCAL")
         self.SAMPLEWIDTH = samplewidth  # mm
-        self.SAMPLETOLERANCE = constants["gripper"][
-            "extra_opening_width"
+        self.SAMPLETOLERANCE_PICK = constants["gripper"][
+            "extra_opening_width_pick"
+        ]  # mm extra opening width
+        self.SAMPLETOLERANCE_PLACE = constants["gripper"][
+            "extra_opening_width_place"
         ]  # mm extra opening width
         self.IDLECOORDINATES = constants["gantry"][
             "idle_coordinates"
@@ -81,7 +84,7 @@ class Maestro:
         self.hotplates = {
             "HotPlate1": HotPlate(
                 name="Hotplate1",
-                version="hotplate_SCILOGEX",  # TODO #3 move the version details into a yaml file, define version in hardwareconstants instead.
+                version="hotplate_SCILOGEX_tighter",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["hotplate"]["p0"],
@@ -90,7 +93,7 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="SampleTray1",
-                version="storage_v3",  # TODO #3
+                version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p0"],
@@ -184,7 +187,8 @@ class Maestro:
                 catch_attempts -= 1
                 # lets jog the gripper position and try again.
                 self.gripper.close()
-                self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=False)
+                self.open_to_catch()
+                # self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False)
                 # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
                 self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
 
@@ -193,12 +197,20 @@ class Maestro:
             self.gripper.close()
             raise ValueError("Failed to pick up sample!")
 
-    def release(self):
+    def open_to_catch(self):
         """
-        Open gripper slowly release sample without jogging position
+        Open gripper quickly before picking up a sample
         """
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE, slow=True
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
+        )  # slow to prevent sample position shifting upon release
+
+    def release(self):
+        """
+        Open gripper slowly to release a sample without jogging position too much
+        """
+        self.gripper.open(
+            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
         )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
@@ -207,15 +219,15 @@ class Maestro:
         self.gripper.close()
 
     def transfer(self, p1, p2, zhop=True):
-        self.release()  # open the grippers
+        self.open_to_catch()  # open the grippers
         self.gantry.moveto(p1, zhop=zhop)  # move to the pickup position
         self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
-        self.gantry.moveto(
-            x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-        )  # move just above destination
-        if self.gripper.is_under_load():
-            raise ValueError("Sample dropped in transit!")
-        self.gantry.moveto(p2, zhop=False)  # if not dropped, move to the final position
+        # self.gantry.moveto(
+        #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+        # )  # move just above destination
+        # if self.gripper.is_under_load():
+        #     raise ValueError("Sample dropped in transit!")
+        self.gantry.moveto(p2, zhop=True)  # if not dropped, move to the final position
         self.release()  # drop the sample
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
@@ -295,7 +307,9 @@ class Maestro:
 
     def run(self, filepath, name, ot2_ip):
         if not self.characterization._calibrated:
-            raise Exception('Cannot start until characterization line has been calibrated!')
+            raise Exception(
+                "Cannot start until characterization line has been calibrated!"
+            )
         self.liquidhandler.server.ip = ot2_ip
         # self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []

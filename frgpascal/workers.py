@@ -176,7 +176,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.maestro.storage[tray](slot)
         p2 = self.maestro.spincoater()
 
-        self.maestro.release()  # open the grippers
+        self.maestro.open_to_catch()  # open the grippers
         self.gantry.moveto(p1, zhop=True)  # move to the pickup position
         self.maestro.catch()  # pick up the sample. this function checks to see if gripper picks successfully
         self.gantry.moveto(
@@ -206,7 +206,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.hotplates[hotplate_name].load(slot, sample)
         p2 = self.hotplates[hotplate_name](slot)
 
-        self.maestro.release()  # open the grippers
+        self.maestro.open_to_catch()  # open the grippers
         self.spincoater.vacuum_off()
         off_time = time.time()
         self.gantry.moveto(p1, zhop=True)  # move to the pickup position
@@ -457,9 +457,10 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         tasks_future = asyncio.gather(
-                self._monitor_droptimes(liquidhandlertasks, t0),
-                self._set_spinspeeds(recipe["steps"], t0, headstart),
-            )
+            self._monitor_droptimes(liquidhandlertasks, t0),
+            self._set_spinspeeds(recipe["steps"], t0, headstart),
+        )
+
         def future_callback(future):
             try:
                 future.result()
@@ -467,9 +468,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 self.logger.exception(f"Exception in {self}")
                 # if future.exception(): #your long thing had an exception
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
+
         tasks_future.add_done_callback(future_callback)
 
-        
         drop_times, _ = loop.run_until_complete(tasks_future)
         rpm_log = self.spincoater.finish_logging()
         self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
