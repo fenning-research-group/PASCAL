@@ -103,7 +103,6 @@ class SpinCoater:
 
     def disconnect(self):
         try:
-            self.odrv0.reboot()
             self.odrv0._destroy()
         except:
             pass  # this always throws an "object lost" error...which is what we want
