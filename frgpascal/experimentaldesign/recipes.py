@@ -3,8 +3,6 @@ from uuid import uuid4  # for unique sample identifiers
 import json
 
 ### Recipes to define a sample
-
-
 class SolutionRecipe:
     def __init__(
         self,
@@ -354,8 +352,6 @@ class Sample:
 
 
 ### Json -> recipe methods
-
-
 def solutionrecipe_fromjson(s: str):
     """
     Loads a solution recipe from a json string
