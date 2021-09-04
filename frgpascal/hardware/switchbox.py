@@ -5,6 +5,7 @@ import serial
 from functools import partial
 from .helpers import get_port
 import time
+from threading import Lock
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -47,10 +48,13 @@ class Switchbox:
             "vacuumsolenoid": "7",  # relay 8 and 9 are not being used for switchboard
             "unused_2": "8",
         }
+        self._lock = (
+            Lock()
+        )  # to prevent multiple workers from talking to switchbox simultaneously
         self.connect()
 
     def connect(self):
-        self._handle = serial.Serial(port=self.port, timeout=1)
+        self._handle = serial.Serial(port=self.port, timeout=5)
         print("Connected to characterization switchbox")
 
     def _get_relay(self, switch):
@@ -65,9 +69,10 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
-        relay = self._get_relay(switch)
-        self._handle.write(f"relay off {relay}\n\r".encode())
-        time.sleep(self.RELAYRESPONSETIME)
+        with self._lock:
+            relay = self._get_relay(switch)
+            self._handle.write(f"relay off {relay}\n\r".encode())
+            time.sleep(self.RELAYRESPONSETIME)
 
     def on(self, switch: int):
         """sets a switch HIGH
@@ -75,9 +80,10 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
-        relay = self._get_relay(switch)
-        self._handle.write(f"relay on {relay}\n\r".encode())
-        time.sleep(self.RELAYRESPONSETIME)
+        with self._lock:
+            relay = self._get_relay(switch)
+            self._handle.write(f"relay on {relay}\n\r".encode())
+            time.sleep(self.RELAYRESPONSETIME)
 
     def all_off(self):
         """
