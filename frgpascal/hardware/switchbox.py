@@ -69,10 +69,10 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
+        relay = self._get_relay(switch)
         with self._lock:
-            relay = self._get_relay(switch)
             self._handle.write(f"relay off {relay}\n\r".encode())
-            time.sleep(self.RELAYRESPONSETIME)
+        time.sleep(self.RELAYRESPONSETIME)
 
     def on(self, switch: int):
         """sets a switch HIGH
@@ -80,10 +80,10 @@ class Switchbox:
         Args:
             switch (int): index of switch to adjust
         """
+        relay = self._get_relay(switch)
         with self._lock:
-            relay = self._get_relay(switch)
             self._handle.write(f"relay on {relay}\n\r".encode())
-            time.sleep(self.RELAYRESPONSETIME)
+        time.sleep(self.RELAYRESPONSETIME)
 
     def all_off(self):
         """
