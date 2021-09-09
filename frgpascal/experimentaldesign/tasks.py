@@ -17,7 +17,6 @@ from frgpascal.workers import (
     Worker_Storage,
 )
 
-
 gg = Worker_GantryGripper(planning=True)
 sclh = Worker_SpincoaterLiquidHandler(planning=True)
 hp = Worker_Hotplate(n_workers=25, planning=True)
@@ -109,14 +108,9 @@ class Task:
         return json.dumps(self.to_dict())
 
 
-# def task_builder(sample, task, precedents=[]):
-#     return Task(
-#         sample=sample,
-#         task=task,
-#         workers=ALL_TASKS[task]["workers"],
-#         duration=ALL_TASKS[task]["estimated_duration"],
-#         precedents=precedents,
-#     )
+### build task list for a sample
+def generate_tasks_for_sample(sample: Sample):
+    tasks = []
 
 
 ### build task list for a sample
@@ -175,7 +169,7 @@ class Scheduler:
         self.model = cp_model.CpModel()
         ending_variables = []
         machine_intervals = {w: [] for w in self.workers.values()}
-        # reservoirs = {}
+        reservoirs = {}
         ### Task Constraints
         for task in self.tasklist:
             task.end_var = self.model.NewIntVar(
