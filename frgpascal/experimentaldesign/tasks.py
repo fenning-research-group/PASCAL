@@ -106,7 +106,7 @@ class SpincoaterToHotplate(Task):
             sample=sample,
             task="spincoater_to_hotplate",
             workers=[gg, sclh],
-            duration=25,
+            duration=30,
             precedents=precedents,
         )
 
