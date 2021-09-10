@@ -45,6 +45,7 @@ class Gripper:
 
         self.currentwidth = self.MINWIDTH
         self.currentpwm = self.MINPWM
+        self._lock = threading.Lock()
         self.connect()  # connect to gripper by default
         # self.close()  # close gripper by default
         # self.write(f"S{self.MINPWM} {self.SLOWGRIPPERINTERVAL}")
@@ -56,12 +57,26 @@ class Gripper:
         print("Connected to gripper")
 
     def disconnect(self):
+        self.__stop_gripper_timeout_watchdog()
         self._handle.close()
         del self._handle
 
     def write(self, msg):
-        self._handle.write(f"{msg}\n".encode())
-        time.sleep(self.POLLINGDELAY)
+        """
+        writes a message to the arduino.
+        In the event of an error, resets the connection and tries again
+        Three tries max, then throws error
+        """
+        with self._lock:
+            for i in range(3):  # 3 tries
+                try:
+                    self._handle.write(f"{msg}\n".encode())
+                    return
+                except:
+                    self.disconnect()
+                    self.connect()
+                time.sleep(self.POLLINGDELAY)
+        raise Exception("Could not talk to gripper")
 
     def _waitformovement(self):
         # return
@@ -71,7 +86,8 @@ class Gripper:
             if time.time() - time0 > 2:  # self.GRIPPERTIMEOUT:
                 raise ValueError("Gripper timed out during movement")
             if self._handle.in_waiting > 0:
-                readline = self._handle.readline().decode("utf-8").strip()
+                with self._lock:
+                    readline = self._handle.readline().decode("utf-8").strip()
             time.sleep(self.POLLINGDELAY)
 
     # gripper methods
@@ -102,8 +118,8 @@ class Gripper:
     def is_under_load(self):
         time.sleep(0.5)  # wait for gripper to complete motion
         self.write("l")
-        time.sleep(self.POLLINGDELAY)
-        load = float(self._handle.readline())
+        with self._lock:
+            load = float(self._handle.readline())
         print(load)
         if load > self.LOADTHRESHOLD:
             return True
@@ -151,11 +167,11 @@ class Gripper:
         self.__stop_gripperidlethread = True
         print("Waiting for gripper timeout watchdog thread to finish up...")
         while self.__gripperwatchdogthread.is_alive():
-            time.sleep(1)
+            time.sleep(0.02)
             print(".")
 
     def __watch_gripper_timeout(self):
-        interval = self.GRIPPERTIMEOUT / 10
+        interval = self.GRIPPERTIMEOUT / 100
         while True:
             time.sleep(interval)
             if self.__stop_gripperidlethread:

@@ -387,7 +387,7 @@ class Maestro:
 
     def stop(self):
         self.working = False
-        self.liquidhandler.server.mark_completed()  # tell liquid handler to complete the protocol.
+        self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
         self.thread.join()
         # clean up the experiment, save log of actual timings
         with open(

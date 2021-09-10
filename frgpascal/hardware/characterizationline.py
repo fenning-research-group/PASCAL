@@ -4,7 +4,7 @@ import re
 import numpy as np
 import yaml
 import os
-import threading
+from threading import Thread
 from abc import ABC, abstractmethod
 from tifffile import imwrite
 import csv
@@ -14,6 +14,7 @@ from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import SingleSwitch, Switchbox
 from frgpascal.hardware.shutter import Shutter
+from frgpascal.hardware.filterslider import FilterSlider
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
@@ -32,6 +33,7 @@ class CharacterizationLine:
             os.mkdir(self.rootdir)
         self.switchbox = switchbox
         self.shutter = Shutter()
+        self.filterslider = FilterSlider()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
             camid=constants["darkfield"]["cameraid"]
@@ -72,6 +74,7 @@ class CharacterizationLine:
                 position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
                 spectrometer=self.spectrometer,
+                slider=self.filterslider,
                 shutter=self.shutter,
             ),
             PLSpectroscopy(
@@ -79,6 +82,7 @@ class CharacterizationLine:
                 rootdir=self.rootdir,
                 subdir="PL_635",
                 spectrometer=self.spectrometer,
+                slider=self.filterslider,
                 shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
             ),
@@ -87,6 +91,7 @@ class CharacterizationLine:
                 rootdir=self.rootdir,
                 subdir="PL_405",
                 spectrometer=self.spectrometer,
+                slider=self.filterslider,
                 shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
@@ -419,17 +424,36 @@ class BrightfieldImaging(StationTemplate):
 
 
 class TransmissionSpectroscopy(StationTemplate):
-    def __init__(self, position, rootdir, spectrometer, shutter, subdir="Transmission"):
+    def __init__(
+        self,
+        position,
+        rootdir,
+        spectrometer: Spectrometer,
+        shutter: Shutter,
+        slider: FilterSlider,
+        subdir="Transmission",
+    ):
         super().__init__(position=position, rootdir=rootdir, subdir=subdir)
 
         self.spectrometer = spectrometer
         self.shutter = shutter
+        self.slider = slider
 
     def capture(self):
-        self.shutter.top_left()  # moves longpass filter out of the transmitted path
-        self.shutter.bottom_left()  # moves shutter out of the way, puts ND filter in incident path
+        threads = [
+            Thread(
+                target=self.slider.top_left
+            ),  # move longpass filter out of the detector path
+            Thread(target=self.shutter.open),  # open the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
         wl, t = self.spectrometer.transmission_hdr()
-        self.shutter.bottom_right()  # closes the shutter
+        self.shutter.close()
+
         return wl, t
 
     def save(self, spectrum, sample):
@@ -442,14 +466,14 @@ class TransmissionSpectroscopy(StationTemplate):
                 writer.writerow([wl_, t_])
 
     def calibrate(self):
-        self.shutter.top_left()  # moves longpass filter out of the transmitted path
-        self.shutter.bottom_right()  # close the shutter
+        self.slider.top_left()  # moves longpass filter out of the transmitted path
+        self.shutter.close()  # close the shutter
         self.spectrometer.take_dark_baseline()
         print("spectrometer dark baselines taken")
-        self.shutter.bottom_left()  # open the shutter
+        self.shutter.open()  # open the shutter
         self.spectrometer.take_light_baseline()
         print("spectrometer light baselines taken")
-        self.shutter.bottom_right()  # closes the shutter
+        self.shutter.close()  # closes the shutter
 
 
 class PLSpectroscopy(StationTemplate):
@@ -459,6 +483,7 @@ class PLSpectroscopy(StationTemplate):
         rootdir,
         spectrometer: Spectrometer,
         lightswitch: SingleSwitch,
+        slider: FilterSlider,
         shutter: Shutter,
         subdir="PL",
     ):
@@ -466,18 +491,28 @@ class PLSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.lightswitch = lightswitch
         self.shutter = shutter
+        self.slider = slider
 
     def capture(self):
         """
         captures high-depth resolution (HDR) PL spectrum with a few increasing dwell times.
         data at each wavelength uses the longest dwell time that didnt blow out the detector
         """
-        self.shutter.top_right()  # moves longpass filter into the detector path
-        self.shutter.bottom_right()  # closes shutter to block transmission lamp
+        threads = [
+            Thread(
+                target=self.slider.top_right
+            ),  # move longpass filter into the detector path
+            Thread(target=self.shutter.close),  # close the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
         self.lightswitch.on()  # turn on the laser
         all_cts = {}
         for t in self.spectrometer._hdr_times:
-            self.spectrometer.exposure = t
+            self.spectrometer.dwelltime = t
             wl, cts = self.spectrometer._capture_raw()
             all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
