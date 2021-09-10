@@ -148,8 +148,10 @@ class OT2:
         )
         return taskid
 
-    # def end(self):
-    #     self.server.add_to_queue(task="None", all_done="all_done")
+    def mark_completed(self):
+        self.server._start_directly()
+        self.mark_completed()
+        self.server.stop()
 
     def wait_for_task_complete(self, taskid):
         while taskid not in self.server.completed_tasks:

@@ -173,7 +173,7 @@ class Characterize(Task):
             sample=sample,
             task="characterize",
             workers=[cl],
-            duration=95,
+            duration=120,
             precedents=precedents,
         )
 

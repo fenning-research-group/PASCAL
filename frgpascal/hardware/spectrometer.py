@@ -20,10 +20,12 @@ class Spectrometer:
     def __init__(self, address=0):
         self.id, self.__wl = sn.array_get_spec(address)
         self._hdr_times = [
+            50,
+            100,
+            250,
             500,
-            1500,
-            5000,
-            20000,
+            2500,
+            15000,
         ]  # duration times (ms) for high dynamic range measurements
         self.HDR_THRESHOLD = (
             2 ** 16 * 0.95
@@ -187,12 +189,17 @@ class Spectrometer:
 
         for i, t in enumerate(self._hdr_times):
             self.dwelltime = t  # milliseconds
-            wl, cts = self.capture()  # removes dark baseline from captured spectrum
-            transmission = cts / (self.__baseline_light[t] - self.__baseline_dark[t])
+            (
+                wl,
+                cts,
+            ) = self._capture_raw()  # removes dark baseline from captured spectrum
+            transmission = (cts - self.__baseline_dark[t]) / (
+                self.__baseline_light[t] - self.__baseline_dark[t]
+            )
             if i == 0:
                 transmission_overall = transmission
             else:
-                mask = cts < self.HDR_THRESHOLD
+                mask = self.__baseline_light[t] < self.HDR_THRESHOLD
                 transmission_overall[mask] = transmission[mask]
 
         return wl, transmission_overall
