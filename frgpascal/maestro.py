@@ -272,7 +272,14 @@ class Maestro:
     def batch_characterize(self, name, tray_maxslots={}):
         """
         Characterize a list of samples.
+        Creates an experiment folder to save data, filenames by tray-slot
+
+        Parameters
+            tray_maxslots (dict): a dictionary of tray names and the highest index filled
+
+                    ie: tray_maxslots = {'SampleTray1': 'A5'} will measure samples A1, A2, A3, A4, A5
         """
+        self._experiment_checklist(characterization_only=True)
         self._set_up_experiment_folder(name)
 
         if any([tray not in self.storage for tray in tray_maxslots]):
@@ -363,11 +370,41 @@ class Maestro:
         self.logger.addHandler(fh)
         self.logger.addHandler(sh)
 
-    def run(self, filepath, name, ot2_ip):
+    def _experiment_checklist(self, characterization_only=False):
+        """prompt user to go through checklist to ensure that
+        all hardware is set properly for PASCAL to run
+
+        """
+
+        def prompt_for_yes(s):
+            response = input(s)
+            if response not in ["y", "Y"]:
+                raise Exception("Checklist failed!")
+
         if not self.characterization._calibrated:
             raise Exception(
                 "Cannot start until characterization line has been calibrated!"
             )
+
+        prompt_for_yes("Is the transmission lamp on? (y/n)")
+        prompt_for_yes("Is the sample holder(s) loaded and in place? (y/n)")
+        if not characterization_only:
+            prompt_for_yes("Is the vacuum pump on? (y/n)")
+            prompt_for_yes(
+                "Are the vials loaded into the liquid handler with the caps off? (y/n)"
+            )
+            prompt_for_yes(
+                "Are there fresh pipette tips loaded into the liquid handler (starting with deck slot 7)? (y/n)"
+            )
+            prompt_for_yes(
+                "Has the liquid handler listener protocol been run up to the waiting point? (y/n)"
+            )
+
+        # if we make it this far, checklist has been passed
+
+    def run(self, filepath, name, ot2_ip):
+        self._experiment_checklist()
+
         self.liquidhandler.server.ip = ot2_ip
         # self.liquidhandler.server.start(ip=ot2_ip)
         self.pending_tasks = []

@@ -74,16 +74,20 @@ class Spectrometer:
         time.sleep(self.SETTING_DELAY)
         self.__smooth = n
 
-    def take_light_baseline(self):
+    def take_light_baseline(self, skip_repeats=False):
         """takes an illuminated baseline at each integration time from HDR timings"""
         for t in self._hdr_times:
+            if skip_repeats and t in self.__baseline_light:
+                continue  # already taken
             self.dwelltime = t
             wl, cts = self._capture_raw()
             self.__baseline_light[t] = cts
 
-    def take_dark_baseline(self):
+    def take_dark_baseline(self, skip_repeats=False):
         """takes an dark baseline at each integration time from HDR timings"""
         for t in self._hdr_times:
+            if skip_repeats and t in self.__baseline_dark:
+                continue  # already taken
             self.dwelltime = t
             wl, cts = self._capture_raw()
             self.__baseline_dark[t] = cts
