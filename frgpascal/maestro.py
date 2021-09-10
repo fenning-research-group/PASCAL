@@ -10,7 +10,8 @@ import ntplib
 import asyncio
 import datetime
 import logging
-import numpy as np
+from natsort import natsorted
+from tqdm import tqdm
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -267,6 +268,29 @@ class Maestro:
             self.gantry._transition_to_frame(
                 "workspace"
             )  # move gantry out of the liquid handler
+
+    def batch_characterize(self, name, tray_maxslots={}):
+        """
+        Characterize a list of samples.
+        """
+        self._set_up_experiment_folder(name)
+
+        if any([tray not in self.storage for tray in tray_maxslots]):
+            raise ValueError("Invalid tray specified!")
+
+        samples_to_characterize = []
+        for tray in tray_maxslots.keys():
+            for slot in natsorted(self.storage[tray]._coordinates.keys()):
+                samples_to_characterize.append((tray, slot))
+                if slot == tray_maxslots[tray]:
+                    break  # last sample to measure in this tray
+
+        for (tray, slot) in tqdm(
+            samples_to_characterize, label="Batch Characterization"
+        ):
+            self.transfer(self.storage[tray](slot), self.characterization.axis())
+            self.characterization.run(f"{tray}-{slot}")
+            self.transfer(self.characterization.axis(), self.storage[tray](slot))
 
     ### Batch Sample Execution
     def _load_netlist(self, filepath):
