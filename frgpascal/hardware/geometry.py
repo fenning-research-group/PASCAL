@@ -116,32 +116,19 @@ class Workspace:
         Raises:
             Exception: [description]
         """
-        # :param name: name of workspace. For logging purposes
-        # :type name: string
-        # :param p0: Approximate location of lower left slot in the source (gantry) coordinate system
-        # :type name: list [x,y,z]
-        # :param pitch: space between neighboring breadboard holes, mm, (x,y). assume constrained in xy plane @ z = 0
-        # :type pitch: [type]
-        # :param gridsize: number of grid points available, (x,y)
-        # :type gridsize: [type]
-        # :param gantry: Gantry control object
-        # :type gridsize: gantry.Gantry
-        # :param testslots: slots to probe during calibration, defaults to None
-        # :type testslots: [type], optional
-        # :param z_clearance: vertical offset when calibrating points, in mm. ensures no crashing before calibration, defaults to 5
-        # :type z_clearance: int, optional
 
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
         if gantry is None and gripper is None:
             self.__is_simulation = True
+            self.p0 = np.array([0, 0, 0])
         else:
             self.__is_simulation = False
+            self.p0 = np.asarray(p0) + [0, 0, 5]
         self.gantry = gantry
         self.gripper = gripper
         # coordinate system properties
         self.pitch = pitch
-        self.p0 = np.asarray(p0) + [0, 0, 5]
         self.gridsize = gridsize
         self.z_clearance = z_clearance
         self.OPENWIDTH = openwidth

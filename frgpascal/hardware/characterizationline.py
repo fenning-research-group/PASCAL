@@ -390,19 +390,33 @@ class PLImaging(StationTemplate):
         super().__init__(position=position, rootdir=rootdir, subdir=subdir)
         self.camera = camera
         self.lightswitch = lightswitch
-        self.exposure_time = 2e5
+        self.hdr_times = [5e4, 2e5, 1e6, 5e6]  # 50 ms, 200 ms, 1 s dwell times
 
     def capture(self):
-        self.camera.exposure = self.exposure_time  #  dwell time, in microseconds
-        self.lightswitch.on()
-        time.sleep(1)  # takes a little longer for PL lamp to turn on
-        img = self.camera.capture()
-        self.lightswitch.off()
-        return img
+        """
+        Take a series of PL images at exposure times specified in self.hdr_times
 
-    def save(self, img, sample):
-        fname = f"{sample}_darkfield.tif"
-        imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
+        Returns:
+            imgs: dictionary of {dwelltime (ms): image}
+        """
+        frames0 = self.camera.frames
+        self.camera.frames = 5  # average 10 frames
+        imgs = {}
+
+        self.lightswitch.on()
+        time.sleep(1)  # LED lamp takes a second to turn on
+        for t in self.hdr_times:
+            self.camera.exposure_time = t
+            imgs[int(t / 1000)] = self.camera.capture()  # save as ms exposure
+        self.lightswitch.off()
+
+        self.camera.frames = frames0
+        return imgs
+
+    def save(self, imgs, sample):
+        for t, img in imgs.items():
+            filename = f"{sample}_plimage_{t}ms.tif"
+            img.save(os.path.join(self.savedir, filename))
 
 
 class BrightfieldImaging(StationTemplate):
@@ -438,8 +452,19 @@ class TransmissionSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.shutter = shutter
         self.slider = slider
+        self.hdr_times = [50, 200, 1000, 5000, 10000]  # ms
+        self.NUMSCANS = 2  # take 2 scans per to reduce noise
+        self.spectrometer._hdr_times = list(
+            set(self.spectrometer._hdr_times + self.hdr_times)
+        )
 
     def capture(self):
+        # set scan parameters
+        self.spectrometer.numscans = self.NUMSCANS
+        hdrtimes0 = self.spectrometer._hdr_times
+        self.spectrometer._hdr_times = self.hdr_times
+
+        # open shutter + move filter slider
         threads = [
             Thread(
                 target=self.slider.top_left
@@ -450,9 +475,12 @@ class TransmissionSpectroscopy(StationTemplate):
             t.start()
         for t in threads:
             t.join()
-
         wl, t = self.spectrometer.transmission_hdr()
+
+        # close shutter, return to defaults
         self.shutter.close()
+        self.spectometer.numscans = 1
+        self.spectrometer._hdr_times = hdrtimes0
 
         return wl, t
 
@@ -492,6 +520,10 @@ class PLSpectroscopy(StationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
+        self.hdr_times = [50, 200, 1000, 5000]
+        self.spectrometer._hdr_times = list(
+            set(self.spectrometer._hdr_times + self.hdr_times)
+        )
 
     def capture(self):
         """
@@ -511,7 +543,7 @@ class PLSpectroscopy(StationTemplate):
 
         self.lightswitch.on()  # turn on the laser
         all_cts = {}
-        for t in self.spectrometer._hdr_times:
+        for t in self.hdr_times:
             self.spectrometer.dwelltime = t
             wl, cts = self.spectrometer._capture_raw()
             all_cts[t] = cts
@@ -532,3 +564,9 @@ class PLSpectroscopy(StationTemplate):
             writer.writerow(["Wavelength (nm)"] + ["PL (counts)"] * len(dwells))
             for wl_, cts_ in zip(wl, cts):
                 writer.writerow([wl_] + list(cts_))
+
+    def calibrate(self):
+        self.slider.top_right()  # moves longpass filter out of the transmitted path
+        self.shutter.close()  # close the shutter
+        self.spectrometer.take_dark_baseline()
+        print("PL dark baselines taken")
