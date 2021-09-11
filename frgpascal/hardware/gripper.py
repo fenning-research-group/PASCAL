@@ -120,7 +120,7 @@ class Gripper:
         self.write("l")
         with self._lock:
             load = float(self._handle.readline())
-        print(load)
+        # print(load)
         if load > self.LOADTHRESHOLD:
             return True
         else:

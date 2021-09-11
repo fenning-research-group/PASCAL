@@ -12,6 +12,7 @@ import datetime
 import logging
 from natsort import natsorted
 from tqdm import tqdm
+from warnings import warn
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -94,7 +95,7 @@ class Maestro:
         }
         self.storage = {
             "Tray1": SampleTray(
-                name="SampleTray1",
+                name="Tray1",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
@@ -116,11 +117,15 @@ class Maestro:
     def __calibrate_time_to_nist(self):
         client = ntplib.NTPClient()
         response = None
+        t0 = time.time()
         while response is None:
             try:
-                response = client.request("europe.pool.ntp.org", version=3)
+                responnse = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
+            if time.time() - t0 >= 10:
+                warn("Could not get NIST time!")
+                return
         self.__local_nist_offset = response.tx_time - time.time()
 
     def nist_time(self):
@@ -286,14 +291,16 @@ class Maestro:
             raise ValueError("Invalid tray specified!")
 
         samples_to_characterize = []
-        for tray in tray_maxslots.keys():
+        for tray, maxslot in tray_maxslots.items():
+            if maxslot not in self.storage[tray]._coordinates:
+                raise ValueError(f"{maxslot} does not exist in tray {tray}!")
             for slot in natsorted(self.storage[tray]._coordinates.keys()):
                 samples_to_characterize.append((tray, slot))
                 if slot == tray_maxslots[tray]:
                     break  # last sample to measure in this tray
 
         for (tray, slot) in tqdm(
-            samples_to_characterize, label="Batch Characterization"
+            samples_to_characterize, desc="Batch Characterization"
         ):
             self.transfer(self.storage[tray](slot), self.characterization.axis())
             self.characterization.run(f"{tray}-{slot}")

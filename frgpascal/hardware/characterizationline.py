@@ -111,6 +111,7 @@ class CharacterizationLine:
         """calibrate any stations that require it"""
         for s in self.stations:
             if hasattr(s, "calibrate"):
+                print(f"Calibrating {s}")
                 self.axis.moveto(s.position)
                 s.calibrate()
         self.axis.moveto(self.axis.TRANSFERPOSITION)
@@ -415,8 +416,8 @@ class PLImaging(StationTemplate):
 
     def save(self, imgs, sample):
         for t, img in imgs.items():
-            filename = f"{sample}_plimage_{t}ms.tif"
-            img.save(os.path.join(self.savedir, filename))
+            fname = f"{sample}_plimage_{t}ms.tif"
+            imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
 class BrightfieldImaging(StationTemplate):
@@ -479,7 +480,7 @@ class TransmissionSpectroscopy(StationTemplate):
 
         # close shutter, return to defaults
         self.shutter.close()
-        self.spectometer.numscans = 1
+        self.spectrometer.numscans = 1
         self.spectrometer._hdr_times = hdrtimes0
 
         return wl, t
