@@ -6,8 +6,8 @@ import json
 
 from frgpascal.experimentaldesign.recipes import (
     Sample,
-    SpincoatRecipe,
-    AnnealRecipe,
+    Spincoat,
+    Anneal,
 )
 from frgpascal.workers import (
     Worker_GantryGripper,
@@ -59,10 +59,12 @@ TRANSITION_TASKS = {
     },
 }
 
-hide_me = [task for p1 in TRANSITION_TASKS.values() for task in p1.values()]
+hide_me = [
+    task for p1 in TRANSITION_TASKS.values() for task in p1.values()
+]  # user does not need to see transition tasks
 AVAILABLE_TASKS = {
-    task: details for task, details in AVAILABLE_TASKS.items() if task not in hide_me
-}
+    task: details for task, details in ALL_TASKS.items() if task not in hide_me
+}  # tasks to display to user
 ### Base Class for PASCAL Tasks
 class Task:
     def __init__(
@@ -110,15 +112,10 @@ class Task:
 
 
 ### build task list for a sample
-def generate_tasks_for_sample(sample: Sample):
-    tasks = []
-
-
-### build task list for a sample
 def generate_sample_worklist(sample: Sample):
     sample_worklist = []
     p0 = Worker_Storage  # sample begins at storage
-    for task in sample.tasks:
+    for task in sample.worklist:
         p1 = task["workers"][0]
         transition_task = ALL_TASKS[TRANSITION_TASKS[p0][p1]]
         sample_worklist.append(
@@ -129,25 +126,31 @@ def generate_sample_worklist(sample: Sample):
                 duration=transition_task["estimated_duration"],
             )
         )
+
+        if ALL_TASKS[task]["estimated_duration"] is None:
+            duration = task.duration
+        else:
+            duration = ALL_TASKS[task]["estimated_duration"]
+
         sample_worklist.append(
             Task(
                 sample=sample,
                 task=task,
                 workers=ALL_TASKS[task]["workers"],
-                duration=ALL_TASKS[task]["estimated_duration"],
+                duration=duration,
             )
         )
         p0 = p1  # update location for next task
-    p1 = Worker_Storage
-    transition_task = ALL_TASKS[TRANSITION_TASKS[p0][p1]]
-    sample_worklist.append(
-        Task(
-            sample=sample,
-            task=transition_task,
-            workers=transition_task["workers"],
-            duration=transition_task["estimated_duration"],
-        )
-    )  # sample ends at storage
+    if p0 != Worker_Storage:
+        transition_task = ALL_TASKS[TRANSITION_TASKS[p0][Worker_Storage]]
+        sample_worklist.append(
+            Task(
+                sample=sample,
+                task=transition_task,
+                workers=transition_task["workers"],
+                duration=transition_task["estimated_duration"],
+            )
+        )  # sample ends at storage
     return sample_worklist
 
 

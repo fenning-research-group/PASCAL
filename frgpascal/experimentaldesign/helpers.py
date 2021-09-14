@@ -1,9 +1,6 @@
 import numpy as np
 import itertools
-from frgpascal.experimentaldesign.recipes import (
-    SolutionRecipe,
-    Sample,
-)
+from frgpascal.experimentaldesign.recipes import Solution, Sample, Spincoat, Drop
 from scipy.optimize import nnls
 from copy import deepcopy
 import uuid
@@ -71,7 +68,7 @@ def where_to_store(volume, options):
 
 
 def calculate_mix(
-    target: SolutionRecipe,
+    target: Solution,
     volume: float,
     stock_solutions: list,
     tolerance: float = 0.05,
@@ -204,15 +201,52 @@ def plot_tray(tray, ax=None):
 #### Construct sample list from experimental mesh
 
 
+def apply_solution_mesh_to_drop(drop: Drop, solution_mesh):
+    """
+    given a drop, apply the solution mesh to the drop
+    """
+    if type(drop.solution) == Solution:
+        return [drop]
+    if drop.solution not in solution_mesh:
+        raise Exception(f"Solution placeholder {drop.solution} not in solution mesh!")
+    solutions = solution_mesh[drop.solution]
+    return [
+        Drop(
+            solution=s,
+            volume=drop.volume,
+            time=drop.time,
+            rate=drop.rate,
+            height=drop.height,
+        )
+        for s in solutions
+    ]
+
+
+def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
+    """
+    given a spincoat, apply the solution mesh to the spincoat
+    """
+    drop_options = [
+        apply_solution_mesh_to_drop(d, solution_mesh) for d in spincoat.drops
+    ]
+    spincoats = [
+        Spincoat(
+            steps=spincoat.steps,
+            drops=ds,
+        )
+        for ds in itertools.product(*drop_options)
+    ]
+    return spincoats
+
+
 def build_sample_list(
-    available_trays,
-    input_substrates,
-    target_solutions,
-    spincoat_recipes,
-    anneal_recipes,
-    n_repeats=1,
-    ignore_storage=False,
-):
+    available_trays: list,
+    input_substrates: list,
+    steps: list,
+    solution_mesh: dict = {},
+    n_repeats: int = 1,
+    ignore_storage: bool = False,
+) -> list:
     """
     Permutes experimental mesh into sample list
     """
@@ -221,6 +255,12 @@ def build_sample_list(
         tray.unload_all()
     trays = iter(available_trays)
     current_tray = next(trays)
+    listedsteps = []
+    for step in steps:
+        if type(step) != list:
+            listedsteps.append([step])
+        else:
+            listedsteps.append(step)
 
     def get_storage_slot(name, current_tray, trays):
         loaded = False
@@ -237,29 +277,34 @@ def build_sample_list(
                     )
         return {"tray": current_tray.name, "slot": slot}, current_tray, trays
 
+    all_worklists = []
+    for worklist in itertools.product(*listedsteps):
+        this_set_of_steps = []
+        for step in worklist:
+            if type(step) == Spincoat:
+                this_set_of_steps.append(apply_solution_mesh(step, solution_mesh))
+            else:
+                this_set_of_steps.append([step])
+        all_worklists += list(itertools.product(*this_set_of_steps))
+
     idx = 0
-    for sub, sol, sc, an in itertools.product(
-        input_substrates, target_solutions, spincoat_recipes, anneal_recipes
-    ):
-        # recipe_id = generate_unique_id()
-        sc_ = deepcopy(sc)
-        sc_.solution = sol
-        for r in range(n_repeats):
-            name = f"sample{idx}"
-            idx += 1
-            this_sample = Sample(
-                name=name,
-                substrate=sub,
-                spincoat_recipe=sc_,
-                anneal_recipe=an,
-                storage_slot=None
-                # sampleid=sampleid
-            )
-            if not ignore_storage:
-                storage_slot, current_tray, trays = get_storage_slot(
-                    this_sample, current_tray, trays
+    for wl in all_worklists:
+        for sub in input_substrates:
+            for r in range(n_repeats):
+                name = f"sample{idx}"
+                idx += 1
+                this_sample = Sample(
+                    name=name,
+                    substrate=sub,
+                    worklist=wl,
+                    storage_slot=None
+                    # sampleid=sampleid
                 )
-            this_sample.storage_slot = storage_slot
-            sample_list.append(this_sample)
+                if not ignore_storage:
+                    storage_slot, current_tray, trays = get_storage_slot(
+                        this_sample, current_tray, trays
+                    )
+                this_sample.storage_slot = storage_slot
+                sample_list.append(this_sample)
 
     return sample_list

@@ -150,8 +150,8 @@ class WorkerTemplate(ABC):
 
 
 class Worker_GantryGripper(WorkerTemplate):
-    def __init__(self, maestro):
-        super().__init__(maestro=maestro, n_workers=1)
+    def __init__(self, maestro=None, planning=False):
+        super().__init__(maestro=maestro, planning=planning, n_workers=1)
         self.functions = {
             # "moveto": self.gantry.moveto,
             # "moverel": self.gantry.moverel,
@@ -371,8 +371,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
 
 class Worker_Hotplate(WorkerTemplate):
-    def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro, n_workers=n_workers)
+    def __init__(self, n_workers, maestro=None, planning=False):
+        super().__init__(maestro=maestro, planning=planning, n_workers=n_workers)
         self.functions = {
             "anneal": task(
                 function=self.anneal, estimated_duration=None, other_workers=[]
@@ -384,8 +384,8 @@ class Worker_Hotplate(WorkerTemplate):
 
 
 class Worker_Storage(WorkerTemplate):
-    def __init__(self, maestro, n_workers):
-        super().__init__(maestro=maestro, n_workers=n_workers)
+    def __init__(self, n_workers, maestro=None, planning=False):
+        super().__init__(maestro=maestro, planning=planning, n_workers=n_workers)
         self.functions = {
             "cooldown": task(
                 function=self.cooldown, estimated_duration=180, other_workers=[]
@@ -397,23 +397,9 @@ class Worker_Storage(WorkerTemplate):
 
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
-    def __init__(self, maestro):
-        super().__init__(maestro=maestro, n_workers=1)
+    def __init__(self, maestro=None, planning=False):
+        super().__init__(maestro=maestro, planning=planning, n_workers=1)
         self.functions = {
-            # "vacuum_on": self.spincoater.vacuum_on,
-            # "vacuum_off": self.spincoater.vacuum_off,
-            # "set_rpm": self.spincoater.set_rpm,
-            # "stop": self.spincoater.stop,
-            # "start_logging": self.spincoater.start_logging,
-            # "finish_logging": self.spincoater.finish_logging,
-            # "aspirate_for_spincoating": self.liquidhandler.aspirate_for_spincoating,
-            # "aspirate_both_for_spincoating": self.liquidhandler.aspirate_both_for_spincoating,
-            # "stage_perovskite": self.liquidhandler.stage_perovskite,
-            # "stage_antisolvent": self.liquidhandler.stage_antisolvent,
-            # "drop_perovskite": self.liquidhandler.drop_perovskite,
-            # "drop_antisolvent": self.liquidhandler.drop_antisolvent,
-            # "clear_chuck": self.liquidhandler.clear_chuck,
-            # "cleanup": self.liquidhandler.cleanup,
             "spincoat": task(
                 function=self.spincoat, estimated_duration=None, other_workers=[]
             ),
@@ -592,12 +578,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
 
 class Worker_Characterization(WorkerTemplate):
-    def __init__(self, maestro):
-        super().__init__(maestro=maestro, n_workers=1)
+    def __init__(self, maestro=None, planning=False):
+        super().__init__(maestro=maestro, planning=planning, n_workers=1)
         self.functions = {
-            # "moveto": self.characterization.axis.moveto,
-            # "moverel": self.characterization.axis.moverel,
-            # "movetotransfer": self.characterization.axis.movetotransfer,
             "characterize": task(
                 function=self.characterize, estimated_duration=95, other_workers=[]
             ),
