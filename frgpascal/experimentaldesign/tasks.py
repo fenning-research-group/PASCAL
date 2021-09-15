@@ -65,38 +65,191 @@ hide_me = [
 AVAILABLE_TASKS = {
     task: details for task, details in ALL_TASKS.items() if task not in hide_me
 }  # tasks to display to user
+
+
+### Subclasses to define a spincoat
+class Solution:
+    def __init__(
+        self,
+        solvent: str,
+        solutes: str = "",
+        molarity: float = 0,
+    ):
+        if solutes != "" and molarity == 0:
+            raise ValueError(
+                "If the solution contains solutes, the molarity must be >0!"
+            )
+
+        self.solutes = solutes
+        self.molarity = molarity
+        self.solvent = solvent
+
+        self.solute_dict = self.name_to_components(
+            solutes, factor=molarity, delimiter="_"
+        )
+        self.solvent_dict = self.name_to_components(solvent, factor=1, delimiter="_")
+        total_solvent_amt = sum(self.solvent_dict.values())
+        self.solvent_dict = {
+            k: v / total_solvent_amt for k, v in self.solvent_dict.items()
+        }  # normalize so total solvent amount is 1.0
+        self.well = {
+            "tray": None,
+            "slot": None,
+        }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
+
+    def name_to_components(
+        self,
+        name,
+        factor=1,
+        delimiter="_",
+    ):
+        """
+        given a chemical formula, returns dictionary with individual components/amounts
+        expected name format = 'MA0.5_FA0.5_Pb1_I2_Br1'.
+        would return dictionary with keys ['MA, FA', 'Pb', 'I', 'Br'] and values [0.5,.05,1,2,1]*factor
+        """
+        components = {}
+        for part in name.split(delimiter):
+            species = part
+            count = 1.0
+            for l in range(len(part), 0, -1):
+                try:
+                    count = float(part[-l:])
+                    species = part[:-l]
+                    break
+                except:
+                    pass
+            if species == "":
+                continue
+            components[species] = count * factor
+        return components
+
+    def to_dict(self):
+        out = {
+            "solutes": self.solutes,
+            "molarity": self.molarity,
+            "solvent": self.solvent,
+            "well": self.well,
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __str__(self):
+        if self.solutes == "":  # no solutes, just a solvent
+            return f"{self.solvent}"
+        return f"{round(self.molarity,2)}M {self.solutes} in {self.solvent}"
+
+    def __repr__(self):
+        return f"<Solution>" + str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.solutes == other.solutes
+                and self.molarity == other.molarity
+                and self.solvent == other.solvent
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.solutes, self.molarity, self.solvent)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
+class Drop:
+    def __init__(
+        self,
+        solution: Solution,
+        volume: float,
+        time: float,
+        rate: float = 50,
+        height: float = 2,
+    ):
+        self.solution = solution
+        self.volume = volume
+        self.time = time
+        self.rate = rate
+        self.height = max(
+            1, height
+        )  # distance from pipette tip to substrate must be at least 1mm
+
+    def __repr__(self):
+        return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
+
+    def to_dict(self):
+        out = {
+            "type": "drop",
+            "solution": self.solution.to_dict(),
+            "time": self.time,
+            "rate": self.rate,
+            "height": self.height,
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.solution == other.solution
+                and self.volume == other.volume
+                and self.time == other.time
+                and self.rate == other.rate
+                and self.height == other.height
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.solution, self.volume, self.time, self.rate, self.height)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
 ### Base Class for PASCAL Tasks
 class Task:
     def __init__(
         self,
-        sample,
         task,
-        workers,
-        duration,
+        duration=None,
         # task_details="",
         precedents=[],
         # reservoir=[],
+        sample=None,
     ):
         self.sample = sample
-        self.workers = workers
+        if task not in ALL_TASKS:
+            raise ValueError(f"Task {task} not in ALL_TASKS!")
+        taskinfo = ALL_TASKS[task]
         self.task = task
+        self.workers = taskinfo["workers"]
+        if duration is None:
+            self.duration = taskinfo["estimated_duration"]
+        else:
+            self.duration = int(duration)
         # self.task_details = task_details
         self.taskid = f"{task}-{str(uuid.uuid4())}"
         self.precedents = precedents
         # self.reservoir = []
         if sum([immediate for task, immediate in precedents]) > 1:
             raise ValueError("Only one precedent can be immediate!")
-        self.duration = int(duration)
 
     def __repr__(self):
-        return f"<Task> {self.sample.name}, {self.task}"
+        return f"<Task> {self.sample}, {self.task}"
 
     def __eq__(self, other):
         return other == self.taskid
 
     def to_dict(self):
         out = {
-            "sample": self.sample.name,
+            "sample": self.sample,
             "start": self.start,
             "task": self.task,
             # "details": self.task_details,
@@ -111,166 +264,297 @@ class Task:
         return json.dumps(self.to_dict())
 
 
+class Spincoat(Task):
+    def __init__(
+        self,
+        steps: list,
+        drops: list,
+    ):
+        """
+
+        Args:
+            steps (list): nested list of steps:
+            [
+                [speed, acceleration, duration],
+                [speed, acceleration, duration],
+                ...,
+                [speed, acceleration, duration]
+            ]
+            where speed = rpm, acceleration = rpm/s, duration = s (including the acceleration ramp!)
+            drops: list of solution drops to be performed during spincoating
+        """
+        self.steps = np.asarray(steps, dtype=float)
+        if self.steps.shape[1] != 3:
+            raise ValueError(
+                "steps must be an nx3 nested list/array where each row = [speed, acceleration, duration]."
+            )
+        if len(drops) > 2:
+            raise ValueError(
+                "Cannot plan more than two drops in one spincoating routine (yet)!"
+            )
+        self.drops = drops
+        first_drop_time = min([d.time for d in self.drops])
+        self.start_times = [
+            max(0, -first_drop_time)
+        ]  # push back spinning times to allow static drop beforehand
+        for duration in self.steps[:-1, 2]:
+            self.start_times.append(self.start_times[-1] + duration)
+        duration = self.steps[:, 2].sum() + self.start_times[0]
+
+        super().__init__(
+            task="spincoat",
+            duration=duration,
+        )
+
+    def to_dict(self):
+        steps = [
+            {"rpm": rpm, "acceleration": accel, "duration": duration}
+            for rpm, accel, duration in self.steps
+        ]
+        drops = [d.to_dict() for d in self.drops]
+
+        out = {
+            "type": "spincoat",
+            "steps": steps,
+            "start_times": self.start_times,
+            "duration": self.duration,
+            "drops": drops,
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __repr__(self):
+        output = "<Spincoat>\n"
+        currenttime = 0
+        psk_dropped = False
+        as_dropped = False
+        for (rpm, accel, duration) in self.steps:
+            output += f"\t{round(currenttime,2)}-{round(currenttime+duration,2)}s:\t{round(rpm,2)} rpm, {round(accel,2):.0f} rpm/s"
+            currenttime += duration
+            output += "\n"
+        for d in self.drops:
+            output += "\t" + str(d) + "\n"
+        return output[:-1]
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.steps == other.steps).all() and all(
+                ds in other.drops for ds in self.drops
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.steps.tostring(), self.drops)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
+class Anneal(Task):
+    def __init__(self, duration: float, temperature: float):
+        """
+
+        Args:
+            duration (float): duration (seconds) to anneal the sample
+            temperature (float): temperature (C) to anneal the sample at
+        """
+        self.duration = duration
+        self.temperature = temperature
+        super().__init__(
+            task="anneal",
+            duration=self.duration,
+        )
+
+    def __repr__(self):
+        duration = self.duration
+        units = "seconds"
+        if duration > 60:
+            duration /= 60
+            units = "minutes"
+        if duration > 60:
+            duration /= 60
+            units = "hours"
+
+        return f"<Anneal> {round(self.temperature,1)}C for {round(duration,1)} {units}"
+
+    def to_dict(self):
+        out = {
+            "type": "anneal",
+            "temperature": self.temperature,
+            "duration": self.duration,
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.duration == other.duration
+                and self.temperature == other.temperature
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.duration, self.temperature)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
+class Rest(Task):
+    def __init__(self, duration: float):
+        """
+
+        Args:
+            duration (float): duration (seconds) to anneal the sample
+        """
+        self.duration = duration
+        super().__init__(
+            task="rest",
+            duration=self.duration,
+        )
+
+    def __repr__(self):
+        duration = self.duration
+        units = "seconds"
+        if duration > 60:
+            duration /= 60
+            units = "minutes"
+        if duration > 60:
+            duration /= 60
+            units = "hours"
+
+        return f"<Rest> {round(duration,1)} {units}"
+
+    def to_dict(self):
+        out = {
+            "type": "rest",
+            "duration": self.duration,
+        }
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.duration == other.duration
+        else:
+            return False
+
+    def __key(self):
+        return self.duration
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
+class Characterize(Task):
+    def __init__(self, duration: float = 200):
+        self.duration = duration
+        super().__init__(
+            task="characterize",
+            duration=self.duration,
+        )
+
+    def __repr__(self):
+        return "<Characterize>"
+
+
+class Sample:
+    def __init__(
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
+        sampleid: str = None,
+    ):
+        self.name = name
+        self.substrate = substrate
+        if hash is None:
+            self._sampleid = str(uuid4())
+        else:
+            self._sampleid = sampleid
+        if storage_slot is None:
+            self.storage_slot = {
+                "tray": None,
+                "slot": None,
+            }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
+        else:
+            self.storage_slot = storage_slot
+        self.worklist = worklist
+        self.status = "not_started"
+        self.tasks = []
+
+    def to_dict(self):
+        task_output = [task.to_dict() for task in self.tasks]
+
+        out = {
+            "name": self.name,
+            "sampleid": self._sampleid,
+            "substrate": self.substrate,
+            "storage_slot": self.storage_slot,
+            "worlist": [w.to_dict() for w in self.worklist],
+            "tasks": task_output,
+        }
+
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __repr__(self):
+        output = f"<Sample> {self.name}\n"
+        output += f"<Substrate> {self.substrate}\n"
+        output += f"Worklist:\n"
+        for task in self.worklist:
+            output += f"\t{task}\n"
+        return output
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.substrate == other.substrate and self.worklist == other.worklist
+        else:
+            return False
+
+    def __key(self):
+        return (
+            self.substrate,
+            *self.worklist,
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
 ### build task list for a sample
 def generate_sample_worklist(sample: Sample):
     sample_worklist = []
     p0 = Worker_Storage  # sample begins at storage
     for task in sample.worklist:
-        p1 = task["workers"][0]
-        transition_task = ALL_TASKS[TRANSITION_TASKS[p0][p1]]
+        p1 = task.workers[0]
+        transition_task = TRANSITION_TASKS[p0][p1]
         sample_worklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
-                workers=transition_task["workers"],
-                duration=transition_task["estimated_duration"],
             )
         )
-
-        if ALL_TASKS[task]["estimated_duration"] is None:
-            duration = task.duration
-        else:
-            duration = ALL_TASKS[task]["estimated_duration"]
-
-        sample_worklist.append(
-            Task(
-                sample=sample,
-                task=task,
-                workers=ALL_TASKS[task]["workers"],
-                duration=duration,
-            )
-        )
+        sample_worklist.append(task)
         p0 = p1  # update location for next task
     if p0 != Worker_Storage:
-        transition_task = ALL_TASKS[TRANSITION_TASKS[p0][Worker_Storage]]
+        transition_task = TRANSITION_TASKS[p0][Worker_Storage]
         sample_worklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
-                workers=transition_task["workers"],
-                duration=transition_task["estimated_duration"],
             )
         )  # sample ends at storage
     return sample_worklist
-
-
-### Task Scheduler
-
-
-class Scheduler:
-    def __init__(self, samples, spanning_tasks=[], enforce_sample_order=False):
-        self.workers = workers
-        self.samples = samples
-        self.tasks = {s: s.tasks for s in samples}
-        self.tasklist = [
-            t for sample_tasks in self.tasks.values() for t in sample_tasks
-        ]
-        self.horizon = int(sum([t.duration for t in self.tasklist]))
-        self.spanning_tasks = spanning_tasks
-        self.initialize_model(enforce_sample_order=enforce_sample_order)
-
-    def initialize_model(self, enforce_sample_order: bool):
-        self.model = cp_model.CpModel()
-        ending_variables = []
-        machine_intervals = {w: [] for w in self.workers.values()}
-        # reservoirs = {}
-        ### Task Constraints
-        for task in self.tasklist:
-            task.end_var = self.model.NewIntVar(
-                task.duration, self.horizon, "end" + str(task)
-            )
-            ending_variables.append(task.end_var)
-
-        for task in self.tasklist:
-            ## connect to preceding tasks
-            immediate_precedent = [
-                precedent for precedent, immediate in task.precedents if immediate
-            ]  # list of immediate precedents
-            if len(immediate_precedent) == 0:
-                task.start_var = self.model.NewIntVar(
-                    0, self.horizon, "start" + str(task)
-                )
-            else:
-                precedent = immediate_precedent[0]
-                task.start_var = precedent.end_var
-
-            for precedent, immediate in task.precedents:
-                if not immediate:
-                    self.model.Add(task.start_var >= precedent.end_var)
-
-            ## mark workers as occupied during this task
-            interval_var = self.model.NewIntervalVar(
-                task.start_var, task.duration, task.end_var, "interval" + str(task)
-            )
-            for w in task.workers:
-                machine_intervals[w].append(interval_var)
-
-        ### Force sequential tasks to preserve order even if not immediate
-        spanning_tasks = {c: [] for c in self.spanning_tasks}
-        for sample, tasks in self.tasks.items():
-            for start_class, end_class in spanning_tasks:
-                start_var = [t for t in tasks if t.__class__ == start_class][
-                    0
-                ].start_var
-                end_var = [t for t in tasks if t.__class__ == end_class][0].end_var
-
-                duration = self.model.NewIntVar(0, self.horizon, "duration")
-                interval = self.model.NewIntervalVar(
-                    start_var, duration, end_var, "sampleinterval"
-                )
-                spanning_tasks[(start_class, end_class)].append(interval)
-        for intervals in spanning_tasks.values():
-            self.model.AddNoOverlap(intervals)
-
-        ### Force sample order if flagged
-        if enforce_sample_order:
-            for preceding_sample, sample in zip(self.samples, self.samples[1:]):
-                self.model.Add(
-                    sample.tasks[0].start_var > preceding_sample.tasks[0].start_var
-                )
-
-        ### Worker Constraints
-        for w in workers:
-            intervals = machine_intervals[w]
-            if w.capacity > 1:
-                demands = [1 for _ in machine_intervals[w]]
-                self.model.AddCumulative(intervals, demands, w.capacity)
-            else:
-                self.model.AddNoOverlap(intervals)
-        # for w, r in reservoirs.items():
-        #     self.modelAddReservoirConstraint(r["times"], r["demands"], 0, w.capacity)
-        objective_var = self.model.NewIntVar(0, self.horizon, "makespan")
-        self.model.AddMaxEquality(objective_var, ending_variables)
-        self.model.Minimize(objective_var)
-
-    def solve(self, solve_time=5):
-        self.solver = cp_model.CpSolver()
-        self.solver.parameters.max_time_in_seconds = solve_time
-        status = self.solver.Solve(self.model)
-        for s in self.samples:
-            for task in s.tasks:
-                task.start = self.solver.Value(task.start_var)
-                task.end = self.solver.Value(task.end_var)
-        self.plot_solution()
-
-    def plot_solution(self, ax=None):
-        plt.figure(figsize=(14, 5))
-
-        for idx, (sample, tasklist) in enumerate(self.tasks.items()):
-            color = plt.cm.tab20(idx % 20)
-            offset = 0.2 + 0.6 * (idx / len(self.tasks))
-            for t in tasklist:
-                for w in t.workers:
-                    y = [self.workers.index(w) + offset] * 2
-                    x = [t.start / 60, t.end / 60]
-                    plt.plot(x, y, color=color)
-
-        plt.yticks(range(len(self.workers)), labels=[w.name for w in self.workers])
-        plt.xlabel("Time (minutes)")
-
-    # def _set_start_time(self, task):
-    #     for pid in task.precedents:
-    #         ptidx = self.tasks.index(pid)
-    #         pt = self.tasks[ptidx]
-    #         if pt.end_time < task.start_time:
-    #             task.start_time = pt.end_time

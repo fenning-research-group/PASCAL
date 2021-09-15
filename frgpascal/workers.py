@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import time
 import logging
 from collections import namedtuple
+import uuid
 
 # from frgpascal.maestro import Maestro
 
@@ -147,6 +148,12 @@ class WorkerTemplate(ABC):
             with self.maestro.lock_pendingtasks:
                 self.maestro.pending_tasks.remove(task["id"])
             self.queue.task_done()
+
+    def __hash__(self):
+        return hash(str(type(self)))
+
+    def __eq__(self, other):
+        return type(self) == type(other)
 
 
 class Worker_GantryGripper(WorkerTemplate):
@@ -387,12 +394,10 @@ class Worker_Storage(WorkerTemplate):
     def __init__(self, n_workers, maestro=None, planning=False):
         super().__init__(maestro=maestro, planning=planning, n_workers=n_workers)
         self.functions = {
-            "cooldown": task(
-                function=self.cooldown, estimated_duration=180, other_workers=[]
-            ),
+            "rest": task(function=self.rest, estimated_duration=180, other_workers=[]),
         }
 
-    async def cooldown(self, sample):
+    async def rest(self, sample):
         await asyncio.sleep(180)
 
 

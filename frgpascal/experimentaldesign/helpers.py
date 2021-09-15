@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from frgpascal.experimentaldesign.recipes import Solution, Sample, Spincoat, Drop
+from frgpascal.experimentaldesign.tasks import Solution, Sample, Spincoat, Drop
 from scipy.optimize import nnls
 from copy import deepcopy
 import uuid
