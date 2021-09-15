@@ -183,7 +183,6 @@ class Drop:
 
     def to_dict(self):
         out = {
-            "type": "drop",
             "solution": self.solution.to_dict(),
             "time": self.time,
             "rate": self.rate,
@@ -217,17 +216,17 @@ class Drop:
 class Task:
     def __init__(
         self,
-        task,
-        duration=None,
+        task: str,
+        duration: int = None,
         precedent=None,
-        immediate=False,
-        sample=None,
+        immediate: bool = False,
+        sample: Sample = None,
     ):
         self.sample = sample
         if task not in ALL_TASKS:
             raise ValueError(f"Task {task} not in ALL_TASKS!")
-        taskinfo = ALL_TASKS[task]
         self.task = task
+        taskinfo = ALL_TASKS[task]
         self.workers = taskinfo["workers"]
         if duration is None:
             self.duration = taskinfo["estimated_duration"]
@@ -244,7 +243,7 @@ class Task:
         #     raise ValueError("Only one precedent can be immediate!")
 
     def __repr__(self):
-        return f"<Task> {self.sample.name}, {self.task}"
+        return f"<Task> {self.sample.name}, {self.name}"
 
     def __eq__(self, other):
         return other == self.taskid
@@ -254,12 +253,13 @@ class Task:
             "sample": self.sample.name,
             "start": self.start,
             "task": self.task,
-            # "details": self.task_details,
             "id": self.taskid,
-            "precedents": [
-                precedent.taskid for precedent, immediate in self.precedents
-            ],
         }
+        if self.precedent is None:
+            out["precedent"] = None
+        else:
+            out["precedent"] = self.precedent.taskid
+
         return out
 
     def to_json(self):
@@ -302,19 +302,20 @@ class Spincoat(Task):
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def to_dict(self):
+        out = super().to_dict()
         steps = [
             {"rpm": rpm, "acceleration": accel, "duration": duration}
             for rpm, accel, duration in self.steps
         ]
         drops = [d.to_dict() for d in self.drops]
 
-        out = {
-            "type": "spincoat",
+        out["details"] = {
             "steps": steps,
             "start_times": self.start_times,
             "duration": self.duration,
             "drops": drops,
         }
+
         return out
 
     def to_json(self):
@@ -377,8 +378,8 @@ class Anneal(Task):
         return f"<Anneal> {round(self.temperature,1)}C for {round(duration,1)} {units}"
 
     def to_dict(self):
-        out = {
-            "type": "anneal",
+        out = super().to_dict()
+        out["details"] = {
             "temperature": self.temperature,
             "duration": self.duration,
         }
@@ -426,7 +427,8 @@ class Rest(Task):
         return f"<Rest> {round(duration,1)} {units}"
 
     def to_dict(self):
-        out = {
+        out = super().to_dict()
+        out["details"] = {
             "type": "rest",
             "duration": self.duration,
         }
@@ -488,14 +490,14 @@ class Sample:
         self.tasks = []
 
     def to_dict(self):
-        task_output = [task.to_dict() for task in self.tasks]
+        task_output = {task.taskid: task.to_dict() for task in self.tasks}
 
         out = {
             "name": self.name,
             "sampleid": self._sampleid,
             "substrate": self.substrate,
             "storage_slot": self.storage_slot,
-            "worlist": [w.to_dict() for w in self.worklist],
+            "worklist": [w.to_dict() for w in self.worklist],
             "tasks": task_output,
         }
 

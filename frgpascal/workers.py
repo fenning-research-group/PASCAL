@@ -18,7 +18,7 @@ import uuid
 #     CharacterizationLine,
 # )
 
-task = namedtuple("task", ["function", "estimated_duration", "other_workers"])
+task_tuple = namedtuple("task", ["function", "estimated_duration", "other_workers"])
 
 
 class WorkerTemplate(ABC):
@@ -80,7 +80,8 @@ class WorkerTemplate(ABC):
             _, task = await self.queue.get()  # blocking wait for next task
             task_description = f'{task["task"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
-            sample_task = [t for t in sample["tasks"] if t["task"] == task["task"]][0]
+            sample_task = sample["tasks"][task["id"]]
+
             # print(f"starting {task_description}")
             if task is None:  # finished flag
                 break
@@ -124,23 +125,31 @@ class WorkerTemplate(ABC):
             function = self.functions[task["task"]]
             if asyncio.iscoroutinefunction(function):
                 self.logger.info(f"executing {task_description} as coroutine")
-                await function(sample)
+                output_dict = await function(sample, sample_task["details"])
             else:
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
-                    self.loop.run_in_executor(self.maestro.threadpool, function, sample)
+                    self.loop.run_in_executor(
+                        self.maestro.threadpool,
+                        function,
+                        sample,
+                        sample_task["details"],
+                    )
                 )
                 future.add_done_callback(future_callback)
-                await future
+                output_dict = await future
                 # try:
                 #     future.result()
                 # except:
                 #     self.logger.info(
                 #         f"{task_description} failed: {future.exception()}"
                 #     )
-
+            if output_dict is None:
+                output_dict = {}
             # update task lists
             sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
+            sample_task.update(output_dict)
+
             self.logger.info(f"finished {task_description}")
             with self.maestro.lock_completedtasks:
                 self.maestro.completed_tasks[task["id"]] = (
@@ -168,75 +177,75 @@ class Worker_GantryGripper(WorkerTemplate):
             # "open": self.gripper.open,
             # "close": self.gripper.close,
             # "transfer": self.maestro.transfer,
-            "idle_gantry": task(
+            "idle_gantry": task_tuple(
                 function=self.idle_gantry, estimated_duration=20, other_workers=[]
             ),
-            "spincoater_to_hotplate": task(
+            "spincoater_to_hotplate": task_tuple(
                 function=self.spincoater_to_hotplate,
                 estimated_duration=25,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
-            "spincoater_to_storage": task(
+            "spincoater_to_storage": task_tuple(
                 function=self.spincoater_to_storage,
                 estimated_duration=25,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
-            "spincoater_to_characterization": task(
+            "spincoater_to_characterization": task_tuple(
                 function=self.spincoater_to_characterization,
                 estimated_duration=25,
                 other_workers=[Worker_SpincoaterLiquidHandler, Worker_Characterization],
             ),
-            "hotplate_to_spincoater": task(
+            "hotplate_to_spincoater": task_tuple(
                 function=self.hotplate_to_spincoater,
                 estimated_duration=33,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
-            "hotplate_to_storage": task(
+            "hotplate_to_storage": task_tuple(
                 function=self.hotplate_to_storage,
                 estimated_duration=18,
                 other_workers=[],
             ),
-            "hotplate_to_characterization": task(
+            "hotplate_to_characterization": task_tuple(
                 function=self.hotplate_to_characterization,
                 estimated_duration=18,
                 other_workers=[Worker_Characterization],
             ),
-            "storage_to_spincoater": task(
+            "storage_to_spincoater": task_tuple(
                 function=self.storage_to_spincoater,
                 estimated_duration=33,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
-            "storage_to_hotplate": task(
+            "storage_to_hotplate": task_tuple(
                 function=self.storage_to_hotplate,
                 estimated_duration=18,
                 other_workers=[],
             ),
-            "storage_to_characterization": task(
+            "storage_to_characterization": task_tuple(
                 function=self.storage_to_characterization,
                 estimated_duration=18,
                 other_workers=[Worker_Characterization],
             ),
-            "characterization_to_spincoater": task(
+            "characterization_to_spincoater": task_tuple(
                 function=self.characterization_to_spincoater,
                 estimated_duration=33,
                 other_workers=[Worker_Characterization, Worker_SpincoaterLiquidHandler],
             ),
-            "characterization_to_hotplate": task(
+            "characterization_to_hotplate": task_tuple(
                 function=self.characterization_to_hotplate,
                 estimated_duration=18,
                 other_workers=[Worker_Characterization],
             ),
-            "characterization_to_storage": task(
+            "characterization_to_storage": task_tuple(
                 function=self.characterization_to_storage,
                 estimated_duration=18,
                 other_workers=[Worker_Characterization],
             ),
         }
 
-    def idle_gantry(self, sample):
+    def idle_gantry(self, sample, details):
         self.maestro.idle_gantry()
 
-    def spincoater_to_hotplate(self, sample):
+    def spincoater_to_hotplate(self, sample, details):
         p1 = self.spincoater()
         for hotplate_name, hp in self.hotplates.items():
             try:
@@ -255,7 +264,7 @@ class Worker_GantryGripper(WorkerTemplate):
             "slot": slot,
         }
 
-    def spincoater_to_storage(self, sample):
+    def spincoater_to_storage(self, sample, details):
         p1 = self.spincoater()
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -265,13 +274,13 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
 
-    def spincoater_to_characterization(self, sample):
+    def spincoater_to_characterization(self, sample, details):
         p1 = self.spincoater()
         p2 = self.characterization.axis()
 
         self.transfer(p1, p2)
 
-    def hotplate_to_storage(self, sample):
+    def hotplate_to_storage(self, sample, details):
         hotplate, hpslot = (
             sample["anneal_recipe"]["location"]["hotplate"],
             sample["anneal_recipe"]["location"]["slot"],
@@ -287,7 +296,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate].unload(slot=hpslot)
 
-    def hotplate_to_characterization(self, sample):
+    def hotplate_to_characterization(self, sample, details):
         hotplate, hpslot = (
             sample["anneal_recipe"]["location"]["hotplate"],
             sample["anneal_recipe"]["location"]["slot"],
@@ -298,7 +307,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate].unload(slot=hpslot)
 
-    def hotplate_to_spincoater(self, sample):
+    def hotplate_to_spincoater(self, sample, details):
         hotplate, hpslot = (
             sample["anneal_recipe"]["location"]["hotplate"],
             sample["anneal_recipe"]["location"]["slot"],
@@ -309,7 +318,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate].unload(slot=hpslot)
 
-    def storage_to_spincoater(self, sample):
+    def storage_to_spincoater(self, sample, details):
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -319,7 +328,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
 
-    def storage_to_hotplate(self, sample):
+    def storage_to_hotplate(self, sample, details):
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -338,7 +347,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate_name].load(slot, sample)
 
-    def storage_to_characterization(self, sample):
+    def storage_to_characterization(self, sample, details):
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -348,13 +357,13 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
 
-    def characterization_to_spincoater(self, sample):
+    def characterization_to_spincoater(self, sample, details):
         p1 = self.characterization.axis()
         p2 = self.spincoater()
 
         self.maestro.transfer(p1, p2)
 
-    def characterization_to_hotplate(self, sample):
+    def characterization_to_hotplate(self, sample, details):
         p1 = self.characterization.axis()
         for hotplate_name, hp in self.hotplates.items():
             try:
@@ -369,7 +378,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate_name].load(slot, sample)
 
-    def characterization_to_storage(self, sample):
+    def characterization_to_storage(self, sample, details):
         p1 = self.characterization.axis()
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -386,12 +395,12 @@ class Worker_Hotplate(WorkerTemplate):
             name="Hotplate", maestro=maestro, planning=planning, n_workers=n_workers
         )
         self.functions = {
-            "anneal": task(
+            "anneal": task_tuple(
                 function=self.anneal, estimated_duration=None, other_workers=[]
             ),
         }
 
-    async def anneal(self, sample):
+    async def anneal(self, sample, details):
         await asyncio.sleep(sample["anneal_recipe"]["duration"])
 
 
@@ -401,11 +410,13 @@ class Worker_Storage(WorkerTemplate):
             name="Storage", maestro=maestro, planning=planning, n_workers=n_workers
         )
         self.functions = {
-            "rest": task(function=self.rest, estimated_duration=180, other_workers=[]),
+            "rest": task_tuple(
+                function=self.rest, estimated_duration=180, other_workers=[]
+            ),
         }
 
-    async def rest(self, sample):
-        await asyncio.sleep(180)
+    async def rest(self, sample, details):
+        await asyncio.sleep(details["duration"])
 
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
@@ -417,7 +428,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             n_workers=1,
         )
         self.functions = {
-            "spincoat": task(
+            "spincoat": task_tuple(
                 function=self.spincoat, estimated_duration=None, other_workers=[]
             ),
         }
@@ -445,7 +456,141 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 await asyncio.sleep(0.1)
         self.spincoater.stop()
 
-    def spincoat(self, sample):
+    def _generatelhtasks_onedrop(self, t0, drop):
+        liquidhandlertasks = {}
+
+        headstart = max(
+            self.liquidhandler.ASPIRATION_DELAY
+            + self.liquidhandler.DISPENSE_DELAY
+            - drop["time"],
+            0,
+        )
+
+        liquidhandlertasks[
+            "aspirate_solution"
+        ] = self.liquidhandler.aspirate_for_spincoating(
+            nist_time=t0
+            + drop["time"]
+            + headstart
+            - self.liquidhandler.ASPIRATION_DELAY,
+            tray=drop["well"]["tray"],
+            well=drop["well"]["slot"],
+            volume=drop["volume"],
+            pipette="perovskite",
+        )
+
+        last_time = t0 + drop["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
+        liquidhandlertasks["dispense_solution"] = self.liquidhandler.drop_perovskite(
+            nist_time=last_time,
+        )
+
+        self.liquidhandler.cleanup(nist_time=last_time + 0.5)
+
+        return headstart, liquidhandlertasks
+
+    def _generatelhtasks_twodrops(self, t0, drop0, drop1):
+        liquidhandlertasks = {}
+
+        if drop1["time"] - drop0["time"] > 2 * (
+            self.liquidhandler.ASPIRATION_DELAY + self.liquidhandler.DISPENSE_DELAY
+        ):  # if the two drops are too close in time, let's aspirate them both at the beginning
+            headstart = max(
+                2
+                * (
+                    self.liquidhandler.ASPIRATION_DELAY
+                    + self.liquidhandler.DISPENSE_DELAY
+                )
+                - drop0["time"],
+                0,
+            )
+
+            liquidhandlertasks[
+                "aspirate_both"
+            ] = self.liquidhandler.aspirate_both_for_spincoating(
+                nist_time=t0
+                + drop0["time"]
+                + headstart
+                - self.liquidhandler.ASPIRATION_DELAY,
+                psk_tray=drop0["well"]["tray"],
+                psk_well=drop0["well"]["slot"],
+                psk_volume=drop0["volume"],
+                antisolvent_tray=drop1["well"]["tray"],
+                antisolvent_well=drop1["well"]["slot"],
+                antisolvent_volume=drop1["volume"],
+            )
+
+            dispense0_time = (
+                t0 + drop0["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
+            )
+            liquidhandlertasks[
+                "dispense_solution"
+            ] = self.liquidhandler.drop_perovskite(nist_time=dispense0_time)
+
+            liquidhandlertasks[
+                "stage_antisolvent"
+            ] = self.liquidhandler.stage_antisolvent(nist_time=dispense0_time + 0.1)
+        else:  # we have enough dead time to come back to aspirate the second drop
+            headstart = max(
+                self.liquidhandler.ASPIRATION_DELAY
+                + self.liquidhandler.DISPENSE_DELAY
+                - drop0["time"],
+                0,
+            )
+            liquidhandlertasks[
+                "aspirate_solution"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time=t0
+                + drop0["time"]
+                + headstart
+                - self.liquidhandler.ASPIRATION_DELAY,
+                tray=drop0["well"]["tray"],
+                well=drop0["well"]["slot"],
+                volume=drop0["volume"],
+                pipette="perovskite",
+            )
+            dispense0_time = (
+                t0 + drop0["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
+            )
+            aspirate1_time = (
+                t0 + drop1["time"] + headstart - self.liquidhandler.ASPIRATION_DELAY,
+            )
+
+            liquidhandlertasks[
+                "dispense_solution"
+            ] = self.liquidhandler.drop_perovskite(
+                nist_time=dispense0_time,
+            )
+
+            if aspirate1_time - dispense0_time > (
+                self.DISPENSE_DELAY * 5
+            ):  # move pipette to idle off of the chuck
+                liquidhandlertasks[
+                    "clear_chuck_between_drops"
+                ] = self.liquidhandler.stage_perovskite(nist_time=dispense0_time + 0.3)
+
+            liquidhandlertasks[
+                "aspirate_antisolvent"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time=aspirate1_time,
+                tray=drop1["well"]["tray"],
+                well=drop1["well"]["slot"],
+                volume=drop1["volume"],
+                pipette="antisolvent",
+            )
+        # Dispenses
+
+        dispense1_time = (
+            t0 + drop1["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
+        )
+        liquidhandlertasks[
+            "dispense_antisolvent"
+        ] = self.liquidhandler.drop_antisolvent(nist_time=dispense1_time)
+
+        self.liquidhandler.cleanup(nist_time=dispense1_time + 0.5)
+
+        return headstart, liquidhandlertasks
+
+    def spincoat(self, sample, details):
         """executes a series of spin coating steps. A final "stop" step is inserted
         at the end to bring the rotor to a halt.
 
@@ -457,120 +602,23 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         """
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
 
-        recipe = sample["spincoat_recipe"]
         t0 = self.maestro.nist_time()
         self.spincoater.start_logging()
         ### set up liquid handler tasks
-        liquidhandlertasks = {}
-        ## Aspirations
-        # if drop times are close, pipette up both solutions at the beginning
-        if (
-            recipe["antisolvent"]["droptime"] - recipe["solution"]["droptime"]
-            > (self.liquidhandler.ASPIRATION_DELAY + self.liquidhandler.DISPENSE_DELAY)
-            * 2
-        ):
-            headstart = max(
-                2
-                * (
-                    self.liquidhandler.ASPIRATION_DELAY
-                    + self.liquidhandler.DISPENSE_DELAY
-                )
-                - recipe["solution"]["droptime"],
-                0,
+        if len(details["drops"]) == 1:
+            headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
+                t0=t0, drop=details["drops"][0]
             )
-            liquidhandlertasks[
-                "aspirate_both"
-            ] = self.liquidhandler.aspirate_both_for_spincoating(
-                nist_time=t0
-                + recipe["solution"]["droptime"]
-                + headstart
-                - self.liquidhandler.ASPIRATION_DELAY,
-                psk_tray=recipe["solution"]["solution"]["well"]["tray"],
-                psk_well=recipe["solution"]["solution"]["well"]["slot"],
-                psk_volume=recipe["solution"]["volume"],
-                antisolvent_tray=recipe["antisolvent"]["solution"]["well"]["tray"],
-                antisolvent_well=recipe["antisolvent"]["solution"]["well"]["slot"],
-                antisolvent_volume=recipe["antisolvent"]["volume"],
+        else:  # assume two drops, planning does not allow for >2
+            headstart, liquidhandlertasks = self._generatelhtasks_twodrops(
+                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1]
             )
-            liquidhandlertasks[
-                "dispense_solution"
-            ] = self.liquidhandler.drop_perovskite(
-                nist_time=t0
-                + recipe["solution"]["droptime"]
-                + headstart
-                - self.liquidhandler.DISPENSE_DELAY
-            )
-            liquidhandlertasks[
-                "stage_antisolvent"
-            ] = self.liquidhandler.stage_antisolvent(
-                nist_time=t0
-                + recipe["antisolvent"]["droptime"]
-                + headstart
-                - self.liquidhandler.STAGING_DELAY,
-            )
-        else:
-            headstart = max(
-                self.liquidhandler.ASPIRATION_DELAY
-                + self.liquidhandler.DISPENSE_DELAY
-                - recipe["solution"]["droptime"],
-                0,
-            )
-            liquidhandlertasks[
-                "aspirate_solution"
-            ] = self.liquidhandler.aspirate_for_spincoating(
-                nist_time=t0
-                + recipe["solution"]["droptime"]
-                + headstart
-                - self.liquidhandler.ASPIRATION_DELAY,
-                tray=recipe["solution"]["solution"]["well"]["tray"],
-                well=recipe["solution"]["solution"]["well"]["slot"],
-                volume=recipe["solution"]["volume"],
-                pipette="perovskite",
-            )
-            liquidhandlertasks[
-                "dispense_solution"
-            ] = self.liquidhandler.drop_perovskite(
-                nist_time=t0
-                + recipe["solution"]["droptime"]
-                + headstart
-                - self.liquidhandler.DISPENSE_DELAY
-            )
-
-            liquidhandlertasks[
-                "aspirate_antisolvent"
-            ] = self.liquidhandler.aspirate_for_spincoating(
-                nist_time=t0
-                + recipe["antisolvent"]["droptime"]
-                + headstart
-                - self.liquidhandler.ASPIRATION_DELAY,
-                tray=recipe["antisolvent"]["solution"]["well"]["tray"],
-                well=recipe["antisolvent"]["solution"]["well"]["slot"],
-                volume=recipe["antisolvent"]["volume"],
-                pipette="antisolvent",
-            )
-        # Dispenses
-
-        liquidhandlertasks[
-            "dispense_antisolvent"
-        ] = self.liquidhandler.drop_antisolvent(
-            nist_time=t0
-            + recipe["antisolvent"]["droptime"]
-            + headstart
-            - self.liquidhandler.DISPENSE_DELAY
-        )
-        liquidhandlertasks["clear_chuck"] = self.liquidhandler.drop_antisolvent(
-            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart - 0.5
-        )  # final task to be done
-
-        self.liquidhandler.cleanup(
-            nist_time=t0 + recipe["antisolvent"]["droptime"] + headstart
-        )
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         tasks_future = asyncio.gather(
             self._monitor_droptimes(liquidhandlertasks, t0),
-            self._set_spinspeeds(recipe["steps"], t0, headstart),
+            self._set_spinspeeds(details["steps"], t0, headstart),
         )
 
         def future_callback(future):
@@ -587,9 +635,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         rpm_log = self.spincoater.finish_logging()
         self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
 
-        self.maestro.samples[sample["name"]]["spincoat_recipe"]["record"] = {
-            **drop_times,
-            **rpm_log,
+        return {
+            "liquidhandler_timings": {**drop_times},
+            "spincoater_log": {**rpm_log},
             "headstart": headstart,
         }
 
@@ -600,10 +648,10 @@ class Worker_Characterization(WorkerTemplate):
             name="Characterization", maestro=maestro, planning=planning, n_workers=1
         )
         self.functions = {
-            "characterize": task(
+            "characterize": task_tuple(
                 function=self.characterize, estimated_duration=95, other_workers=[]
             ),
         }
 
-    def characterize(self, sample):
+    def characterize(self, sample, details):
         self.characterization.run(samplename=sample["name"])

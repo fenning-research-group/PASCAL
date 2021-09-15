@@ -309,11 +309,11 @@ class Maestro:
             self.transfer(self.characterization.axis(), self.storage[tray](slot))
 
     ### Batch Sample Execution
-    def _load_netlist(self, filepath):
+    def _load_worklist(self, filepath):
         with open(filepath) as f:
-            netlist = json.load(f)
-        self.tasks = netlist["tasks"]
-        self.samples = netlist["samples"]
+            worklist = json.load(f)
+        self.tasks = worklist["tasks"]
+        self.samples = worklist["samples"]
 
     def make_background_event_loop(self):
         def exception_handler(loop, context):
@@ -420,7 +420,7 @@ class Maestro:
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
         self.lock_completedtasks = Lock()
-        self._load_netlist(filepath)
+        self._load_worklist(filepath)
         self._set_up_experiment_folder(name)
 
         self.workers = {
