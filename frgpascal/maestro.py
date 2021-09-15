@@ -64,9 +64,6 @@ class Maestro:
         self.SAMPLETOLERANCE_PLACE = constants["gripper"][
             "extra_opening_width_place"
         ]  # mm extra opening width
-        self.IDLECOORDINATES = constants["gantry"][
-            "idle_coordinates"
-        ]  # where to move the gantry during idle times, mainly to avoid cameras.
         self.CATCHATTEMPTS = constants["gripper"][
             "catch_attempts"
         ]  # number of times to try picking up a sample before erroring out
@@ -120,7 +117,7 @@ class Maestro:
         t0 = time.time()
         while response is None:
             try:
-                responnse = client.request("europe.pool.ntp.org", version=3)
+                response = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
             if time.time() - t0 >= 10:
@@ -222,7 +219,7 @@ class Maestro:
 
     def idle_gantry(self):
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
-        self.gantry.moveto(self.IDLECOORDINATES)
+        self.gantry.movetoidle()
         self.gripper.close()
 
     def transfer(self, p1, p2, zhop=True):

@@ -45,6 +45,10 @@ class Gantry:
         self.TRANSITION_COORDINATES = constants["gantry"][
             "transition_coordinates"
         ]  # point to move to when transitioning between ot2 and workspace frames
+        self.CLEAR_COORDINATES = constants["gantry"]["clear_coordinates"]
+        self.IDLE_COORDINATES = constants["gantry"][
+            "idle_coordinates"
+        ]  # where to move the gantry during idle times, mainly to avoid cameras.
 
         self.__currentframe = None
         self.__ZLIM = None  # ceiling for current frame
@@ -158,6 +162,7 @@ class Gantry:
     def gohome(self):
         self.write("G28 X Y Z")
         self.update()
+        self.movetoidle()
 
     def _target_frame(self, x, y, z):
         """Checks whether a target coordinate is within the liquid handler (OT2), workspace (over the breadboard), or invalid coordinate frames
@@ -244,6 +249,12 @@ class Gantry:
             self.moveto(z=z, zhop=False, speed=speed)
         else:
             self._movecommand(x, y, z, speed)
+
+    def movetoclear(self):
+        self.moveto(self.CLEAR_COORDINATES)
+
+    def movetoidle(self):
+        self.moveto(self.IDLE_COORDINATES)
 
     def _movecommand(self, x: float, y: float, z: float, speed: float):
         """internal command to execute a direct move from current location to new location"""

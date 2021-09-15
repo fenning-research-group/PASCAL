@@ -374,9 +374,11 @@ class DarkfieldImaging(StationTemplate):
 
     def capture(self):
         self.camera.exposure = 5e4  # 50 ms dwell time, in microseconds
+        self.camera.frames = 20  # average 20 frames
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
+        self.camera.frames = 1
         return img
 
     def save(self, img, sample):
@@ -400,8 +402,7 @@ class PLImaging(StationTemplate):
         Returns:
             imgs: dictionary of {dwelltime (ms): image}
         """
-        frames0 = self.camera.frames
-        self.camera.frames = 5  # average 10 frames
+        self.camera.frames = 5  # average 5 frames
         imgs = {}
 
         self.lightswitch.on()
@@ -411,7 +412,7 @@ class PLImaging(StationTemplate):
             imgs[int(t / 1000)] = self.camera.capture()  # save as ms exposure
         self.lightswitch.off()
 
-        self.camera.frames = frames0
+        self.camera.frames = 1
         return imgs
 
     def save(self, imgs, sample):
