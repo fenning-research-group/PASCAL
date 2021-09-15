@@ -24,7 +24,6 @@ from frgpascal.hardware.characterizationline import (
     CharacterizationAxis,
     CharacterizationLine,
 )
-from frgpascal.experimentaldesign.recipes import SpincoatRecipe, AnnealRecipe, Sample
 from frgpascal.workers import (
     Worker_Hotplate,
     Worker_Storage,
@@ -117,7 +116,7 @@ class Maestro:
         t0 = time.time()
         while response is None:
             try:
-                responnse = client.request("europe.pool.ntp.org", version=3)
+                response = client.request("europe.pool.ntp.org", version=3)
             except:
                 pass
             if time.time() - t0 >= 10:
@@ -453,14 +452,14 @@ class Maestro:
         self._set_up_experiment_folder(name)
 
         self.workers = {
-            "gantry_gripper": Worker_GantryGripper(self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(self),
-            "characterization": Worker_Characterization(self),
+            "gantry_gripper": Worker_GantryGripper(maestro=self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
+            "characterization": Worker_Characterization(maestro=self),
             "hotplates": Worker_Hotplate(
-                self, n_workers=25
+                maestro=self, n_workers=25
             ),  # TODO dont hardcode hotplate workers
             "storage": Worker_Storage(
-                self, n_workers=45
+                maestro=self, n_workers=45
             ),  # TODO dont hardcode storage workers
         }
 
