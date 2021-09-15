@@ -28,7 +28,7 @@ class WorkerTemplate(ABC):
     hardware components that act in unison to complete tasks.
     """
 
-    def __init__(self, n_workers, maestro=None, planning=False):
+    def __init__(self, name, n_workers, maestro=None, planning=False):
         if not planning:
             self.logger = logging.getLogger("PASCAL")
             self.maestro = maestro
@@ -43,6 +43,7 @@ class WorkerTemplate(ABC):
             self.working = False
             self.POLLINGRATE = 0.1  # seconds
         self.n_workers = n_workers
+        self.name = name
 
     def prime(self, loop):
         asyncio.set_event_loop(loop)
@@ -158,7 +159,9 @@ class WorkerTemplate(ABC):
 
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
-        super().__init__(maestro=maestro, planning=planning, n_workers=1)
+        super().__init__(
+            name="GantryGripper", maestro=maestro, planning=planning, n_workers=1
+        )
         self.functions = {
             # "moveto": self.gantry.moveto,
             # "moverel": self.gantry.moverel,
@@ -379,7 +382,9 @@ class Worker_GantryGripper(WorkerTemplate):
 
 class Worker_Hotplate(WorkerTemplate):
     def __init__(self, n_workers, maestro=None, planning=False):
-        super().__init__(maestro=maestro, planning=planning, n_workers=n_workers)
+        super().__init__(
+            name="Hotplate", maestro=maestro, planning=planning, n_workers=n_workers
+        )
         self.functions = {
             "anneal": task(
                 function=self.anneal, estimated_duration=None, other_workers=[]
@@ -392,7 +397,9 @@ class Worker_Hotplate(WorkerTemplate):
 
 class Worker_Storage(WorkerTemplate):
     def __init__(self, n_workers, maestro=None, planning=False):
-        super().__init__(maestro=maestro, planning=planning, n_workers=n_workers)
+        super().__init__(
+            name="Storage", maestro=maestro, planning=planning, n_workers=n_workers
+        )
         self.functions = {
             "rest": task(function=self.rest, estimated_duration=180, other_workers=[]),
         }
@@ -403,7 +410,12 @@ class Worker_Storage(WorkerTemplate):
 
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
-        super().__init__(maestro=maestro, planning=planning, n_workers=1)
+        super().__init__(
+            name="SpincoaterLiquidHandler",
+            maestro=maestro,
+            planning=planning,
+            n_workers=1,
+        )
         self.functions = {
             "spincoat": task(
                 function=self.spincoat, estimated_duration=None, other_workers=[]
@@ -584,7 +596,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
 class Worker_Characterization(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
-        super().__init__(maestro=maestro, planning=planning, n_workers=1)
+        super().__init__(
+            name="Characterization", maestro=maestro, planning=planning, n_workers=1
+        )
         self.functions = {
             "characterize": task(
                 function=self.characterize, estimated_duration=95, other_workers=[]

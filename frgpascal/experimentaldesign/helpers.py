@@ -284,7 +284,7 @@ def build_sample_list(
             if type(step) == Spincoat:
                 this_set_of_steps.append(apply_solution_mesh(step, solution_mesh))
             else:
-                this_set_of_steps.append([step])
+                this_set_of_steps.append([deepcopy(step)])
         all_worklists += list(itertools.product(*this_set_of_steps))
 
     idx = 0
@@ -296,7 +296,7 @@ def build_sample_list(
                 this_sample = Sample(
                     name=name,
                     substrate=sub,
-                    worklist=wl,
+                    worklist=deepcopy(wl),
                     storage_slot=None
                     # sampleid=sampleid
                 )

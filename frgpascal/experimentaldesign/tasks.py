@@ -219,9 +219,8 @@ class Task:
         self,
         task,
         duration=None,
-        # task_details="",
-        precedents=[],
-        # reservoir=[],
+        precedent=None,
+        immediate=False,
         sample=None,
     ):
         self.sample = sample
@@ -236,20 +235,23 @@ class Task:
             self.duration = int(duration)
         # self.task_details = task_details
         self.taskid = f"{task}-{str(uuid.uuid4())}"
-        self.precedents = precedents
+        self.precedent = precedent
+        if precedent is None:
+            immediate = False
+        self.immediate = immediate
         # self.reservoir = []
-        if sum([immediate for task, immediate in precedents]) > 1:
-            raise ValueError("Only one precedent can be immediate!")
+        # if sum([immediate for task, immediate in precedents]) > 1:
+        #     raise ValueError("Only one precedent can be immediate!")
 
     def __repr__(self):
-        return f"<Task> {self.sample}, {self.task}"
+        return f"<Task> {self.sample.name}, {self.task}"
 
     def __eq__(self, other):
         return other == self.taskid
 
     def to_dict(self):
         out = {
-            "sample": self.sample,
+            "sample": self.sample.name,
             "start": self.start,
             "task": self.task,
             # "details": self.task_details,
@@ -265,11 +267,7 @@ class Task:
 
 
 class Spincoat(Task):
-    def __init__(
-        self,
-        steps: list,
-        drops: list,
-    ):
+    def __init__(self, steps: list, drops: list, immediate=False):
         """
 
         Args:
@@ -301,10 +299,7 @@ class Spincoat(Task):
             self.start_times.append(self.start_times[-1] + duration)
         duration = self.steps[:, 2].sum() + self.start_times[0]
 
-        super().__init__(
-            task="spincoat",
-            duration=duration,
-        )
+        super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def to_dict(self):
         steps = [
@@ -354,7 +349,7 @@ class Spincoat(Task):
 
 
 class Anneal(Task):
-    def __init__(self, duration: float, temperature: float):
+    def __init__(self, duration: float, temperature: float, immediate=True):
         """
 
         Args:
@@ -366,6 +361,7 @@ class Anneal(Task):
         super().__init__(
             task="anneal",
             duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -408,17 +404,14 @@ class Anneal(Task):
 
 
 class Rest(Task):
-    def __init__(self, duration: float):
+    def __init__(self, duration: float, immediate=True):
         """
 
         Args:
             duration (float): duration (seconds) to anneal the sample
         """
         self.duration = duration
-        super().__init__(
-            task="rest",
-            duration=self.duration,
-        )
+        super().__init__(task="rest", duration=self.duration, immediate=immediate)
 
     def __repr__(self):
         duration = self.duration
@@ -456,11 +449,12 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 200):
+    def __init__(self, duration: float = 200, immediate=False):
         self.duration = duration
         super().__init__(
             task="characterize",
             duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -538,23 +532,36 @@ class Sample:
 def generate_sample_worklist(sample: Sample):
     sample_worklist = []
     p0 = Worker_Storage  # sample begins at storage
+    for task0, task1 in zip(sample.worklist, sample.worklist[1:]):
+        task1.precedent = task0  # task1 is preceded by task0
+
     for task in sample.worklist:
+        task.sample = sample
         p1 = task.workers[0]
         transition_task = TRANSITION_TASKS[p0][p1]
         sample_worklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
+                immediate=task.immediate,
+                precedent=task.precedent,
             )
         )
+        task.precedent = sample_worklist[-1]
         sample_worklist.append(task)
         p0 = p1  # update location for next task
-    if p0 != Worker_Storage:
+    if p1 != Worker_Storage:
         transition_task = TRANSITION_TASKS[p0][Worker_Storage]
+        if p1 == Worker_Hotplate:
+            immediate = True
+        else:
+            immediate = False
         sample_worklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
+                precedent=sample_worklist[-1],
+                immediate=immediate,
             )
         )  # sample ends at storage
     return sample_worklist

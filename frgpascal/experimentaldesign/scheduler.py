@@ -39,46 +39,41 @@ class Scheduler:
         ### Task Constraints
         for task in self.tasklist:
             task.end_var = self.model.NewIntVar(
-                task.duration, self.horizon, "end" + str(task.task)
+                task.duration, self.horizon, "end " + str(task.taskid)
             )
             ending_variables.append(task.end_var)
 
         for task in self.tasklist:
             ## connect to preceding tasks
-            immediate_precedent = [
-                precedent for precedent, immediate in task.precedents if immediate
-            ]  # list of immediate precedents
-            if len(immediate_precedent) == 0:
-                task.start_var = self.model.NewIntVar(
-                    0, self.horizon, "start" + str(task.task)
-                )
+            if task.immediate:
+                task.start_var = task.precedent.end_var
             else:
-                precedent = immediate_precedent[0]
-                task.start_var = precedent.end_var
-
-            for precedent, immediate in task.precedents:
-                if not immediate:
-                    self.model.Add(task.start_var >= precedent.end_var)
+                task.start_var = self.model.NewIntVar(
+                    0, self.horizon, "start " + str(task.taskid)
+                )
+                if task.precedent is not None:
+                    self.model.Add(task.start_var >= task.precedent.end_var)
 
             ## mark workers as occupied during this task
             interval_var = self.model.NewIntervalVar(
-                task.start_var, task.duration, task.end_var, "interval" + str(task.task)
+                task.start_var,
+                task.duration,
+                task.end_var,
+                "interval " + str(task.taskid),
             )
             for w in task.workers:
                 machine_intervals[w].append(interval_var)
 
-        ### Force sequential tasks to preserve order even if not immediate
+        ### Force sequential tasks to preserve order even if not immediate #TODO this is not generalizable!
         spanning_tasks = {c: [] for c in self.spanning_tasks}
         for sample, tasks in self.tasks.items():
-            for start_class, end_class in spanning_tasks:
-                start_var = [t for t in tasks if t.task == start_class][0].start_var
-                end_var = [t for t in tasks if t.task == end_class][0].end_var
-
-                duration = self.model.NewIntVar(0, self.horizon, "duration")
-                interval = self.model.NewIntervalVar(
-                    start_var, duration, end_var, "sampleinterval"
-                )
-                spanning_tasks[(start_class, end_class)].append(interval)
+            for t0, t1, t2 in zip(tasks, tasks[1:], tasks[2:]):
+                if t1.task in spanning_tasks:
+                    duration = self.model.NewIntVar(0, self.horizon, "duration")
+                    interval = self.model.NewIntervalVar(
+                        t0.start_var, duration, t2.end_var, "sampleinterval"
+                    )
+                    spanning_tasks[t1.task].append(interval)
         for intervals in spanning_tasks.values():
             self.model.AddNoOverlap(intervals)
 
@@ -90,15 +85,13 @@ class Scheduler:
                 )
 
         ### Worker Constraints
-        for w, capacity in workers.items():
+        for w, capacity in self.workers.items():
             intervals = machine_intervals[w]
             if capacity > 1:
                 demands = [1 for _ in machine_intervals[w]]
                 self.model.AddCumulative(intervals, demands, capacity)
             else:
                 self.model.AddNoOverlap(intervals)
-        # for w, r in reservoirs.items():
-        #     self.modelAddReservoirConstraint(r["times"], r["demands"], 0, w.capacity)
         objective_var = self.model.NewIntVar(0, self.horizon, "makespan")
         self.model.AddMaxEquality(objective_var, ending_variables)
         self.model.Minimize(objective_var)
@@ -122,11 +115,14 @@ class Scheduler:
             offset = 0.2 + 0.6 * (idx / len(self.tasks))
             for t in tasklist:
                 for w in t.workers:
-                    y = [self.workers.index(w) + offset] * 2
+                    y = [list(self.workers.keys()).index(w) + offset] * 2
                     x = [t.start / 60, t.end / 60]
                     plt.plot(x, y, color=color)
 
-        plt.yticks(range(len(self.workers)), labels=[w.name for w in self.workers])
+        plt.yticks(
+            range(len(self.workers)),
+            labels=[str(w).split("Worker_")[1][:-2] for w in self.workers],
+        )
         plt.xlabel("Time (minutes)")
 
     # def _set_start_time(self, task):
