@@ -9,7 +9,7 @@ from thorlabs_tsi_sdk.tl_mono_to_color_processor import MonoToColorProcessorSDK
 from thorlabs_tsi_sdk.tl_mono_to_color_enums import COLOR_SPACE
 from thorlabs_tsi_sdk.tl_color_enums import FORMAT
 from thorlabs_tsi_sdk.tl_camera_enums import SENSOR_TYPE
-
+from warnings import warn
 import numpy as np
 import time
 
@@ -100,7 +100,10 @@ class Thorcam:
             frames (int): number of frames to average
         """
         if frames == 0:
-            raise ValueError("Frames must be >0!")
+            frames = 1
+            warn(
+                "Tried to set frames=0, we set frames=1 instead. PASCAL Thorcam implementation does not support unlimited frames (implied by frames=0)"
+            )
         self.camera.frames_per_trigger_zero_for_unlimited = int(frames)
         self.__frames = frames
 
