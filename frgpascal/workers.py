@@ -260,7 +260,7 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2)
 
         self.hotplates[hotplate_name].load(slot, sample)
-        sample["anneal_recipe"]["location"] = {
+        sample["hotplate_slot"] = {
             "hotplate": hotplate_name,
             "slot": slot,
         }
@@ -283,8 +283,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
     def hotplate_to_storage(self, sample, details):
         hotplate, hpslot = (
-            sample["anneal_recipe"]["location"]["hotplate"],
-            sample["anneal_recipe"]["location"]["slot"],
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
         )
         p1 = self.hotplates[hotplate](hpslot)
 
@@ -299,8 +299,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
     def hotplate_to_characterization(self, sample, details):
         hotplate, hpslot = (
-            sample["anneal_recipe"]["location"]["hotplate"],
-            sample["anneal_recipe"]["location"]["slot"],
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
         )
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.characterization.axis()
@@ -310,8 +310,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
     def hotplate_to_spincoater(self, sample, details):
         hotplate, hpslot = (
-            sample["anneal_recipe"]["location"]["hotplate"],
-            sample["anneal_recipe"]["location"]["slot"],
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
         )
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.spincoater()
@@ -344,9 +344,12 @@ class Worker_GantryGripper(WorkerTemplate):
         if slot is None:
             raise ValueError("No slots available on any hotplate!")
         p2 = self.hotplates[hotplate_name](slot)
-
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate_name].load(slot, sample)
+        sample["hotplate_slot"] = {
+            "hotplate": hotplate_name,
+            "slot": slot,
+        }
 
     def storage_to_characterization(self, sample, details):
         tray, slot = (
@@ -378,6 +381,10 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate_name].load(slot, sample)
+        sample["hotplate_slot"] = {
+            "hotplate": hotplate_name,
+            "slot": slot,
+        }
 
     def characterization_to_storage(self, sample, details):
         p1 = self.characterization.axis()
@@ -555,7 +562,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 t0 + drop0["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
             )
             aspirate1_time = (
-                t0 + drop1["time"] + headstart - self.liquidhandler.ASPIRATION_DELAY,
+                t0 + drop1["time"] + headstart - self.liquidhandler.ASPIRATION_DELAY
             )
 
             liquidhandlertasks[
@@ -565,7 +572,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
 
             if aspirate1_time - dispense0_time > (
-                self.DISPENSE_DELAY * 5
+                self.liquidhandler.DISPENSE_DELAY * 5
             ):  # move pipette to idle off of the chuck
                 liquidhandlertasks[
                     "clear_chuck_between_drops"
