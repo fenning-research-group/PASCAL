@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import uuid
 import json
+from copy import deepcopy
 
 from frgpascal.experimentaldesign.recipes import (
     Sample,
@@ -234,7 +235,6 @@ class Task:
         else:
             self.duration = int(duration)
         # self.task_details = task_details
-        self.taskid = f"{task}-{str(uuid.uuid4())}"
         self.precedent = precedent
         if precedent is None:
             immediate = False
@@ -242,12 +242,26 @@ class Task:
         # self.reservoir = []
         # if sum([immediate for task, immediate in precedents]) > 1:
         #     raise ValueError("Only one precedent can be immediate!")
+        self.__generate_taskid()
+
+    def __generate_taskid(self):
+        self.taskid = f"{self.task}-{str(uuid.uuid4())}"
 
     def __repr__(self):
-        return f"<Task> {self.sample.name}, {self.name}"
+        return f"<Task> {self.sample.name}, {self.task}"
 
     def __eq__(self, other):
         return other == self.taskid
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+
+        result.__generate_taskid()  # give a unique id to the copied task
+        return result
 
     def to_dict(self):
         out = {

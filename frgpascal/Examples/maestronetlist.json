@@ -9,118 +9,75 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358": {
+                "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d": {
                     "details": {
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe",
+                    "id": "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d",
+                    "precedent": "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772",
                     "sample": "sample0",
                     "start": 760,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3": {
-                    "id": "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48": {
+                    "id": "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48",
+                    "precedent": "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a",
                     "sample": "sample0",
                     "start": 2705,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-baca1638-7c9a-411d-ab2c-77f8d6874f95": {
-                    "id": "characterization_to_storage-baca1638-7c9a-411d-ab2c-77f8d6874f95",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-cd36176e-2226-4840-ad34-790871bb23ce": {
+                    "id": "characterization_to_storage-cd36176e-2226-4840-ad34-790871bb23ce",
+                    "precedent": "characterize-ff1c131e-515e-46fc-b902-340efa1af438",
                     "sample": "sample0",
                     "start": 3207,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931",
-                    "sample": "sample0",
-                    "start": 3007,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2",
+                "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a": {
+                    "id": "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a",
+                    "precedent": "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4",
                     "sample": "sample0",
                     "start": 2505,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809": {
-                    "id": "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809",
-                    "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+                "characterize-ff1c131e-515e-46fc-b902-340efa1af438": {
+                    "id": "characterize-ff1c131e-515e-46fc-b902-340efa1af438",
+                    "precedent": "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837",
+                    "sample": "sample0",
+                    "start": 3007,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d": {
+                    "id": "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d",
+                    "precedent": "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d",
                     "sample": "sample0",
                     "start": 1370,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
+                "rest-780281bf-42df-497d-93ec-e652ff432c8d": {
                     "details": {
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a",
+                    "id": "rest-780281bf-42df-497d-93ec-e652ff432c8d",
+                    "precedent": "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993",
                     "sample": "sample0",
                     "start": 2813,
                     "task": "rest"
                 },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-ceca3061-c951-44f6-a1e7-05848767da0e": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809",
+                    "id": "rest-ceca3061-c951-44f6-a1e7-05848767da0e",
+                    "precedent": "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d",
                     "sample": "sample0",
                     "start": 1388,
                     "task": "rest"
                 },
-                "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d": {
-                    "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
-                    },
-                    "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-                    "precedent": "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3",
-                    "sample": "sample0",
-                    "start": 2738,
-                    "task": "spincoat"
-                },
-                "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98": {
+                "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476": {
                     "details": {
                         "drops": [
                             {
@@ -172,42 +129,85 @@
                             }
                         ]
                     },
-                    "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-                    "precedent": "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1",
+                    "id": "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476",
+                    "precedent": "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1",
                     "sample": "sample0",
                     "start": 685,
                     "task": "spincoat"
                 },
-                "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe": {
-                    "id": "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe",
-                    "precedent": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
+                "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f",
+                    "precedent": "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48",
+                    "sample": "sample0",
+                    "start": 2738,
+                    "task": "spincoat"
+                },
+                "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772": {
+                    "id": "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772",
+                    "precedent": "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476",
                     "sample": "sample0",
                     "start": 735,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a": {
-                    "id": "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a",
-                    "precedent": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
+                "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993": {
+                    "id": "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993",
+                    "precedent": "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f",
                     "sample": "sample0",
                     "start": 2788,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2": {
-                    "id": "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4": {
+                    "id": "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4",
+                    "precedent": "rest-ceca3061-c951-44f6-a1e7-05848767da0e",
                     "sample": "sample0",
                     "start": 2487,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931": {
-                    "id": "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837": {
+                    "id": "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837",
+                    "precedent": "rest-780281bf-42df-497d-93ec-e652ff432c8d",
                     "sample": "sample0",
                     "start": 2989,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1": {
-                    "id": "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1",
+                "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1": {
+                    "id": "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1",
                     "precedent": null,
                     "sample": "sample0",
                     "start": 652,
@@ -267,8 +267,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-                    "precedent": "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1",
+                    "id": "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476",
+                    "precedent": "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1",
                     "sample": "sample0",
                     "start": 685,
                     "task": "spincoat"
@@ -278,8 +278,8 @@
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe",
+                    "id": "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d",
+                    "precedent": "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772",
                     "sample": "sample0",
                     "start": 760,
                     "task": "anneal"
@@ -289,15 +289,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809",
+                    "id": "rest-ceca3061-c951-44f6-a1e7-05848767da0e",
+                    "precedent": "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d",
                     "sample": "sample0",
                     "start": 1388,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2",
+                    "id": "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a",
+                    "precedent": "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4",
                     "sample": "sample0",
                     "start": 2505,
                     "task": "characterize"
@@ -339,8 +339,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-                    "precedent": "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3",
+                    "id": "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f",
+                    "precedent": "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48",
                     "sample": "sample0",
                     "start": 2738,
                     "task": "spincoat"
@@ -350,15 +350,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a",
+                    "id": "rest-780281bf-42df-497d-93ec-e652ff432c8d",
+                    "precedent": "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993",
                     "sample": "sample0",
                     "start": 2813,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931",
+                    "id": "characterize-ff1c131e-515e-46fc-b902-340efa1af438",
+                    "precedent": "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837",
                     "sample": "sample0",
                     "start": 3007,
                     "task": "characterize"
@@ -374,118 +374,75 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358": {
+                "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3": {
                     "details": {
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561",
+                    "id": "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3",
+                    "precedent": "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86",
                     "sample": "sample1",
                     "start": 108,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651": {
-                    "id": "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3": {
+                    "id": "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3",
+                    "precedent": "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4",
                     "sample": "sample1",
                     "start": 1244,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-8e967634-1d0a-4392-961d-f1f720281ea5": {
-                    "id": "characterization_to_storage-8e967634-1d0a-4392-961d-f1f720281ea5",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-403987ba-fbe6-4d1b-8fd6-d13e27f7ba21": {
+                    "id": "characterization_to_storage-403987ba-fbe6-4d1b-8fd6-d13e27f7ba21",
+                    "precedent": "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5",
                     "sample": "sample1",
                     "start": 1746,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87",
-                    "sample": "sample1",
-                    "start": 1546,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2",
+                "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4": {
+                    "id": "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4",
+                    "precedent": "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0",
                     "sample": "sample1",
                     "start": 1044,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376": {
-                    "id": "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376",
-                    "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+                "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5": {
+                    "id": "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5",
+                    "precedent": "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b",
+                    "sample": "sample1",
+                    "start": 1546,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e": {
+                    "id": "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e",
+                    "precedent": "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3",
                     "sample": "sample1",
                     "start": 708,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
-                    "details": {
-                        "duration": 30,
-                        "type": "rest"
-                    },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388",
-                    "sample": "sample1",
-                    "start": 1352,
-                    "task": "rest"
-                },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-012c08c6-9c68-4ced-bd68-883b967ca112": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376",
+                    "id": "rest-012c08c6-9c68-4ced-bd68-883b967ca112",
+                    "precedent": "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e",
                     "sample": "sample1",
                     "start": 726,
                     "task": "rest"
                 },
-                "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d": {
+                "rest-bc19c963-b78a-487b-8638-5cea6c901a5c": {
                     "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
+                        "duration": 30,
+                        "type": "rest"
                     },
-                    "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-                    "precedent": "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651",
+                    "id": "rest-bc19c963-b78a-487b-8638-5cea6c901a5c",
+                    "precedent": "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df",
                     "sample": "sample1",
-                    "start": 1277,
-                    "task": "spincoat"
+                    "start": 1352,
+                    "task": "rest"
                 },
-                "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98": {
+                "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e": {
                     "details": {
                         "drops": [
                             {
@@ -537,42 +494,85 @@
                             }
                         ]
                     },
-                    "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-                    "precedent": "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa",
+                    "id": "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e",
+                    "precedent": "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee",
                     "sample": "sample1",
                     "start": 33,
                     "task": "spincoat"
                 },
-                "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561": {
-                    "id": "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561",
-                    "precedent": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
+                "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02",
+                    "precedent": "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3",
+                    "sample": "sample1",
+                    "start": 1277,
+                    "task": "spincoat"
+                },
+                "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86": {
+                    "id": "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86",
+                    "precedent": "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e",
                     "sample": "sample1",
                     "start": 83,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388": {
-                    "id": "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388",
-                    "precedent": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
+                "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df": {
+                    "id": "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df",
+                    "precedent": "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02",
                     "sample": "sample1",
                     "start": 1327,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87": {
-                    "id": "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b": {
+                    "id": "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b",
+                    "precedent": "rest-bc19c963-b78a-487b-8638-5cea6c901a5c",
                     "sample": "sample1",
                     "start": 1528,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2": {
-                    "id": "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0": {
+                    "id": "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0",
+                    "precedent": "rest-012c08c6-9c68-4ced-bd68-883b967ca112",
                     "sample": "sample1",
                     "start": 1026,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa": {
-                    "id": "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa",
+                "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee": {
+                    "id": "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee",
                     "precedent": null,
                     "sample": "sample1",
                     "start": 0,
@@ -632,8 +632,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-                    "precedent": "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa",
+                    "id": "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e",
+                    "precedent": "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee",
                     "sample": "sample1",
                     "start": 33,
                     "task": "spincoat"
@@ -643,8 +643,8 @@
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561",
+                    "id": "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3",
+                    "precedent": "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86",
                     "sample": "sample1",
                     "start": 108,
                     "task": "anneal"
@@ -654,15 +654,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376",
+                    "id": "rest-012c08c6-9c68-4ced-bd68-883b967ca112",
+                    "precedent": "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e",
                     "sample": "sample1",
                     "start": 726,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2",
+                    "id": "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4",
+                    "precedent": "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0",
                     "sample": "sample1",
                     "start": 1044,
                     "task": "characterize"
@@ -704,8 +704,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-                    "precedent": "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651",
+                    "id": "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02",
+                    "precedent": "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3",
                     "sample": "sample1",
                     "start": 1277,
                     "task": "spincoat"
@@ -715,15 +715,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388",
+                    "id": "rest-bc19c963-b78a-487b-8638-5cea6c901a5c",
+                    "precedent": "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df",
                     "sample": "sample1",
                     "start": 1352,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87",
+                    "id": "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5",
+                    "precedent": "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b",
                     "sample": "sample1",
                     "start": 1546,
                     "task": "characterize"
@@ -739,75 +739,118 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084": {
+                "anneal-7c5163be-267f-4566-86bf-823214015bf5": {
                     "details": {
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76",
+                    "id": "anneal-7c5163be-267f-4566-86bf-823214015bf5",
+                    "precedent": "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab",
                     "sample": "sample2",
                     "start": 543,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c": {
-                    "id": "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0": {
+                    "id": "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0",
+                    "precedent": "characterize-87eee1df-4442-465f-ac83-ff3cb2162695",
                     "sample": "sample2",
                     "start": 1982,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-6ab2a682-2c55-4ff8-a0f8-3c33ee7b857b": {
-                    "id": "characterization_to_storage-6ab2a682-2c55-4ff8-a0f8-3c33ee7b857b",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-feae37fc-7482-4995-8945-4ba2ddc741da": {
+                    "id": "characterization_to_storage-feae37fc-7482-4995-8945-4ba2ddc741da",
+                    "precedent": "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a",
                     "sample": "sample2",
                     "start": 2469,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e",
-                    "sample": "sample2",
-                    "start": 2269,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46",
+                "characterize-87eee1df-4442-465f-ac83-ff3cb2162695": {
+                    "id": "characterize-87eee1df-4442-465f-ac83-ff3cb2162695",
+                    "precedent": "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa",
                     "sample": "sample2",
                     "start": 1782,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4": {
-                    "id": "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4",
-                    "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+                "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a": {
+                    "id": "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a",
+                    "precedent": "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84",
+                    "sample": "sample2",
+                    "start": 2269,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c": {
+                    "id": "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c",
+                    "precedent": "anneal-7c5163be-267f-4566-86bf-823214015bf5",
                     "sample": "sample2",
                     "start": 1443,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
-                    "details": {
-                        "duration": 30,
-                        "type": "rest"
-                    },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d",
-                    "sample": "sample2",
-                    "start": 2090,
-                    "task": "rest"
-                },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-597ff020-3e25-4c61-afc2-3fc85b2be371": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4",
+                    "id": "rest-597ff020-3e25-4c61-afc2-3fc85b2be371",
+                    "precedent": "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c",
                     "sample": "sample2",
                     "start": 1461,
                     "task": "rest"
                 },
-                "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de": {
+                "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf": {
+                    "details": {
+                        "duration": 30,
+                        "type": "rest"
+                    },
+                    "id": "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf",
+                    "precedent": "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414",
+                    "sample": "sample2",
+                    "start": 2090,
+                    "task": "rest"
+                },
+                "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e",
+                    "precedent": "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0",
+                    "sample": "sample2",
+                    "start": 2015,
+                    "task": "spincoat"
+                },
+                "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7": {
                     "details": {
                         "drops": [
                             {
@@ -859,85 +902,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-                    "precedent": "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251",
+                    "id": "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7",
+                    "precedent": "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3",
                     "sample": "sample2",
                     "start": 468,
                     "task": "spincoat"
                 },
-                "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60": {
-                    "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
-                    },
-                    "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-                    "precedent": "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c",
-                    "sample": "sample2",
-                    "start": 2015,
-                    "task": "spincoat"
-                },
-                "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76": {
-                    "id": "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76",
-                    "precedent": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
+                "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab": {
+                    "id": "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab",
+                    "precedent": "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7",
                     "sample": "sample2",
                     "start": 518,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d": {
-                    "id": "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d",
-                    "precedent": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
+                "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414": {
+                    "id": "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414",
+                    "precedent": "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e",
                     "sample": "sample2",
                     "start": 2065,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46": {
-                    "id": "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa": {
+                    "id": "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa",
+                    "precedent": "rest-597ff020-3e25-4c61-afc2-3fc85b2be371",
                     "sample": "sample2",
                     "start": 1764,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e": {
-                    "id": "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84": {
+                    "id": "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84",
+                    "precedent": "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf",
                     "sample": "sample2",
                     "start": 2251,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251": {
-                    "id": "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251",
+                "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3": {
+                    "id": "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3",
                     "precedent": null,
                     "sample": "sample2",
                     "start": 435,
@@ -997,8 +997,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-                    "precedent": "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251",
+                    "id": "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7",
+                    "precedent": "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3",
                     "sample": "sample2",
                     "start": 468,
                     "task": "spincoat"
@@ -1008,8 +1008,8 @@
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76",
+                    "id": "anneal-7c5163be-267f-4566-86bf-823214015bf5",
+                    "precedent": "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab",
                     "sample": "sample2",
                     "start": 543,
                     "task": "anneal"
@@ -1019,15 +1019,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4",
+                    "id": "rest-597ff020-3e25-4c61-afc2-3fc85b2be371",
+                    "precedent": "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c",
                     "sample": "sample2",
                     "start": 1461,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46",
+                    "id": "characterize-87eee1df-4442-465f-ac83-ff3cb2162695",
+                    "precedent": "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa",
                     "sample": "sample2",
                     "start": 1782,
                     "task": "characterize"
@@ -1069,8 +1069,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-                    "precedent": "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c",
+                    "id": "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e",
+                    "precedent": "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0",
                     "sample": "sample2",
                     "start": 2015,
                     "task": "spincoat"
@@ -1080,15 +1080,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d",
+                    "id": "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf",
+                    "precedent": "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414",
                     "sample": "sample2",
                     "start": 2090,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e",
+                    "id": "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a",
+                    "precedent": "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84",
                     "sample": "sample2",
                     "start": 2269,
                     "task": "characterize"
@@ -1104,75 +1104,118 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084": {
+                "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965": {
                     "details": {
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de",
+                    "id": "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965",
+                    "precedent": "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c",
                     "sample": "sample3",
                     "start": 868,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4": {
-                    "id": "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b": {
+                    "id": "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b",
+                    "precedent": "characterize-549cd95f-3076-416b-865e-2384c7d7d030",
                     "sample": "sample3",
                     "start": 3945,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-532a49b5-3ba9-4ca5-802b-d6d59d266cd9": {
-                    "id": "characterization_to_storage-532a49b5-3ba9-4ca5-802b-d6d59d266cd9",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-d8fe4c05-d23c-46e2-b35b-22a91d57f2c6": {
+                    "id": "characterization_to_storage-d8fe4c05-d23c-46e2-b35b-22a91d57f2c6",
+                    "precedent": "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7",
                     "sample": "sample3",
                     "start": 4432,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a",
-                    "sample": "sample3",
-                    "start": 4232,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6",
+                "characterize-549cd95f-3076-416b-865e-2384c7d7d030": {
+                    "id": "characterize-549cd95f-3076-416b-865e-2384c7d7d030",
+                    "precedent": "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4",
                     "sample": "sample3",
                     "start": 3745,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d": {
-                    "id": "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d",
-                    "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+                "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7": {
+                    "id": "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7",
+                    "precedent": "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c",
+                    "sample": "sample3",
+                    "start": 4232,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec": {
+                    "id": "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec",
+                    "precedent": "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965",
                     "sample": "sample3",
                     "start": 1782,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
-                    "details": {
-                        "duration": 30,
-                        "type": "rest"
-                    },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0",
-                    "sample": "sample3",
-                    "start": 4053,
-                    "task": "rest"
-                },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d",
+                    "id": "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4",
+                    "precedent": "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec",
                     "sample": "sample3",
                     "start": 1800,
                     "task": "rest"
                 },
-                "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de": {
+                "rest-e691e29b-2f05-4857-8a77-6621fb14c734": {
+                    "details": {
+                        "duration": 30,
+                        "type": "rest"
+                    },
+                    "id": "rest-e691e29b-2f05-4857-8a77-6621fb14c734",
+                    "precedent": "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db",
+                    "sample": "sample3",
+                    "start": 4053,
+                    "task": "rest"
+                },
+                "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4",
+                    "precedent": "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b",
+                    "sample": "sample3",
+                    "start": 3978,
+                    "task": "spincoat"
+                },
+                "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7": {
                     "details": {
                         "drops": [
                             {
@@ -1224,85 +1267,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-                    "precedent": "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d",
+                    "id": "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7",
+                    "precedent": "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692",
                     "sample": "sample3",
                     "start": 793,
                     "task": "spincoat"
                 },
-                "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60": {
-                    "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
-                    },
-                    "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-                    "precedent": "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4",
-                    "sample": "sample3",
-                    "start": 3978,
-                    "task": "spincoat"
-                },
-                "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de": {
-                    "id": "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de",
-                    "precedent": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
+                "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c": {
+                    "id": "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c",
+                    "precedent": "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7",
                     "sample": "sample3",
                     "start": 843,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0": {
-                    "id": "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0",
-                    "precedent": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
+                "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db": {
+                    "id": "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db",
+                    "precedent": "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4",
                     "sample": "sample3",
                     "start": 4028,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a": {
-                    "id": "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "sample": "sample3",
-                    "start": 4214,
-                    "task": "storage_to_characterization"
-                },
-                "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6": {
-                    "id": "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4": {
+                    "id": "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4",
+                    "precedent": "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4",
                     "sample": "sample3",
                     "start": 3727,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d": {
-                    "id": "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d",
+                "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c": {
+                    "id": "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c",
+                    "precedent": "rest-e691e29b-2f05-4857-8a77-6621fb14c734",
+                    "sample": "sample3",
+                    "start": 4214,
+                    "task": "storage_to_characterization"
+                },
+                "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692": {
+                    "id": "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692",
                     "precedent": null,
                     "sample": "sample3",
                     "start": 760,
@@ -1362,8 +1362,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-                    "precedent": "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d",
+                    "id": "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7",
+                    "precedent": "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692",
                     "sample": "sample3",
                     "start": 793,
                     "task": "spincoat"
@@ -1373,8 +1373,8 @@
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de",
+                    "id": "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965",
+                    "precedent": "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c",
                     "sample": "sample3",
                     "start": 868,
                     "task": "anneal"
@@ -1384,15 +1384,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d",
+                    "id": "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4",
+                    "precedent": "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec",
                     "sample": "sample3",
                     "start": 1800,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6",
+                    "id": "characterize-549cd95f-3076-416b-865e-2384c7d7d030",
+                    "precedent": "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4",
                     "sample": "sample3",
                     "start": 3745,
                     "task": "characterize"
@@ -1434,8 +1434,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-                    "precedent": "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4",
+                    "id": "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4",
+                    "precedent": "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b",
                     "sample": "sample3",
                     "start": 3978,
                     "task": "spincoat"
@@ -1445,15 +1445,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0",
+                    "id": "rest-e691e29b-2f05-4857-8a77-6621fb14c734",
+                    "precedent": "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db",
                     "sample": "sample3",
                     "start": 4053,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a",
+                    "id": "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7",
+                    "precedent": "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c",
                     "sample": "sample3",
                     "start": 4232,
                     "task": "characterize"
@@ -1469,75 +1469,75 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358": {
+                "anneal-01968106-d85d-45a7-89bd-779e1166e61f": {
                     "details": {
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3",
+                    "id": "anneal-01968106-d85d-45a7-89bd-779e1166e61f",
+                    "precedent": "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60",
                     "sample": "sample4",
                     "start": 217,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e": {
-                    "id": "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62": {
+                    "id": "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62",
+                    "precedent": "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec",
                     "sample": "sample4",
                     "start": 1495,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-3609a812-cc93-40f5-ae46-1af23892cd3c": {
-                    "id": "characterization_to_storage-3609a812-cc93-40f5-ae46-1af23892cd3c",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-5da141f6-5bac-40de-8734-2825abc944d2": {
+                    "id": "characterization_to_storage-5da141f6-5bac-40de-8734-2825abc944d2",
+                    "precedent": "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644",
                     "sample": "sample4",
                     "start": 2233,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec",
-                    "sample": "sample4",
-                    "start": 2033,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167",
+                "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec": {
+                    "id": "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec",
+                    "precedent": "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3",
                     "sample": "sample4",
                     "start": 1295,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c": {
-                    "id": "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c",
-                    "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+                "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644": {
+                    "id": "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644",
+                    "precedent": "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7",
+                    "sample": "sample4",
+                    "start": 2033,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec": {
+                    "id": "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec",
+                    "precedent": "anneal-01968106-d85d-45a7-89bd-779e1166e61f",
                     "sample": "sample4",
                     "start": 817,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
-                    "details": {
-                        "duration": 30,
-                        "type": "rest"
-                    },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b",
-                    "sample": "sample4",
-                    "start": 1603,
-                    "task": "rest"
-                },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c",
+                    "id": "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d",
+                    "precedent": "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec",
                     "sample": "sample4",
                     "start": 835,
                     "task": "rest"
                 },
-                "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18": {
+                "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70": {
+                    "details": {
+                        "duration": 30,
+                        "type": "rest"
+                    },
+                    "id": "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70",
+                    "precedent": "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5",
+                    "sample": "sample4",
+                    "start": 1603,
+                    "task": "rest"
+                },
+                "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13": {
                     "details": {
                         "drops": [
                             {
@@ -1589,13 +1589,13 @@
                             }
                         ]
                     },
-                    "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-                    "precedent": "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a",
+                    "id": "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13",
+                    "precedent": "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e",
                     "sample": "sample4",
                     "start": 141,
                     "task": "spincoat"
                 },
-                "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451": {
+                "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651": {
                     "details": {
                         "drops": [
                             {
@@ -1632,42 +1632,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-                    "precedent": "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e",
+                    "id": "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651",
+                    "precedent": "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62",
                     "sample": "sample4",
                     "start": 1528,
                     "task": "spincoat"
                 },
-                "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3": {
-                    "id": "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3",
-                    "precedent": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
+                "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60": {
+                    "id": "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60",
+                    "precedent": "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13",
                     "sample": "sample4",
                     "start": 192,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b": {
-                    "id": "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b",
-                    "precedent": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
+                "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5": {
+                    "id": "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5",
+                    "precedent": "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651",
                     "sample": "sample4",
                     "start": 1578,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167": {
-                    "id": "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "sample": "sample4",
-                    "start": 1277,
-                    "task": "storage_to_characterization"
-                },
-                "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec": {
-                    "id": "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7": {
+                    "id": "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7",
+                    "precedent": "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70",
                     "sample": "sample4",
                     "start": 2015,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a": {
-                    "id": "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a",
+                "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3": {
+                    "id": "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3",
+                    "precedent": "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d",
+                    "sample": "sample4",
+                    "start": 1277,
+                    "task": "storage_to_characterization"
+                },
+                "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e": {
+                    "id": "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e",
                     "precedent": null,
                     "sample": "sample4",
                     "start": 108,
@@ -1727,8 +1727,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-                    "precedent": "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a",
+                    "id": "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13",
+                    "precedent": "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e",
                     "sample": "sample4",
                     "start": 141,
                     "task": "spincoat"
@@ -1738,8 +1738,8 @@
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3",
+                    "id": "anneal-01968106-d85d-45a7-89bd-779e1166e61f",
+                    "precedent": "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60",
                     "sample": "sample4",
                     "start": 217,
                     "task": "anneal"
@@ -1749,15 +1749,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c",
+                    "id": "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d",
+                    "precedent": "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec",
                     "sample": "sample4",
                     "start": 835,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167",
+                    "id": "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec",
+                    "precedent": "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3",
                     "sample": "sample4",
                     "start": 1295,
                     "task": "characterize"
@@ -1799,8 +1799,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-                    "precedent": "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e",
+                    "id": "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651",
+                    "precedent": "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62",
                     "sample": "sample4",
                     "start": 1528,
                     "task": "spincoat"
@@ -1810,15 +1810,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b",
+                    "id": "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70",
+                    "precedent": "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5",
                     "sample": "sample4",
                     "start": 1603,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec",
+                    "id": "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644",
+                    "precedent": "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7",
                     "sample": "sample4",
                     "start": 2033,
                     "task": "characterize"
@@ -1834,75 +1834,75 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358": {
+                "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5": {
                     "details": {
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e",
+                    "id": "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5",
+                    "precedent": "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5",
                     "sample": "sample5",
                     "start": 326,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e": {
-                    "id": "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def": {
+                    "id": "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def",
+                    "precedent": "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a",
                     "sample": "sample5",
                     "start": 3694,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-2d261307-fcb1-4503-8e4e-5d93e75c1043": {
-                    "id": "characterization_to_storage-2d261307-fcb1-4503-8e4e-5d93e75c1043",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-25c35730-e00f-4456-a13c-8a8dc992437b": {
+                    "id": "characterization_to_storage-25c35730-e00f-4456-a13c-8a8dc992437b",
+                    "precedent": "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5",
                     "sample": "sample5",
                     "start": 4196,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45",
-                    "sample": "sample5",
-                    "start": 3996,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5",
+                "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a": {
+                    "id": "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a",
+                    "precedent": "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1",
                     "sample": "sample5",
                     "start": 3494,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55": {
-                    "id": "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55",
-                    "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+                "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5": {
+                    "id": "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5",
+                    "precedent": "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd",
+                    "sample": "sample5",
+                    "start": 3996,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1": {
+                    "id": "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1",
+                    "precedent": "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5",
                     "sample": "sample5",
                     "start": 926,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
+                "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a": {
                     "details": {
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8",
+                    "id": "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a",
+                    "precedent": "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603",
                     "sample": "sample5",
                     "start": 3802,
                     "task": "rest"
                 },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-c054ce8d-3513-4376-b83e-be09b24a58aa": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55",
+                    "id": "rest-c054ce8d-3513-4376-b83e-be09b24a58aa",
+                    "precedent": "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1",
                     "sample": "sample5",
                     "start": 944,
                     "task": "rest"
                 },
-                "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18": {
+                "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320": {
                     "details": {
                         "drops": [
                             {
@@ -1954,13 +1954,13 @@
                             }
                         ]
                     },
-                    "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-                    "precedent": "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5",
+                    "id": "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320",
+                    "precedent": "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0",
                     "sample": "sample5",
                     "start": 250,
                     "task": "spincoat"
                 },
-                "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451": {
+                "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef": {
                     "details": {
                         "drops": [
                             {
@@ -1997,42 +1997,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-                    "precedent": "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e",
+                    "id": "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef",
+                    "precedent": "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def",
                     "sample": "sample5",
                     "start": 3727,
                     "task": "spincoat"
                 },
-                "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e": {
-                    "id": "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e",
-                    "precedent": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
+                "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5": {
+                    "id": "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5",
+                    "precedent": "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320",
                     "sample": "sample5",
                     "start": 301,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8": {
-                    "id": "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8",
-                    "precedent": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
+                "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603": {
+                    "id": "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603",
+                    "precedent": "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef",
                     "sample": "sample5",
                     "start": 3777,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5": {
-                    "id": "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "sample": "sample5",
-                    "start": 3476,
-                    "task": "storage_to_characterization"
-                },
-                "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45": {
-                    "id": "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd": {
+                    "id": "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd",
+                    "precedent": "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a",
                     "sample": "sample5",
                     "start": 3978,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5": {
-                    "id": "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5",
+                "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1": {
+                    "id": "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1",
+                    "precedent": "rest-c054ce8d-3513-4376-b83e-be09b24a58aa",
+                    "sample": "sample5",
+                    "start": 3476,
+                    "task": "storage_to_characterization"
+                },
+                "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0": {
+                    "id": "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0",
                     "precedent": null,
                     "sample": "sample5",
                     "start": 217,
@@ -2092,8 +2092,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-                    "precedent": "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5",
+                    "id": "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320",
+                    "precedent": "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0",
                     "sample": "sample5",
                     "start": 250,
                     "task": "spincoat"
@@ -2103,8 +2103,8 @@
                         "duration": 600,
                         "temperature": 100
                     },
-                    "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-                    "precedent": "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e",
+                    "id": "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5",
+                    "precedent": "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5",
                     "sample": "sample5",
                     "start": 326,
                     "task": "anneal"
@@ -2114,15 +2114,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55",
+                    "id": "rest-c054ce8d-3513-4376-b83e-be09b24a58aa",
+                    "precedent": "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1",
                     "sample": "sample5",
                     "start": 944,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5",
+                    "id": "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a",
+                    "precedent": "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1",
                     "sample": "sample5",
                     "start": 3494,
                     "task": "characterize"
@@ -2164,8 +2164,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-                    "precedent": "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e",
+                    "id": "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef",
+                    "precedent": "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def",
                     "sample": "sample5",
                     "start": 3727,
                     "task": "spincoat"
@@ -2175,15 +2175,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8",
+                    "id": "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a",
+                    "precedent": "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603",
                     "sample": "sample5",
                     "start": 3802,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45",
+                    "id": "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5",
+                    "precedent": "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd",
                     "sample": "sample5",
                     "start": 3996,
                     "task": "characterize"
@@ -2199,75 +2199,118 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084": {
+                "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9": {
                     "details": {
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029",
+                    "id": "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9",
+                    "precedent": "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab",
                     "sample": "sample6",
                     "start": 435,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d": {
-                    "id": "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51": {
+                    "id": "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51",
+                    "precedent": "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df",
                     "sample": "sample6",
                     "start": 3443,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-6bb49759-2f45-4c26-ad63-600bb757f4e8": {
-                    "id": "characterization_to_storage-6bb49759-2f45-4c26-ad63-600bb757f4e8",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-94f24a94-9709-45ba-ad6d-7e80af20d224": {
+                    "id": "characterization_to_storage-94f24a94-9709-45ba-ad6d-7e80af20d224",
+                    "precedent": "characterize-56e0a606-1a70-4a65-9b58-28455947a172",
                     "sample": "sample6",
                     "start": 4904,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42",
-                    "sample": "sample6",
-                    "start": 4704,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b",
+                "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df": {
+                    "id": "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df",
+                    "precedent": "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a",
                     "sample": "sample6",
                     "start": 3243,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f": {
-                    "id": "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f",
-                    "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+                "characterize-56e0a606-1a70-4a65-9b58-28455947a172": {
+                    "id": "characterize-56e0a606-1a70-4a65-9b58-28455947a172",
+                    "precedent": "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6",
+                    "sample": "sample6",
+                    "start": 4704,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061": {
+                    "id": "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061",
+                    "precedent": "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9",
                     "sample": "sample6",
                     "start": 1352,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
-                    "details": {
-                        "duration": 30,
-                        "type": "rest"
-                    },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b",
-                    "sample": "sample6",
-                    "start": 3551,
-                    "task": "rest"
-                },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f",
+                    "id": "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9",
+                    "precedent": "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061",
                     "sample": "sample6",
                     "start": 1370,
                     "task": "rest"
                 },
-                "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc": {
+                "rest-792880ce-088d-4df8-b3ff-d9915f39a129": {
+                    "details": {
+                        "duration": 30,
+                        "type": "rest"
+                    },
+                    "id": "rest-792880ce-088d-4df8-b3ff-d9915f39a129",
+                    "precedent": "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321",
+                    "sample": "sample6",
+                    "start": 3551,
+                    "task": "rest"
+                },
+                "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae",
+                    "precedent": "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51",
+                    "sample": "sample6",
+                    "start": 3476,
+                    "task": "spincoat"
+                },
+                "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f": {
                     "details": {
                         "drops": [
                             {
@@ -2319,85 +2362,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-                    "precedent": "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3",
+                    "id": "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f",
+                    "precedent": "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894",
                     "sample": "sample6",
                     "start": 359,
                     "task": "spincoat"
                 },
-                "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17": {
-                    "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
-                    },
-                    "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-                    "precedent": "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d",
-                    "sample": "sample6",
-                    "start": 3476,
-                    "task": "spincoat"
-                },
-                "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029": {
-                    "id": "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029",
-                    "precedent": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
+                "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab": {
+                    "id": "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab",
+                    "precedent": "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f",
                     "sample": "sample6",
                     "start": 410,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b": {
-                    "id": "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b",
-                    "precedent": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
+                "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321": {
+                    "id": "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321",
+                    "precedent": "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae",
                     "sample": "sample6",
                     "start": 3526,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42": {
-                    "id": "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "sample": "sample6",
-                    "start": 4686,
-                    "task": "storage_to_characterization"
-                },
-                "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b": {
-                    "id": "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a": {
+                    "id": "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a",
+                    "precedent": "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9",
                     "sample": "sample6",
                     "start": 3225,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3": {
-                    "id": "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3",
+                "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6": {
+                    "id": "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6",
+                    "precedent": "rest-792880ce-088d-4df8-b3ff-d9915f39a129",
+                    "sample": "sample6",
+                    "start": 4686,
+                    "task": "storage_to_characterization"
+                },
+                "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894": {
+                    "id": "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894",
                     "precedent": null,
                     "sample": "sample6",
                     "start": 326,
@@ -2457,8 +2457,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-                    "precedent": "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3",
+                    "id": "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f",
+                    "precedent": "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894",
                     "sample": "sample6",
                     "start": 359,
                     "task": "spincoat"
@@ -2468,8 +2468,8 @@
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029",
+                    "id": "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9",
+                    "precedent": "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab",
                     "sample": "sample6",
                     "start": 435,
                     "task": "anneal"
@@ -2479,15 +2479,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f",
+                    "id": "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9",
+                    "precedent": "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061",
                     "sample": "sample6",
                     "start": 1370,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b",
+                    "id": "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df",
+                    "precedent": "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a",
                     "sample": "sample6",
                     "start": 3243,
                     "task": "characterize"
@@ -2529,8 +2529,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-                    "precedent": "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d",
+                    "id": "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae",
+                    "precedent": "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51",
                     "sample": "sample6",
                     "start": 3476,
                     "task": "spincoat"
@@ -2540,15 +2540,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b",
+                    "id": "rest-792880ce-088d-4df8-b3ff-d9915f39a129",
+                    "precedent": "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321",
                     "sample": "sample6",
                     "start": 3551,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42",
+                    "id": "characterize-56e0a606-1a70-4a65-9b58-28455947a172",
+                    "precedent": "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6",
                     "sample": "sample6",
                     "start": 4704,
                     "task": "characterize"
@@ -2564,75 +2564,118 @@
             },
             "substrate": "2mm_FTO",
             "tasks": {
-                "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084": {
+                "anneal-1080679a-4a25-4f0a-be9b-41facd839b62": {
                     "details": {
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569",
+                    "id": "anneal-1080679a-4a25-4f0a-be9b-41facd839b62",
+                    "precedent": "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69",
                     "sample": "sample7",
                     "start": 652,
                     "task": "anneal"
                 },
-                "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f": {
-                    "id": "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f",
-                    "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+                "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027": {
+                    "id": "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027",
+                    "precedent": "characterize-4bcdc762-27a6-421b-b641-79c6b81da937",
                     "sample": "sample7",
                     "start": 2956,
                     "task": "characterization_to_spincoater"
                 },
-                "characterization_to_storage-4912e8a3-bad8-4591-9082-104b1e067d82": {
-                    "id": "characterization_to_storage-4912e8a3-bad8-4591-9082-104b1e067d82",
-                    "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+                "characterization_to_storage-da108563-5a95-4e9a-a69b-ddcfa40695ba": {
+                    "id": "characterization_to_storage-da108563-5a95-4e9a-a69b-ddcfa40695ba",
+                    "precedent": "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1",
                     "sample": "sample7",
                     "start": 4668,
                     "task": "characterization_to_storage"
                 },
-                "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a": {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3",
-                    "sample": "sample7",
-                    "start": 4468,
-                    "task": "characterize"
-                },
-                "characterize-846921a7-d3f5-4771-908b-36dfba610308": {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67",
+                "characterize-4bcdc762-27a6-421b-b641-79c6b81da937": {
+                    "id": "characterize-4bcdc762-27a6-421b-b641-79c6b81da937",
+                    "precedent": "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b",
                     "sample": "sample7",
                     "start": 2756,
                     "task": "characterize"
                 },
-                "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520": {
-                    "id": "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520",
-                    "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+                "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1": {
+                    "id": "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1",
+                    "precedent": "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3",
+                    "sample": "sample7",
+                    "start": 4468,
+                    "task": "characterize"
+                },
+                "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1": {
+                    "id": "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1",
+                    "precedent": "anneal-1080679a-4a25-4f0a-be9b-41facd839b62",
                     "sample": "sample7",
                     "start": 1552,
                     "task": "hotplate_to_storage"
                 },
-                "rest-5eacfef6-b59d-492f-add6-252a9d4afa79": {
+                "rest-91da2157-68d9-460c-84dc-d26313e4b5b5": {
                     "details": {
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3",
+                    "id": "rest-91da2157-68d9-460c-84dc-d26313e4b5b5",
+                    "precedent": "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f",
                     "sample": "sample7",
                     "start": 3064,
                     "task": "rest"
                 },
-                "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1": {
+                "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02": {
                     "details": {
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520",
+                    "id": "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02",
+                    "precedent": "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1",
                     "sample": "sample7",
                     "start": 1570,
                     "task": "rest"
                 },
-                "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc": {
+                "spincoat-a2860a40-a353-424a-af5b-bc601760d031": {
+                    "details": {
+                        "drops": [
+                            {
+                                "height": 2,
+                                "rate": 50,
+                                "solution": {
+                                    "molarity": 1,
+                                    "solutes": "",
+                                    "solvent": "Chlorobenzene",
+                                    "well": {
+                                        "slot": "A1",
+                                        "tray": "4mL_Tray1"
+                                    }
+                                },
+                                "time": 5,
+                                "volume": 20
+                            }
+                        ],
+                        "duration": 50,
+                        "start_times": [
+                            0,
+                            20.0
+                        ],
+                        "steps": [
+                            {
+                                "acceleration": 1000.0,
+                                "duration": 20.0,
+                                "rpm": 500.0
+                            },
+                            {
+                                "acceleration": 4000.0,
+                                "duration": 30.0,
+                                "rpm": 4000.0
+                            }
+                        ]
+                    },
+                    "id": "spincoat-a2860a40-a353-424a-af5b-bc601760d031",
+                    "precedent": "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027",
+                    "sample": "sample7",
+                    "start": 2989,
+                    "task": "spincoat"
+                },
+                "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a": {
                     "details": {
                         "drops": [
                             {
@@ -2684,85 +2727,42 @@
                             }
                         ]
                     },
-                    "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-                    "precedent": "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0",
+                    "id": "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a",
+                    "precedent": "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5",
                     "sample": "sample7",
                     "start": 576,
                     "task": "spincoat"
                 },
-                "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17": {
-                    "details": {
-                        "drops": [
-                            {
-                                "height": 2,
-                                "rate": 50,
-                                "solution": {
-                                    "molarity": 1,
-                                    "solutes": "",
-                                    "solvent": "Chlorobenzene",
-                                    "well": {
-                                        "slot": "A1",
-                                        "tray": "4mL_Tray1"
-                                    }
-                                },
-                                "time": 5,
-                                "volume": 20
-                            }
-                        ],
-                        "duration": 50,
-                        "start_times": [
-                            0,
-                            20.0
-                        ],
-                        "steps": [
-                            {
-                                "acceleration": 1000.0,
-                                "duration": 20.0,
-                                "rpm": 500.0
-                            },
-                            {
-                                "acceleration": 4000.0,
-                                "duration": 30.0,
-                                "rpm": 4000.0
-                            }
-                        ]
-                    },
-                    "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-                    "precedent": "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f",
-                    "sample": "sample7",
-                    "start": 2989,
-                    "task": "spincoat"
-                },
-                "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569": {
-                    "id": "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569",
-                    "precedent": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
+                "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69": {
+                    "id": "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69",
+                    "precedent": "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a",
                     "sample": "sample7",
                     "start": 627,
                     "task": "spincoater_to_hotplate"
                 },
-                "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3": {
-                    "id": "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3",
-                    "precedent": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
+                "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f": {
+                    "id": "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f",
+                    "precedent": "spincoat-a2860a40-a353-424a-af5b-bc601760d031",
                     "sample": "sample7",
                     "start": 3039,
                     "task": "spincoater_to_storage"
                 },
-                "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67": {
-                    "id": "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67",
-                    "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+                "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b": {
+                    "id": "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b",
+                    "precedent": "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02",
                     "sample": "sample7",
                     "start": 2738,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3": {
-                    "id": "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3",
-                    "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+                "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3": {
+                    "id": "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3",
+                    "precedent": "rest-91da2157-68d9-460c-84dc-d26313e4b5b5",
                     "sample": "sample7",
                     "start": 4450,
                     "task": "storage_to_characterization"
                 },
-                "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0": {
-                    "id": "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0",
+                "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5": {
+                    "id": "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5",
                     "precedent": null,
                     "sample": "sample7",
                     "start": 543,
@@ -2822,8 +2822,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-                    "precedent": "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0",
+                    "id": "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a",
+                    "precedent": "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5",
                     "sample": "sample7",
                     "start": 576,
                     "task": "spincoat"
@@ -2833,8 +2833,8 @@
                         "duration": 900,
                         "temperature": 100
                     },
-                    "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-                    "precedent": "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569",
+                    "id": "anneal-1080679a-4a25-4f0a-be9b-41facd839b62",
+                    "precedent": "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69",
                     "sample": "sample7",
                     "start": 652,
                     "task": "anneal"
@@ -2844,15 +2844,15 @@
                         "duration": 300,
                         "type": "rest"
                     },
-                    "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-                    "precedent": "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520",
+                    "id": "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02",
+                    "precedent": "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1",
                     "sample": "sample7",
                     "start": 1570,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-                    "precedent": "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67",
+                    "id": "characterize-4bcdc762-27a6-421b-b641-79c6b81da937",
+                    "precedent": "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b",
                     "sample": "sample7",
                     "start": 2756,
                     "task": "characterize"
@@ -2894,8 +2894,8 @@
                             }
                         ]
                     },
-                    "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-                    "precedent": "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f",
+                    "id": "spincoat-a2860a40-a353-424a-af5b-bc601760d031",
+                    "precedent": "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027",
                     "sample": "sample7",
                     "start": 2989,
                     "task": "spincoat"
@@ -2905,15 +2905,15 @@
                         "duration": 30,
                         "type": "rest"
                     },
-                    "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-                    "precedent": "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3",
+                    "id": "rest-91da2157-68d9-460c-84dc-d26313e4b5b5",
+                    "precedent": "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f",
                     "sample": "sample7",
                     "start": 3064,
                     "task": "rest"
                 },
                 {
-                    "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-                    "precedent": "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3",
+                    "id": "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1",
+                    "precedent": "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3",
                     "sample": "sample7",
                     "start": 4468,
                     "task": "characterize"
@@ -2923,7 +2923,7 @@
     },
     "tasks": [
         {
-            "id": "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa",
+            "id": "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee",
             "precedent": null,
             "sample": "sample1",
             "start": 0,
@@ -2981,15 +2981,15 @@
                     }
                 ]
             },
-            "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-            "precedent": "storage_to_spincoater-f9f92f91-4a5c-463d-a5e3-c4a45938f7aa",
+            "id": "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e",
+            "precedent": "storage_to_spincoater-4c524c4a-d8dc-4e9f-b197-04cc759a16ee",
             "sample": "sample1",
             "start": 33,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561",
-            "precedent": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
+            "id": "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86",
+            "precedent": "spincoat-9897081e-c05e-4737-a336-e467cbf8da0e",
             "sample": "sample1",
             "start": 83,
             "task": "spincoater_to_hotplate"
@@ -2999,14 +2999,14 @@
                 "duration": 600,
                 "temperature": 100
             },
-            "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-            "precedent": "spincoater_to_hotplate-db08a1e4-5b3b-4af5-a0b5-470c5499b561",
+            "id": "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3",
+            "precedent": "spincoater_to_hotplate-87683d73-6d7b-41f1-b5f1-9ddd1b70ba86",
             "sample": "sample1",
             "start": 108,
             "task": "anneal"
         },
         {
-            "id": "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a",
+            "id": "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e",
             "precedent": null,
             "sample": "sample4",
             "start": 108,
@@ -3064,15 +3064,15 @@
                     }
                 ]
             },
-            "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-            "precedent": "storage_to_spincoater-770d8474-4be3-4fff-8452-00399930e00a",
+            "id": "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13",
+            "precedent": "storage_to_spincoater-9bc011cb-bd06-43b0-b04f-e78dd5185e5e",
             "sample": "sample4",
             "start": 141,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3",
-            "precedent": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
+            "id": "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60",
+            "precedent": "spincoat-09237e66-78dd-4962-a31c-f8c250bcaa13",
             "sample": "sample4",
             "start": 192,
             "task": "spincoater_to_hotplate"
@@ -3082,14 +3082,14 @@
                 "duration": 600,
                 "temperature": 100
             },
-            "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-            "precedent": "spincoater_to_hotplate-f124c826-de5c-459d-903d-9d0cb62e8fa3",
+            "id": "anneal-01968106-d85d-45a7-89bd-779e1166e61f",
+            "precedent": "spincoater_to_hotplate-cf7e3b3c-a2cb-42eb-9126-eb8b4f6f3e60",
             "sample": "sample4",
             "start": 217,
             "task": "anneal"
         },
         {
-            "id": "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5",
+            "id": "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0",
             "precedent": null,
             "sample": "sample5",
             "start": 217,
@@ -3147,15 +3147,15 @@
                     }
                 ]
             },
-            "id": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
-            "precedent": "storage_to_spincoater-a68c28a6-10ae-484b-9efc-4abd015e3cb5",
+            "id": "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320",
+            "precedent": "storage_to_spincoater-20782b29-c2c5-44c2-b941-af9beed4e4b0",
             "sample": "sample5",
             "start": 250,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e",
-            "precedent": "spincoat-b3e7b3c7-5244-4a52-ada6-983a98ec9c18",
+            "id": "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5",
+            "precedent": "spincoat-1bd92673-eb96-456f-a1ff-6e599dd5e320",
             "sample": "sample5",
             "start": 301,
             "task": "spincoater_to_hotplate"
@@ -3165,14 +3165,14 @@
                 "duration": 600,
                 "temperature": 100
             },
-            "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-            "precedent": "spincoater_to_hotplate-e77143a3-b951-4839-80a9-595f7b36c98e",
+            "id": "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5",
+            "precedent": "spincoater_to_hotplate-fdf32f6b-b48a-42e9-80bf-e589ed2ce3c5",
             "sample": "sample5",
             "start": 326,
             "task": "anneal"
         },
         {
-            "id": "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3",
+            "id": "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894",
             "precedent": null,
             "sample": "sample6",
             "start": 326,
@@ -3230,21 +3230,21 @@
                     }
                 ]
             },
-            "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-            "precedent": "storage_to_spincoater-e009c434-645b-4bf5-8477-14a411ef6cc3",
+            "id": "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f",
+            "precedent": "storage_to_spincoater-ca6293cc-db57-40b6-8524-740d561b3894",
             "sample": "sample6",
             "start": 359,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029",
-            "precedent": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
+            "id": "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab",
+            "precedent": "spincoat-78a7559a-37fa-4c5b-bcbe-38a4fa114d0f",
             "sample": "sample6",
             "start": 410,
             "task": "spincoater_to_hotplate"
         },
         {
-            "id": "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251",
+            "id": "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3",
             "precedent": null,
             "sample": "sample2",
             "start": 435,
@@ -3255,8 +3255,8 @@
                 "duration": 900,
                 "temperature": 100
             },
-            "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-            "precedent": "spincoater_to_hotplate-6e0c39d4-37f2-4bdd-8205-946802c9b029",
+            "id": "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9",
+            "precedent": "spincoater_to_hotplate-f240bcf7-6c79-4995-b9f1-84bb36312cab",
             "sample": "sample6",
             "start": 435,
             "task": "anneal"
@@ -3313,15 +3313,15 @@
                     }
                 ]
             },
-            "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-            "precedent": "storage_to_spincoater-566e21ce-2c78-48a7-9169-1cb931a9e251",
+            "id": "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7",
+            "precedent": "storage_to_spincoater-4b0b79e1-9ac6-4c0b-891c-e70d7e8ac8c3",
             "sample": "sample2",
             "start": 468,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76",
-            "precedent": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
+            "id": "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab",
+            "precedent": "spincoat-ba8812cf-6b9b-4c17-bc57-5089b4fe98d7",
             "sample": "sample2",
             "start": 518,
             "task": "spincoater_to_hotplate"
@@ -3331,14 +3331,14 @@
                 "duration": 900,
                 "temperature": 100
             },
-            "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-            "precedent": "spincoater_to_hotplate-c679923b-167c-45f2-907c-06c00e9b7f76",
+            "id": "anneal-7c5163be-267f-4566-86bf-823214015bf5",
+            "precedent": "spincoater_to_hotplate-53c869d1-e731-4054-ac88-f609f857a2ab",
             "sample": "sample2",
             "start": 543,
             "task": "anneal"
         },
         {
-            "id": "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0",
+            "id": "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5",
             "precedent": null,
             "sample": "sample7",
             "start": 543,
@@ -3396,21 +3396,21 @@
                     }
                 ]
             },
-            "id": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
-            "precedent": "storage_to_spincoater-45bd0fba-68ef-4d03-8aff-d4479cec0cb0",
+            "id": "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a",
+            "precedent": "storage_to_spincoater-31252bff-3b64-48da-a631-3b48351744e5",
             "sample": "sample7",
             "start": 576,
             "task": "spincoat"
         },
         {
-            "id": "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569",
-            "precedent": "spincoat-9112bc78-644f-4b14-968d-4e1cf833eedc",
+            "id": "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69",
+            "precedent": "spincoat-d3b61743-5958-4690-85cb-c71aec562c4a",
             "sample": "sample7",
             "start": 627,
             "task": "spincoater_to_hotplate"
         },
         {
-            "id": "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1",
+            "id": "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1",
             "precedent": null,
             "sample": "sample0",
             "start": 652,
@@ -3421,8 +3421,8 @@
                 "duration": 900,
                 "temperature": 100
             },
-            "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-            "precedent": "spincoater_to_hotplate-7a2ce6e4-1fd7-4f49-a69a-e653ca541569",
+            "id": "anneal-1080679a-4a25-4f0a-be9b-41facd839b62",
+            "precedent": "spincoater_to_hotplate-8e148e0f-eb31-419d-9914-4c44139c1a69",
             "sample": "sample7",
             "start": 652,
             "task": "anneal"
@@ -3479,15 +3479,15 @@
                     }
                 ]
             },
-            "id": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
-            "precedent": "storage_to_spincoater-d37209c0-45bf-4f97-b876-9e48260f58c1",
+            "id": "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476",
+            "precedent": "storage_to_spincoater-f3b10a89-ea40-4a9a-b19b-c377970ecec1",
             "sample": "sample0",
             "start": 685,
             "task": "spincoat"
         },
         {
-            "id": "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376",
-            "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+            "id": "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e",
+            "precedent": "anneal-88cfeea8-e715-4cc3-b35e-6b9e36e981c3",
             "sample": "sample1",
             "start": 708,
             "task": "hotplate_to_storage"
@@ -3497,15 +3497,15 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-020fc4bb-803b-4a2b-a0b9-57012f650376",
+            "id": "rest-012c08c6-9c68-4ced-bd68-883b967ca112",
+            "precedent": "hotplate_to_storage-1e798283-3007-46d5-bff6-29fd9b3b4c1e",
             "sample": "sample1",
             "start": 726,
             "task": "rest"
         },
         {
-            "id": "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe",
-            "precedent": "spincoat-aba23a42-5582-411f-b8f3-b3ffa26c8e98",
+            "id": "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772",
+            "precedent": "spincoat-3cd88299-89fd-4082-954d-e13df0ebd476",
             "sample": "sample0",
             "start": 735,
             "task": "spincoater_to_hotplate"
@@ -3515,14 +3515,14 @@
                 "duration": 600,
                 "temperature": 100
             },
-            "id": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
-            "precedent": "spincoater_to_hotplate-08fb985f-a397-4642-afe7-74fe78cd94fe",
+            "id": "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d",
+            "precedent": "spincoater_to_hotplate-eb1aed2f-d642-4a55-855e-eca19b5d5772",
             "sample": "sample0",
             "start": 760,
             "task": "anneal"
         },
         {
-            "id": "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d",
+            "id": "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692",
             "precedent": null,
             "sample": "sample3",
             "start": 760,
@@ -3580,15 +3580,15 @@
                     }
                 ]
             },
-            "id": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
-            "precedent": "storage_to_spincoater-ff364bad-ec77-4865-9f36-59131bbd566d",
+            "id": "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7",
+            "precedent": "storage_to_spincoater-8ec4f791-432a-4066-a414-d9f5937a2692",
             "sample": "sample3",
             "start": 793,
             "task": "spincoat"
         },
         {
-            "id": "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c",
-            "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+            "id": "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec",
+            "precedent": "anneal-01968106-d85d-45a7-89bd-779e1166e61f",
             "sample": "sample4",
             "start": 817,
             "task": "hotplate_to_storage"
@@ -3598,15 +3598,15 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-ea651119-1516-4cc1-95c9-93cf25ff6c9c",
+            "id": "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d",
+            "precedent": "hotplate_to_storage-7133dfcb-1025-4359-8a44-c2ac8d771dec",
             "sample": "sample4",
             "start": 835,
             "task": "rest"
         },
         {
-            "id": "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de",
-            "precedent": "spincoat-02c00029-90a1-4df1-8cec-59daf7e782de",
+            "id": "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c",
+            "precedent": "spincoat-8ca53ab2-4c89-4955-ad0c-7f45cbd965a7",
             "sample": "sample3",
             "start": 843,
             "task": "spincoater_to_hotplate"
@@ -3616,15 +3616,15 @@
                 "duration": 900,
                 "temperature": 100
             },
-            "id": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
-            "precedent": "spincoater_to_hotplate-074ccd5b-8b35-499b-824a-432c0529a9de",
+            "id": "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965",
+            "precedent": "spincoater_to_hotplate-694a373b-f41b-4141-b4df-14e062cdaf0c",
             "sample": "sample3",
             "start": 868,
             "task": "anneal"
         },
         {
-            "id": "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55",
-            "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+            "id": "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1",
+            "precedent": "anneal-7aaf3b45-375e-493c-8df2-fb85bb43aaf5",
             "sample": "sample5",
             "start": 926,
             "task": "hotplate_to_storage"
@@ -3634,29 +3634,29 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-35a5b365-6b29-4aaa-9197-b74b4d33ff55",
+            "id": "rest-c054ce8d-3513-4376-b83e-be09b24a58aa",
+            "precedent": "hotplate_to_storage-a4abaf3f-6f4e-4679-8391-da0aec25acf1",
             "sample": "sample5",
             "start": 944,
             "task": "rest"
         },
         {
-            "id": "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0",
+            "precedent": "rest-012c08c6-9c68-4ced-bd68-883b967ca112",
             "sample": "sample1",
             "start": 1026,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-c6463ba4-5f92-43c8-8b21-c05f0629ace2",
+            "id": "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4",
+            "precedent": "storage_to_characterization-38f0c524-acc8-4ae8-9067-0fc4027f49f0",
             "sample": "sample1",
             "start": 1044,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3",
+            "precedent": "characterize-2a706187-1b34-42cd-9880-2bd1cf020be4",
             "sample": "sample1",
             "start": 1244,
             "task": "characterization_to_spincoater"
@@ -3698,29 +3698,29 @@
                     }
                 ]
             },
-            "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-            "precedent": "characterization_to_spincoater-92bce93e-fa79-4958-acc8-5683b8afa651",
+            "id": "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02",
+            "precedent": "characterization_to_spincoater-9286ba07-4982-497e-8f51-062b3dd9d0e3",
             "sample": "sample1",
             "start": 1277,
             "task": "spincoat"
         },
         {
-            "id": "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3",
+            "precedent": "rest-34b380b9-74a4-49bc-a22b-de1902b8b05d",
             "sample": "sample4",
             "start": 1277,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-71523364-ce7c-47a7-a3a3-11190fa7c167",
+            "id": "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec",
+            "precedent": "storage_to_characterization-c7353ed5-34c3-4a30-b884-0bd1fe82a8d3",
             "sample": "sample4",
             "start": 1295,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388",
-            "precedent": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
+            "id": "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df",
+            "precedent": "spincoat-a77e492d-6d19-4c3d-bf92-1c5a3d56ff02",
             "sample": "sample1",
             "start": 1327,
             "task": "spincoater_to_storage"
@@ -3730,22 +3730,22 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-16d501a0-a4e5-410d-bb65-e3a49f245388",
+            "id": "rest-bc19c963-b78a-487b-8638-5cea6c901a5c",
+            "precedent": "spincoater_to_storage-95f1375d-04bb-46ec-a3a3-0f25e07c93df",
             "sample": "sample1",
             "start": 1352,
             "task": "rest"
         },
         {
-            "id": "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f",
-            "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+            "id": "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061",
+            "precedent": "anneal-9418429d-60da-4e8a-838c-1a45ce4025e9",
             "sample": "sample6",
             "start": 1352,
             "task": "hotplate_to_storage"
         },
         {
-            "id": "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809",
-            "precedent": "anneal-f5764d54-fa98-45b1-b42c-ae4b339d4358",
+            "id": "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d",
+            "precedent": "anneal-ed9b56ac-0e41-4aad-8c07-526f6c7d798d",
             "sample": "sample0",
             "start": 1370,
             "task": "hotplate_to_storage"
@@ -3755,8 +3755,8 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-9eb8f9ab-04e3-41c4-9233-2d5fcf2c591f",
+            "id": "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9",
+            "precedent": "hotplate_to_storage-0537b1a9-013c-4759-984f-29b161398061",
             "sample": "sample6",
             "start": 1370,
             "task": "rest"
@@ -3766,15 +3766,15 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-beec7338-640a-4b9f-a839-9902b5774809",
+            "id": "rest-ceca3061-c951-44f6-a1e7-05848767da0e",
+            "precedent": "hotplate_to_storage-b137bb29-5012-494d-b1ac-cb075aa69a2d",
             "sample": "sample0",
             "start": 1388,
             "task": "rest"
         },
         {
-            "id": "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4",
-            "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+            "id": "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c",
+            "precedent": "anneal-7c5163be-267f-4566-86bf-823214015bf5",
             "sample": "sample2",
             "start": 1443,
             "task": "hotplate_to_storage"
@@ -3784,22 +3784,22 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-b71504f4-7fc6-4301-8f7e-102fbe9000d4",
+            "id": "rest-597ff020-3e25-4c61-afc2-3fc85b2be371",
+            "precedent": "hotplate_to_storage-9136d79e-fafd-4c65-ab8a-08e087caf93c",
             "sample": "sample2",
             "start": 1461,
             "task": "rest"
         },
         {
-            "id": "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62",
+            "precedent": "characterize-4ead1921-54f7-44a6-ab86-236d16c12aec",
             "sample": "sample4",
             "start": 1495,
             "task": "characterization_to_spincoater"
         },
         {
-            "id": "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b",
+            "precedent": "rest-bc19c963-b78a-487b-8638-5cea6c901a5c",
             "sample": "sample1",
             "start": 1528,
             "task": "storage_to_characterization"
@@ -3841,22 +3841,22 @@
                     }
                 ]
             },
-            "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-            "precedent": "characterization_to_spincoater-6472fe04-59e0-4f7e-8494-8ca3314aaa1e",
+            "id": "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651",
+            "precedent": "characterization_to_spincoater-f624e4ab-4219-4678-8390-0daa6cf74e62",
             "sample": "sample4",
             "start": 1528,
             "task": "spincoat"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-0dd3caa1-aa80-4665-897b-b2f8c12deb87",
+            "id": "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5",
+            "precedent": "storage_to_characterization-38cb5c67-375d-4a0c-bcf1-45c3b049ea5b",
             "sample": "sample1",
             "start": 1546,
             "task": "characterize"
         },
         {
-            "id": "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520",
-            "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+            "id": "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1",
+            "precedent": "anneal-1080679a-4a25-4f0a-be9b-41facd839b62",
             "sample": "sample7",
             "start": 1552,
             "task": "hotplate_to_storage"
@@ -3866,15 +3866,15 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-c8966b1c-6645-4ce4-812a-350c78ae6520",
+            "id": "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02",
+            "precedent": "hotplate_to_storage-fe76c118-c9a0-422f-a6d6-011b187a66e1",
             "sample": "sample7",
             "start": 1570,
             "task": "rest"
         },
         {
-            "id": "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b",
-            "precedent": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
+            "id": "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5",
+            "precedent": "spincoat-6c6e070a-ccd1-4deb-94bc-2f0382331651",
             "sample": "sample4",
             "start": 1578,
             "task": "spincoater_to_storage"
@@ -3884,36 +3884,36 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-0897c2ec-ffb8-48fc-92b8-7f2e2b2a454b",
+            "id": "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70",
+            "precedent": "spincoater_to_storage-1f8f507f-2323-495c-bfe5-559342fc37a5",
             "sample": "sample4",
             "start": 1603,
             "task": "rest"
         },
         {
-            "id": "characterization_to_storage-8e967634-1d0a-4392-961d-f1f720281ea5",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-403987ba-fbe6-4d1b-8fd6-d13e27f7ba21",
+            "precedent": "characterize-c33733cd-b6ca-4c99-a039-f537c752e8d5",
             "sample": "sample1",
             "start": 1746,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa",
+            "precedent": "rest-597ff020-3e25-4c61-afc2-3fc85b2be371",
             "sample": "sample2",
             "start": 1764,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-01b6f932-16c8-46d0-a83e-ed88c8733f46",
+            "id": "characterize-87eee1df-4442-465f-ac83-ff3cb2162695",
+            "precedent": "storage_to_characterization-99d6499f-c027-4747-bd44-b6204e00d1fa",
             "sample": "sample2",
             "start": 1782,
             "task": "characterize"
         },
         {
-            "id": "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d",
-            "precedent": "anneal-fc7e9125-d6f0-47b5-aec7-bb888c568084",
+            "id": "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec",
+            "precedent": "anneal-4f52c9f2-acd0-4aac-8317-0d2f159e0965",
             "sample": "sample3",
             "start": 1782,
             "task": "hotplate_to_storage"
@@ -3923,15 +3923,15 @@
                 "duration": 300,
                 "type": "rest"
             },
-            "id": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
-            "precedent": "hotplate_to_storage-3341c7a8-51c9-408a-b675-37614dddce0d",
+            "id": "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4",
+            "precedent": "hotplate_to_storage-14ea6a92-bb32-434f-99e5-2b135d86ebec",
             "sample": "sample3",
             "start": 1800,
             "task": "rest"
         },
         {
-            "id": "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0",
+            "precedent": "characterize-87eee1df-4442-465f-ac83-ff3cb2162695",
             "sample": "sample2",
             "start": 1982,
             "task": "characterization_to_spincoater"
@@ -3973,29 +3973,29 @@
                     }
                 ]
             },
-            "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-            "precedent": "characterization_to_spincoater-fe0a5b95-d57a-413d-a1bf-051e7028198c",
+            "id": "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e",
+            "precedent": "characterization_to_spincoater-b2e63631-4665-4a77-a246-de18029cf3d0",
             "sample": "sample2",
             "start": 2015,
             "task": "spincoat"
         },
         {
-            "id": "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7",
+            "precedent": "rest-ffb95270-123d-45e9-a9bd-d5ab90e54f70",
             "sample": "sample4",
             "start": 2015,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-819cd578-6f1b-4895-a836-5a58d39fc9ec",
+            "id": "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644",
+            "precedent": "storage_to_characterization-8c8eeec8-6a3a-4d50-a325-d16e58941ad7",
             "sample": "sample4",
             "start": 2033,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d",
-            "precedent": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
+            "id": "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414",
+            "precedent": "spincoat-999345af-1391-48b6-a5ce-0162afe67c7e",
             "sample": "sample2",
             "start": 2065,
             "task": "spincoater_to_storage"
@@ -4005,57 +4005,57 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-d9795313-4f16-49ad-989c-1775498ad12d",
+            "id": "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf",
+            "precedent": "spincoater_to_storage-0be7c48e-0a41-4819-97fb-9d316cfa0414",
             "sample": "sample2",
             "start": 2090,
             "task": "rest"
         },
         {
-            "id": "characterization_to_storage-3609a812-cc93-40f5-ae46-1af23892cd3c",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-5da141f6-5bac-40de-8734-2825abc944d2",
+            "precedent": "characterize-d66ee337-e68b-46c0-b488-760f1c7cb644",
             "sample": "sample4",
             "start": 2233,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84",
+            "precedent": "rest-7a4377c5-f6b4-4842-adfa-27b6be469daf",
             "sample": "sample2",
             "start": 2251,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-a2c2eb1f-baa6-434d-91d7-a96557eff20e",
+            "id": "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a",
+            "precedent": "storage_to_characterization-a8b4df75-20f7-47ff-b2fb-4ea6a3930c84",
             "sample": "sample2",
             "start": 2269,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_storage-6ab2a682-2c55-4ff8-a0f8-3c33ee7b857b",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-feae37fc-7482-4995-8945-4ba2ddc741da",
+            "precedent": "characterize-cf72a20e-b9b0-4694-bde2-e2602d72e74a",
             "sample": "sample2",
             "start": 2469,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4",
+            "precedent": "rest-ceca3061-c951-44f6-a1e7-05848767da0e",
             "sample": "sample0",
             "start": 2487,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-0e2b1d6e-228a-432c-b40d-270638ee43a2",
+            "id": "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a",
+            "precedent": "storage_to_characterization-8311c44a-ec0b-40b9-913b-51d2d314d5a4",
             "sample": "sample0",
             "start": 2505,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48",
+            "precedent": "characterize-8d6d8612-a7b5-404a-acb6-e461525dbb9a",
             "sample": "sample0",
             "start": 2705,
             "task": "characterization_to_spincoater"
@@ -4097,29 +4097,29 @@
                     }
                 ]
             },
-            "id": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
-            "precedent": "characterization_to_spincoater-170ef490-2c1a-4ce3-8e47-b7da5b8467a3",
+            "id": "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f",
+            "precedent": "characterization_to_spincoater-487d26da-2b8d-4220-a26c-ec557507cf48",
             "sample": "sample0",
             "start": 2738,
             "task": "spincoat"
         },
         {
-            "id": "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b",
+            "precedent": "rest-a3a119e7-4c5b-4062-ab36-203ddc1f4a02",
             "sample": "sample7",
             "start": 2738,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-0ad7f3ed-1652-41ba-8e31-fa223a9fae67",
+            "id": "characterize-4bcdc762-27a6-421b-b641-79c6b81da937",
+            "precedent": "storage_to_characterization-449c8070-6ca6-43a9-95af-92ed5a35718b",
             "sample": "sample7",
             "start": 2756,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a",
-            "precedent": "spincoat-881e9769-1dc5-4660-a06f-882c11927a2d",
+            "id": "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993",
+            "precedent": "spincoat-a3b435a9-30e1-46e6-a3f1-8432aa8c054f",
             "sample": "sample0",
             "start": 2788,
             "task": "spincoater_to_storage"
@@ -4129,22 +4129,22 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-5eb47cbb-6c58-4dd0-8123-8e578c58b62a",
+            "id": "rest-780281bf-42df-497d-93ec-e652ff432c8d",
+            "precedent": "spincoater_to_storage-a2346d53-8789-4ced-8a52-f97dd0344993",
             "sample": "sample0",
             "start": 2813,
             "task": "rest"
         },
         {
-            "id": "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027",
+            "precedent": "characterize-4bcdc762-27a6-421b-b641-79c6b81da937",
             "sample": "sample7",
             "start": 2956,
             "task": "characterization_to_spincoater"
         },
         {
-            "id": "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837",
+            "precedent": "rest-780281bf-42df-497d-93ec-e652ff432c8d",
             "sample": "sample0",
             "start": 2989,
             "task": "storage_to_characterization"
@@ -4186,22 +4186,22 @@
                     }
                 ]
             },
-            "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-            "precedent": "characterization_to_spincoater-806b9ac7-6604-4edf-becf-9030440f7c9f",
+            "id": "spincoat-a2860a40-a353-424a-af5b-bc601760d031",
+            "precedent": "characterization_to_spincoater-ec312596-6c05-46b5-a97e-b6eddbf1b027",
             "sample": "sample7",
             "start": 2989,
             "task": "spincoat"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-75a18d0d-7b7b-4d70-8c88-36cb1b25b931",
+            "id": "characterize-ff1c131e-515e-46fc-b902-340efa1af438",
+            "precedent": "storage_to_characterization-9fe7e636-53c4-40bd-8f9c-9b4a7d821837",
             "sample": "sample0",
             "start": 3007,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3",
-            "precedent": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
+            "id": "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f",
+            "precedent": "spincoat-a2860a40-a353-424a-af5b-bc601760d031",
             "sample": "sample7",
             "start": 3039,
             "task": "spincoater_to_storage"
@@ -4211,43 +4211,43 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-e890b9b5-aef7-4c08-afb3-b639a7dafbe3",
+            "id": "rest-91da2157-68d9-460c-84dc-d26313e4b5b5",
+            "precedent": "spincoater_to_storage-e595a9c0-1082-43c7-851a-2693a6d6839f",
             "sample": "sample7",
             "start": 3064,
             "task": "rest"
         },
         {
-            "id": "characterization_to_storage-baca1638-7c9a-411d-ab2c-77f8d6874f95",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-cd36176e-2226-4840-ad34-790871bb23ce",
+            "precedent": "characterize-ff1c131e-515e-46fc-b902-340efa1af438",
             "sample": "sample0",
             "start": 3207,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a",
+            "precedent": "rest-0402cfc6-7591-4026-832c-1474a7d1a4a9",
             "sample": "sample6",
             "start": 3225,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-b11bed87-46fc-47c4-8016-33ec923c599b",
+            "id": "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df",
+            "precedent": "storage_to_characterization-2583171f-d23d-4e0c-9d33-80674b2acb9a",
             "sample": "sample6",
             "start": 3243,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51",
+            "precedent": "characterize-2fa1120a-563b-493c-970e-cef6ba30a0df",
             "sample": "sample6",
             "start": 3443,
             "task": "characterization_to_spincoater"
         },
         {
-            "id": "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1",
+            "precedent": "rest-c054ce8d-3513-4376-b83e-be09b24a58aa",
             "sample": "sample5",
             "start": 3476,
             "task": "storage_to_characterization"
@@ -4289,22 +4289,22 @@
                     }
                 ]
             },
-            "id": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
-            "precedent": "characterization_to_spincoater-57e2728f-0752-4491-b152-d29fe4c6ea2d",
+            "id": "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae",
+            "precedent": "characterization_to_spincoater-1c1a2631-4db2-4585-92f6-f2e655d89a51",
             "sample": "sample6",
             "start": 3476,
             "task": "spincoat"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-a7d80500-86e7-42e0-a068-ceca7b5a73f5",
+            "id": "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a",
+            "precedent": "storage_to_characterization-c6d7e626-8512-4c62-814e-ece7ebe3dce1",
             "sample": "sample5",
             "start": 3494,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b",
-            "precedent": "spincoat-f4cd90b3-6802-4817-80c7-e661bb226d17",
+            "id": "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321",
+            "precedent": "spincoat-22621e68-36f9-4f47-9dd6-69c00ce581ae",
             "sample": "sample6",
             "start": 3526,
             "task": "spincoater_to_storage"
@@ -4314,22 +4314,22 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-c3b5a897-3a10-4035-b067-e9d5a97e256b",
+            "id": "rest-792880ce-088d-4df8-b3ff-d9915f39a129",
+            "precedent": "spincoater_to_storage-d23ddfd1-5b76-42b7-bd54-ae10470e4321",
             "sample": "sample6",
             "start": 3551,
             "task": "rest"
         },
         {
-            "id": "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def",
+            "precedent": "characterize-59004e7b-48e8-4b19-97d6-8b6f21bed03a",
             "sample": "sample5",
             "start": 3694,
             "task": "characterization_to_spincoater"
         },
         {
-            "id": "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6",
-            "precedent": "rest-75e389fa-d4b4-4177-a4ed-89d7586aa1b1",
+            "id": "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4",
+            "precedent": "rest-d9a65bd9-36e0-406f-8e14-ecebd63217b4",
             "sample": "sample3",
             "start": 3727,
             "task": "storage_to_characterization"
@@ -4371,22 +4371,22 @@
                     }
                 ]
             },
-            "id": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
-            "precedent": "characterization_to_spincoater-ea2c3240-7acc-4642-ad45-1bbbe254fb3e",
+            "id": "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef",
+            "precedent": "characterization_to_spincoater-3c967b76-9f51-49c7-b7fc-fd06138c2def",
             "sample": "sample5",
             "start": 3727,
             "task": "spincoat"
         },
         {
-            "id": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
-            "precedent": "storage_to_characterization-c83cda88-c27f-4377-930b-0610276e9ac6",
+            "id": "characterize-549cd95f-3076-416b-865e-2384c7d7d030",
+            "precedent": "storage_to_characterization-21c37f48-34c0-4e43-af78-4c9c8c0f85e4",
             "sample": "sample3",
             "start": 3745,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8",
-            "precedent": "spincoat-c7954ed7-bdbb-4c30-84c3-cc83802b3451",
+            "id": "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603",
+            "precedent": "spincoat-f46942a8-340b-47d6-b6cf-1c45478436ef",
             "sample": "sample5",
             "start": 3777,
             "task": "spincoater_to_storage"
@@ -4396,15 +4396,15 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-3e91f881-f591-47e0-aa4e-8a60c72462d8",
+            "id": "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a",
+            "precedent": "spincoater_to_storage-f1d0cb0c-6e83-4489-92b2-d4ca600ce603",
             "sample": "sample5",
             "start": 3802,
             "task": "rest"
         },
         {
-            "id": "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4",
-            "precedent": "characterize-846921a7-d3f5-4771-908b-36dfba610308",
+            "id": "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b",
+            "precedent": "characterize-549cd95f-3076-416b-865e-2384c7d7d030",
             "sample": "sample3",
             "start": 3945,
             "task": "characterization_to_spincoater"
@@ -4446,29 +4446,29 @@
                     }
                 ]
             },
-            "id": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
-            "precedent": "characterization_to_spincoater-887389c8-f38e-4b9a-8c46-5115e2a73fa4",
+            "id": "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4",
+            "precedent": "characterization_to_spincoater-5746dc55-b561-4645-99d5-bdb41739722b",
             "sample": "sample3",
             "start": 3978,
             "task": "spincoat"
         },
         {
-            "id": "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd",
+            "precedent": "rest-1a77de95-cec6-427f-9dd9-a07b75fc682a",
             "sample": "sample5",
             "start": 3978,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-fc9930ba-159b-4444-b925-61abed1a1d45",
+            "id": "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5",
+            "precedent": "storage_to_characterization-865c5391-3a7c-4c41-8c38-a124b589d3fd",
             "sample": "sample5",
             "start": 3996,
             "task": "characterize"
         },
         {
-            "id": "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0",
-            "precedent": "spincoat-c624aded-8caf-4b71-9373-6b4bc3aa3f60",
+            "id": "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db",
+            "precedent": "spincoat-4ea6dae5-fd9a-49db-99c4-8c6d8663f7c4",
             "sample": "sample3",
             "start": 4028,
             "task": "spincoater_to_storage"
@@ -4478,78 +4478,78 @@
                 "duration": 30,
                 "type": "rest"
             },
-            "id": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
-            "precedent": "spincoater_to_storage-f6f3c743-3276-405b-8784-2c7c40f706b0",
+            "id": "rest-e691e29b-2f05-4857-8a77-6621fb14c734",
+            "precedent": "spincoater_to_storage-c814108e-0b32-440c-a9ae-889f46dfe2db",
             "sample": "sample3",
             "start": 4053,
             "task": "rest"
         },
         {
-            "id": "characterization_to_storage-2d261307-fcb1-4503-8e4e-5d93e75c1043",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-25c35730-e00f-4456-a13c-8a8dc992437b",
+            "precedent": "characterize-5e8d3106-cf98-457b-8d50-74ddb3a415c5",
             "sample": "sample5",
             "start": 4196,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c",
+            "precedent": "rest-e691e29b-2f05-4857-8a77-6621fb14c734",
             "sample": "sample3",
             "start": 4214,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-4f73a25b-f58a-4679-838c-9c3ef276f08a",
+            "id": "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7",
+            "precedent": "storage_to_characterization-d75bd366-565d-4ed6-bec7-1067f1d1265c",
             "sample": "sample3",
             "start": 4232,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_storage-532a49b5-3ba9-4ca5-802b-d6d59d266cd9",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-d8fe4c05-d23c-46e2-b35b-22a91d57f2c6",
+            "precedent": "characterize-eec0f6f6-3867-4401-96c8-6392b60c6bf7",
             "sample": "sample3",
             "start": 4432,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3",
+            "precedent": "rest-91da2157-68d9-460c-84dc-d26313e4b5b5",
             "sample": "sample7",
             "start": 4450,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-8fa2a725-62b8-4543-8e70-979dfde208d3",
+            "id": "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1",
+            "precedent": "storage_to_characterization-a003247a-11c3-46d3-bc8d-63bd5e0b10e3",
             "sample": "sample7",
             "start": 4468,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_storage-4912e8a3-bad8-4591-9082-104b1e067d82",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-da108563-5a95-4e9a-a69b-ddcfa40695ba",
+            "precedent": "characterize-9b1386f1-6294-44d7-88d8-54a4814b1ca1",
             "sample": "sample7",
             "start": 4668,
             "task": "characterization_to_storage"
         },
         {
-            "id": "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42",
-            "precedent": "rest-5eacfef6-b59d-492f-add6-252a9d4afa79",
+            "id": "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6",
+            "precedent": "rest-792880ce-088d-4df8-b3ff-d9915f39a129",
             "sample": "sample6",
             "start": 4686,
             "task": "storage_to_characterization"
         },
         {
-            "id": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
-            "precedent": "storage_to_characterization-3fa38899-ea4f-4ab5-a783-e327613d2e42",
+            "id": "characterize-56e0a606-1a70-4a65-9b58-28455947a172",
+            "precedent": "storage_to_characterization-2d5f5a67-761a-4acb-9b25-eb812d6b24b6",
             "sample": "sample6",
             "start": 4704,
             "task": "characterize"
         },
         {
-            "id": "characterization_to_storage-6bb49759-2f45-4c26-ad63-600bb757f4e8",
-            "precedent": "characterize-4af882b1-efe6-4821-afc9-e3cbce84698a",
+            "id": "characterization_to_storage-94f24a94-9709-45ba-ad6d-7e80af20d224",
+            "precedent": "characterize-56e0a606-1a70-4a65-9b58-28455947a172",
             "sample": "sample6",
             "start": 4904,
             "task": "characterization_to_storage"

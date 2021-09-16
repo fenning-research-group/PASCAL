@@ -282,7 +282,9 @@ def build_sample_list(
         this_set_of_steps = []
         for step in worklist:
             if type(step) == Spincoat:
-                this_set_of_steps.append(apply_solution_mesh(step, solution_mesh))
+                this_set_of_steps.append(
+                    apply_solution_mesh(deepcopy(step), solution_mesh)
+                )
             else:
                 this_set_of_steps.append([deepcopy(step)])
         all_worklists += list(itertools.product(*this_set_of_steps))
