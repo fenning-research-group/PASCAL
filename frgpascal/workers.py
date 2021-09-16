@@ -81,21 +81,20 @@ class WorkerTemplate(ABC):
             task_description = f'{task["task"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
             sample_task = sample["tasks"][task["id"]]
-
             # print(f"starting {task_description}")
             if task is None:  # finished flag
                 break
-
             # wait for all previous tasks to complete
 
             with self.maestro.lock_pendingtasks:
                 self.maestro.pending_tasks.append(task["id"])
-            for precedent in task["precedents"]:
-                found = False
+
+            if task["precedent"] is not None:
                 first = True
+                found = False
                 while not found:
                     with self.maestro.lock_completedtasks:
-                        found = precedent in self.maestro.completed_tasks
+                        found = task["precedent"] in self.maestro.completed_tasks
                     if found:
                         break
                     else:
@@ -122,10 +121,11 @@ class WorkerTemplate(ABC):
             # )
 
             sample_task["start_actual"] = self.maestro.nist_time() - self.maestro.t0
-            function = self.functions[task["task"]]
+            function = self.functions[task["task"]].function
+            details = sample_task.get("details", {})
             if asyncio.iscoroutinefunction(function):
                 self.logger.info(f"executing {task_description} as coroutine")
-                output_dict = await function(sample, sample_task["details"])
+                output_dict = await function(sample, details)
             else:
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
@@ -133,7 +133,7 @@ class WorkerTemplate(ABC):
                         self.maestro.threadpool,
                         function,
                         sample,
-                        sample_task["details"],
+                        details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -144,6 +144,7 @@ class WorkerTemplate(ABC):
                 #     self.logger.info(
                 #         f"{task_description} failed: {future.exception()}"
                 #     )
+            output_dict = output_dict[0]
             if output_dict is None:
                 output_dict = {}
             # update task lists
@@ -473,15 +474,15 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             + drop["time"]
             + headstart
             - self.liquidhandler.ASPIRATION_DELAY,
-            tray=drop["well"]["tray"],
-            well=drop["well"]["slot"],
+            tray=drop["solution"]["well"]["tray"],
+            well=drop["solution"]["well"]["slot"],
             volume=drop["volume"],
             pipette="perovskite",
         )
 
         last_time = t0 + drop["time"] + headstart - self.liquidhandler.DISPENSE_DELAY
         liquidhandlertasks["dispense_solution"] = self.liquidhandler.drop_perovskite(
-            nist_time=last_time,
+            nist_time=last_time, rate=drop["rate"], height=drop["height"]
         )
 
         self.liquidhandler.cleanup(nist_time=last_time + 0.5)
@@ -511,11 +512,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 + drop0["time"]
                 + headstart
                 - self.liquidhandler.ASPIRATION_DELAY,
-                psk_tray=drop0["well"]["tray"],
-                psk_well=drop0["well"]["slot"],
+                psk_tray=drop0["solution"]["well"]["tray"],
+                psk_well=drop0["solution"]["well"]["slot"],
                 psk_volume=drop0["volume"],
-                antisolvent_tray=drop1["well"]["tray"],
-                antisolvent_well=drop1["well"]["slot"],
+                antisolvent_tray=drop1["solution"]["well"]["tray"],
+                antisolvent_well=drop1["solution"]["well"]["slot"],
                 antisolvent_volume=drop1["volume"],
             )
 
@@ -524,7 +525,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
             liquidhandlertasks[
                 "dispense_solution"
-            ] = self.liquidhandler.drop_perovskite(nist_time=dispense0_time)
+            ] = self.liquidhandler.drop_perovskite(
+                nist_time=dispense0_time, height=drop0["height"], rate=drop0["rate"]
+            )
 
             liquidhandlertasks[
                 "stage_antisolvent"
@@ -543,8 +546,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 + drop0["time"]
                 + headstart
                 - self.liquidhandler.ASPIRATION_DELAY,
-                tray=drop0["well"]["tray"],
-                well=drop0["well"]["slot"],
+                tray=drop0["solution"]["well"]["tray"],
+                well=drop0["solution"]["well"]["slot"],
                 volume=drop0["volume"],
                 pipette="perovskite",
             )
@@ -558,7 +561,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             liquidhandlertasks[
                 "dispense_solution"
             ] = self.liquidhandler.drop_perovskite(
-                nist_time=dispense0_time,
+                nist_time=dispense0_time, height=drop0["height"], rate=drop0["rate"]
             )
 
             if aspirate1_time - dispense0_time > (
@@ -572,8 +575,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 "aspirate_antisolvent"
             ] = self.liquidhandler.aspirate_for_spincoating(
                 nist_time=aspirate1_time,
-                tray=drop1["well"]["tray"],
-                well=drop1["well"]["slot"],
+                tray=drop1["solution"]["well"]["tray"],
+                well=drop1["solution"]["well"]["slot"],
                 volume=drop1["volume"],
                 pipette="antisolvent",
             )
@@ -584,7 +587,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         )
         liquidhandlertasks[
             "dispense_antisolvent"
-        ] = self.liquidhandler.drop_antisolvent(nist_time=dispense1_time)
+        ] = self.liquidhandler.drop_antisolvent(
+            nist_time=dispense1_time, height=drop1["height"], rate=drop1["rate"]
+        )
 
         self.liquidhandler.cleanup(nist_time=dispense1_time + 0.5)
 

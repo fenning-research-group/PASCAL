@@ -204,7 +204,7 @@ class CharacterizationAxis:
         self.moveto(self.TRANSFERPOSITION)
         self.gantry.moveto(*self.p0)
         self.gantry.gui()
-        self.coordinates = self.gantry.position
+        self.coordinates = np.array(self.gantry.position)
         # self.gantry.moverel(z=10, zhop=False)
         self.__calibrated = True
         with open(
@@ -216,7 +216,7 @@ class CharacterizationAxis:
         with open(
             os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
         ) as f:
-            self.coordinates = yaml.load(f, Loader=yaml.FullLoader)
+            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
         self.__calibrated = True
 
     def set_defaults(self):

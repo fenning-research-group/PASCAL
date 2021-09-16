@@ -184,6 +184,7 @@ class Drop:
     def to_dict(self):
         out = {
             "solution": self.solution.to_dict(),
+            "volume": self.volume,
             "time": self.time,
             "rate": self.rate,
             "height": self.height,

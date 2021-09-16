@@ -122,7 +122,7 @@ class SpinCoater:
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
         self.gantry.moveto(*self.p0)
         self.gantry.gui()
-        self.coordinates = self.gantry.position
+        self.coordinates = np.array(self.gantry.position)
         # self.gantry.moverel(z=10, zhop=False)
         self.__calibrated = True
         with open(
@@ -134,7 +134,7 @@ class SpinCoater:
         with open(
             os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
         ) as f:
-            self.coordinates = yaml.load(f, Loader=yaml.FullLoader)
+            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
         self.__calibrated = True
 
     def __call__(self):

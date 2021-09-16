@@ -233,9 +233,9 @@ class Maestro:
             ValueError: Sample has been dropped during transit
         """
         self.open_to_catch()  # open the grippers
-        if p1 == self.spincoater():  # moving off of the spincoater
+        if (p1 == self.spincoater()).all():  # moving off of the spincoater
             off_thread = Thread(
-                target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME)
+                target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
             )
             self.spincoater.vacuum_off()
             off_thread.start()
@@ -252,7 +252,7 @@ class Maestro:
         # if self.gripper.is_under_load():
         #     raise ValueError("Sample dropped in transit!")
 
-        if p2 == self.spincoater():  # moving onto the spincoater
+        if (p2 == self.spincoater()).all():  # moving onto the spincoater
             self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True)
             self.spincoater.vacuum_on()
             self.gantry.moveto(
@@ -267,7 +267,7 @@ class Maestro:
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
         # self.gripper.close()  # fully close gripper to reduce servo strain
-        if p2 == self.spincoater():
+        if (p2 == self.spincoater()).all():
             self.gantry._transition_to_frame(
                 "workspace"
             )  # move gantry out of the liquid handler

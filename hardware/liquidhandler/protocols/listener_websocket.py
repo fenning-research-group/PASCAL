@@ -306,17 +306,17 @@ class ListenerWebsocket:
         )
 
     def mix(self, dispense_instructions):
-        p = self._get_pipette(pipette='perovskite')
+        p = self._get_pipette(pipette="perovskite")
         for dispense in dispense_instructions:
-            tray = dispense['tray']
-            well = dispense['well']
+            tray = dispense["tray"]
+            well = dispense["well"]
             source_well = self._sources[tray][well]
-            
+
             destination_wells = []
             volumes = []
-            for d in dispense['destinations']:
-                tray = d['tray']
-                for well, volume in zip(d['wells'], d['volumes']):
+            for d in dispense["destinations"]:
+                tray = d["tray"]
+                for well, volume in zip(d["wells"], d["volumes"]):
                     destination_wells.append(self._sources[tray][well])
                     volumes.append(volume)
 
@@ -326,9 +326,8 @@ class ListenerWebsocket:
                 destination_wells,
                 touch_tip=False,
                 blow_out=True,
-                disposal_volume=0
-                )
-
+                disposal_volume=0,
+            )
 
     def cleanup(self):
         """drops tips of all pipettes into trash to prepare pipettes for future commands"""
