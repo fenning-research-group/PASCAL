@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 ### https://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
 os.environ[
@@ -269,3 +270,41 @@ class Workspace:
         self._openslots = list(self._coordinates.keys())
         self._openslots.sort()
         self.contents = {}
+
+    def plot(tray, ax=None):
+        """
+        plot current contents of the labware
+        """
+        if ax is None:
+            fig, ax = plt.subplots()
+            ax.set_aspect("equal")
+
+        plt.sca(ax)
+        xvals = np.unique([x for x, _, _ in tray._coordinates.values()])
+        yvals = np.unique([y for _, y, _ in tray._coordinates.values()])
+        markersize = 30
+
+        unique_substrates = {}
+        empty_slots = {"x": [], "y": []}
+        for k, (x, y, z) in tray._coordinates.items():
+            if k in tray.contents:
+                substrate = tray.contents[k].substrate
+                if substrate not in unique_substrates:
+                    unique_substrates[substrate] = {"x": [], "y": []}
+                unique_substrates[substrate]["x"].append(x)
+                unique_substrates[substrate]["y"].append(y)
+            else:
+                empty_slots["x"].append(x)
+                empty_slots["y"].append(y)
+
+        for label, c in unique_substrates.items():
+            plt.scatter(c["x"], c["y"], label=label, marker="s")
+        plt.scatter(empty_slots["x"], empty_slots["y"], c="gray", marker="x", alpha=0.2)
+
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+        plt.title(tray.name)
+        plt.yticks(
+            yvals[::-1],
+            [chr(65 + i) for i in range(len(yvals))],
+        )
+        plt.xticks(xvals, [i + 1 for i in range(len(xvals))])

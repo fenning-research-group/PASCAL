@@ -5,11 +5,6 @@ import uuid
 import json
 from copy import deepcopy
 
-from frgpascal.experimentaldesign.recipes import (
-    Sample,
-    Spincoat,
-    Anneal,
-)
 from frgpascal.workers import (
     Worker_GantryGripper,
     Worker_Characterization,
@@ -67,6 +62,75 @@ AVAILABLE_TASKS = {
     task: details for task, details in ALL_TASKS.items() if task not in hide_me
 }  # tasks to display to user
 
+### Sample Class
+
+
+class Sample:
+    def __init__(
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
+        sampleid: str = None,
+    ):
+        self.name = name
+        self.substrate = substrate
+        if hash is None:
+            self._sampleid = str(uuid4())
+        else:
+            self._sampleid = sampleid
+        if storage_slot is None:
+            self.storage_slot = {
+                "tray": None,
+                "slot": None,
+            }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
+        else:
+            self.storage_slot = storage_slot
+        self.worklist = worklist
+        self.status = "not_started"
+        self.tasks = []
+
+    def to_dict(self):
+        task_output = {task.taskid: task.to_dict() for task in self.tasks}
+
+        out = {
+            "name": self.name,
+            "sampleid": self._sampleid,
+            "substrate": self.substrate,
+            "storage_slot": self.storage_slot,
+            "worklist": [w.to_dict() for w in self.worklist],
+            "tasks": task_output,
+        }
+
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __repr__(self):
+        output = f"<Sample> {self.name}\n"
+        output += f"<Substrate> {self.substrate}\n"
+        output += f"Worklist:\n"
+        for task in self.worklist:
+            output += f"\t{task}\n"
+        return output
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.substrate == other.substrate and self.worklist == other.worklist
+        else:
+            return False
+
+    def __key(self):
+        return (
+            self.substrate,
+            *self.worklist,
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
 
 ### Subclasses to define a spincoat
 class Solution:
@@ -75,11 +139,15 @@ class Solution:
         solvent: str,
         solutes: str = "",
         molarity: float = 0,
+        labware: str = None,
+        well: str = None,
     ):
         if solutes != "" and molarity == 0:
             raise ValueError(
                 "If the solution contains solutes, the molarity must be >0!"
             )
+        if solutes == "":
+            molarity = 1
 
         self.solutes = solutes
         self.molarity = molarity
@@ -93,9 +161,14 @@ class Solution:
         self.solvent_dict = {
             k: v / total_solvent_amt for k, v in self.solvent_dict.items()
         }  # normalize so total solvent amount is 1.0
+
+        if not ((labware is None) and (well is None)):
+            raise Exception(
+                "Labware and Well must both be either defined or left as None!"
+            )
         self.well = {
-            "tray": None,
-            "slot": None,
+            "labware": labware,
+            "well": well,
         }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
 
     def name_to_components(
@@ -476,73 +549,6 @@ class Characterize(Task):
 
     def __repr__(self):
         return "<Characterize>"
-
-
-class Sample:
-    def __init__(
-        self,
-        name: str,
-        substrate: str,
-        worklist: list,
-        storage_slot=None,
-        sampleid: str = None,
-    ):
-        self.name = name
-        self.substrate = substrate
-        if hash is None:
-            self._sampleid = str(uuid4())
-        else:
-            self._sampleid = sampleid
-        if storage_slot is None:
-            self.storage_slot = {
-                "tray": None,
-                "slot": None,
-            }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
-        else:
-            self.storage_slot = storage_slot
-        self.worklist = worklist
-        self.status = "not_started"
-        self.tasks = []
-
-    def to_dict(self):
-        task_output = {task.taskid: task.to_dict() for task in self.tasks}
-
-        out = {
-            "name": self.name,
-            "sampleid": self._sampleid,
-            "substrate": self.substrate,
-            "storage_slot": self.storage_slot,
-            "worklist": [w.to_dict() for w in self.worklist],
-            "tasks": task_output,
-        }
-
-        return out
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
-
-    def __repr__(self):
-        output = f"<Sample> {self.name}\n"
-        output += f"<Substrate> {self.substrate}\n"
-        output += f"Worklist:\n"
-        for task in self.worklist:
-            output += f"\t{task}\n"
-        return output
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.substrate == other.substrate and self.worklist == other.worklist
-        else:
-            return False
-
-    def __key(self):
-        return (
-            self.substrate,
-            *self.worklist,
-        )
-
-    def __hash__(self):
-        return hash(self.__key())
 
 
 ### build task list for a sample

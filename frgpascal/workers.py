@@ -481,8 +481,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             + drop["time"]
             + headstart
             - self.liquidhandler.ASPIRATION_DELAY,
-            tray=drop["solution"]["well"]["tray"],
-            well=drop["solution"]["well"]["slot"],
+            tray=drop["solution"]["well"]["labware"],
+            well=drop["solution"]["well"]["well"],
             volume=drop["volume"],
             pipette="perovskite",
         )
@@ -519,11 +519,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 + drop0["time"]
                 + headstart
                 - self.liquidhandler.ASPIRATION_DELAY,
-                psk_tray=drop0["solution"]["well"]["tray"],
-                psk_well=drop0["solution"]["well"]["slot"],
+                psk_tray=drop0["solution"]["well"]["labware"],
+                psk_well=drop0["solution"]["well"]["well"],
                 psk_volume=drop0["volume"],
-                antisolvent_tray=drop1["solution"]["well"]["tray"],
-                antisolvent_well=drop1["solution"]["well"]["slot"],
+                antisolvent_tray=drop1["solution"]["well"]["labware"],
+                antisolvent_well=drop1["solution"]["well"]["well"],
                 antisolvent_volume=drop1["volume"],
             )
 
@@ -553,8 +553,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 + drop0["time"]
                 + headstart
                 - self.liquidhandler.ASPIRATION_DELAY,
-                tray=drop0["solution"]["well"]["tray"],
-                well=drop0["solution"]["well"]["slot"],
+                tray=drop0["solution"]["well"]["labware"],
+                well=drop0["solution"]["well"]["well"],
                 volume=drop0["volume"],
                 pipette="perovskite",
             )
@@ -582,8 +582,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 "aspirate_antisolvent"
             ] = self.liquidhandler.aspirate_for_spincoating(
                 nist_time=aspirate1_time,
-                tray=drop1["solution"]["well"]["tray"],
-                well=drop1["solution"]["well"]["slot"],
+                tray=drop1["solution"]["well"]["labware"],
+                well=drop1["solution"]["well"]["well"],
                 volume=drop1["volume"],
                 pipette="antisolvent",
             )

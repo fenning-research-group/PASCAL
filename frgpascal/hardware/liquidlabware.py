@@ -27,7 +27,7 @@ class LiquidLabware:
         numy = len(constants["ordering"][0])
         self.shape = (numy, numx)  # grid dimensions
         self.capacity = numy * numx  # number of slots
-        self.volume = constants["wells"][self._openslots[0]][
+        self.volume = constants["wells"][self._openwells[0]][
             "totalLiquidVolume"
         ]  # in uL. assumes all wells have same volume!
         self.contents = {}
@@ -47,9 +47,9 @@ class LiquidLabware:
         self._coordinates = {
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
-        self._openslots = list(self._coordinates.keys())
-        self._openslots = natsorted(
-            self._openslots
+        self._openwells = list(self._coordinates.keys())
+        self._openwells = natsorted(
+            self._openwells
         )  # should already be sorted, but just in case
 
         return constants
@@ -67,14 +67,14 @@ class LiquidLabware:
             (str): which slot has been allocated to the new contents
         """
         try:
-            slot = self._openslots.pop(0)  # take the next open slot
-            self.contents[slot] = contents
-            self._openslots = natsorted(self._openslots)
-            return slot
+            well = self._openwells.pop(0)  # take the next open slot
+            self.contents[well] = contents
+            self._openwells = natsorted(self._openwells)
+            return well
         except IndexError as e:
             raise IndexError("This labware is full!")
 
-    def unload(self, slot: str):
+    def unload(self, well: str):
         """Unload contents from a slot in the labware.
             Sorts the list of open slots so we always fill the lowest index open slot.
 
@@ -84,13 +84,13 @@ class LiquidLabware:
         Raises:
             ValueError: If that slot is already empty
         """
-        if slot not in self._coordinates:
-            raise ValueError(f"{slot} is not a valid slot")
-        if slot in self._openslots:
-            raise ValueError(f"Cannot unload {slot}, it's already empty!")
-        self._openslots.append(slot)
-        self._openslots = natsorted(self._openslots)
-        return self.contents.pop(slot)
+        if well not in self._coordinates:
+            raise ValueError(f"{well} is not a valid well!")
+        if well in self._openwells:
+            raise ValueError(f"Cannot unload {well}, it's already empty!")
+        self._openwells.append(well)
+        self._openwells = natsorted(self._openwells)
+        return self.contents.pop(well)
 
     def __repr__(self):
         out = f"<LiquidLabware> {self.name}, {self.volume/1e3} mL volume, {self.capacity} wells"
@@ -100,8 +100,8 @@ class LiquidLabware:
         """
         resets the labware to an empty state
         """
-        self._openslots = list(self._coordinates.keys())
-        self._openslots.sort()
+        self._openwells = list(self._coordinates.keys())
+        self._openwells.sort()
         self.contents = {}
 
     def plot(self, solution_details=None, ax=None):
@@ -149,6 +149,7 @@ class LiquidLabware:
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
 
         plt.sca(ax)
+        ax.set_aspect("equal")
         plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         plt.title(self.name)
         plt.yticks(
