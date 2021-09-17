@@ -88,6 +88,8 @@ class Sample:
         else:
             self.storage_slot = storage_slot
         self.worklist = worklist
+        for t in self.worklist:
+            t.sample = self
         self.status = "not_started"
         self.tasks = []
 
@@ -316,12 +318,17 @@ class Task:
         # if sum([immediate for task, immediate in precedents]) > 1:
         #     raise ValueError("Only one precedent can be immediate!")
         self.__generate_taskid()
+        self.start = np.nan
+        self.end = np.nan
 
     def __generate_taskid(self):
         self.taskid = f"{self.task}-{str(uuid.uuid4())}"
 
     def __repr__(self):
-        return f"<Task> {self.sample.name}, {self.task}"
+        if self.sample is None:
+            return f"<Task> {self.task}, no sample assigned yet"
+        else:
+            return f"<Task> {self.sample.name}, {self.task}"
 
     def __eq__(self, other):
         return other == self.taskid
@@ -337,8 +344,12 @@ class Task:
         return result
 
     def to_dict(self):
+        if self.sample is None:
+            name = None
+        else:
+            name = self.sample.name
         out = {
-            "sample": self.sample.name,
+            "sample": name,
             "start": self.start,
             "task": self.task,
             "id": self.taskid,

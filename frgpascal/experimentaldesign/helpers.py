@@ -5,6 +5,7 @@ from scipy.optimize import nnls
 from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
+import pandas as pd
 
 #### General
 def generate_unique_id():
@@ -313,6 +314,59 @@ def build_sample_list(
     return sample_list
 
 
+def samples_to_dataframe(samples):
+    dfdata = {c: [] for c in ["name", "storage_tray", "storage_slot", "worklist"]}
+    for s in samples:
+        dfdata["name"].append(s.name)
+        dfdata["storage_tray"].append(s.storage_slot["tray"])
+        dfdata["storage_slot"].append(s.storage_slot["slot"])
+        dfdata["worklist"].append([t.to_dict() for t in s.worklist])
+
+    task_idx = {name: 0 for name in ["spincoat", "anneal", "rest", "characterize"]}
+
+    for step_idx, step in enumerate(samples[0].worklist):
+        idx = task_idx[step.task]
+        task_idx[step.task] += 1
+        header = f"{step.task}{idx}_"
+        if step.task == "spincoat":
+            cols = []
+            for drop_idx, d in enumerate(step.drops):
+                for aspect in [
+                    "solutes",
+                    "solvent",
+                    "molarity",
+                    "time",
+                    "height",
+                    "rate",
+                ]:
+                    cols.append(f"drop{drop_idx}_{aspect}")
+            for c in ["steps", "duration"] + cols:
+                dfdata[header + c] = []
+        else:
+            for c in [header + c for c in step.to_dict().get("details", {}).keys()]:
+                dfdata[c] = []
+
+        for s in samples:
+            for c, v in s.worklist[step_idx].to_dict().get("details", {}).items():
+                if c == "drops":
+                    for drop_idx, d in enumerate(v):
+                        for aspect in ["time", "height", "rate"]:
+                            dfdata[header + f"drop{drop_idx}_{aspect}"].append(
+                                d[aspect]
+                            )
+                        for aspect in ["solutes", "solvent", "molarity"]:
+                            dfdata[header + f"drop{drop_idx}_{aspect}"].append(
+                                d["solution"][aspect]
+                            )
+                else:
+                    key = header + c
+                    if key in dfdata:
+                        dfdata[key].append(v)
+
+    return pd.DataFrame(dfdata)
+
+
+# df = pd.DataFrame(dfdata)
 #### Set liquid storage locations + amounts needed
 def handle_liquids(samples, stock_solutions, solution_storage, min_volume=50):
     unique_solutions_required = list(
