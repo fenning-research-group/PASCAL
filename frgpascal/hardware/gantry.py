@@ -162,7 +162,7 @@ class Gantry:
     def gohome(self):
         self.write("G28 X Y Z")
         self.update()
-        self.movetoidle()
+        self.movetoclear()
 
     def _target_frame(self, x, y, z):
         """Checks whether a target coordinate is within the liquid handler (OT2), workspace (over the breadboard), or invalid coordinate frames

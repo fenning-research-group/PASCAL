@@ -51,9 +51,18 @@ class WorkerTemplate(ABC):
         self.queue = asyncio.PriorityQueue()
 
     def start(self):
+        def future_callback(future):
+            try:
+                future.result()
+            except Exception as e:
+                self.logger.exception(f"Exception in {self}")
+                # if future.exception(): #your long thing had an exception
+                #     self.logger.error(f'Exception in {self}: {future.exception()}')
+
         self.working = True
         for _ in range(self.n_workers):
-            asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
+            future = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
+            future.add_done_callback(future_callback)
 
     def stop_workers(self):
         self.working = False
@@ -138,17 +147,11 @@ class WorkerTemplate(ABC):
                 )
                 future.add_done_callback(future_callback)
                 output_dict = await future
-                # try:
-                #     future.result()
-                # except:
-                #     self.logger.info(
-                #         f"{task_description} failed: {future.exception()}"
-                #     )
-            output_dict = output_dict[0]
+                output_dict = output_dict[0]
             if output_dict is None:
                 output_dict = {}
             # update task lists
-            sample_task["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
+            output_dict["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
             sample_task.update(output_dict)
 
             self.logger.info(f"finished {task_description}")
@@ -409,7 +412,7 @@ class Worker_Hotplate(WorkerTemplate):
         }
 
     async def anneal(self, sample, details):
-        await asyncio.sleep(sample["anneal_recipe"]["duration"])
+        await asyncio.sleep(details["duration"])
 
 
 class Worker_Storage(WorkerTemplate):

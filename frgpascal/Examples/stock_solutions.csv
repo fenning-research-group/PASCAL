@@ -1,9 +1,6 @@
 Labware,Well,Volume (uL),Solutes,Molarity (M),Solvent
-4mL_Tray1,A1,1600.0,spiro,1,IPA
-4mL_Tray1,A2,2000.0,,1,Chlorobenzene
-4mL_Tray1,A3,800.0,FA_Pb_I3,1,DMF9_DMSO1
-96_Plate1,A1,Empty Vial,MA0.5_FA0.5_Pb_I3,1,DMF9_DMSO1
-96_Plate1,A2,Empty Vial,FA0.25_MA0.75_Pb_I3,1,DMF9_DMSO1
-4mL_Tray1,A4,800.0,MA_Pb_I3,1,DMF9_DMSO1
-96_Plate1,A3,Empty Vial,FA0.75_MA0.25_Pb_I3,1,DMF9_DMSO1
-4mL_Tray1,A5,2000.0,,1,MethylAcetate
+96_Plate1,A1,320.0,spiro,1,IPA
+4mL_Tray1,A1,400.0,,1,Chlorobenzene
+4mL_Tray1,A2,400.0,,1,MethylAcetate
+96_Plate1,A2,160.0,FA_Pb_I3,1,DMF9_DMSO1
+96_Plate1,A3,160.0,MA_Pb_I3,1,DMF9_DMSO1
