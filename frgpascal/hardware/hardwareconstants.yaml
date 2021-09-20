@@ -68,10 +68,14 @@ hotplate:
   p0: [273.4, 217.5, 88] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 
 liquidhandler:
-  pollingrate: 0.5 #delay (seconds) between checks for new commands to push to liquid handler server
+  pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
+  dispense_delay: 1 # time (seconds) between initiating a dispense and the completion of the dispense
+  aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
+  staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
   server:
     ip: '169.254.160.20' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
+  
 
 sampletray:
   p0: [495.7,17.5,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions

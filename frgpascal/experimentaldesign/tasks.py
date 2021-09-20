@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import uuid
 import json
+import yaml
 from copy import deepcopy
+import os
 
 from frgpascal.workers import (
     Worker_GantryGripper,
@@ -12,6 +14,13 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
+
+
+MODULE_DIR = os.path.dirname(__file__)
+with open(
+    os.path.join(MODULE_DIR, "..", "hardware", "hardwareconstants.yaml"), "r"
+) as f:
+    constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
 gg = Worker_GantryGripper(planning=True)
@@ -398,6 +407,24 @@ class Spincoat(Task):
             self.start_times.append(self.start_times[-1] + duration)
         duration = self.steps[:, 2].sum() + self.start_times[0]
 
+        # add overhead time based on number of pipetting steps. These numbers are calibrated from experiments
+        if len(drops) == 1:
+            duration += max(
+                constants["liquidhandler"]["aspiration_delay"]
+                + constants["liquidhandler"]["dispense_delay"]
+                - self.drops[0].time,
+                0,
+            )
+        elif len(drops) == 2:
+            duration += max(
+                2
+                * (
+                    constants["liquidhandler"]["aspiration_delay"]
+                    + constants["liquidhandler"]["dispense_delay"]
+                )
+                - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def to_dict(self):

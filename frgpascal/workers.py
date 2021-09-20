@@ -182,21 +182,21 @@ class Worker_GantryGripper(WorkerTemplate):
             # "close": self.gripper.close,
             # "transfer": self.maestro.transfer,
             "idle_gantry": task_tuple(
-                function=self.idle_gantry, estimated_duration=20, other_workers=[]
+                function=self.idle_gantry, estimated_duration=6, other_workers=[]
             ),
             "spincoater_to_hotplate": task_tuple(
                 function=self.spincoater_to_hotplate,
-                estimated_duration=25,
+                estimated_duration=27,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_storage": task_tuple(
                 function=self.spincoater_to_storage,
-                estimated_duration=25,
+                estimated_duration=30,
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_characterization": task_tuple(
                 function=self.spincoater_to_characterization,
-                estimated_duration=25,
+                estimated_duration=30,
                 other_workers=[Worker_SpincoaterLiquidHandler, Worker_Characterization],
             ),
             "hotplate_to_spincoater": task_tuple(
@@ -226,7 +226,7 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
             "storage_to_characterization": task_tuple(
                 function=self.storage_to_characterization,
-                estimated_duration=18,
+                estimated_duration=15,
                 other_workers=[Worker_Characterization],
             ),
             "characterization_to_spincoater": task_tuple(

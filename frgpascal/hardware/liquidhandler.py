@@ -11,21 +11,23 @@ import uuid
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
-    constants = yaml.load(f, Loader=yaml.FullLoader)
+    constants = yaml.load(f, Loader=yaml.FullLoader)["liquidhandler"]
 
 
 class OT2:
     def __init__(self):
         self.server = OT2Server()
         # self.server.start()
-        self.POLLINGRATE = 0.1
-        self.DISPENSE_DELAY = 1  # time (seconds) between initiating a dispense and the completion of the dispense
-        self.ASPIRATION_DELAY = (
-            22.5  # time (seconds) to perform an aspiration and stage the pipette
-        )
-        self.STAGING_DELAY = (
-            1.5  # time (seconds) to move pipette into position for drop staging
-        )
+        self.POLLINGRATE = constants["pollingrate"]
+        self.DISPENSE_DELAY = constants[
+            "dispense_delay"
+        ]  # time (seconds) between initiating a dispense and the completion of the dispense
+        self.ASPIRATION_DELAY = constants[
+            "aspiration_delay"
+        ]  # time (seconds) to perform an aspiration and stage the pipette
+        self.STAGING_DELAY = constants[
+            "staging_delay"
+        ]  # time (seconds) to move pipette into position for drop staging
 
     def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
@@ -170,8 +172,8 @@ class OT2Server:
     def __init__(self):
         self.__calibrate_time_to_nist()
         self.connected = False
-        self.ip = constants["liquidhandler"]["server"]["ip"]
-        self.port = constants["liquidhandler"]["server"]["port"]
+        self.ip = constants["server"]["ip"]
+        self.port = constants["server"]["port"]
         self.pending_tasks = []
         self.completed_tasks = {}
         self.POLLINGRATE = 1  # seconds between status checks to OT2
