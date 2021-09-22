@@ -123,7 +123,7 @@ class SpinCoater:
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
         self.gantry.moveto(*self.p0)
         self.gantry.gui()
-        self.coordinates = np.array(self.gantry.position)
+        self.coordinates = self.gantry.position
         # self.gantry.moverel(z=10, zhop=False)
         self.__calibrated = True
         with open(
