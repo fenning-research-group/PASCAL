@@ -87,9 +87,9 @@ spincoater:
   pollingrate: 0.5 #delay (seconds) between communication to the arduino
   # movement
   p0: [4.3, 34.7, 61.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
-  rpm_max: 10000 #maximum angular velocity (rpm) the spincoater can hit
-  rpm_min: 300 #minimum angular velocity (rpm) the spincoater can hit
-  acceleration_max: 10000 #maximum angular acceleration (rpm/s) the spincoater can hit
+  rpm_max: 6000 #maximum angular velocity (rpm) the spincoater can hit
+  rpm_min: 1 #minimum angular velocity (rpm) the spincoater can hit
+  acceleration_max: 4000 #maximum angular acceleration (rpm/s) the spincoater can hit
   acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit
   logging_interval: 0.2 #interval (seconds) at which to log spincoating rpm
   vacuum_disengagement_time: 5 #delay (seconds) after closing vacuum solenoid -> vacuum releasing at the chuck

@@ -59,6 +59,7 @@ class SpinCoater:
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
         self.connect()
+        self._current_rps = 0
 
     def connect(self, **kwargs):
         # connect to odrive BLDC controller
@@ -92,13 +93,13 @@ class SpinCoater:
             AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
         )
         # odrive defaults
-        self.axis.motor.config.current_lim = 60  # Amps NOT SAME AS POWER SUPPLY CURRENT
+        self.axis.motor.config.current_lim = 30  # Amps NOT SAME AS POWER SUPPLY CURRENT
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
         self.axis.trap_traj.config.vel_limit = (
-            0.2  # for position moves to lock position
+            0.5  # for position moves to lock position
         )
-        self.axis.trap_traj.config.accel_limit = 1
-        self.axis.trap_traj.config.decel_limit = 1
+        self.axis.trap_traj.config.accel_limit = 0.5
+        self.axis.trap_traj.config.decel_limit = 0.5
         self.__lock()
 
         # start libfibre timer watchdog
@@ -177,28 +178,34 @@ class SpinCoater:
         self.axis.controller.config.vel_ramp_rate = acceleration
         self.axis.controller.input_vel = rps
 
+        self._current_rps = rps
+
     def __lock(self):
         """
         routine to lock rotor in registered position for sample transfer
         """
-        self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
-        time.sleep(0.1)
+        # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
+        self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
+        time.sleep(0.2)
         self.axis.controller.input_pos = (
             0  # arbitrary, just needs to be same 0-1 position each time we "lock"
         )
-        while self.axis.encoder.pos_circular > 0.005:  # tolerance = 360*value degrees
+        while self.axis.encoder.pos_circular > 0.02:  # tolerance = 360*value degrees
             time.sleep(0.1)
 
     def stop(self):
         """
         stop rotation and locks the rotor in position
         """
-        self.set_rpm(0, 2000)
-        # wait until the rotor is nearly stopped
-        while (
-            self.axis.encoder.vel_estimate > 0.1
-        ):  # cutoff speed = 0.1 rotation/second
+        self.set_rpm(0, 3000)
+        t0 = time.time()
+        min_stopped_time = 2
+        while True:
+            if self.axis.encoder.vel_estimate > 0:
+                t0 = time.time()
+            if time.time() - t0 > min_stopped_time:
+                break
             time.sleep(0.1)
         self.__lock()
 
