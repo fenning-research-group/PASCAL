@@ -160,20 +160,33 @@ class Solution:
         if solutes == "":
             molarity = 1
 
-        self.solutes = solutes
         self.molarity = molarity
-        self.solvent = solvent
-
+        self.solutes = solutes
         self.solute_dict = self.name_to_components(
-            solutes, factor=molarity, delimiter="_"
-        )
-        self.solvent_dict = self.name_to_components(solvent, factor=1, delimiter="_")
+            solutes, factor=molarity
+        )  # dictionary of molarity of each component
+        total_solute_amt = sum(self.solute_dict.values())
+        self._solute_dict_norm = {
+            k: v / total_solute_amt for k, v in self.solute_dict.items()
+        }  # normalize so total solute amount is 1.0. used for hashing/comparison to other Solution's
+        self.__solute_str_norm = json.dumps(
+            {k: round(v, 5) for k, v in self._solute_dict_norm.items()}, sort_keys=True
+        )  # used for hashing
+
+        self.solvent = solvent
+        self.solvent_dict = self.name_to_components(solvent)
+        # self.solvent = components_to_name(self.solvent_dict, delimiter="_")
         total_solvent_amt = sum(self.solvent_dict.values())
         self.solvent_dict = {
             k: v / total_solvent_amt for k, v in self.solvent_dict.items()
         }  # normalize so total solvent amount is 1.0
+        self.__solvent_str_norm = json.dumps(
+            {k: round(v, 5) for k, v in self.solvent_dict.items()}, sort_keys=True
+        )  # used for hashing
 
-        if not ((labware is None) and (well is None)):
+        if (labware is None and well is not None) or (
+            labware is not None and well is None
+        ):
             raise Exception(
                 "Labware and Well must both be either defined or left as None!"
             )
@@ -206,7 +219,8 @@ class Solution:
                     pass
             if species == "":
                 continue
-            components[species] = count * factor
+            if count > 0:
+                components[species] = count * factor
         return components
 
     def to_dict(self):
@@ -230,17 +244,23 @@ class Solution:
         return f"<Solution>" + str(self)
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (
-                self.solutes == other.solutes
-                and self.molarity == other.molarity
-                and self.solvent == other.solvent
-            )
-        else:
+        if not isinstance(other, self.__class__):
             return False
+        for d1, d2 in zip(
+            [self._solute_dict_norm, self.solvent_dict],
+            [other._solute_dict_norm, other.solvent_dict],
+        ):
+            if d1.keys() != d2.keys():
+                return False
+            for k in d1.keys():
+                if (
+                    np.abs(1 - (d1[k] / d2[k])) > 0.0001
+                ):  # tolerance to accomodate rounding errors
+                    return False
+        return True
 
     def __key(self):
-        return (self.solutes, self.molarity, self.solvent)
+        return (self.__solvent_str_norm, self.__solute_str_norm)
 
     def __hash__(self):
         return hash(self.__key())

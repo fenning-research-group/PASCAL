@@ -54,7 +54,7 @@ class LiquidLabware:
 
         return constants
 
-    def load(self, contents) -> str:
+    def load(self, contents, well=None) -> str:
         """Load new contents into the labware. Returns the next empty slot, or error if none exists.
 
         Args:
@@ -66,13 +66,21 @@ class LiquidLabware:
         Returns:
             (str): which slot has been allocated to the new contents
         """
-        try:
-            well = self._openwells.pop(0)  # take the next open slot
+        if well is None:
+            try:
+                well = self._openwells.pop(0)  # take the next open slot
+                self.contents[well] = contents
+                self._openwells = natsorted(self._openwells)
+                return well
+            except IndexError as e:
+                raise IndexError("This labware is full!")
+        else:
+            if well not in self._openwells:
+                raise IndexError(f"Well {well} was already filled!")
             self.contents[well] = contents
+            self._openwells.remove(well)
             self._openwells = natsorted(self._openwells)
             return well
-        except IndexError as e:
-            raise IndexError("This labware is full!")
 
     def unload(self, well: str):
         """Unload contents from a slot in the labware.
