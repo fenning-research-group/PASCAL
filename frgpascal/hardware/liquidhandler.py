@@ -8,6 +8,7 @@ import yaml
 import websockets
 import threading
 import uuid
+import logging
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -196,17 +197,13 @@ class OT2Server:
 
     ### Server Methods
     async def __connect_to_websocket(self):
+        try:
+            del self.websocket
+        except:
+            pass  # if this is the first time, we wont have a websocket. thats fine
         self.websocket = await websockets.connect(
             self.uri, ping_interval=20, ping_timeout=300
         )
-
-    async def _start_workers(self):
-        # self.localloop.run_forever()
-        self._worker = self.worker()
-        self._checker = self.checker()
-        await asyncio.gather(self.__connect_to_websocket(), self._worker, self._checker)
-        # self._worker = self.loop.create_task(self.worker(), name="maestro_worker")
-        # self._checker = self.loop.create_task(self.checker(), name="maestro_checker")
 
     def start(self, ip=None, port=None):
         if ip is not None:
@@ -306,19 +303,20 @@ class OT2Server:
                 ot2 = json.loads(response)
             except asyncio.TimeoutError:
                 ot2 = {}
+            except websockets.exceptions.ConnectionClosed:  # reconnect
+                del self.websocket
+                asyncio.run_coroutine_threadsafe(
+                    self.__connect_to_websocket(), self.loop
+                )
+                # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
+                while not hasattr(self, "websocket"):
+                    time.sleep(0.1)  # wait to connect
             # print(f"maestro recieved {ot2}")
             if "acknowledged" in ot2:
                 # print(f'{ot2["acknowledged"]} acknowledged by OT2')
                 self.pending_tasks.append(ot2["acknowledged"])
             if "completed" in ot2:
                 self._update_completed_tasklist(ot2["completed"])
-        return
-
-    async def checker(self):
-        while self.connected:
-            await asyncio.sleep(self.POLLINGRATE)
-            maestro = {"status": 0}  # query the status, 0 is just a placeholder values
-            await self.websocket.send(json.dumps(maestro))
         return
 
     async def __add_task(self, task):
