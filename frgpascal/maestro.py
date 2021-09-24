@@ -233,7 +233,9 @@ class Maestro:
             ValueError: Sample has been dropped during transit
         """
         self.open_to_catch()  # open the grippers
-        if all([a==b for a,b in zip(p2, self.spincoater())]):  # moving off of the spincoater
+        if all(
+            [a == b for a, b in zip(p1, self.spincoater())]
+        ):  # moving off of the spincoater
             off_thread = Thread(
                 target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
             )
@@ -252,7 +254,9 @@ class Maestro:
         # if self.gripper.is_under_load():
         #     raise ValueError("Sample dropped in transit!")
 
-        if all([a==b for a,b in zip(p2, self.spincoater())]):  # moving onto the spincoater
+        if all(
+            [a == b for a, b in zip(p2, self.spincoater())]
+        ):  # moving onto the spincoater
             self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True)
             self.spincoater.vacuum_on()
             self.gantry.moveto(
