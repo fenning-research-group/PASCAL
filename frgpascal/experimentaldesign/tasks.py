@@ -6,6 +6,7 @@ import json
 import yaml
 from copy import deepcopy
 import os
+from mixsol import Solution as Solution_mixsol
 
 from frgpascal.workers import (
     Worker_GantryGripper,
@@ -144,7 +145,7 @@ class Sample:
 
 
 ### Subclasses to define a spincoat
-class Solution:
+class Solution(Solution_mixsol):
     def __init__(
         self,
         solvent: str,
@@ -153,27 +154,14 @@ class Solution:
         labware: str = None,
         well: str = None,
     ):
+        super().__init__(solutes=solutes, solvent=solvent, molarity=molarity)
         if solutes != "" and molarity == 0:
             raise ValueError(
                 "If the solution contains solutes, the molarity must be >0!"
             )
-        if solutes == "":
-            molarity = 1
-
-        self.solutes = solutes
-        self.molarity = molarity
-        self.solvent = solvent
-
-        self.solute_dict = self.name_to_components(
-            solutes, factor=molarity, delimiter="_"
-        )
-        self.solvent_dict = self.name_to_components(solvent, factor=1, delimiter="_")
-        total_solvent_amt = sum(self.solvent_dict.values())
-        self.solvent_dict = {
-            k: v / total_solvent_amt for k, v in self.solvent_dict.items()
-        }  # normalize so total solvent amount is 1.0
-
-        if not ((labware is None) and (well is None)):
+        if (labware is None and well is not None) or (
+            labware is not None and well is None
+        ):
             raise Exception(
                 "Labware and Well must both be either defined or left as None!"
             )
@@ -181,33 +169,6 @@ class Solution:
             "labware": labware,
             "well": well,
         }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
-
-    def name_to_components(
-        self,
-        name,
-        factor=1,
-        delimiter="_",
-    ):
-        """
-        given a chemical formula, returns dictionary with individual components/amounts
-        expected name format = 'MA0.5_FA0.5_Pb1_I2_Br1'.
-        would return dictionary with keys ['MA, FA', 'Pb', 'I', 'Br'] and values [0.5,.05,1,2,1]*factor
-        """
-        components = {}
-        for part in name.split(delimiter):
-            species = part
-            count = 1.0
-            for l in range(len(part), 0, -1):
-                try:
-                    count = float(part[-l:])
-                    species = part[:-l]
-                    break
-                except:
-                    pass
-            if species == "":
-                continue
-            components[species] = count * factor
-        return components
 
     def to_dict(self):
         out = {
@@ -220,30 +181,6 @@ class Solution:
 
     def to_json(self):
         return json.dumps(self.to_dict())
-
-    def __str__(self):
-        if self.solutes == "":  # no solutes, just a solvent
-            return f"{self.solvent}"
-        return f"{round(self.molarity,2)}M {self.solutes} in {self.solvent}"
-
-    def __repr__(self):
-        return f"<Solution>" + str(self)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (
-                self.solutes == other.solutes
-                and self.molarity == other.molarity
-                and self.solvent == other.solvent
-            )
-        else:
-            return False
-
-    def __key(self):
-        return (self.solutes, self.molarity, self.solvent)
-
-    def __hash__(self):
-        return hash(self.__key())
 
 
 class Drop:
