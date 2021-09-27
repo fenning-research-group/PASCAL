@@ -66,6 +66,7 @@ class Maestro:
         self.CATCHATTEMPTS = constants["gripper"][
             "catch_attempts"
         ]  # number of times to try picking up a sample before erroring out
+        self.TWISTOFF = True
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
@@ -177,7 +178,7 @@ class Maestro:
             self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
         )  # slow to prevent sample position shifting upon release
 
-    def catch(self):
+    def catch(self, from_spincoater=False):
         """
         Close gripper barely enough to pick up sample
         """
@@ -185,7 +186,10 @@ class Maestro:
         catch_attempts = self.CATCHATTEMPTS
         while not caught_successfully and catch_attempts > 0:
             self.gripper.close(slow=True)
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+            if from_spincoater and self.TWISTOFF:
+                self.spincoater.twist_off()
+                self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                self.spincoater.lock()
             self.gripper.open(self.SAMPLEWIDTH - 2)
             self.gripper.open(self.SAMPLEWIDTH - 1)
             time.sleep(0.1)
@@ -243,9 +247,13 @@ class Maestro:
             off_thread.start()
             self.gantry.moveto(p1, zhop=True)  # move to the pickup position
             off_thread.join()
+            from_spincoater = True
         else:
             self.gantry.moveto(p1, zhop=zhop)
-        self.catch()  # pick up the sample. this function checks to see if gripper picks successfully
+            from_spincoater = False
+        self.catch(
+            from_spincoater=from_spincoater
+        )  # pick up the sample. this function checks to see if gripper picks successfully
 
         ### Code for drop check, currently not being used
         # self.gantry.moveto(
