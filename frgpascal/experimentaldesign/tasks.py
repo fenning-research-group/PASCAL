@@ -257,8 +257,8 @@ class Task:
             self.duration = int(duration)
         # self.task_details = task_details
         self.precedent = precedent
-        if precedent is None:
-            immediate = False
+        # if precedent is None:
+        #     immediate = False
         self.immediate = immediate
         # self.reservoir = []
         # if sum([immediate for task, immediate in precedents]) > 1:
@@ -529,10 +529,11 @@ class Characterize(Task):
 ### build task list for a sample
 def generate_sample_worklist(sample: Sample):
     sample_worklist = []
-    p0 = Worker_Storage  # sample begins at storage
     for task0, task1 in zip(sample.worklist, sample.worklist[1:]):
         task1.precedent = task0  # task1 is preceded by task0
+    sample.worklist[0].immediate = False
 
+    p0 = Worker_Storage  # sample begins at storage
     for task in sample.worklist:
         task.sample = sample
         p1 = task.workers[0]

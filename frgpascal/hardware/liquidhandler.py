@@ -214,7 +214,6 @@ class OT2Server:
 
         flag = input("confirm that the Listener protocol is running on OT2 (y/n):")
         if str.lower(flag) == "y":
-
             def run_loop(loop):
                 asyncio.set_event_loop(loop)
                 loop.run_forever()
@@ -317,7 +316,6 @@ class OT2Server:
                 self.pending_tasks.append(ot2["acknowledged"])
             if "completed" in ot2:
                 self._update_completed_tasklist(ot2["completed"])
-        return
 
     async def __add_task(self, task):
         # print(task)
