@@ -36,7 +36,8 @@ class ListenerWebsocket:
         # self._start_worker_thread()  # creates self.loop, self._worker
 
         ## Task constants
-        self.completed_tasks = {}
+        self.recently_completed_tasks = {}
+        self.all_completed_tasks = {}
         self.status = STATUS_IDLE
         self.tips = tips
         self._sources = labwares
@@ -105,7 +106,7 @@ class ListenerWebsocket:
             maestro = json.loads(await websocket.recv())
             if "task" in maestro:
                 await self.__process_task(maestro["task"], websocket)
-            if "status" in maestro or len(self.completed_tasks) > 0:
+            if "status" in maestro or len(self.recently_completed_tasks) > 0:
                 await self.__update_status(websocket)
             if "complete" in maestro:
                 finished = True
@@ -127,7 +128,8 @@ class ListenerWebsocket:
             self.q.task_done()
             self.status = STATUS_IDLE
 
-            self.completed_tasks[task["taskid"]] = self.nist_time()
+            self.recently_completed_tasks[task["taskid"]] = self.nist_time()
+            self.all_completed_tasks.update(self.recently_completed_tasks)
             task["finished_event"].set()
             # print(f"{task['taskid']} ({task['task']}) finished")
 
@@ -142,14 +144,11 @@ class ListenerWebsocket:
 
         await task["finished_event"].wait()
 
-        ot2 = {"completed": self.completed_tasks}
-        await websocket.send(json.dumps(ot2))
-
     async def __update_status(self, websocket):
         # print("> updating task status")
-        ot2 = {"completed": self.completed_tasks}
+        ot2 = {"completed": self.all_completed_tasks}
         await websocket.send(json.dumps(ot2))
-        self.completed_tasks = {}
+        self.recently_completed_tasks = {}
 
     # start it all
     def start(self):

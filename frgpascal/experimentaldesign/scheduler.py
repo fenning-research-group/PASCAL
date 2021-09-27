@@ -22,10 +22,13 @@ workers = {
 
 ### Task Scheduler
 class Scheduler:
-    def __init__(self, samples, spanning_tasks=[], enforce_sample_order=False):
+    def __init__(self, samples, spanning_tasks=None, enforce_sample_order=False):
         self.workers = workers
         self.samples = samples
-        self.spanning_tasks = spanning_tasks
+        if spanning_tasks is None:
+            self.spanning_tasks = []
+        else:
+            self.spanning_tasks = spanning_tasks
         self.enforce_sample_order = enforce_sample_order
 
     def _generate_worklists(self):
@@ -144,9 +147,11 @@ class Scheduler:
             1: "OPTIMAL",
             2: "FEASIBLE",
             3: "INFEASIBLE",
+            4: "MODEL_INVALID",
         }
         print(f"solution status: {status_key[status]}")
-
+        if status_key in [3, 4]:
+            return
         for s in self.samples:
             for task in s.tasks:
                 task.start = self.solver.Value(task.start_var)
