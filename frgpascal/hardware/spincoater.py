@@ -46,6 +46,7 @@ class SpinCoater:
             constants["spincoater"]["rpm_max"],
         )  # rpm
         self.__rpm = 0  # nominal current rpm. does not take ramping into account
+        self.__HOMEPOSITION = 0.5  # home coordinate for spincoater chuck, in radial (0-1) coordinates. somewhat arbitrary, but avoid 0 because it wraps around to 1, makes some math annoying
         self.gantry = gantry
         self.__calibrated = False
         # logging
@@ -188,10 +189,10 @@ class SpinCoater:
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         time.sleep(0.2)
-        self.axis.controller.input_pos = (
-            0  # arbitrary, just needs to be same 0-1 position each time we "lock"
-        )
-        while self.axis.encoder.pos_circular > 0.02:  # tolerance = 360*value degrees
+        self.axis.controller.input_pos = self.__HOMEPOSITION
+        while (
+            np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.025
+        ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
             time.sleep(0.1)
 
     def stop(self):
