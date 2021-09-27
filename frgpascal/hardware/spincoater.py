@@ -47,6 +47,8 @@ class SpinCoater:
         )  # rpm
         self.__rpm = 0  # nominal current rpm. does not take ramping into account
         self.__HOMEPOSITION = 0.5  # home coordinate for spincoater chuck, in radial (0-1) coordinates. somewhat arbitrary, but avoid 0 because it wraps around to 1, makes some math annoying
+        self.__TWISTDELTA = -0.1  # turn to make when twisting off sample from chuck.
+        self._locked = False  # true when chuck is holding at home position
         self.gantry = gantry
         self.__calibrated = False
         # logging
@@ -101,7 +103,7 @@ class SpinCoater:
         )
         self.axis.trap_traj.config.accel_limit = 0.5
         self.axis.trap_traj.config.decel_limit = 0.5
-        self.__lock()
+        self.lock()
 
         # start libfibre timer watchdog
         self.__connected = True
@@ -180,8 +182,9 @@ class SpinCoater:
         self.axis.controller.input_vel = rps
 
         self._current_rps = rps
+        self._locked = False
 
-    def __lock(self):
+    def lock(self):
         """
         routine to lock rotor in registered position for sample transfer
         """
@@ -193,6 +196,24 @@ class SpinCoater:
         while (
             np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.025
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
+            time.sleep(0.1)
+        self._locked = True
+
+    def twist_off(self):
+        """
+        routine to slightly rotate the chuck from home position.
+
+        intended to help remove a stuck substrate from the o-ring, which can get sticky if
+        perovskite solution drips onto the o-ring.
+        """
+        if not self._locked:
+            raise Exception(
+                "Cannot twist off the sample, the chuck is not currently locked!"
+            )
+
+        target_position = self.__HOMEPOSITION + self.__TWISTDELTA
+        self.axis.controller.input_pos = target_position
+        while (np.abs(target_position - self.axis.encoder.pos_circular)) > 0.025:
             time.sleep(0.1)
 
     def stop(self):
@@ -208,7 +229,7 @@ class SpinCoater:
             if time.time() - t0 > min_stopped_time:
                 break
             time.sleep(0.1)
-        self.__lock()
+        self.lock()
 
     # logging code
     def __logging_worker(self):
