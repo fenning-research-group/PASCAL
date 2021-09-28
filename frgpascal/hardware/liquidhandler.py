@@ -152,7 +152,7 @@ class OT2:
 
     def mark_completed(self):
         self.server._start_directly()
-        self.mark_completed()
+        self.server.mark_completed()
         self.server.stop()
 
     def wait_for_task_complete(self, taskid):
@@ -214,6 +214,7 @@ class OT2Server:
 
         flag = input("confirm that the Listener protocol is running on OT2 (y/n):")
         if str.lower(flag) == "y":
+
             def run_loop(loop):
                 asyncio.set_event_loop(loop)
                 loop.run_forever()
