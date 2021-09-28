@@ -130,8 +130,8 @@ characterizationline:
       vid: 1027
       pid: 24597
       serial_number: "DK0AJS9DA"
-    top: "0" #address/index for top shutter. This should be a string!
-    bottom: "2" #address/index for bottom shutter. This should be a string!
+    top: "2" #address/index for top shutter. This should be a string!
+    bottom: "0" #address/index for bottom shutter. This should be a string!
     pollingrate: 0.2
     shutterresponsetime: 2 #seconds between telling the shutter to move -> shutter completing the move
   #individual stations
