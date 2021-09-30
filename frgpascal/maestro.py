@@ -279,7 +279,7 @@ class Maestro:
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
         # self.gripper.close()  # fully close gripper to reduce servo strain
-        if (p2 == self.spincoater()).all():
+        if all([a == b for a, b in zip(p2, self.spincoater())]):
             self.gantry._transition_to_frame(
                 "workspace"
             )  # move gantry out of the liquid handler
