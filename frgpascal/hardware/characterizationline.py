@@ -592,7 +592,7 @@ class PLPhotostability(StationTemplate):
         self.slider = slider
         self.dwelltime = 2000
         self.spectrometer._hdr_times = list(
-            set(self.spectrometer._hdr_times[self.dwelltime])
+            set(self.spectrometer._hdr_times + [self.dwelltime])
         )
 
     def capture(self, duration=60):
@@ -606,13 +606,14 @@ class PLPhotostability(StationTemplate):
         """
         times = []
         spectra = []
+        self.spectrometer.dwelltime = self.dwelltime
         self.lightswitch.on()
         t0 = time.time()
         tnow = 0
         while tnow <= duration:
             wl, cts = self.spectrometer.capture()
             times.append(tnow)
-            spectra.apppend(cts)
+            spectra.append(cts)
             tnow = time.time() - t0
         spectra = np.asarray(spectra)
         return wl, spectra, times

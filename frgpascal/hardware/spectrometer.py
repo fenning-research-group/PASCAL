@@ -76,21 +76,27 @@ class Spectrometer:
 
     def take_light_baseline(self, skip_repeats=False):
         """takes an illuminated baseline at each integration time from HDR timings"""
+        numscans0 = self.numscans
+        self.numscans = 3
         for t in self._hdr_times:
             if skip_repeats and t in self.__baseline_light:
                 continue  # already taken
             self.dwelltime = t
             wl, cts = self._capture_raw()
             self.__baseline_light[t] = cts
+        self.numscans = numscans0
 
     def take_dark_baseline(self, skip_repeats=False):
         """takes an dark baseline at each integration time from HDR timings"""
+        numscans0 = self.numscans
+        self.numscans = 3
         for t in self._hdr_times:
             if skip_repeats and t in self.__baseline_dark:
                 continue  # already taken
             self.dwelltime = t
             wl, cts = self._capture_raw()
             self.__baseline_dark[t] = cts
+        self.numscans = numscans0
 
     def __is_dark_baseline_taken(self, dwelltime=None):
         """Check whether a baseline has been taken at the current integration time

@@ -672,7 +672,7 @@ class Worker_Characterization(WorkerTemplate):
         )
         self.functions = {
             "characterize": task_tuple(
-                function=self.characterize, estimated_duration=95, other_workers=[]
+                function=self.characterize, estimated_duration=160, other_workers=[]
             ),
         }
 
