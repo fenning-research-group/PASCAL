@@ -134,17 +134,22 @@ class Spectrometer:
         """
         spectrum = sn.array_spectrum(self.id, self.__wl)
         # spectrum[:, 1] /= self.integrationtime / 1000  # convert to counts per second
-        wl, cts = spectrum[:, 0], spectrum[:, 1]
+        wl, cts = (
+            spectrum[:, 0].round(2),
+            spectrum[:, 1],
+        )  # wavelength bins are reported as way more precise than they actually are for our slit width
         return wl, cts
 
     def capture(self):
         """
         captures a spectrum from the usb spectrometer
 
-        returns counts/second with dark baseline subtracted
+        returns counts/second with dark baseline subtracted.
+        saturated counts are set to np.nan
         """
         if self.__is_dark_baseline_taken():
             wl, cts = self._capture_raw()
+            cts[cts >= (2 ** 16 - 1)] = np.nan  # detector saturated here
             cts -= self.__baseline_dark[self.dwelltime]
             return wl, cts
 
