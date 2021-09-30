@@ -528,26 +528,30 @@ class Characterize(Task):
 
 ### build task list for a sample
 def generate_sample_worklist(sample: Sample):
-    sample_worklist = []
-    for task0, task1 in zip(sample.worklist, sample.worklist[1:]):
+    worklist = deepcopy(sample.worklist)
+    for task0, task1 in zip(worklist, worklist[1:]):
         task1.precedent = task0  # task1 is preceded by task0
-    sample.worklist[0].immediate = False
 
+    sample_tasklist = []
     p0 = Worker_Storage  # sample begins at storage
-    for task in sample.worklist:
+    for task in worklist:
         task.sample = sample
         p1 = task.workers[0]
         transition_task = TRANSITION_TASKS[p0][p1]
-        sample_worklist.append(
+        if Worker_Hotplate in [p0, p1]:
+            immediate = True
+        else:
+            immediate = task.immediate
+        sample_tasklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
-                immediate=task.immediate,
+                immediate=immediate,
                 precedent=task.precedent,
             )
         )
-        task.precedent = sample_worklist[-1]
-        sample_worklist.append(task)
+        task.precedent = sample_tasklist[-1]
+        sample_tasklist.append(task)
         p0 = p1  # update location for next task
     if p1 != Worker_Storage:
         transition_task = TRANSITION_TASKS[p0][Worker_Storage]
@@ -555,12 +559,12 @@ def generate_sample_worklist(sample: Sample):
             immediate = True
         else:
             immediate = False
-        sample_worklist.append(
+        sample_tasklist.append(
             Task(
                 sample=sample,
                 task=transition_task,
-                precedent=sample_worklist[-1],
+                precedent=sample_tasklist[-1],
                 immediate=immediate,
             )
         )  # sample ends at storage
-    return sample_worklist
+    return sample_tasklist

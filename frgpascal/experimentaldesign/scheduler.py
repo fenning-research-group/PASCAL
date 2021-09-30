@@ -142,16 +142,9 @@ class Scheduler:
         self.solver.parameters.max_time_in_seconds = solve_time
         status = self.solver.Solve(self.model)
 
-        status_key = {
-            0: "UNKNOWN",
-            1: "OPTIMAL",
-            2: "FEASIBLE",
-            3: "INFEASIBLE",
-            4: "MODEL_INVALID",
-        }
-        print(f"solution status: {status_key[status]}")
-        if status_key in [3, 4]:
-            return
+        print(f"solution status: {self.solver.StatusName()}")
+        # if status in [3, 4]:
+        #     return
         for s in self.samples:
             for task in s.tasks:
                 task.start = self.solver.Value(task.start_var)

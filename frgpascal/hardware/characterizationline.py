@@ -86,10 +86,10 @@ class CharacterizationLine:
                 shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
             ),
-            PLSpectroscopy(
+            PLPhotostability(
                 position=constants["pl_blue"]["position"],
                 rootdir=self.rootdir,
-                subdir="PL_405",
+                subdir="PLPhotostability_405",
                 spectrometer=self.spectrometer,
                 slider=self.filterslider,
                 shutter=self.shutter,
@@ -547,7 +547,7 @@ class PLSpectroscopy(StationTemplate):
         all_cts = {}
         for t in self.hdr_times:
             self.spectrometer.dwelltime = t
-            wl, cts = self.spectrometer._capture_raw()
+            wl, cts = self.spectrometer.capture()
             all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
 
@@ -570,5 +570,67 @@ class PLSpectroscopy(StationTemplate):
     def calibrate(self):
         self.slider.top_right()  # moves longpass filter out of the transmitted path
         self.shutter.close()  # close the shutter
-        self.spectrometer.take_dark_baseline()
+        self.spectrometer.take_dark_baseline(skip_repeats=True)
         print("PL dark baselines taken")
+
+
+class PLPhotostability(StationTemplate):
+    def __init__(
+        self,
+        position,
+        rootdir,
+        spectrometer: Spectrometer,
+        lightswitch: SingleSwitch,
+        slider: FilterSlider,
+        shutter: Shutter,
+        subdir="PLPhotostability",
+    ):
+        super().__init__(position=position, rootdir=rootdir, subdir=subdir)
+        self.spectrometer = spectrometer
+        self.lightswitch = lightswitch
+        self.shutter = shutter
+        self.slider = slider
+        self.dwelltime = 2000
+        self.spectrometer._hdr_times = list(
+            set(self.spectrometer._hdr_times[self.dwelltime])
+        )
+
+    def capture(self, duration=60):
+        """Capture a continuous series of photoluminescence spectra
+
+        Args:
+            duration (int, optional): Total duration (seconds) for which to track spectra. Defaults to 60.
+
+        Returns:
+            [type]: [description]
+        """
+        times = []
+        spectra = []
+        self.lightswitch.on()
+        t0 = time.time()
+        tnow = 0
+        while tnow <= duration:
+            wl, cts = self.spectrometer.capture()
+            times.append(tnow)
+            spectra.apppend(cts)
+            tnow = time.time() - t0
+        spectra = np.asarray(spectra)
+        return wl, spectra, times
+
+    def save(self, data, sample):
+        wl, spectra, times = data
+        fname = f"{sample}_photostability.csv"
+        with open(os.path.join(self.savedir, fname), "w", newline="") as f:
+            writer = csv.writer(f, delimiter=",")
+            writer.writerow(["Dwelltime (ms)", self.spectrometer.dwelltime])
+            writer.writerow(["Number of Spectra", len(spectra)])
+            writer.writerow(["Data Start", "Times (s) of acquisition start ->"])
+            writer.writerow(["Wavelength (nm)"] + [round(t_, 1) for t_ in times])
+            for wl_, cts in zip(wl, spectra.T):
+                writer.writerow([wl_] + cts.tolist())
+
+    def calibrate(self):
+        self.slider.top_right()  # moves longpass filter out of the transmitted path
+        self.shutter.close()  # close the shutter
+        self.spectrometer.take_dark_baseline(skip_repeats=True)
+        print("PLPhotostability dark baselines taken")

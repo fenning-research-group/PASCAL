@@ -383,7 +383,8 @@ class Maestro:
                 await asyncio.sleep(5)
             else:
                 break
-        self.stop()
+        if experiment_completed == True:
+            self.stop()
 
     def _start_loop(self):
         self.working = True
@@ -497,13 +498,15 @@ class Maestro:
 
     def stop(self):
         self.working = False
-        self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
-        self.thread.join()
         # clean up the experiment, save log of actual timings
         with open(
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
+        for w in self.workers.values():
+            w.stop_workers()
+        self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+        self.thread.join()
 
     def __del__(self):
         if self.working:
