@@ -50,6 +50,7 @@ class ListenerWebsocket:
         self.all_completed_tasks = {}
         self.status = STATUS_IDLE
         self.tips = tips
+        tip_racks = list(self.tips.keys())
         self._sources = labwares
 
         self.spincoater = spincoater
@@ -62,19 +63,25 @@ class ListenerWebsocket:
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
         self.pipettes = {
             side: protocol_context.load_instrument(
-                "p300_single_gen2", mount=side, tip_racks=self.tips
+                "p300_single_gen2", mount=side, tip_racks=tip_racks
             )
             for side in ["left", "right"]
         }
+        for tiprack, unavailable_tips in self.tips.items():
+            for tip in unavailable_tips:
+                self.pipettes["left"].use_tips(
+                    start_well=tiprack[tip], num_channels=1
+                )  # remove these tips from the tip iterator
+
         for p in self.pipettes.values():
             p.well_bottom_clearance.aspirate = (
                 0.3  # aspirate from 300 um above the bottom of well
             )
             p.well_bottom_clearance.dispense = 1  # dispense from higher
-        # self.pipettes["left"], self.pipettes["right"] = (
-        #     self.pipettes["right"],
-        #     self.pipettes["left"],
-        # )  # idk why these flip
+
+        # will be populated with (tray,well):tip coordinate as protocol proceeds
+        self.reusable_tips = {}
+        self.return_current_tip = {p: False for p in self.pipettes.values()}
 
         self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
@@ -215,6 +222,17 @@ class ListenerWebsocket:
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
 
+    def _get_reusable_tip(self, tray, well):
+        key = (tray, well)
+        if key in self.reusable_tips:
+            next_tip = self.reusable_tips[key]
+        else:
+            next_tip = self.pipettes[
+                "left"
+            ].next_tip()  # arbitrary which pipette is chosen here
+            self.reusable_tips[key] = next_tip
+        return next_tip
+
     ### Callable Tasks
 
     def __initialize_tasks(self):
@@ -237,12 +255,18 @@ class ListenerWebsocket:
         air_gap=True,
         touch_tip=True,
         pre_mix=0,
+        reuse_tip=False,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
         p = self._get_pipette(pipette=pipette)
         if p.has_tip:
             p.drop_tip()
-        p.pick_up_tip()
+        if reuse_tip:
+            tip = self._get_reusable_tip(tray, well)
+            p.pick_up_tip(tip)
+            self.return_current_tip[p] = True
+        else:
+            p.pick_up_tip()
         self._aspirate_from_well(
             tray=tray,
             well=well,
@@ -353,35 +377,21 @@ class ListenerWebsocket:
             )
 
     def cleanup(self):
-        """drops tips of all pipettes into trash to prepare pipettes for future commands"""
+        """drops/returns tips of all pipettes to prepare pipettes for future commands"""
         for p in self.pipettes.values():
-            if p.has_tip:
+            if not p.has_tip:
+                continue
+            if self.return_current_tip[p]:
+                p.return_tip()
+            else:
                 p.drop_tip()
-        # for p in self.pipettes:
-        #     p.pick_up_tip()
+            self.return_current_tip[p] = False
 
 
 def run(protocol_context):
     # define your hardware
-    tips = [
-        protocol_context.load_labware(
-            "sartorius_safetyspace_tiprack_200ul", location=location
-        )
-        for location in ["7", "10"]
-    ]
-
-    # note that each stock tray name must match the names from experiment designer!
-    labwares = {
-        "96_Plate1": protocol_context.load_labware(
-            "greiner_96_wellplate_360ul", location="5"
-        ),
-        "4mL_Tray1": protocol_context.load_labware(
-            "frg_24_wellplate_4000ul", location="1"
-        ),
-        "15mL_Tray1": protocol_context.load_labware(
-            "frg_12_wellplate_15000ul", location="8"
-        ),
-    }
+    tips = []
+    labwares = {}
 
     # spincoater
     spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")

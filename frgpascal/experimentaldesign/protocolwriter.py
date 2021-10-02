@@ -10,7 +10,7 @@ def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
             MODULE_DIR,
             "recipes",
             "liquidhandlerprotocols",
-            "OT2listener_websocket_template.py",
+            "OT2listener_websocket_template_reusetips.py",
         ),
         "r",
     ) as f:
@@ -28,7 +28,7 @@ def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
         labware_str += f"        ),\n"
     labware_str += "    }"
 
-    tiprack_str = "    tips = [\n"
+    tiprack_str = "    tips = {\n"
     for t in tipracks:
         if t.deck_slot in used_deck_slots:
             raise Exception(
@@ -36,8 +36,8 @@ def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
             )
         tiprack_str += f"        protocol_context.load_labware(\n"
         tiprack_str += f'            "{t.version}", location="{t.deck_slot}"\n'
-        tiprack_str += f"        ),\n"
-    tiprack_str += "    ]"
+        tiprack_str += f"        ):{t.unavailable_tips},\n"
+    tiprack_str += "    }\n"
 
     with open(fpath, "w") as f:
         for line in template_lines:

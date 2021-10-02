@@ -50,7 +50,9 @@ class TipRack:
         ), "Starting tip must be a valid tip slop name!"
         tips_in_order = [well for column in constants["ordering"] for well in column]
         starting_idx = tips_in_order.index(self.starting_tip)
-        self.num_tips = len(tips_in_order) - starting_idx
+        self.unavailable_tips = tips_in_order[:starting_idx]
+        self.available_tips = tips_in_order[starting_idx:]
+        self.num_tips = len(self.available_tips)
 
 
 class LiquidLabware:
