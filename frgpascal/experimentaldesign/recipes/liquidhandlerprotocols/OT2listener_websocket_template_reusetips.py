@@ -52,15 +52,6 @@ class ListenerWebsocket:
         self.tips = tips
         tip_racks = list(self.tips.keys())
         self._sources = labwares
-<<<<<<< HEAD
-<<<<<<< HEAD
-        self.TRASH = protocol_context.fixed_trash["A1"]
-=======
-
-<<<<<<< HEAD
->>>>>>> dba6f94 (reusable tips)
-=======
-=======
         self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
         self.CHUCK = "A1"
@@ -70,33 +61,6 @@ class ListenerWebsocket:
             100,
             100,
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
->>>>>>> 5b65810 (finalize protocol with tip reuse)
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-        self.ASPIRATE_HEIGHT = (
-            0.3  # mm, distance between tip and bottom of wells while aspirating
-        )
-        self.DISPENSE_HEIGHT = (
-            1  # mm, distance between tip and bottom of wells while dispensing
-        )
-        self.DISPENSE_RATE = 150  # uL/s
-        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
-        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
-        self.SLOW_Z_RATE = 20  # mm/s
-        self.MIX_VOLUME = (
-            50  # uL to repeatedly aspirate/dispense when mixing well contents
-        )
-
-<<<<<<< HEAD
->>>>>>> 83755a4 (trash the reused tips at end)
-        self.spincoater = spincoater
-        self.CHUCK = "A1"
-        self.STANDBY = "B1"
-        self.CLEARCHUCKPOSITION = (
-            150,
-            100,
-            100,
-        )  # mm, 0,0,0 = front left floor corner of gantry volume.
-<<<<<<< HEAD
         self.AIRGAP = 10  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.ASPIRATE_HEIGHT = (
             0.3  # mm, distance between tip and bottom of wells while aspirating
@@ -113,10 +77,6 @@ class ListenerWebsocket:
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
 
-=======
->>>>>>> dba6f94 (reusable tips)
-=======
->>>>>>> 5b65810 (finalize protocol with tip reuse)
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", mount=side, tip_racks=tip_racks
@@ -125,55 +85,18 @@ class ListenerWebsocket:
         }
         for tiprack, unavailable_tips in self.tips.items():
             for tip in unavailable_tips:
-<<<<<<< HEAD
-<<<<<<< HEAD
                 tiprack.use_tips(
-=======
-                self.pipettes["left"].use_tips(
->>>>>>> dba6f94 (reusable tips)
-=======
-                tiprack.use_tips(
->>>>>>> 12ba5e5 (set starting tips on tipracks!)
                     start_well=tiprack[tip], num_channels=1
                 )  # remove these tips from the tip iterator
 
         for p in self.pipettes.values():
-<<<<<<< HEAD
-<<<<<<< HEAD
             p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
             p.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
-=======
-            p.well_bottom_clearance.aspirate = (
-                0.3  # aspirate from 300 um above the bottom of well
-            )
-            p.well_bottom_clearance.dispense = 1  # dispense from higher
->>>>>>> dba6f94 (reusable tips)
-=======
-            p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
-            p.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
->>>>>>> 83755a4 (trash the reused tips at end)
 
         # will be populated with (tray,well):tip coordinate as protocol proceeds
         self.reusable_tips = {}
         self.return_current_tip = {p: False for p in self.pipettes.values()}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-        self.DISPENSE_HEIGHT = (
-            2  # mm, distance between tip and bottom of wells while dispensing
-        )
-        self.DISPENSE_RATE = 150  # uL/s
-        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
-        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
-        self.SLOW_Z_RATE = 20  # mm/s
-        self.MIX_VOLUME = (
-            50  # uL to repeatedly aspirate/dispense when mixing well contents
-        )
->>>>>>> dba6f94 (reusable tips)
-=======
->>>>>>> 83755a4 (trash the reused tips at end)
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
 
@@ -278,7 +201,6 @@ class ListenerWebsocket:
             raise ValueError("Invalid pipette name given!")
 
     def _aspirate_from_well(
-<<<<<<< HEAD
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
         p = pipette
@@ -287,16 +209,6 @@ class ListenerWebsocket:
             p.mix(
                 repetitions=pre_mix[0],
                 volume=pre_mix[1],
-=======
-        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix=0
-    ):
-        p = pipette
-        # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
-        if pre_mix > 0:
-            p.mix(
-                repetitions=pre_mix,
-                volume=self.MIX_VOLUME,
->>>>>>> dba6f94 (reusable tips)
                 location=self._sources[tray][well],
             )
         p.aspirate(volume=volume, location=self._sources[tray][well])
@@ -313,7 +225,6 @@ class ListenerWebsocket:
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
 
-<<<<<<< HEAD
     def _next_tip(self):
         for tiprack in self.tips.keys():
             next_tip = tiprack.next_tip(num_tips=1)
@@ -324,30 +235,12 @@ class ListenerWebsocket:
             raise Exception("No remaining tips!")
         return next_tip
 
-=======
->>>>>>> dba6f94 (reusable tips)
     def _get_reusable_tip(self, tray, well):
         key = (tray, well)
         if key in self.reusable_tips:
             next_tip = self.reusable_tips[key]
         else:
-<<<<<<< HEAD
-<<<<<<< HEAD
             next_tip = self._next_tip()
-=======
-            next_tip = self.pipettes[
-                "left"
-            ].next_tip()  # arbitrary which pipette is chosen here
->>>>>>> dba6f94 (reusable tips)
-=======
-            for tiprack in self.tips.keys():
-                next_tip = tiprack.next_tip(num_tips=1)
-                if next_tip is not None:
-                    break
-
-            if next_tip is None:
-                raise Exception("No remaining tips!")
->>>>>>> 5b65810 (finalize protocol with tip reuse)
             self.reusable_tips[key] = next_tip
         return next_tip
 
@@ -372,11 +265,7 @@ class ListenerWebsocket:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
-<<<<<<< HEAD
         pre_mix=(0, 0),
-=======
-        pre_mix=0,
->>>>>>> dba6f94 (reusable tips)
         reuse_tip=False,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
@@ -441,7 +330,6 @@ class ListenerWebsocket:
 
         self.stage_for_dispense(pipette="perovskite")
 
-<<<<<<< HEAD
     def stage_for_dispense(self, pipette, slow_travel=False):
         p = self._get_pipette(pipette)
         if slow_travel:
@@ -449,17 +337,11 @@ class ListenerWebsocket:
         else:
             speed = None
         p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
-=======
-    def stage_for_dispense(self, pipette):
-        p = self._get_pipette(pipette)
-        p.move_to(self.spincoater[self.STANDBY].top())
->>>>>>> dba6f94 (reusable tips)
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
         height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
-<<<<<<< HEAD
         slow_travel = kwargs.get("slow_travel", False)
 
         p = self._get_pipette(pipette)
@@ -471,25 +353,6 @@ class ListenerWebsocket:
             )
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         # p.blow_out()
-=======
-        # if height is None:
-        #     height = self.SPINCOATING_DISPENSE_HEIGHT
-        # elif height < 0.5:
-        #     height = 0.5  # dont want to crash into the substrate!
-        # if rate is None:
-        #     rate = self.SPINCOATING_DISPENSE_RATE
-
-        p = self._get_pipette(pipette)
-        # if not p.has_tip():
-        #     return
-        # p = self.pipettes["left"]
-        relative_rate = rate / p.flow_rate.dispense
-        # relative_rate = 1.0
-        # p.move_to(self.spincoater[self.CHUCK].top(height))
-        p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        # p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        p.blow_out()
->>>>>>> dba6f94 (reusable tips)
 
     def clear_chuck(self):
         self.pipettes["right"].move_to(
@@ -523,10 +386,6 @@ class ListenerWebsocket:
             )
 
     def cleanup(self):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 5b65810 (finalize protocol with tip reuse)
         """drops/returns tips of all pipettes to prepare pipettes for future commands
 
         the order of operations feels overly complicated, but is chosen to minimize
@@ -534,7 +393,6 @@ class ListenerWebsocket:
         """
         # drop all tips that dont need to be returned
         for p, return_this_tip in self.return_current_tip.items():
-<<<<<<< HEAD
             if not p.has_tip:
                 continue
             if not return_this_tip:
@@ -552,42 +410,11 @@ class ListenerWebsocket:
         next_tip = self._next_tip()
         p = self._get_pipette("perovskite")
         p.move_to(next_tip.top(5))
-=======
-        """drops/returns tips of all pipettes to prepare pipettes for future commands"""
-        for p in self.pipettes.values():
-=======
->>>>>>> 5b65810 (finalize protocol with tip reuse)
-            if not p.has_tip:
-                continue
-            if not return_this_tip:
-                p.drop_tip()
-<<<<<<< HEAD
-            self.return_current_tip[p] = False
->>>>>>> dba6f94 (reusable tips)
-=======
-
-        # first blow out all returning tips, then drop them back
-        for p, return_this_tip in self.return_current_tip.items():
-            if return_this_tip:
-                p.blow_out(self.TRASH)
-        for p, return_this_tip in self.return_current_tip.items():
-            if return_this_tip:
-                p.return_tip()
-                self.return_current_tip[p] = False
->>>>>>> 5b65810 (finalize protocol with tip reuse)
 
 
 def run(protocol_context):
     # define your hardware
-<<<<<<< HEAD
-<<<<<<< HEAD
     tips = {}
-=======
-    tips = []
->>>>>>> dba6f94 (reusable tips)
-=======
-    tips = {}
->>>>>>> 5b65810 (finalize protocol with tip reuse)
     labwares = {}
 
     # spincoater
@@ -603,26 +430,11 @@ def run(protocol_context):
     # each piece of labware has to be involved in some dummy moves to be included in protocol
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
-<<<<<<< HEAD
-<<<<<<< HEAD
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
-=======
->>>>>>> dba6f94 (reusable tips)
-=======
-        p.move_to(listener.spincoater[listener.CHUCK].top(30))
->>>>>>> 5b65810 (finalize protocol with tip reuse)
         for name, labware in labwares.items():
             p.move_to(labware["A1"].top(30))
         for labware in tips:
             p.move_to(labware["A1"].top(30))
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        p.move_to(listener.spincoater[listener.CHUCK].top(30))
-    listener.pipettes["right"].move_to(tips[0]["A1"].top(10))
->>>>>>> dba6f94 (reusable tips)
-=======
->>>>>>> 5b65810 (finalize protocol with tip reuse)
 
     # run through the pre-experiment mixing
     for generation in mixing_netlist:
