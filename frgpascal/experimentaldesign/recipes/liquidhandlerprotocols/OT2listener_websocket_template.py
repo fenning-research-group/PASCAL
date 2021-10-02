@@ -18,6 +18,16 @@ STATUS_TASK_INPROGRESS = 2
 STATUS_ALL_DONE = 9
 
 
+metadata = {
+    "protocolName": "Maestro Listener",
+    "author": "Rishi Kumar",
+    "source": "FRG",
+    "apiLevel": "2.10",
+}
+
+mixing_netlist = []
+
+
 class ListenerWebsocket:
     def __init__(
         self,
@@ -66,7 +76,7 @@ class ListenerWebsocket:
         #     self.pipettes["left"],
         # )  # idk why these flip
 
-        self.AIRGAP = 20  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.DISPENSE_HEIGHT = (
             2  # mm, distance between tip and bottom of wells while dispensing
         )
@@ -74,7 +84,9 @@ class ListenerWebsocket:
         self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
         self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
         self.SLOW_Z_RATE = 20  # mm/s
-
+        self.MIX_VOLUME = (
+            50  # uL to repeatedly aspirate/dispense when mixing well contents
+        )
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
 
@@ -179,13 +191,21 @@ class ListenerWebsocket:
             raise ValueError("Invalid pipette name given!")
 
     def _aspirate_from_well(
-        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip
+        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix=0
     ):
         p = pipette
         # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
+        if pre_mix > 0:
+            p.mix(
+                repetitions=pre_mix,
+                volume=self.MIX_VOLUME,
+                location=self._sources[tray][well],
+            )
         p.aspirate(volume=volume, location=self._sources[tray][well])
         if slow_retract:
             p.move_to(self._sources[tray][well].top(2), speed=self.SLOW_Z_RATE)
+        if touch_tip:
+            p.touch_tip()
         if air_gap:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
@@ -194,8 +214,6 @@ class ListenerWebsocket:
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
-        if touch_tip:
-            p.touch_tip()
 
     ### Callable Tasks
 
@@ -218,6 +236,7 @@ class ListenerWebsocket:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        pre_mix=0,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
         p = self._get_pipette(pipette=pipette)
@@ -232,8 +251,8 @@ class ListenerWebsocket:
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
+            pre_mix=pre_mix,
         )
-        self.stage_for_dispense(pipette=pipette)
 
     def aspirate_both_for_spincoating(
         self,
@@ -246,6 +265,7 @@ class ListenerWebsocket:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
+        pre_mix=0,
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
         for p in self.pipettes.values():
@@ -339,16 +359,6 @@ class ListenerWebsocket:
                 p.drop_tip()
         # for p in self.pipettes:
         #     p.pick_up_tip()
-
-
-metadata = {
-    "protocolName": "Maestro Listener",
-    "author": "Rishi Kumar",
-    "source": "FRG",
-    "apiLevel": "2.10",
-}
-
-mixing_netlist = []
 
 
 def run(protocol_context):
