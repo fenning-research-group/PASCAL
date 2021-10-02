@@ -204,7 +204,6 @@ class Drop:
             raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
 
-        assert time > 0, "Time must be >0"
         self.time = time
         if rate < 0 or rate > 200:
             raise ValueError("dispense rate must be 0<rate<=200 uL/sec")
