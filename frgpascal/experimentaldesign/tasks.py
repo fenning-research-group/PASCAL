@@ -195,40 +195,27 @@ class Drop:
         touch_tip: bool = True,
         air_gap: bool = True,
         pre_mix: int = 0,
+        reuse_tip: bool = False,
     ):
         self.solution = solution
-
-        assert volume > 0, "Volume must be >0"
-        assert type(volume) in [float, int], "Volume must be numeric"
+        if volume <= 0:
+            raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
-
         self.time = time
-
-        assert (rate > 0) and (rate <= 200), "dispense rate must be 0<rate<=200 uL/sec"
+        if rate < 0 or rate > 200:
+            raise ValueError("dispense rate must be 0<rate<=200 uL/sec")
         self.rate = rate
 
-        assert (height >= 0.5) and (
-            height <= 10
-        ), "dispense height must be 0.5<height<=10 mm"
+        if height <= 0 or height > 10:
+            raise ValueError("dispense height must be 0.5<height<=10 mm")
         self.height = (
             height  # distance from pipette tip to substrate must be at least 0.5mm
         )
-
-        assert (
-            type(slow_retract) is bool
-        ), "slow_retract (to raise pipette from vial/well slowly) must be a bool"
         self.slow_retract = slow_retract
-
-        assert type(touch_tip) is bool, "touch_tip must be a bool"
         self.touch_tip = touch_tip
-
-        assert type(air_gap) is bool, "air_gap must be a bool"
         self.air_gap = air_gap
-
-        assert (
-            type(pre_mix) is int
-        ), "pre_mix (number of 50uL aspirate-dispense cycles) must be an int"
         self.pre_mix = pre_mix
+        self.reuse_tip = reuse_tip
 
     def __repr__(self):
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
@@ -244,6 +231,7 @@ class Drop:
             "touch_tip": self.touch_tip,
             "air_gap": self.air_gap,
             "pre_mix": self.pre_mix,
+            "reuse_tip": self.reuse_tip,
         }
         return out
 
