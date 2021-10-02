@@ -4,7 +4,7 @@ import json
 MODULE_DIR = os.path.dirname(__file__)
 
 
-def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
+def generate_ot2_protocol(fpath, mixing_netlist, labware, tipracks):
     with open(
         os.path.join(
             MODULE_DIR,
@@ -19,6 +19,8 @@ def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
     used_deck_slots = []
     labware_str = "    labwares = {\n"
     for l in labware:
+        if len(l.contents) == 0:
+            continue  # no use loading an unused labware!
         if l.deck_slot in used_deck_slots:
             raise Exception(
                 f"More than one labware/tiprack placed on deck slot {l.deck_slot}!"
