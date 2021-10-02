@@ -51,12 +51,18 @@ class TipRack:
         tips_in_order = [well for column in constants["ordering"] for well in column]
         starting_idx = tips_in_order.index(self.starting_tip)
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
 =======
         self.num_tips = len(tips_in_order) - starting_idx
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+        self.unavailable_tips = tips_in_order[:starting_idx]
+        self.available_tips = tips_in_order[starting_idx:]
+        self.num_tips = len(self.available_tips)
+>>>>>>> dba6f94 (reusable tips)
 
 
 class LiquidLabware:

@@ -195,15 +195,19 @@ class Drop:
         slow_retract: bool = True,
         touch_tip: bool = True,
         air_gap: bool = True,
+<<<<<<< HEAD
         pre_mix: tuple = (0, 0),
         reuse_tip: bool = False,
         slow_travel: bool = False,
+=======
+        pre_mix: int = 0,
+        reuse_tip: bool = False,
+>>>>>>> dba6f94 (reusable tips)
     ):
         self.solution = solution
         if volume <= 0:
             raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
-
         self.time = time
         if rate < 0 or rate > 200:
             raise ValueError("dispense rate must be 0<rate<=200 uL/sec")
@@ -217,6 +221,7 @@ class Drop:
         self.slow_retract = slow_retract
         self.touch_tip = touch_tip
         self.air_gap = air_gap
+<<<<<<< HEAD
         if type(pre_mix) not in [list, tuple, np.array]:
             raise ValueError(
                 "pre_mix argument must be a tuple of (n_cycles, volume ul)"
@@ -228,6 +233,10 @@ class Drop:
         self.pre_mix = pre_mix
         self.reuse_tip = reuse_tip
         self.slow_travel = slow_travel
+=======
+        self.pre_mix = pre_mix
+        self.reuse_tip = reuse_tip
+>>>>>>> dba6f94 (reusable tips)
 
     def __repr__(self):
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
@@ -248,7 +257,10 @@ class Drop:
             "air_gap": self.air_gap,
             "pre_mix": self.pre_mix,
             "reuse_tip": self.reuse_tip,
+<<<<<<< HEAD
             "slow_travel": self.slow_travel,
+=======
+>>>>>>> dba6f94 (reusable tips)
         }
         return out
 
