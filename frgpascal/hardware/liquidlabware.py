@@ -50,9 +50,13 @@ class TipRack:
         ), "Starting tip must be a valid tip slop name!"
         tips_in_order = [well for column in constants["ordering"] for well in column]
         starting_idx = tips_in_order.index(self.starting_tip)
+<<<<<<< HEAD
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
+=======
+        self.num_tips = len(tips_in_order) - starting_idx
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
 
 
 class LiquidLabware:
@@ -110,14 +114,22 @@ class LiquidLabware:
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
         allwells = natsorted(list(self._coordinates.keys()))
+<<<<<<< HEAD
         self._unavailablewells = []
+=======
+        self._unavailable_wells = []
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
         self._openwells = []
         unavailable = True
         for well in allwells:
             if well == self.__starting_well:
                 unavailable = False
             if unavailable:
+<<<<<<< HEAD
                 self._unavailablewells.append(well)
+=======
+                self._unavailable_wells.append(well)
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
             else:
                 self._openwells.append(well)
 
@@ -144,7 +156,11 @@ class LiquidLabware:
             except IndexError as e:
                 raise IndexError("This labware is full!")
         else:
+<<<<<<< HEAD
             if well in self._unavailablewells:
+=======
+            if well in self._unavailable_wells:
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
                 raise IndexError(f"Well {well} was set to unavailable!")
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
@@ -163,7 +179,11 @@ class LiquidLabware:
         Raises:
             ValueError: If that slot is already empty
         """
+<<<<<<< HEAD
         if well not in self._coordinates or well in self._unavailablewells:
+=======
+        if well not in self._coordinates or well in self._unavailable_wells:
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
             raise ValueError(f"{well} is not a valid well!")
         if well in self._openwells:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
@@ -225,7 +245,11 @@ class LiquidLabware:
                     markersize=markersize,
                     fillstyle=fillstyle,
                 )
+<<<<<<< HEAD
             elif k in self._unavailablewells:
+=======
+            elif k in self._unavailable_wells:
+>>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
                 ax.scatter(x, y, c="gray", marker="o", alpha=0.3)
