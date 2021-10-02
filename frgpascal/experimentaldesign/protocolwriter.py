@@ -4,12 +4,8 @@ import json
 MODULE_DIR = os.path.dirname(__file__)
 
 
-<<<<<<< HEAD
 def generate_ot2_protocol(title, mixing_netlist, labware, tipracks, directory="."):
     fpath = os.path.join(directory, f"OT2PASCALProtocol_{title}.py")
-=======
-def generate_ot2listenerprotocol(fpath, mixing_netlist, labware, tipracks):
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
     with open(
         os.path.join(
             MODULE_DIR,

@@ -93,10 +93,14 @@ class ListenerWebsocket:
         for tiprack, unavailable_tips in self.tips.items():
             for tip in unavailable_tips:
 <<<<<<< HEAD
+<<<<<<< HEAD
                 tiprack.use_tips(
 =======
                 self.pipettes["left"].use_tips(
 >>>>>>> dba6f94 (reusable tips)
+=======
+                tiprack.use_tips(
+>>>>>>> 12ba5e5 (set starting tips on tipracks!)
                     start_well=tiprack[tip], num_channels=1
                 )  # remove these tips from the tip iterator
 
