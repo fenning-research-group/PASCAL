@@ -455,7 +455,7 @@ class TransmissionSpectroscopy(StationTemplate):
         self.shutter = shutter
         self.slider = slider
         self.hdr_times = [50, 200, 1000, 5000, 10000]  # ms
-        self.NUMSCANS = 2  # take 2 scans per to reduce noise
+        self.NUMSCANS = 3  # take 2 scans per to reduce noise
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + self.hdr_times)
         )
@@ -604,6 +604,17 @@ class PLPhotostability(StationTemplate):
         Returns:
             [type]: [description]
         """
+        threads = [
+            Thread(
+                target=self.slider.top_right
+            ),  # move longpass filter into the detector path
+            Thread(target=self.shutter.close),  # close the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
         times = []
         spectra = []
         self.spectrometer.dwelltime = self.dwelltime
