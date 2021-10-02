@@ -189,16 +189,47 @@ class Drop:
         solution: Solution,
         volume: float,
         time: float,
-        rate: float = 50,
+        rate: float = 100,
         height: float = 2,
+        slow_retract: bool = True,
+        touch_tip: bool = True,
+        air_gap: bool = True,
+        pre_mix: int = 0,
     ):
         self.solution = solution
+
+        assert volume > 0, "Volume must be >0"
+        assert type(volume) in [float, int], "Volume must be numeric"
         self.volume = volume
+
+        assert time > 0, "Time must be >0"
         self.time = time
+
+        assert (rate > 0) and (rate <= 200), "dispense rate must be 0<rate<=200 uL/sec"
         self.rate = rate
-        self.height = max(
-            1, height
-        )  # distance from pipette tip to substrate must be at least 1mm
+
+        assert (height >= 0.5) and (
+            height <= 10
+        ), "dispense height must be 0.5<height<=10 mm"
+        self.height = (
+            height  # distance from pipette tip to substrate must be at least 0.5mm
+        )
+
+        assert (
+            type(slow_retract) is bool
+        ), "slow_retract (to raise pipette from vial/well slowly) must be a bool"
+        self.slow_retract = slow_retract
+
+        assert type(touch_tip) is bool, "touch_tip must be a bool"
+        self.touch_tip = touch_tip
+
+        assert type(air_gap) is bool, "air_gap must be a bool"
+        self.air_gap = air_gap
+
+        assert (
+            type(pre_mix) is int
+        ), "pre_mix (number of 50uL aspirate-dispense cycles) must be an int"
+        self.pre_mix = pre_mix
 
     def __repr__(self):
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
@@ -210,6 +241,10 @@ class Drop:
             "time": self.time,
             "rate": self.rate,
             "height": self.height,
+            "slow_retract": self.slow_retract,
+            "touch_tip": self.touch_tip,
+            "air_gap": self.air_gap,
+            "pre_mix": self.pre_mix,
         }
         return out
 
