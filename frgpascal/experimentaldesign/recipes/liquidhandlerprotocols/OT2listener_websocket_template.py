@@ -56,7 +56,11 @@ class ListenerWebsocket:
             )
             for side in ["left", "right"]
         }
-
+        for p in self.pipettes.values():
+            p.well_bottom_clearance.aspirate = (
+                0.3  # aspirate from 300 um above the bottom of well
+            )
+            p.well_bottom_clearance.dispense = 1  # dispense from higher
         # self.pipettes["left"], self.pipettes["right"] = (
         #     self.pipettes["right"],
         #     self.pipettes["left"],
