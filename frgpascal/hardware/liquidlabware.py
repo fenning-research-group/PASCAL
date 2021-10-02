@@ -18,10 +18,53 @@ def available_versions(self):
     return AVAILABLE_VERSIONS
 
 
+ALLOWED_DECK_SLOTS = [1, 4, 5, 6, 7, 8, 9, 10, 11]  # 2,3 taken up by spincoater
+
+
+class TipRack:
+    def __init__(self, version: str, deck_slot: int, starting_tip: str = "A1"):
+        if "-" in version:
+            raise ValueError(' "-" character not allowed in LiquidLabware name')
+        if deck_slot not in ALLOWED_DECK_SLOTS:
+            raise ValueError(
+                f"{deck_slot} is not a valid deck slot ({ALLOWED_DECK_SLOTS})!"
+            )
+        self.deck_slot = deck_slot
+        self.starting_tip = starting_tip
+        constants = self._load_version(version)  # generates self.num_tips!
+
+    def _load_version(self, version):
+        """Loads the version file for the labware.
+        This should be the same json file used to define custom labware for opentrons.
+        Also extracts coordinates from the json file.
+        """
+        if version not in AVAILABLE_VERSIONS:
+            raise Exception(
+                f'Invalid liquid labware version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
+            )
+        self.version = version
+        with open(AVAILABLE_VERSIONS[version], "r") as f:
+            constants = json.load(f)
+        assert (
+            self.starting_tip in constants["wells"]
+        ), "Starting tip must be a valid tip slop name!"
+        tips_in_order = [well for column in constants["ordering"] for well in column]
+        starting_idx = tips_in_order.index(self.starting_tip)
+        self.num_tips = len(tips_in_order) - starting_idx
+
+
 class LiquidLabware:
-    def __init__(self, name: str, version: str):
+    def __init__(
+        self, name: str, version: str, deck_slot: int, starting_well: str = "A1"
+    ):
         if "-" in name:
             raise ValueError(' "-" character not allowed in LiquidLabware name')
+        if deck_slot not in ALLOWED_DECK_SLOTS:
+            raise ValueError(
+                f"{deck_slot} is not a valid deck slot ({ALLOWED_DECK_SLOTS})!"
+            )
+        self.deck_slot = deck_slot
+        self.__starting_well = starting_well
         constants = self._load_version(version)
         self.name = name
         numx = len(constants["ordering"])
@@ -54,16 +97,27 @@ class LiquidLabware:
             raise Exception(
                 f'Invalid liquid labware version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
             )
+        self.version = version
         with open(AVAILABLE_VERSIONS[version], "r") as f:
             constants = json.load(f)
 
+        assert (
+            self.__starting_well in constants["wells"]
+        ), "Starting well must be a valid well name!"
         self._coordinates = {
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
-        self._openwells = list(self._coordinates.keys())
-        self._openwells = natsorted(
-            self._openwells
-        )  # should already be sorted, but just in case
+        allwells = natsorted(list(self._coordinates.keys()))
+        self._unavailable_wells = []
+        self._openwells = []
+        unavailable = True
+        for well in allwells:
+            if well == self.__starting_well:
+                unavailable = False
+            if unavailable:
+                self._unavailable_wells.append(well)
+            else:
+                self._openwells.append(well)
 
         return constants
 
@@ -88,6 +142,8 @@ class LiquidLabware:
             except IndexError as e:
                 raise IndexError("This labware is full!")
         else:
+            if well in self._unavailable_wells:
+                raise IndexError(f"Well {well} was set to unavailable!")
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
             self.contents[well] = contents
@@ -105,7 +161,7 @@ class LiquidLabware:
         Raises:
             ValueError: If that slot is already empty
         """
-        if well not in self._coordinates:
+        if well not in self._coordinates or well in self._unavailable_wells:
             raise ValueError(f"{well} is not a valid well!")
         if well in self._openwells:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
@@ -166,8 +222,10 @@ class LiquidLabware:
                     markersize=markersize,
                     fillstyle=fillstyle,
                 )
-            else:
+            elif k in self._unavailable_wells:
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
+            else:
+                ax.scatter(x, y, c="gray", marker="o", alpha=0.3)
 
         plt.sca(ax)
         ax.set_aspect("equal")

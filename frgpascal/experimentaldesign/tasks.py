@@ -202,7 +202,6 @@ class Drop:
         assert type(volume) in [float, int], "Volume must be numeric"
         self.volume = volume
 
-        assert time > 0, "Time must be >0"
         self.time = time
 
         assert (rate > 0) and (rate <= 200), "dispense rate must be 0<rate<=200 uL/sec"

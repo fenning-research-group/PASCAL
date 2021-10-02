@@ -27,7 +27,6 @@ metadata = {
 
 mixing_netlist = []
 
-
 class ListenerWebsocket:
     def __init__(
         self,
@@ -363,9 +362,22 @@ class ListenerWebsocket:
 
 def run(protocol_context):
     # define your hardware
-    tips = []
-    labwares = {}
-
+    tips = [
+        protocol_context.load_labware(
+            "sartorius_safetyspace_tiprack_200ul", location="7"
+        ),
+        protocol_context.load_labware(
+            "sartorius_safetyspace_tiprack_200ul", location="10"
+        ),
+    ]    # note that each stock tray name must match the names from experiment designer!
+    labwares = {
+        "96_Plate1": protocol_context.load_labware(
+            "greiner_96_wellplate_360ul", location="5"
+        ),
+        "4mL_Tray1": protocol_context.load_labware(
+            "frg_24_wellplate_4000ul", location="1"
+        ),
+    }
     # spincoater
     spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")
 
