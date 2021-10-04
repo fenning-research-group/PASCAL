@@ -53,6 +53,21 @@ class ListenerWebsocket:
         tip_racks = list(self.tips.keys())
         self._sources = labwares
 
+        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+        self.DISPENSE_HEIGHT = (
+            2  # mm, distance between tip and bottom of wells while dispensing
+        )
+        self.ASPIRATE_HEIGHT = (
+            0.3  # mm, distance between tip and bottom of wells while aspirating
+        )
+        self.DISPENSE_RATE = 150  # uL/s
+        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
+        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
+        self.SLOW_Z_RATE = 20  # mm/s
+        self.MIX_VOLUME = (
+            50  # uL to repeatedly aspirate/dispense when mixing well contents
+        )
+
         self.spincoater = spincoater
         self.CHUCK = "A1"
         self.STANDBY = "B1"
@@ -74,26 +89,13 @@ class ListenerWebsocket:
                 )  # remove these tips from the tip iterator
 
         for p in self.pipettes.values():
-            p.well_bottom_clearance.aspirate = (
-                0.3  # aspirate from 300 um above the bottom of well
-            )
-            p.well_bottom_clearance.dispense = 1  # dispense from higher
+            p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
+            p.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
 
         # will be populated with (tray,well):tip coordinate as protocol proceeds
         self.reusable_tips = {}
         self.return_current_tip = {p: False for p in self.pipettes.values()}
 
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-        self.DISPENSE_HEIGHT = (
-            2  # mm, distance between tip and bottom of wells while dispensing
-        )
-        self.DISPENSE_RATE = 150  # uL/s
-        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
-        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
-        self.SLOW_Z_RATE = 20  # mm/s
-        self.MIX_VOLUME = (
-            50  # uL to repeatedly aspirate/dispense when mixing well contents
-        )
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
 
@@ -437,3 +439,9 @@ def run(protocol_context):
     listener.start()
     while listener.status != STATUS_ALL_DONE:
         time.sleep(0.2)
+
+    listener.cleanup()
+    # trash our reused tips
+    for (source_tray, source_well), tip in listener.reusable_tips.items():
+        listener.pipettes["right"].pick_up_tip(tip)
+        listener.pipettes["right"].drop_tip()
