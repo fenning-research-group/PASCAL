@@ -25,9 +25,7 @@ metadata = {
     "apiLevel": "2.10",
 }
 
-mixing_netlist = [
-    {"96_Plate1-A4": {"96_Plate1-A3": 105.0}, "96_Plate1-A5": {"96_Plate1-A3": 105.0}}
-]
+mixing_netlist = []
 
 
 class ListenerWebsocket:
@@ -54,7 +52,7 @@ class ListenerWebsocket:
         self.tips = tips
         tip_racks = list(self.tips.keys())
         self._sources = labwares
-
+        self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
         self.CHUCK = "A1"
         self.STANDBY = "B1"
@@ -229,9 +227,13 @@ class ListenerWebsocket:
         if key in self.reusable_tips:
             next_tip = self.reusable_tips[key]
         else:
-            next_tip = self.pipettes[
-                "left"
-            ].next_tip()  # arbitrary which pipette is chosen here
+            for tiprack in self.tips.keys():
+                next_tip = tiprack.next_tip(num_tips=1)
+                if next_tip is not None:
+                    break
+
+            if next_tip is None:
+                raise Exception("No remaining tips!")
             self.reusable_tips[key] = next_tip
         return next_tip
 
@@ -379,15 +381,26 @@ class ListenerWebsocket:
             )
 
     def cleanup(self):
-        """drops/returns tips of all pipettes to prepare pipettes for future commands"""
-        for p in self.pipettes.values():
+        """drops/returns tips of all pipettes to prepare pipettes for future commands
+
+        the order of operations feels overly complicated, but is chosen to minimize
+        the travel (both horizontally and vertically) of the pipette heads
+        """
+        # drop all tips that dont need to be returned
+        for p, return_this_tip in self.return_current_tip.items():
             if not p.has_tip:
                 continue
-            if self.return_current_tip[p]:
-                p.return_tip()
-            else:
+            if not return_this_tip:
                 p.drop_tip()
-            self.return_current_tip[p] = False
+
+        # first blow out all returning tips, then drop them back
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.blow_out(self.TRASH)
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.return_tip()
+                self.return_current_tip[p] = False
 
 
 def run(protocol_context):
@@ -472,12 +485,11 @@ def run(protocol_context):
     # each piece of labware has to be involved in some dummy moves to be included in protocol
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
+        p.move_to(listener.spincoater[listener.CHUCK].top(30))
         for name, labware in labwares.items():
             p.move_to(labware["A1"].top(30))
         for labware in tips:
             p.move_to(labware["A1"].top(30))
-        p.move_to(listener.spincoater[listener.CHUCK].top(30))
-    listener.pipettes["right"].move_to(tips[0]["A1"].top(10))
 
     # run through the pre-experiment mixing
     for generation in mixing_netlist:
