@@ -6,6 +6,7 @@ from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
 import pandas as pd
+from mixsol import Mixer
 
 #### General
 def generate_unique_id():
@@ -368,7 +369,93 @@ def samples_to_dataframe(samples):
 
 # df = pd.DataFrame(dfdata)
 #### Set liquid storage locations + amounts needed
-def handle_liquids(samples, stock_solutions, solution_storage, min_volume=50):
+
+
+def where_to_store(volume, options):
+    for ll in options:
+        if volume <= ll.volume and len(ll._openwells) > 0:
+            return ll
+    raise ValueError(f"No options have enough space to hold {volume/1e3:.2f} mL!")
+
+
+def handle_liquids(samples: list, mixer: Mixer, solution_storage: list):
+    solution_details = {}
+    for s in mixer.solutions:
+        solution_details[s] = {
+            "largest_volume_required": round(
+                mixer.initial_volumes_required.get(s, 0), 3
+            ),
+            "is_stock": mixer.solutions.index(s) in mixer.stock_idx,
+        }
+
+    for ll in solution_storage:
+        ll.unload_all()
+
+    for solution, v in solution_details.items():
+        if solution.well["labware"] is None:
+            continue
+        volume = v["largest_volume_required"]
+        ll = [ll for ll in solution_storage if ll.name == solution.well["labware"]][0]
+        well = ll.load(solution, well=solution.well["well"])
+        solution_details[solution]["labware"] = ll.name
+        solution_details[solution]["well"] = well
+        if v["is_stock"]:
+            solution_details[solution]["initial_volume_required"] = v[
+                "largest_volume_required"
+            ]
+        else:
+            solution_details[solution]["initial_volume_required"] = 0
+
+    for solution, v in solution_details.items():
+        if "labware" in v:
+            continue
+        volume = v["largest_volume_required"]
+        ll = where_to_store(volume, solution_storage)  # which liquid labware
+        well = ll.load(solution)
+        solution_details[solution]["labware"] = ll.name
+        solution_details[solution]["well"] = well
+        if v["is_stock"]:
+            solution_details[solution]["initial_volume_required"] = v[
+                "largest_volume_required"
+            ]
+        else:
+            solution_details[solution]["initial_volume_required"] = 0
+
+    for s in samples:
+        for task in s.worklist:
+            if not isinstance(task, Spincoat):
+                continue
+            for drop in task.drops:
+                d = solution_details[drop.solution]
+                drop.solution.well = {
+                    "labware": d["labware"],
+                    "well": d["well"],
+                }
+
+    mixing_netlist = (
+        []
+    )  # [{source: {[destinations], [volumes]}}, {source:{[destinations], [volumes]}}]
+    for generation in mixer.transfers_per_generation:
+        this_generation = {}
+        for source, transfers in generation.items():
+            labware = solution_details[source]["labware"]
+            well = solution_details[source]["well"]
+            source_str = f"{labware}-{well}"
+            transfers_from_this_source = {}
+            for destination, volume in transfers.items():
+                if volume == 0:
+                    continue
+                labware = solution_details[destination]["labware"]
+                well = solution_details[destination]["well"]
+                destination_str = f"{labware}-{well}"
+                transfers_from_this_source[destination_str] = volume.round(2)
+            this_generation[source_str] = transfers_from_this_source
+        mixing_netlist.append(this_generation)
+
+    return solution_details, mixing_netlist
+
+
+def handle_liquids_old(samples, stock_solutions, solution_storage, min_volume=50):
     unique_solutions_required = list(
         set(
             [

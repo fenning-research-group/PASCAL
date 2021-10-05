@@ -51,7 +51,7 @@ def generate_ot2_protocol(title, mixing_netlist, labware, tipracks, directory=".
 
             elif line.startswith("    labwares = {}"):
                 f.write(labware_str)
-            elif line.startswith("    tips = []"):
+            elif line.startswith("    tips = {}"):
                 f.write(tiprack_str)
             else:
                 f.write(line)
