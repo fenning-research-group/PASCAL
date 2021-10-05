@@ -53,18 +53,30 @@ class ListenerWebsocket:
         tip_racks = list(self.tips.keys())
         self._sources = labwares
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.TRASH = protocol_context.fixed_trash["A1"]
 =======
 
 <<<<<<< HEAD
 >>>>>>> dba6f94 (reusable tips)
 =======
+=======
+        self.TRASH = protocol_context.fixed_trash["A1"]
+        self.spincoater = spincoater
+        self.CHUCK = "A1"
+        self.STANDBY = "B1"
+        self.CLEARCHUCKPOSITION = (
+            150,
+            100,
+            100,
+        )  # mm, 0,0,0 = front left floor corner of gantry volume.
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
         self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-        self.DISPENSE_HEIGHT = (
-            2  # mm, distance between tip and bottom of wells while dispensing
-        )
         self.ASPIRATE_HEIGHT = (
             0.3  # mm, distance between tip and bottom of wells while aspirating
+        )
+        self.DISPENSE_HEIGHT = (
+            1  # mm, distance between tip and bottom of wells while dispensing
         )
         self.DISPENSE_RATE = 150  # uL/s
         self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
@@ -74,6 +86,7 @@ class ListenerWebsocket:
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
 
+<<<<<<< HEAD
 >>>>>>> 83755a4 (trash the reused tips at end)
         self.spincoater = spincoater
         self.CHUCK = "A1"
@@ -102,6 +115,8 @@ class ListenerWebsocket:
 
 =======
 >>>>>>> dba6f94 (reusable tips)
+=======
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", mount=side, tip_racks=tip_racks
@@ -317,12 +332,22 @@ class ListenerWebsocket:
             next_tip = self.reusable_tips[key]
         else:
 <<<<<<< HEAD
+<<<<<<< HEAD
             next_tip = self._next_tip()
 =======
             next_tip = self.pipettes[
                 "left"
             ].next_tip()  # arbitrary which pipette is chosen here
 >>>>>>> dba6f94 (reusable tips)
+=======
+            for tiprack in self.tips.keys():
+                next_tip = tiprack.next_tip(num_tips=1)
+                if next_tip is not None:
+                    break
+
+            if next_tip is None:
+                raise Exception("No remaining tips!")
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
             self.reusable_tips[key] = next_tip
         return next_tip
 
@@ -499,6 +524,9 @@ class ListenerWebsocket:
 
     def cleanup(self):
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
         """drops/returns tips of all pipettes to prepare pipettes for future commands
 
         the order of operations feels overly complicated, but is chosen to minimize
@@ -506,6 +534,7 @@ class ListenerWebsocket:
         """
         # drop all tips that dont need to be returned
         for p, return_this_tip in self.return_current_tip.items():
+<<<<<<< HEAD
             if not p.has_tip:
                 continue
             if not return_this_tip:
@@ -526,23 +555,39 @@ class ListenerWebsocket:
 =======
         """drops/returns tips of all pipettes to prepare pipettes for future commands"""
         for p in self.pipettes.values():
+=======
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
             if not p.has_tip:
                 continue
-            if self.return_current_tip[p]:
-                p.return_tip()
-            else:
+            if not return_this_tip:
                 p.drop_tip()
+<<<<<<< HEAD
             self.return_current_tip[p] = False
 >>>>>>> dba6f94 (reusable tips)
+=======
+
+        # first blow out all returning tips, then drop them back
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.blow_out(self.TRASH)
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.return_tip()
+                self.return_current_tip[p] = False
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
 
 
 def run(protocol_context):
     # define your hardware
 <<<<<<< HEAD
+<<<<<<< HEAD
     tips = {}
 =======
     tips = []
 >>>>>>> dba6f94 (reusable tips)
+=======
+    tips = {}
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
     labwares = {}
 
     # spincoater
@@ -559,18 +604,25 @@ def run(protocol_context):
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
 <<<<<<< HEAD
+<<<<<<< HEAD
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
 =======
 >>>>>>> dba6f94 (reusable tips)
+=======
+        p.move_to(listener.spincoater[listener.CHUCK].top(30))
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
         for name, labware in labwares.items():
             p.move_to(labware["A1"].top(30))
         for labware in tips:
             p.move_to(labware["A1"].top(30))
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         p.move_to(listener.spincoater[listener.CHUCK].top(30))
     listener.pipettes["right"].move_to(tips[0]["A1"].top(10))
 >>>>>>> dba6f94 (reusable tips)
+=======
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
 
     # run through the pre-experiment mixing
     for generation in mixing_netlist:
@@ -596,9 +648,3 @@ def run(protocol_context):
     listener.start()
     while listener.status != STATUS_ALL_DONE:
         time.sleep(0.2)
-
-    listener.cleanup()
-    # trash our reused tips
-    for (source_tray, source_well), tip in listener.reusable_tips.items():
-        listener.pipettes["right"].pick_up_tip(tip)
-        listener.pipettes["right"].drop_tip()

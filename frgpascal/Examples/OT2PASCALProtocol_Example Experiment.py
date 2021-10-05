@@ -25,8 +25,16 @@ metadata = {
     "apiLevel": "2.10",
 }
 
-mixing_netlist = []
-
+mixing_netlist = [
+    {
+        "4mL_Tray1-A1": {
+            "96_Plate1-C3": 105.0
+        },
+        "4mL_Tray1-A2": {
+            "96_Plate1-C3": 105.0
+        }
+    }
+]
 
 class ListenerWebsocket:
     def __init__(
@@ -61,6 +69,21 @@ class ListenerWebsocket:
             100,
             100,
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
+        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+        self.ASPIRATE_HEIGHT = (
+            0.3  # mm, distance between tip and bottom of wells while aspirating
+        )
+        self.DISPENSE_HEIGHT = (
+            1  # mm, distance between tip and bottom of wells while dispensing
+        )
+        self.DISPENSE_RATE = 150  # uL/s
+        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
+        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
+        self.SLOW_Z_RATE = 20  # mm/s
+        self.MIX_VOLUME = (
+            50  # uL to repeatedly aspirate/dispense when mixing well contents
+        )
+
         self.pipettes = {
             side: protocol_context.load_instrument(
                 "p300_single_gen2", mount=side, tip_racks=tip_racks
@@ -74,26 +97,13 @@ class ListenerWebsocket:
                 )  # remove these tips from the tip iterator
 
         for p in self.pipettes.values():
-            p.well_bottom_clearance.aspirate = (
-                0.3  # aspirate from 300 um above the bottom of well
-            )
-            p.well_bottom_clearance.dispense = 1  # dispense from higher
+            p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
+            p.well_bottom_clearance.dispense = self.DISPENSE_HEIGHT
 
         # will be populated with (tray,well):tip coordinate as protocol proceeds
         self.reusable_tips = {}
         self.return_current_tip = {p: False for p in self.pipettes.values()}
 
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-        self.DISPENSE_HEIGHT = (
-            2  # mm, distance between tip and bottom of wells while dispensing
-        )
-        self.DISPENSE_RATE = 150  # uL/s
-        self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
-        self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
-        self.SLOW_Z_RATE = 20  # mm/s
-        self.MIX_VOLUME = (
-            50  # uL to repeatedly aspirate/dispense when mixing well contents
-        )
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
 
@@ -405,65 +415,7 @@ class ListenerWebsocket:
 
 def run(protocol_context):
     # define your hardware
-    tips = {
-        protocol_context.load_labware(
-            "sartorius_safetyspace_tiprack_200ul", location="7"
-        ): [
-            "A1",
-            "B1",
-            "C1",
-            "D1",
-            "E1",
-            "F1",
-            "G1",
-            "H1",
-            "A2",
-            "B2",
-            "C2",
-            "D2",
-            "E2",
-            "F2",
-            "G2",
-            "H2",
-        ],
-        protocol_context.load_labware(
-            "sartorius_safetyspace_tiprack_200ul", location="10"
-        ): [
-            "A1",
-            "B1",
-            "C1",
-            "D1",
-            "E1",
-            "F1",
-            "G1",
-            "H1",
-            "A2",
-            "B2",
-            "C2",
-            "D2",
-            "E2",
-            "F2",
-            "G2",
-            "H2",
-            "A3",
-            "B3",
-            "C3",
-            "D3",
-            "E3",
-            "F3",
-            "G3",
-            "H3",
-            "A4",
-            "B4",
-            "C4",
-            "D4",
-            "E4",
-            "F4",
-            "G4",
-            "H4",
-            "A5",
-        ],
-    }
+    tips = {}
     labwares = {
         "96_Plate1": protocol_context.load_labware(
             "greiner_96_wellplate_360ul", location="5"

@@ -121,10 +121,14 @@ class LiquidLabware:
         }
         allwells = natsorted(list(self._coordinates.keys()))
 <<<<<<< HEAD
+<<<<<<< HEAD
         self._unavailablewells = []
 =======
         self._unavailable_wells = []
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+        self._unavailablewells = []
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
         self._openwells = []
         unavailable = True
         for well in allwells:
@@ -132,10 +136,14 @@ class LiquidLabware:
                 unavailable = False
             if unavailable:
 <<<<<<< HEAD
+<<<<<<< HEAD
                 self._unavailablewells.append(well)
 =======
                 self._unavailable_wells.append(well)
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+                self._unavailablewells.append(well)
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
             else:
                 self._openwells.append(well)
 
@@ -163,10 +171,14 @@ class LiquidLabware:
                 raise IndexError("This labware is full!")
         else:
 <<<<<<< HEAD
+<<<<<<< HEAD
             if well in self._unavailablewells:
 =======
             if well in self._unavailable_wells:
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+            if well in self._unavailablewells:
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
                 raise IndexError(f"Well {well} was set to unavailable!")
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
@@ -186,10 +198,14 @@ class LiquidLabware:
             ValueError: If that slot is already empty
         """
 <<<<<<< HEAD
+<<<<<<< HEAD
         if well not in self._coordinates or well in self._unavailablewells:
 =======
         if well not in self._coordinates or well in self._unavailable_wells:
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+        if well not in self._coordinates or well in self._unavailablewells:
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
             raise ValueError(f"{well} is not a valid well!")
         if well in self._openwells:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
@@ -252,10 +268,14 @@ class LiquidLabware:
                     fillstyle=fillstyle,
                 )
 <<<<<<< HEAD
+<<<<<<< HEAD
             elif k in self._unavailablewells:
 =======
             elif k in self._unavailable_wells:
 >>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
+=======
+            elif k in self._unavailablewells:
+>>>>>>> 5b65810 (finalize protocol with tip reuse)
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
                 ax.scatter(x, y, c="gray", marker="o", alpha=0.3)
