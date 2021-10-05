@@ -4,7 +4,8 @@ import json
 MODULE_DIR = os.path.dirname(__file__)
 
 
-def generate_ot2_protocol(fpath, mixing_netlist, labware, tipracks):
+def generate_ot2_protocol(title, mixing_netlist, labware, tipracks, directory="."):
+    fpath = os.path.join(directory, f"OT2PASCALProtocol_{title}.py")
     with open(
         os.path.join(
             MODULE_DIR,
