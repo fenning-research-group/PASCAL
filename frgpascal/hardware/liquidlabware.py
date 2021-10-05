@@ -110,14 +110,14 @@ class LiquidLabware:
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
         allwells = natsorted(list(self._coordinates.keys()))
-        self._unavailable_wells = []
+        self._unavailablewells = []
         self._openwells = []
         unavailable = True
         for well in allwells:
             if well == self.__starting_well:
                 unavailable = False
             if unavailable:
-                self._unavailable_wells.append(well)
+                self._unavailablewells.append(well)
             else:
                 self._openwells.append(well)
 
@@ -144,7 +144,7 @@ class LiquidLabware:
             except IndexError as e:
                 raise IndexError("This labware is full!")
         else:
-            if well in self._unavailable_wells:
+            if well in self._unavailablewells:
                 raise IndexError(f"Well {well} was set to unavailable!")
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
@@ -163,7 +163,7 @@ class LiquidLabware:
         Raises:
             ValueError: If that slot is already empty
         """
-        if well not in self._coordinates or well in self._unavailable_wells:
+        if well not in self._coordinates or well in self._unavailablewells:
             raise ValueError(f"{well} is not a valid well!")
         if well in self._openwells:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
@@ -179,8 +179,9 @@ class LiquidLabware:
         """
         resets the labware to an empty state
         """
-        self._openwells = list(self._coordinates.keys())
-        self._openwells.sort()
+        self._openwells = natsorted(
+            [well for well in self._coordinates if well not in self._unavailablewells]
+        )
         self.contents = {}
 
     def plot(self, solution_details=None, ax=None):
@@ -224,7 +225,7 @@ class LiquidLabware:
                     markersize=markersize,
                     fillstyle=fillstyle,
                 )
-            elif k in self._unavailable_wells:
+            elif k in self._unavailablewells:
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
                 ax.scatter(x, y, c="gray", marker="o", alpha=0.3)
