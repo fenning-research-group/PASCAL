@@ -1,3 +1,4 @@
+from functools import total_ordering
 import os
 import json
 from natsort import natsorted
@@ -27,9 +28,21 @@ class LiquidLabware:
         numy = len(constants["ordering"][0])
         self.shape = (numy, numx)  # grid dimensions
         self.capacity = numy * numx  # number of slots
+
         self.volume = constants["wells"][self._openwells[0]][
             "totalLiquidVolume"
         ]  # in uL. assumes all wells have same volume!
+        total_depth = constants["wells"][self._openwells[0]][
+            "depth"
+        ]  # in mm. assumes all wells have same depth!
+        min_depth = 1.5  # minimum liquid level (mm) to allow within the well. assume we can't aspirate effectively below this!
+        self.min_volume = round(
+            self.volume * min_depth / total_depth, 2
+        )  # this assume the well/vial is not tapered!
+
+        self.usable_volume = (
+            self.volume - self.min_volume
+        )  # total capacity that can be aspirated, in uL
         self.contents = {}
 
     def _load_version(self, version):
