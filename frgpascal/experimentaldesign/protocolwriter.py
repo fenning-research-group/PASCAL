@@ -55,3 +55,5 @@ def generate_ot2_protocol(title, mixing_netlist, labware, tipracks, directory=".
                 f.write(tiprack_str)
             else:
                 f.write(line)
+
+    print(f'OT2 protocol dumped to "{fpath}"')

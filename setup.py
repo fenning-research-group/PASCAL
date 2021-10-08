@@ -5,7 +5,7 @@ import re
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(this_dir, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 
@@ -23,17 +23,25 @@ with open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as f:
 
 
 setup(
-    name='frgpascal',
-    version='0.1',
-    description='Control of Fenning Research Group automated synthesis platform',
+    name="frgpascal",
+    version="0.2",
+    description="Control of Fenning Research Group automated synthesis platform",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Rishi Kumar',
-    author_email='rek010@eng.ucsd.edu',
-    download_url='https://github.com/fenning-research-group/PASCAL/frgpascal',
-    license='BSD',
-    install_requires=['numpy', "aiohttp",
-                      'pyyaml', 'scipy'],
+    long_description_content_type="text/markdown",
+    author="Rishi Kumar",
+    author_email="rek010@eng.ucsd.edu",
+    download_url="https://github.com/fenning-research-group/PASCAL/frgpascal",
+    license="MIT",
+    install_requires=[
+        "numpy",
+        "aiohttp",
+        "pyyaml",
+        "scipy",
+        "mixsol",
+        "ortools",
+        "matplotlib",
+        "pandas",
+    ],
     # extras_require={
     #     'model_saving': ['h5py'],
     #     'molecules': ['openbabel', 'rdkit'],
@@ -42,7 +50,8 @@ setup(
     # },
     packages=find_packages(),
     package_data={
-        "hardware": ["*.yaml"],
+        "hardware": ["*.yaml", "*/*.yaml", "*/*/*.yaml", "*/*/*.json"],
+        "Examples": ["*.ipynb"],
     },
     include_package_data=True,
     keywords=["materials", "science", "machine", "automation"],
@@ -55,7 +64,7 @@ setup(
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering :: Chemistry",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     # entry_points={
     #     'console_scripts': [
