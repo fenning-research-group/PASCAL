@@ -161,7 +161,7 @@ characterizationline:
     position: 164.4 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 8 #switchbox plug index for light source (ring light)
   pl_blue: #spectroscopy
-    position: 285
+    position: 287
     switchindex: 5
   pl_red: #spectroscopy
     position: 287 #position (mm) at which characterization axis centers sample in FOV
