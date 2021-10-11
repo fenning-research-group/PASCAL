@@ -581,7 +581,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 0,
             )
             aspirate0_time = (
-                t0 + drop0["time"] + headstart - self.liquidhandler.ASPIRATION_DELAY,
+                t0 + drop0["time"] + headstart - self.liquidhandler.ASPIRATION_DELAY
             )
             liquidhandlertasks[
                 "aspirate_solution0"

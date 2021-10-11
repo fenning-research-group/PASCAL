@@ -148,13 +148,13 @@ characterizationline:
     position: 165.4 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 8 #switchbox plug index for light source (ring light)
   pl_blue: #spectroscopy
-    position: 284
+    position: 287
     switchindex: 5
   pl_red: #spectroscopy
-    position: 280 #position (mm) at which characterization axis centers sample in FOV
+    position: 287 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 4 #switchbox plug index for light source (red laser)
   transmission: #spectroscopy
-    position: 283 #position (mm) at which characterization axis centers sample in FOV
+    position: 287 #position (mm) at which characterization axis centers sample in FOV
   #fourpointprobe:
     # position:397.5
   

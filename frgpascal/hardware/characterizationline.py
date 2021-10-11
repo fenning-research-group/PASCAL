@@ -627,6 +627,7 @@ class PLPhotostability(StationTemplate):
             spectra.append(cts)
             tnow = time.time() - t0
         spectra = np.asarray(spectra)
+        self.lightswitch.off()
         return wl, spectra, times
 
     def save(self, data, sample):
