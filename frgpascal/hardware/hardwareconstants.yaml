@@ -69,9 +69,20 @@ hotplate:
 
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
-  dispense_delay: 1 # time (seconds) between initiating a dispense and the completion of the dispense
-  aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
-  staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
+  timings:
+    aspirate:
+      preparetip: 5 #time (seconds) to pick up a fresh tip
+      traveltowell: 2 #time to move from tiprack to aspiration well
+      aspiration_rate: 100 #rate (ul/s) of aspiration
+      slowretract: 2.5 #extra time to slowly retract pipette from well
+      touchtip: 1.5 #time to touch tip/knock off droplets on side of well
+      airgap: 1.5 #time to add an airgap
+    stage: 1.5 #time to move from the aspiration well to the spincoater
+    dispense_delay: 1 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
+    slowfactor: 2 #factor to scale movement times if "slow_travel" is True
+  # dispense_delay: 1 
+  # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
+  # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
   server:
     ip: '169.254.160.20' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
