@@ -194,8 +194,9 @@ class Drop:
         slow_retract: bool = True,
         touch_tip: bool = True,
         air_gap: bool = True,
-        pre_mix: int = 0,
+        pre_mix: tuple = (0, 0),
         reuse_tip: bool = False,
+        slow_travel: bool = False,
     ):
         self.solution = solution
         if volume <= 0:
@@ -214,8 +215,17 @@ class Drop:
         self.slow_retract = slow_retract
         self.touch_tip = touch_tip
         self.air_gap = air_gap
+        if type(pre_mix) not in [list, tuple, np.array]:
+            raise ValueError(
+                "pre_mix argument must be a tuple of (n_cycles, volume ul)"
+            )
+        if len(pre_mix) != 2:
+            raise ValueError(
+                "pre_mix argument must be a tuple of (n_cycles, volume ul)"
+            )
         self.pre_mix = pre_mix
         self.reuse_tip = reuse_tip
+        self.slow_travel = slow_travel
 
     def __repr__(self):
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
@@ -232,6 +242,7 @@ class Drop:
             "air_gap": self.air_gap,
             "pre_mix": self.pre_mix,
             "reuse_tip": self.reuse_tip,
+            "slow_travel": self.slow_travel,
         }
         return out
 
@@ -255,6 +266,38 @@ class Drop:
 
     def __hash__(self):
         return hash(self.__key())
+
+
+class VolatileDrop(Drop):
+    """Wrapper for Drop class with default arguments for handling volatile liquids (like antisolvents)"""
+
+    def __init__(
+        self,
+        solution: Solution,
+        volume: float,
+        time: float,
+        rate: float = 100,
+        height: float = 2,
+        slow_retract: bool = False,
+        touch_tip: bool = False,
+        air_gap: bool = True,
+        pre_mix: int = 3,
+        reuse_tip: bool = False,
+        slow_travel: bool = True,
+    ):
+        super().__init__(
+            solution=solution,
+            volume=volume,
+            time=time,
+            rate=rate,
+            height=height,
+            slow_retract=slow_retract,
+            touch_tip=touch_tip,
+            air_gap=air_gap,
+            pre_mix=pre_mix,
+            reuse_tip=reuse_tip,
+            slow_travel=slow_travel,
+        )
 
 
 ### Base Class for PASCAL Tasks
