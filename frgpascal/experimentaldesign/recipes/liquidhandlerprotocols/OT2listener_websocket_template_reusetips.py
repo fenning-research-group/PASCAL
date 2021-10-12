@@ -72,6 +72,7 @@ class ListenerWebsocket:
         self.SPINCOATING_DISPENSE_HEIGHT = 1  # mm, distance between tip and chuck
         self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
         self.SLOW_Z_RATE = 20  # mm/s
+        self.SLOW_XY_RATE = 100  # mm/s
         self.MIX_VOLUME = (
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
@@ -204,10 +205,10 @@ class ListenerWebsocket:
     ):
         p = pipette
         # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
-        if pre_mix > 0:
+        if pre_mix[0] > 0:
             p.mix(
-                repetitions=pre_mix,
-                volume=self.MIX_VOLUME,
+                repetitions=pre_mix[0],
+                volume=pre_mix[1],
                 location=self._sources[tray][well],
             )
         p.aspirate(volume=volume, location=self._sources[tray][well])
@@ -325,31 +326,29 @@ class ListenerWebsocket:
 
         self.stage_for_dispense(pipette="perovskite")
 
-    def stage_for_dispense(self, pipette):
+    def stage_for_dispense(self, pipette, slow_travel=False):
         p = self._get_pipette(pipette)
-        p.move_to(self.spincoater[self.STANDBY].top())
+        if slow_travel:
+            speed = self.SLOW_XY_RATE
+        else:
+            speed = None
+        p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
         height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
-        # if height is None:
-        #     height = self.SPINCOATING_DISPENSE_HEIGHT
-        # elif height < 0.5:
-        #     height = 0.5  # dont want to crash into the substrate!
-        # if rate is None:
-        #     rate = self.SPINCOATING_DISPENSE_RATE
+        slow_travel = kwargs.get("slow_travel", False)
 
         p = self._get_pipette(pipette)
-        # if not p.has_tip():
-        #     return
-        # p = self.pipettes["left"]
         relative_rate = rate / p.flow_rate.dispense
-        # relative_rate = 1.0
-        # p.move_to(self.spincoater[self.CHUCK].top(height))
+        if slow_travel:
+            p.move_to(
+                location=self.spincoater[self.CHUCK].top(height),
+                speed=self.SLOW_XY_RATE,
+            )
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        # p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        p.blow_out()
+        # p.blow_out()
 
     def clear_chuck(self):
         self.pipettes["right"].move_to(
