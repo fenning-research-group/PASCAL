@@ -6,6 +6,7 @@ from collections import namedtuple
 import uuid
 
 # from frgpascal.maestro import Maestro
+from frgpascal.hardware.liquidhandler import expected_timings
 
 # from frgpascal.hardware.gantry import Gantry
 # from frgpascal.hardware.gripper import Gripper
@@ -515,9 +516,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        aspirate_duration = self._expected_aspiration_duration(drop)
-        staging_duration = self._expected_staging_duration(drop)
-        dispense_duration = self._expected_dispense_duration(drop)
+        (
+            aspirate_duration,
+            staging_duration,
+            dispense_duration,
+        ) = expected_timings(drop)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -561,14 +564,12 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     def _generatelhtasks_twodrops(self, t0, drop0, drop1):
 
-        aspirate0_duration = self._expected_aspiration_duration(drop0)
-        staging0_duration = self._expected_staging_duration(drop0)
-        dispense0_duration = self._expected_dispense_duration(drop0)
-
-        aspirate1_duration = self._expected_aspiration_duration(drop1)
-        staging1_duration = self._expected_staging_duration(drop1)
-        dispense1_duration = self._expected_dispense_duration(drop1)
-
+        aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
+            drop0
+        )
+        aspirate1_duration, staging1_duration, dispense1_duration = expected_timings(
+            drop1
+        )
         if (drop1["time"] - drop0["time"]) < (
             aspirate1_duration + staging1_duration + dispense1_duration
         ):  # if the two drops are too close in time, let's aspirate them both at the beginning
@@ -746,13 +747,16 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             drop0["slow_travel"] = True
             drop1["slow_travel"] = True
 
-            aspirate0_duration = self._expected_aspiration_duration(drop0)
-            staging0_duration = self._expected_staging_duration(drop0)
-            dispense0_duration = self._expected_dispense_duration(drop0)
-
-            aspirate1_duration = self._expected_aspiration_duration(drop1)
-            staging1_duration = self._expected_staging_duration(drop1)
-            dispense1_duration = self._expected_dispense_duration(drop1)
+            (
+                aspirate0_duration,
+                staging0_duration,
+                dispense0_duration,
+            ) = expected_timings(drop0)
+            (
+                aspirate1_duration,
+                staging1_duration,
+                dispense1_duration,
+            ) = expected_timings(drop1)
 
         headstart = (
             aspirate0_duration
