@@ -1,4 +1,3 @@
-from functools import total_ordering
 import os
 import json
 from natsort import natsorted
@@ -50,19 +49,9 @@ class TipRack:
         ), "Starting tip must be a valid tip slop name!"
         tips_in_order = [well for column in constants["ordering"] for well in column]
         starting_idx = tips_in_order.index(self.starting_tip)
-<<<<<<< HEAD
-<<<<<<< HEAD
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
-=======
-        self.num_tips = len(tips_in_order) - starting_idx
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-        self.unavailable_tips = tips_in_order[:starting_idx]
-        self.available_tips = tips_in_order[starting_idx:]
-        self.num_tips = len(self.available_tips)
->>>>>>> dba6f94 (reusable tips)
 
 
 class LiquidLabware:
@@ -83,21 +72,9 @@ class LiquidLabware:
         numy = len(constants["ordering"][0])
         self.shape = (numy, numx)  # grid dimensions
         self.capacity = numy * numx  # number of slots
-
         self.volume = constants["wells"][self._openwells[0]][
             "totalLiquidVolume"
         ]  # in uL. assumes all wells have same volume!
-        total_depth = constants["wells"][self._openwells[0]][
-            "depth"
-        ]  # in mm. assumes all wells have same depth!
-        min_depth = 1.5  # minimum liquid level (mm) to allow within the well. assume we can't aspirate effectively below this!
-        self.min_volume = round(
-            self.volume * min_depth / total_depth, 2
-        )  # this assume the well/vial is not tapered!
-
-        self.usable_volume = (
-            self.volume - self.min_volume
-        )  # total capacity that can be aspirated, in uL
         self.contents = {}
 
     def _load_version(self, version):
@@ -120,30 +97,14 @@ class LiquidLabware:
             k: (v["x"], v["y"], v["z"]) for k, v in constants["wells"].items()
         }
         allwells = natsorted(list(self._coordinates.keys()))
-<<<<<<< HEAD
-<<<<<<< HEAD
         self._unavailablewells = []
-=======
-        self._unavailable_wells = []
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-        self._unavailablewells = []
->>>>>>> 5b65810 (finalize protocol with tip reuse)
         self._openwells = []
         unavailable = True
         for well in allwells:
             if well == self.__starting_well:
                 unavailable = False
             if unavailable:
-<<<<<<< HEAD
-<<<<<<< HEAD
                 self._unavailablewells.append(well)
-=======
-                self._unavailable_wells.append(well)
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-                self._unavailablewells.append(well)
->>>>>>> 5b65810 (finalize protocol with tip reuse)
             else:
                 self._openwells.append(well)
 
@@ -170,15 +131,7 @@ class LiquidLabware:
             except IndexError as e:
                 raise IndexError("This labware is full!")
         else:
-<<<<<<< HEAD
-<<<<<<< HEAD
             if well in self._unavailablewells:
-=======
-            if well in self._unavailable_wells:
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-            if well in self._unavailablewells:
->>>>>>> 5b65810 (finalize protocol with tip reuse)
                 raise IndexError(f"Well {well} was set to unavailable!")
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
@@ -197,15 +150,7 @@ class LiquidLabware:
         Raises:
             ValueError: If that slot is already empty
         """
-<<<<<<< HEAD
-<<<<<<< HEAD
         if well not in self._coordinates or well in self._unavailablewells:
-=======
-        if well not in self._coordinates or well in self._unavailable_wells:
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-        if well not in self._coordinates or well in self._unavailablewells:
->>>>>>> 5b65810 (finalize protocol with tip reuse)
             raise ValueError(f"{well} is not a valid well!")
         if well in self._openwells:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
@@ -267,15 +212,7 @@ class LiquidLabware:
                     markersize=markersize,
                     fillstyle=fillstyle,
                 )
-<<<<<<< HEAD
-<<<<<<< HEAD
             elif k in self._unavailablewells:
-=======
-            elif k in self._unavailable_wells:
->>>>>>> acafdf4 (autopopulate protocol file with labware defined in planning notebook)
-=======
-            elif k in self._unavailablewells:
->>>>>>> 5b65810 (finalize protocol with tip reuse)
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
                 ax.scatter(x, y, c="gray", marker="o", alpha=0.3)
