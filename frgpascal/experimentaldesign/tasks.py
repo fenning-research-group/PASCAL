@@ -634,4 +634,9 @@ def generate_sample_worklist(sample: Sample):
                 immediate=immediate,
             )
         )  # sample ends at storage
+
+    min_start = 0
+    for task in sample_tasklist:
+        task.min_start = min_start
+        min_start += task.duration
     return sample_tasklist
