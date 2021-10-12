@@ -22,7 +22,13 @@ workers = {
 
 ### Task Scheduler
 class Scheduler:
-    def __init__(self, samples, spanning_tasks=None, enforce_sample_order=False):
+    def __init__(
+        self,
+        samples,
+        spanning_tasks=None,
+        enforce_sample_order=False,
+        prioritize_first_spincoat=False,
+    ):
         self.workers = workers
         self.samples = samples
         if spanning_tasks is None:
@@ -30,6 +36,7 @@ class Scheduler:
         else:
             self.spanning_tasks = spanning_tasks
         self.enforce_sample_order = enforce_sample_order
+        self.prioritize_first_spincoat = prioritize_first_spincoat
 
     def _generate_worklists(self):
         for s in self.samples:
@@ -39,6 +46,18 @@ class Scheduler:
             t for sample_tasks in self.tasks.values() for t in sample_tasks
         ]
         self.horizon = int(sum([t.duration for t in self.tasklist]))
+
+        self.first_spincoats = []
+        self.later_spincoats = []
+        for _, tasks in self.tasks.items():
+            n = 0
+            for t in tasks:
+                if t.task == "spincoat":
+                    if n == 0:
+                        self.first_spincoats.append(t)
+                    elif n == 1:
+                        self.later_spincoats.append(t)
+                    n += 1
 
     def _initialize_model(self):
         self._generate_worklists()
@@ -93,6 +112,17 @@ class Scheduler:
                 self.model.Add(
                     sample.tasks[0].start_var > preceding_sample.tasks[0].start_var
                 )
+
+        if self.prioritize_first_spincoat:
+            first_sc = self.model.NewIntVar(0, self.horizon, "firstsc")
+            self.model.AddMaxEquality(
+                first_sc, [t.end_var for t in self.first_spincoats]
+            )
+            later_sc = self.model.NewIntVar(0, self.horizon, "latersc")
+            self.model.AddMinEquality(
+                later_sc, [t.end_var for t in self.later_spincoats]
+            )
+            self.model.Add(later_sc >= first_sc)
 
         ### Worker Constraints
         for w, capacity in self.workers.items():
