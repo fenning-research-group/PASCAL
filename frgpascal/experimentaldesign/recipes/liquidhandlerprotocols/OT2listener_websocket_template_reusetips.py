@@ -61,7 +61,7 @@ class ListenerWebsocket:
             100,
             100,
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+        self.AIRGAP = 10  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
         self.ASPIRATE_HEIGHT = (
             0.3  # mm, distance between tip and bottom of wells while aspirating
         )
@@ -201,7 +201,7 @@ class ListenerWebsocket:
             raise ValueError("Invalid pipette name given!")
 
     def _aspirate_from_well(
-        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix=0
+        self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
         p = pipette
         # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
@@ -225,18 +225,22 @@ class ListenerWebsocket:
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
 
+    def _next_tip(self):
+        for tiprack in self.tips.keys():
+            next_tip = tiprack.next_tip(num_tips=1)
+            if next_tip is not None:
+                break
+
+        if next_tip is None:
+            raise Exception("No remaining tips!")
+        return next_tip
+
     def _get_reusable_tip(self, tray, well):
         key = (tray, well)
         if key in self.reusable_tips:
             next_tip = self.reusable_tips[key]
         else:
-            for tiprack in self.tips.keys():
-                next_tip = tiprack.next_tip(num_tips=1)
-                if next_tip is not None:
-                    break
-
-            if next_tip is None:
-                raise Exception("No remaining tips!")
+            next_tip = self._next_tip()
             self.reusable_tips[key] = next_tip
         return next_tip
 
@@ -261,7 +265,7 @@ class ListenerWebsocket:
         slow_retract=True,
         air_gap=True,
         touch_tip=True,
-        pre_mix=0,
+        pre_mix=(0, 0),
         reuse_tip=False,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
@@ -402,6 +406,10 @@ class ListenerWebsocket:
             if return_this_tip:
                 p.return_tip()
                 self.return_current_tip[p] = False
+
+        next_tip = self._next_tip()
+        p = self._get_pipette("perovskite")
+        p.move_to(next_tip.top(5))
 
 
 def run(protocol_context):

@@ -569,9 +569,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         staging1_duration = self._expected_staging_duration(drop1)
         dispense1_duration = self._expected_dispense_duration(drop1)
 
-        if (
-            drop1["time"] - drop0["time"]
-            > aspirate1_duration + staging1_duration + dispense1_duration
+        if (drop1["time"] - drop0["time"]) < (
+            aspirate1_duration + staging1_duration + dispense1_duration
         ):  # if the two drops are too close in time, let's aspirate them both at the beginning
             return self._generatelhtasks_twodrops_together(
                 t0,
@@ -586,7 +585,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
 
         else:
-            return self._generatelhtasks_twodrops_seperate(
+            return self._generatelhtasks_twodrops_separate(
                 t0,
                 drop0,
                 drop1,
@@ -915,7 +914,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             pre_mix=drop1["pre_mix"],
             reuse_tip=drop1["reuse_tip"],
         )
-        liquidhandlertasks["stage_solution1"] = self.liquidhandler.stage_perovskite(
+        liquidhandlertasks["stage_solution1"] = self.liquidhandler.stage_antisolvent(
             nist_time=aspirate1_time + 0.1,  # immediately after aspiration
             slow_travel=drop1["slow_travel"],
         )

@@ -71,13 +71,13 @@ liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
   timings:
     aspirate:
-      preparetip: 6.5 #time (seconds) to pick up a fresh tip
+      preparetip: 10 #time (seconds) to pick up a fresh tip
       premix: # time (seconds) = (a*volume + b) * num_cycles
         a: 0.0209
         b: 0.5132
-      slowretract: 2.5 #extra time to slowly retract pipette from well
+      slowretract: 3 #extra time to slowly retract pipette from well
       touchtip: 1.5 #time to touch tip/knock off droplets on side of well
-      airgap: 1.5 #time to add an airgap
+      airgap: 2.5 #time to add an airgap
     travel: 2 #time to move from tiprack to aspiration well
     travel_slow: 4 #time to move if slow_travel active
     dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
