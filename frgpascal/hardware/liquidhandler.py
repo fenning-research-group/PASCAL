@@ -14,6 +14,39 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["liquidhandler"]
 
+tc = constants["timings"]
+
+
+def expected_timings(drop):
+    """Estimate the duration (seconds) liquid aspiration will require for a given drop
+
+    Args:
+        drop (dict): dictionary of drop parameters
+
+    Returns:
+        float: duration, in seconds
+    """
+    ac = tc["aspirate"]  # aspiration constants
+    aspirate_duration = ac["preparetip"] + drop["volume"] / 100 + tc["travel"]
+    aspirate_duration += drop["pre_mix"][0] * (
+        ac["premix"]["a"] * drop["pre_mix"][1] + ac["premix"]["b"]
+    )  # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
+    if drop["touch_tip"]:
+        aspirate_duration += ac["touchtip"]
+    if drop["slow_retract"]:
+        aspirate_duration += ac["slowretract"]
+    if drop["air_gap"]:
+        aspirate_duration += ac["airgap"]
+
+    if drop["slow_travel"]:
+        staging_duration = tc["travel_slow"]
+        dispense_duration = tc["dispensedelay_slow"]
+    else:
+        staging_duration = tc["travel"]
+        dispense_duration = tc["dispensedelay"]
+
+    return aspirate_duration, staging_duration, dispense_duration
+
 
 class OT2:
     def __init__(self):

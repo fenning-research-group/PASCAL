@@ -7,6 +7,7 @@ import yaml
 from copy import deepcopy
 import os
 from mixsol import Solution as Solution_mixsol
+from frgpascal.hardware import liquidhandler
 
 from frgpascal.workers import (
     Worker_GantryGripper,
@@ -231,8 +232,12 @@ class Drop:
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
 
     def to_dict(self):
+        if type(self.solution) is str:
+            soldict = self.solution
+        else:
+            soldict = self.solution.to_dict()
         out = {
-            "solution": self.solution.to_dict(),
+            "solution": soldict,
             "volume": self.volume,
             "time": self.time,
             "rate": self.rate,
@@ -410,21 +415,18 @@ class Spincoat(Task):
         duration = self.steps[:, 2].sum() + self.start_times[0]
 
         # add overhead time based on number of pipetting steps. These numbers are calibrated from experiments
+
         if len(drops) == 1:
+            asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
             duration += max(
-                constants["liquidhandler"]["aspiration_delay"]
-                + constants["liquidhandler"]["dispense_delay"]
-                - self.drops[0].time,
+                asp + stage + disp - self.drops[0].time,
                 0,
             )
         elif len(drops) == 2:
+            asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
+            asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
             duration += max(
-                2
-                * (
-                    constants["liquidhandler"]["aspiration_delay"]
-                    + constants["liquidhandler"]["dispense_delay"]
-                )
-                - self.drops[0].time,
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
                 0,
             )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
