@@ -29,6 +29,7 @@ class OT2:
         self.STAGING_DELAY = constants[
             "staging_delay"
         ]  # time (seconds) to move pipette into position for drop staging
+        self.CONSTANTS = constants
 
     def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(

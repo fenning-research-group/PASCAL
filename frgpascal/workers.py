@@ -473,6 +473,43 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         self.spincoater.stop()
         print(f"\t{t0-self.maestro.nist_time():.2f} finished all spinspeed steps")
 
+    def _expected_aspiration_duration(self, drop) -> float:
+        """Estimate the duration (seconds) liquid aspiration will require for a given drop
+
+        Args:
+            drop (dict): dictionary of drop parameters
+
+        Returns:
+            float: duration, in seconds
+        """
+        ac = self.liquidhandler.CONSTANTS["aspirate"]  # aspiration constants
+        d = (
+            ac["preparetip"]
+            + ac["traveltowell"]
+            + drop["volume"] / ac["aspiration_rate"]
+        )
+
+        if drop["touch_tip"]:
+            d += ac["touchtip"]
+        if drop["slow_retract"]:
+            d += ac["slowretract"]
+        if drop["air_gap"]:
+            d += ac["airgap"]
+
+        return d
+
+    def _expected_staging_duration(self, drop) -> float:
+        d = self.liquidhandler.CONSTANTS["stage"]
+        if drop["slow_travel"]:
+            d *= self.liquidhandler.CONSTANTS["slowfactor"]
+        return d
+
+    def _expected_dispense_duration(self, drop) -> float:
+        d = self.liquidhandler.CONSTANTS["dispense_delay"]
+        if drop["slow_travel"]:
+            d *= self.liquidhandler.CONSTANTS["slowfactor"]
+        return d
+
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
