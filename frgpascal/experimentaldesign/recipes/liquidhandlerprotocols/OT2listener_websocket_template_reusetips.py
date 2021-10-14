@@ -61,11 +61,7 @@ class ListenerWebsocket:
             100,
             100,
         )  # mm, 0,0,0 = front left floor corner of gantry volume.
-<<<<<<< HEAD
         self.AIRGAP = 10  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
-=======
-        self.AIRGAP = 30  # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
->>>>>>> 5b65810 (finalize protocol with tip reuse)
         self.ASPIRATE_HEIGHT = (
             0.3  # mm, distance between tip and bottom of wells while aspirating
         )
@@ -244,17 +240,7 @@ class ListenerWebsocket:
         if key in self.reusable_tips:
             next_tip = self.reusable_tips[key]
         else:
-<<<<<<< HEAD
             next_tip = self._next_tip()
-=======
-            for tiprack in self.tips.keys():
-                next_tip = tiprack.next_tip(num_tips=1)
-                if next_tip is not None:
-                    break
-
-            if next_tip is None:
-                raise Exception("No remaining tips!")
->>>>>>> 5b65810 (finalize protocol with tip reuse)
             self.reusable_tips[key] = next_tip
         return next_tip
 
@@ -420,13 +406,10 @@ class ListenerWebsocket:
             if return_this_tip:
                 p.return_tip()
                 self.return_current_tip[p] = False
-<<<<<<< HEAD
 
         next_tip = self._next_tip()
         p = self._get_pipette("perovskite")
         p.move_to(next_tip.top(5))
-=======
->>>>>>> 5b65810 (finalize protocol with tip reuse)
 
 
 def run(protocol_context):
