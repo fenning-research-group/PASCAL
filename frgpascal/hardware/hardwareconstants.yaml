@@ -91,8 +91,8 @@ liquidhandler:
   
 
 sampletray:
-  p0: [495.7,17.5,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
-
+  p1: [494.7,22,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p2: [424.7,22,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
 spincoater:
   # communication
   device_identifiers: #for the arduino controlling the vacuum solenoid
@@ -114,7 +114,6 @@ characterizationline:
   #movement
   axis:
     device_identifiers:
-    # serialid: TODO
       vid: 7855 #WINDOWS ONLY
       pid: 4 #WINDOWS ONLY
       location: "1-1.1" #WINDOWS
@@ -150,11 +149,11 @@ characterizationline:
   #individual stations
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
-    position: 50 #position (mm) at which characterization axis centers sample in FOV
+    position: 59 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 9 #switchbox plug index for light source (ring light)
   pl_imaging:
     # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-    position: 50 #position (mm) at which characterization axis centers sample in FOV
+    position: 59 #position (mm) at which characterization axis centers sample in FOV
     switchindex: 12 #switchbox plug index for light source (blue LED lamp)
   brightfield:
     cameraid: '12519' #serial number for Thorlabs Camera
