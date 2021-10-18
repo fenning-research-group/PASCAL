@@ -454,7 +454,7 @@ class TransmissionSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.shutter = shutter
         self.slider = slider
-        self.hdr_times = [50, 200, 1000, 5000, 10000]  # ms
+        self.hdr_times = [20, 150, 1000, 7500, 15000]  # ms
         self.NUMSCANS = 3  # take 2 scans per to reduce noise
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + self.hdr_times)
@@ -522,7 +522,7 @@ class PLSpectroscopy(StationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
-        self.hdr_times = [50, 200, 1000, 5000]
+        self.hdr_times = [500, 5000, 30000]
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + self.hdr_times)
         )
