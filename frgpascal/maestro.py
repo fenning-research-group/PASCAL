@@ -96,8 +96,15 @@ class Maestro:
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["sampletray"]["p0"],
-            )
+                p0=constants["sampletray"]["p1"],
+            ),
+            "Tray2": SampleTray(
+                name="Tray2",
+                version="storage_v3",
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["sampletray"]["p2"],
+            ),
         }
         # Stock Solutions
 
