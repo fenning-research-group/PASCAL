@@ -68,19 +68,20 @@ class SpinCoater:
         # connect to odrive BLDC controller
         print("Connecting to odrive")
         # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
-        try:
-            self.odrv0 = odrive.find_any(timeout=10)
-        except:
-            raise ValueError("Could not find odrive! confirm that 24V PSU is on")
-        try:
-            self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
-            self.odrv0._destroy()
-        except:
-            pass  # this always throws an "object lost" error...which is what we want
-        try:
-            self.odrv0 = odrive.find_any(timeout=10)
-        except:
-            raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+        self.odrv0 = odrive.find_any()
+        # try:
+        #     self.odrv0 = odrive.find_any(timeout=10)
+        # except:
+        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+        # try:
+        #     self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
+        #     self.odrv0._destroy()
+        # except:
+        #     pass  # this always throws an "object lost" error...which is what we want
+        # try:
+        #     self.odrv0 = odrive.find_any(timeout=10)
+        # except:
+        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
 
         print("\tFound motor, now calibrating. This takes 10-20 seconds.")
         # input("\tPress enter once shroud is out of the way: ")

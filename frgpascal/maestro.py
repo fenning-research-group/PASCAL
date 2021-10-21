@@ -71,15 +71,15 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
-        self.spincoater = SpinCoater(
-            gantry=self.gantry,
-            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-        )
         self.characterization = CharacterizationLine(
             gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
         )
         self.liquidhandler = OT2()
-
+        self.spincoater = SpinCoater(
+            gantry=self.gantry,
+            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+        )
+        
         # Labware
         self.hotplates = {
             "HotPlate1": HotPlate(

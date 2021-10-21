@@ -46,30 +46,6 @@ class CharacterizationLine:
 
         # all characterization stations (in order of measurement!)
         self.stations = [
-            DarkfieldImaging(
-                position=constants["darkfield"]["position"],
-                rootdir=self.rootdir,
-                camera=self.darkfieldcamera,
-                lightswitch=self.switchbox.Switch(
-                    constants["darkfield"]["switchindex"]
-                ),
-            ),
-            PLImaging(
-                position=constants["pl_imaging"]["position"],
-                rootdir=self.rootdir,
-                camera=self.darkfieldcamera,
-                lightswitch=self.switchbox.Switch(
-                    constants["pl_imaging"]["switchindex"]
-                ),
-            ),
-            BrightfieldImaging(
-                position=constants["brightfield"]["position"],
-                rootdir=self.rootdir,
-                camera=self.brightfieldcamera,
-                lightswitch=self.switchbox.Switch(
-                    constants["brightfield"]["switchindex"]
-                ),
-            ),
             TransmissionSpectroscopy(
                 position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
@@ -94,6 +70,30 @@ class CharacterizationLine:
                 slider=self.filterslider,
                 shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
+            ),
+            BrightfieldImaging(
+                position=constants["brightfield"]["position"],
+                rootdir=self.rootdir,
+                camera=self.brightfieldcamera,
+                lightswitch=self.switchbox.Switch(
+                    constants["brightfield"]["switchindex"]
+                ),
+            ),
+            DarkfieldImaging(
+                position=constants["darkfield"]["position"],
+                rootdir=self.rootdir,
+                camera=self.darkfieldcamera,
+                lightswitch=self.switchbox.Switch(
+                    constants["darkfield"]["switchindex"]
+                ),
+            ),
+            PLImaging(
+                position=constants["pl_imaging"]["position"],
+                rootdir=self.rootdir,
+                camera=self.darkfieldcamera,
+                lightswitch=self.switchbox.Switch(
+                    constants["pl_imaging"]["switchindex"]
+                ),
             ),
         ]
 
@@ -210,7 +210,7 @@ class CharacterizationAxis:
         with open(
             os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
         ) as f:
-            yaml.dump(self.coordinates, f)
+            yaml.dump(self.coordinates.tolist(), f)
 
     def _load_calibration(self):
         with open(
