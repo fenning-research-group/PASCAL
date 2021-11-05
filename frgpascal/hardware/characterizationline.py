@@ -454,7 +454,7 @@ class TransmissionSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.shutter = shutter
         self.slider = slider
-        self.hdr_times = [20, 150, 1000, 7500, 15000]  # ms
+        self.hdr_times = [15, 50, 200, 1000, 5000, 15000]  # ms
         self.NUMSCANS = 3  # take 2 scans per to reduce noise
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + self.hdr_times)
@@ -522,10 +522,11 @@ class PLSpectroscopy(StationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
-        self.hdr_times = [500, 5000, 30000]
+        self.hdr_times = [1000, 5000, 20000]
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + self.hdr_times)
         )
+        self.NUMSCANS = 1  # take 2 scans per to reduce noise
 
     def capture(self):
         """
@@ -543,6 +544,7 @@ class PLSpectroscopy(StationTemplate):
         for t in threads:
             t.join()
 
+        self.spectrometer.numscans = self.NUMSCANS
         self.lightswitch.on()  # turn on the laser
         all_cts = {}
         for t in self.hdr_times:
@@ -550,7 +552,7 @@ class PLSpectroscopy(StationTemplate):
             wl, cts = self.spectrometer.capture()
             all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
-
+        self.spectrometer.numscans = 1
         return [wl, all_cts]
 
     def save(self, spectrum, sample):
@@ -590,12 +592,12 @@ class PLPhotostability(StationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
-        self.dwelltime = 2000
+        self.dwelltime = 5000
         self.spectrometer._hdr_times = list(
             set(self.spectrometer._hdr_times + [self.dwelltime])
         )
 
-    def capture(self, duration=60):
+    def capture(self, duration=120):
         """Capture a continuous series of photoluminescence spectra
 
         Args:
@@ -618,6 +620,7 @@ class PLPhotostability(StationTemplate):
         times = []
         spectra = []
         self.spectrometer.dwelltime = self.dwelltime
+        self.spectrometer.numscans = 1
         self.lightswitch.on()
         t0 = time.time()
         tnow = 0
