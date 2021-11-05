@@ -343,6 +343,7 @@ class ListenerWebsocket:
         height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
         slow_travel = kwargs.get("slow_travel", False)
+        blow_out = kwargs.get("blow_out", False)
 
         p = self._get_pipette(pipette)
         relative_rate = rate / p.flow_rate.dispense
@@ -352,7 +353,8 @@ class ListenerWebsocket:
                 speed=self.SLOW_XY_RATE,
             )
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-        # p.blow_out()
+        if blow_out:
+            p.blow_out()
 
     def clear_chuck(self):
         self.pipettes["right"].move_to(
@@ -449,8 +451,15 @@ def run(protocol_context):
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
 
-            listener.pipettes["right"].distribute(
-                volume=volumes, source=source, dest=destinations, disposal_volume=0
+            listener.pipettes["right"].transfer(
+                volume=volumes,
+                source=source,
+                dest=destinations,
+                disposal_volume=0,
+                carryover=True,
+                mix_before=(3, 50),
+                new_tip="once",
+                blow_out=True,
             )
 
     if protocol_context.is_simulating():  # stop here during simulation

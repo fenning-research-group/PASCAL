@@ -198,6 +198,7 @@ class Drop:
         pre_mix: tuple = (0, 0),
         reuse_tip: bool = False,
         slow_travel: bool = False,
+        blow_out: bool = False,
     ):
         self.solution = solution
         if volume <= 0:
@@ -227,6 +228,7 @@ class Drop:
         self.pre_mix = pre_mix
         self.reuse_tip = reuse_tip
         self.slow_travel = slow_travel
+        self.blow_out = blow_out
 
     def __repr__(self):
         return f"<Drop> {self.volume:0.2g} uL of {self.solution} at {self.time}s"
@@ -248,6 +250,7 @@ class Drop:
             "pre_mix": self.pre_mix,
             "reuse_tip": self.reuse_tip,
             "slow_travel": self.slow_travel,
+            "blow_out": self.blow_out,
         }
         return out
 
@@ -581,7 +584,7 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 60, immediate=False):
+    def __init__(self, duration: float = 240, immediate=False):
         self.duration = duration
         super().__init__(
             task="characterize",
