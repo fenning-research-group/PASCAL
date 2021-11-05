@@ -9,23 +9,10 @@ with open(os.path.join(this_dir, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 
-# with open('megnet/__init__.py', encoding='utf-8') as fd:
-#     try:
-#         lines = ''
-#         for item in fd.readlines():
-#             item = item
-#             lines += item + '\n'
-#     except Exception as exc:
-#         raise Exception('Caught exception {}'.format(exc))
-
-
-# version = re.search('__version__ = "(.*)"', lines).group(1)
-
-
 setup(
     name="frgpascal",
     version="0.2",
-    description="Control of Fenning Research Group automated synthesis platform",
+    description="Planning and control of experiments on Fenning Research Group automated synthesis platform",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Rishi Kumar",
@@ -41,13 +28,22 @@ setup(
         "ortools",
         "matplotlib",
         "pandas",
+        "natsort",
     ],
-    # extras_require={
-    #     'model_saving': ['h5py'],
-    #     'molecules': ['openbabel', 'rdkit'],
-    #     'tensorflow': ['tensorflow>=2.1'],
-    #     'tensorflow with gpu': ['tensorflow-gpu>=2.1'],
-    # },
+    extras_require={
+        "hardware": [
+            "tqdm",
+            "asyncio",
+            "uuid",
+            "pyserial",
+            "tifffile",
+            "odrive",
+            "websockets",
+            "ntplib",
+            "cv2",
+            "PyQt5",
+        ],
+    },
     packages=find_packages(),
     package_data={
         "hardware": ["*.yaml", "*/*.yaml", "*/*/*.yaml", "*/*/*.json"],
