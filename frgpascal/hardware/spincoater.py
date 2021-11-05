@@ -37,6 +37,8 @@ class SpinCoater:
         #     self.port = port
         # self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
         self.switch = switch
+        self.TIMEOUT = 30
+
         self.ACCELERATIONRANGE = (
             constants["spincoater"]["acceleration_min"],
             constants["spincoater"]["acceleration_max"],
@@ -177,6 +179,9 @@ class SpinCoater:
         acceleration = int(acceleration / 60)  # convert rpm/s to rps/s for odrive
         # if acceleration == 0:
         #     acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
+
+        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
+            self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_VEL_RAMP
         self.axis.controller.config.vel_ramp_rate = acceleration
@@ -189,16 +194,31 @@ class SpinCoater:
         """
         routine to lock rotor in registered position for sample transfer
         """
+        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
+            self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         time.sleep(0.2)
         self.axis.controller.input_pos = self.__HOMEPOSITION
+        time.sleep(0.1)
+        t0 = time.time()
         while (
-            np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.025
+            np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.05
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
             time.sleep(0.1)
+            if time.time() - t0 > self.TIMEOUT:
+                print("resetting")
+                self.reset()
+                t0 = time.time()
         self._locked = True
+
+    def reset(self):
+        try:
+            self.disconnect()
+        except:
+            pass
+        self.connect()
 
     def twist_off(self):
         """
@@ -214,14 +234,21 @@ class SpinCoater:
 
         target_position = self.__HOMEPOSITION + self.__TWISTDELTA
         self.axis.controller.input_pos = target_position
+        t0 = time.time()
         while (np.abs(target_position - self.axis.encoder.pos_circular)) > 0.025:
             time.sleep(0.1)
+            if time.time() - t0 > self.TIMEOUT:
+                print("resetting")
+                self.reset()
+                t0 = time.time()
 
     def stop(self):
         """
         stop rotation and locks the rotor in position
         """
-        self.set_rpm(0, 3000)
+        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
+            self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+        self.set_rpm(0, 500)
         t0 = time.time()
         min_stopped_time = 2
         while True:
@@ -231,6 +258,10 @@ class SpinCoater:
                 break
             time.sleep(0.1)
         self.lock()
+
+    def idle(self):
+        if self.axis.requested_state != AXIS_STATE_IDLE:
+            self.axis.requested_state = AXIS_STATE_IDLE
 
     # logging code
     def __logging_worker(self):
