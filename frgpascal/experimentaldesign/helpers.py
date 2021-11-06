@@ -388,8 +388,6 @@ def samples_to_dataframe(samples):
 
     return pd.DataFrame(dfdata)
 
-
-# df = pd.DataFrame(dfdata)
 #### Set liquid storage locations + amounts needed
 
 
