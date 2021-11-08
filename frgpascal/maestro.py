@@ -32,9 +32,6 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
 )
 
-# from frgpascal.hardware.characterizationline import CharacterizationLine
-
-
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
@@ -79,17 +76,32 @@ class Maestro:
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
         )
-        
+
         # Labware
         self.hotplates = {
-            "HotPlate1": HotPlate(
+            "Hotplate1": HotPlate(
                 name="Hotplate1",
-                version="hotplate_SCILOGEX_tighter",
+                version="hotplate_FRGv1",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["hotplate"]["p0"],
-            )
+                p0=constants["hotplates"]["hp1"]["p0"],
+            ),
+            "Hotplate2": HotPlate(
+                name="Hotplate2",
+                version="hotplate_FRGv1",
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["hotplates"]["hp2"]["p0"],
+            ),
+            "Hotplate3": HotPlate(
+                name="Hotplate3",
+                version="hotplate_FRGv1",
+                gantry=self.gantry,
+                gripper=self.gripper,
+                p0=constants["hotplate"]["hp3"]["p0"],
+            ),
         }
+
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
