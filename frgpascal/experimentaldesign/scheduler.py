@@ -11,13 +11,29 @@ from frgpascal.workers import (
 from frgpascal.experimentaldesign.tasks import Task, generate_sample_worklist
 
 # from frgpascal.experimentaldesign.tasks import workers
+from collections import namedtuple
+
+workertuple = namedtuple("worker", ["worker_class", "capacity"])
+hotplateworkertuple = namedtuple(
+    "hotplateworker", ["worker_class", "capacity", "temperature"]
+)
 
 workers = {
-    Worker_Characterization: 1,
-    Worker_GantryGripper: 1,
-    Worker_Hotplate: 25,
-    Worker_SpincoaterLiquidHandler: 1,
-    Worker_Storage: 45,
+    "gantry_gripper": workertuple(worker_class=Worker_GantryGripper, capacity=1),
+    "spincoater_lh": workertuple(
+        worker_class=Worker_SpincoaterLiquidHandler, capacity=1
+    ),
+    "characterization": workertuple(worker_class=Worker_Characterization, capacity=1),
+    "Hotplate1": hotplateworkertuple(
+        worker_class=Worker_Hotplate, capacity=25, temperature=None
+    ),
+    "Hotplate2": hotplateworkertuple(
+        worker_class=Worker_Hotplate, capacity=25, temperature=None
+    ),
+    "Hotplate3": hotplateworkertuple(
+        worker_class=Worker_Hotplate, capacity=25, temperature=None
+    ),
+    "storage": workertuple(worker_class=Worker_Storage, capacity=45),
 }
 
 ### Task Scheduler
@@ -30,6 +46,9 @@ class Scheduler:
         prioritize_first_spincoat=False,
     ):
         self.workers = workers
+        self.hotplate_workers = {
+            k: v for k, v in self.workers.items() if v.worker_class == Worker_Hotplate
+        }
         self.samples = samples
         if spanning_tasks is None:
             self.spanning_tasks = []
@@ -59,6 +78,40 @@ class Scheduler:
                     elif n == 1:
                         self.later_spincoats.append(t)
                     n += 1
+
+    def _retrieve_workers_for_task(self, task):
+        """
+        given a task object, return a list of workers within the Scheduler that are
+        required to perform the task
+        """
+        workers = []
+        for worker_class in task.workers:
+            worker_keys = [
+                k for k, v in self.workers.items() if v.worker_class == worker_class
+            ]
+            if worker_class != Worker_Hotplate:
+                workers.append(worker_keys[0])
+            else:
+                hpkeys = list(self.hotplate_workers.keys())
+                temperatures = [x.temperature for x in self.hotplate_workers.values()]
+                if (
+                    task.temperature not in temperatures
+                ):  # no hotplate set to this temperature yet
+                    if None not in temperatures:  # all hotplates have been set already
+                        raise ValueError(
+                            f"Task {task.task} no hotplate is available for temperature {task.temperature} C"
+                        )
+                    else:
+                        hpkey = hpkeys[temperatures.index(None)]
+                        self.hotplate_workers[hpkey] = hotplateworkertuple(
+                            worker_class=Worker_Hotplate,
+                            capacity=self.hotplate_workers[hpkey].capacity,
+                            temperature=task.temperature,
+                        )
+                else:
+                    hpkey = hpkeys[temperatures.index(task.temperature)]
+                workers.append(hpkey)
+        return workers
 
     def _initialize_model(self):
         self._generate_worklists()
@@ -91,7 +144,7 @@ class Scheduler:
                 task.end_var,
                 "interval " + str(task.taskid),
             )
-            for w in task.workers:
+            for w in self._retrieve_workers_for_task(task):
                 machine_intervals[w].append(interval_var)
 
         ### Force sequential tasks to preserve order even if not immediate #TODO this is not generalizable!
@@ -149,11 +202,11 @@ class Scheduler:
             self.model.Add(later_sc >= first_sc)
 
         ### Worker Constraints
-        for w, capacity in self.workers.items():
+        for w, v in self.workers.items():
             intervals = machine_intervals[w]
-            if capacity > 1:
+            if v.capacity > 1:
                 demands = [1 for _ in machine_intervals[w]]
-                self.model.AddCumulative(intervals, demands, capacity)
+                self.model.AddCumulative(intervals, demands, v.capacity)
             else:
                 self.model.AddNoOverlap(intervals)
         objective_var = self.model.NewIntVar(0, self.horizon, "makespan")
@@ -214,14 +267,14 @@ class Scheduler:
             color = plt.cm.tab20(idx % 20)
             offset = 0.2 + 0.6 * (idx / len(self.tasks))
             for t in tasklist:
-                for w in t.workers:
+                for w in self._retrieve_workers_for_task(t):
                     y = [list(self.workers.keys()).index(w) + offset] * 2
                     x = [t.start / 60, t.end / 60]
                     plt.plot(x, y, color=color)
 
         plt.yticks(
             range(len(self.workers)),
-            labels=[str(w).split("Worker_")[1][:-2] for w in self.workers],
+            labels=list(self.workers.keys()),
         )
         plt.xlabel("Time (minutes)")
 
