@@ -64,9 +64,18 @@ gripper:
   springs_loaded_threshold: 2000 #(650 original value) if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 
-hotplate:
-  p0: [273.4, 217.5, 88] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
-
+hotplates:
+  port: "COM3" #port for rs485 communcation to all pid controllers
+  hp1:
+    address: 1 #rs485 address
+    p0: [273.4, 217.5, 88]
+  hp2:
+    address: 2
+    p0: [273.4, 217.5, 88]
+  hp3:
+    address: 3
+    p0: [273.4, 217.5, 88]
+    
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
   timings:
