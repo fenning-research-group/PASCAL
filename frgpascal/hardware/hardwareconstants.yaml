@@ -101,7 +101,7 @@ spincoater:
       pid: 67 #WINDOWS ONLY
       serial_number: '55838333932351108212'
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
-  pollingrate: 0.5 #delay (seconds) between communication to the arduino
+  communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
   p0: [4.3, 34.7, 61.8] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
   rpm_max: 6000 #maximum angular velocity (rpm) the spincoater can hit
