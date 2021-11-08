@@ -79,21 +79,21 @@ class Maestro:
 
         # Labware
         self.hotplates = {
-            "Hotplate1": HotPlate(
+            "Hotplate1": HotPlate(  # DO NOT CHANGE THIS KEY/NAME!
                 name="Hotplate1",
                 version="hotplate_FRGv1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["hotplates"]["hp1"]["p0"],
             ),
-            "Hotplate2": HotPlate(
+            "Hotplate2": HotPlate(  # DO NOT CHANGE THIS KEY/NAME!
                 name="Hotplate2",
                 version="hotplate_FRGv1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["hotplates"]["hp2"]["p0"],
             ),
-            "Hotplate3": HotPlate(
+            "Hotplate3": HotPlate(  # DO NOT CHANGE THIS KEY/NAME!
                 name="Hotplate3",
                 version="hotplate_FRGv1",
                 gantry=self.gantry,
@@ -103,14 +103,14 @@ class Maestro:
         }
 
         self.storage = {
-            "Tray1": SampleTray(
+            "Tray1": SampleTray(  # DO NOT CHANGE THIS KEY/NAME!
                 name="Tray1",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
             ),
-            "Tray2": SampleTray(
+            "Tray2": SampleTray(  # DO NOT CHANGE THIS KEY/NAME!
                 name="Tray2",
                 version="storage_v3",
                 gantry=self.gantry,
