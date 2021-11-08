@@ -37,6 +37,7 @@ class SpinCoater:
         #     self.port = port
         # self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
         self.switch = switch
+        self.COMMUNICATION_INTERVAL = constants["spincoater"]["communication_interval"]
         self.TIMEOUT = 30
 
         self.ACCELERATIONRANGE = (
@@ -177,15 +178,18 @@ class SpinCoater:
         """
         rps = int(rpm / 60)  # convert rpm to rps for odrive
         acceleration = int(acceleration / 60)  # convert rpm/s to rps/s for odrive
+        self.axis.controller.config.vel_ramp_rate = acceleration
+        time.sleep(self.COMMUNICATION_INTERVAL)
+        self.axis.controller.input_vel = rps
+        time.sleep(self.COMMUNICATION_INTERVAL)
+
         # if acceleration == 0:
         #     acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
-
         if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+
         self.axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_VEL_RAMP
-        self.axis.controller.config.vel_ramp_rate = acceleration
-        self.axis.controller.input_vel = rps
 
         self._current_rps = rps
         self._locked = False
@@ -199,9 +203,9 @@ class SpinCoater:
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
-        time.sleep(0.2)
+        time.sleep(self.COMMUNICATION_INTERVAL)
         self.axis.controller.input_pos = self.__HOMEPOSITION
-        time.sleep(0.1)
+        time.sleep(self.COMMUNICATION_INTERVAL)
         t0 = time.time()
         while (
             np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.05
@@ -246,8 +250,6 @@ class SpinCoater:
         """
         stop rotation and locks the rotor in position
         """
-        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
-            self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.set_rpm(0, 500)
         t0 = time.time()
         min_stopped_time = 2
@@ -262,6 +264,12 @@ class SpinCoater:
     def idle(self):
         if self.axis.requested_state != AXIS_STATE_IDLE:
             self.axis.requested_state = AXIS_STATE_IDLE
+
+    def _lookup_error(self):
+        for err in dir(odrive.enums):
+            if self.axis.error == getattr(odrive.enums, err):
+                print(err)
+                break
 
     # logging code
     def __logging_worker(self):
@@ -299,11 +307,16 @@ class SpinCoater:
         by `odrv0._libfibre.timer_map = {}`, in a second or two (assuming this is the interval of the
         libfibre background process) the terminal speed goes back to normal. From what I can tell this does
         not affect operation of the odrive.
+
+        We also clear errors to allow recovery if we're stuck
         """
         while self.__connected:
             time.sleep(1)
             if not self.__logging_active and len(self.odrv0._libfibre.timer_map) > 60:
                 self.odrv0._libfibre.timer_map = {}
+
+            if self.axis.error > 0:
+                self.axis.clear_errors()
 
     def __del__(self):
         self.disconnect()
