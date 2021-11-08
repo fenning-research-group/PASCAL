@@ -487,13 +487,12 @@ class Maestro:
             "gantry_gripper": Worker_GantryGripper(maestro=self),
             "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
             "characterization": Worker_Characterization(maestro=self),
-            "hotplates": Worker_Hotplate(
-                maestro=self, n_workers=25
-            ),  # TODO dont hardcode hotplate workers
-            "storage": Worker_Storage(
-                maestro=self, n_workers=45
-            ),  # TODO dont hardcode storage workers
         }
+
+        for hpname, hp in self.workers.items():
+            self.workers[hpname] = Worker_Hotplate(maestro=self, n_workers=hp._capacity)
+        for stname, st in self.storage.items():
+            self.workers[stname] = Worker_Storage(maestro=self, n_workers=st._capacity)
 
         self._start_loop()
         # self.loop = asyncio.new_event_loop()

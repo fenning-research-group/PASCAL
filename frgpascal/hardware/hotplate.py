@@ -166,7 +166,6 @@ class HotPlate(Workspace):
         }
         self.emptyslots = list(self.slots.keys())
         self.filledslots = []
-        self._capacity = len(self.slots)
         self.full = False
 
         xmean = np.mean([p[0] for p in self._coordinates.values()])

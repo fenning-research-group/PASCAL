@@ -1,4 +1,4 @@
-import numpy as np
+kimport numpy as np
 import os
 import matplotlib.pyplot as plt
 
@@ -184,7 +184,8 @@ class Workspace:
                 self._openslots.append(name)
                 self._openslots.sort()
                 # self._coordinates[name] = [p + poffset for p, poffset in zip(relative_position, self.offset)]
-
+        self._capacity = len(self._coordinates)
+        
     def slot_coordinates(self, name):
         if self.__calibrated == False:
             raise Exception(f"Need to calibrate {self.name} before use!")
