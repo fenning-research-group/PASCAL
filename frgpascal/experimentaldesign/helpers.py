@@ -213,16 +213,12 @@ def apply_solution_mesh_to_drop(drop: Drop, solution_mesh):
     if drop.solution not in solution_mesh:
         raise Exception(f'Solution placeholder "{drop.solution}" not in solution mesh!')
     solutions = solution_mesh[drop.solution]
-    return [
-        Drop(
-            solution=s,
-            volume=drop.volume,
-            time=drop.time,
-            rate=drop.rate,
-            height=drop.height,
-        )
-        for s in solutions
-    ]
+    all_drops = []
+    base_drop = drop.to_dict()
+    for s in solutions:
+        base_drop["solution"] = s
+        all_drops.append(Drop(**base_drop))
+    return all_drops
 
 
 def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
@@ -392,8 +388,6 @@ def samples_to_dataframe(samples):
 
     return pd.DataFrame(dfdata)
 
-
-# df = pd.DataFrame(dfdata)
 #### Set liquid storage locations + amounts needed
 
 

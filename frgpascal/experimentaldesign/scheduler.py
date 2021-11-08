@@ -115,39 +115,38 @@ class Scheduler:
                 )
 
         if self.prioritize_first_spincoat:
-            first_sc_duration = self.model.NewIntVar(
-                0, self.horizon, "first_sc_duration"
-            )
-            first_sc_interval = self.model.NewIntervalVar(
-                self.first_spincoats[0].start_var,
-                first_sc_duration,
-                self.first_spincoats[-1].end_var,
-                "first_sc_interval",
-            )
+            # first_sc_duration = self.model.NewIntVar(
+            #     0, self.horizon, "first_sc_duration"
+            # )
+            # first_sc_interval = self.model.NewIntervalVar(
+            #     self.first_spincoats[0].start_var,
+            #     first_sc_duration,
+            #     self.first_spincoats[-1].end_var,
+            #     "first_sc_interval",
+            # )
 
-            later_sc_duration = self.model.NewIntVar(
-                0, self.horizon, "later_sc_duration"
-            )
-            later_sc_interval = self.model.NewIntervalVar(
-                self.later_spincoats[0].start_var,
-                later_sc_duration,
-                self.later_spincoats[-1].end_var,
-                "later_sc_interval",
-            )
-
-            self.model.AddNoOverlap([first_sc_interval, later_sc_interval])
+            # later_sc_duration = self.model.NewIntVar(
+            #     0, self.horizon, "later_sc_duration"
+            # )
+            # later_sc_interval = self.model.NewIntervalVar(
+            #     self.later_spincoats[0].start_var,
+            #     later_sc_duration,
+            #     self.later_spincoats[-1].end_var,
+            #     "later_sc_interval",
+            # )
+            # self.model.AddNoOverlap([first_sc_interval, later_sc_interval])
             # last_first_sc = self.first_spincoats[-1]
             # first_later_sc = self.later_spincoats[0]
             # self.model.Add(last_first_sc.start_var > first_later_sc.start_var)
-            # first_sc = self.model.NewIntVar(0, self.horizon, "firstsc")
-            # self.model.AddMaxEquality(
-            #     first_sc, [t.end_var for t in self.first_spincoats]
-            # )
-            # later_sc = self.model.NewIntVar(0, self.horizon, "latersc")
-            # self.model.AddMinEquality(
-            #     later_sc, [t.end_var for t in self.later_spincoats]
-            # )
-            # self.model.Add(later_sc >= first_sc)
+            first_sc = self.model.NewIntVar(0, self.horizon, "firstsc")
+            self.model.AddMaxEquality(
+                first_sc, [t.end_var for t in self.first_spincoats]
+            )
+            later_sc = self.model.NewIntVar(0, self.horizon, "latersc")
+            self.model.AddMinEquality(
+                later_sc, [t.end_var for t in self.later_spincoats]
+            )
+            self.model.Add(later_sc >= first_sc)
 
         ### Worker Constraints
         for w, capacity in self.workers.items():
