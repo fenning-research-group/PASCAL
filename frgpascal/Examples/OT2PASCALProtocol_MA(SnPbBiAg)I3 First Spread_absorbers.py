@@ -28,18 +28,18 @@ metadata = {
 mixing_netlist = [
     {
         "4mL_SolutionTray-A6": {
-            "4mL_AntisolventTray-A1": 504.0,
-            "4mL_AntisolventTray-A2": 280.0,
-            "4mL_AntisolventTray-A3": 280.0,
-            "4mL_AntisolventTray-A4": 504.0
+            "4mL_AntisolventTray-A1": 522.0,
+            "4mL_AntisolventTray-A2": 522.0,
+            "4mL_AntisolventTray-A3": 290.0,
+            "4mL_AntisolventTray-A4": 290.0
         },
         "96_Plate1-A1": {
-            "4mL_AntisolventTray-A2": 280.0,
-            "4mL_AntisolventTray-A4": 56.0
+            "4mL_AntisolventTray-A1": 58.0,
+            "4mL_AntisolventTray-A4": 290.0
         },
         "96_Plate1-A2": {
-            "4mL_AntisolventTray-A1": 56.0,
-            "4mL_AntisolventTray-A3": 280.0
+            "4mL_AntisolventTray-A2": 58.0,
+            "4mL_AntisolventTray-A3": 290.0
         }
     }
 ]

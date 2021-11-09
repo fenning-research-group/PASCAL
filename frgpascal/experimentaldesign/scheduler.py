@@ -110,6 +110,7 @@ class Scheduler:
                         )
                 else:
                     hpkey = hpkeys[temperatures.index(task.temperature)]
+                    task.hotplate = hpkey
                 workers.append(hpkey)
         return workers
 

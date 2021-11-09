@@ -492,6 +492,8 @@ class Anneal(Task):
         """
         self.duration = duration
         self.temperature = temperature
+        self.hotplate = None
+
         super().__init__(
             task="anneal",
             duration=self.duration,
@@ -515,6 +517,7 @@ class Anneal(Task):
         out["details"] = {
             "temperature": self.temperature,
             "duration": self.duration,
+            "hotplate": self.hotplate,
         }
         return out
 
