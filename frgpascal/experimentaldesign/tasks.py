@@ -607,20 +607,21 @@ def generate_sample_worklist(sample: Sample):
     for task in worklist:
         task.sample = sample
         p1 = task.workers[0]
-        transition_task = TRANSITION_TASKS[p0][p1]
-        if Worker_Hotplate in [p0, p1]:
-            immediate = True
-        else:
-            immediate = task.immediate
-        sample_tasklist.append(
-            Task(
-                sample=sample,
-                task=transition_task,
-                immediate=immediate,
-                precedent=task.precedent,
+        if p0 != p1:
+            transition_task = TRANSITION_TASKS[p0][p1]
+            if Worker_Hotplate in [p0, p1]:
+                immediate = True
+            else:
+                immediate = task.immediate
+            sample_tasklist.append(
+                Task(
+                    sample=sample,
+                    task=transition_task,
+                    immediate=immediate,
+                    precedent=task.precedent,
+                )
             )
-        )
-        task.precedent = sample_tasklist[-1]
+            task.precedent = sample_tasklist[-1]
         sample_tasklist.append(task)
         p0 = p1  # update location for next task
     if p1 != Worker_Storage:

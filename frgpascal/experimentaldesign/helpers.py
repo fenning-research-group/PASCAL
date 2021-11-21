@@ -388,6 +388,7 @@ def samples_to_dataframe(samples):
 
     return pd.DataFrame(dfdata)
 
+
 #### Set liquid storage locations + amounts needed
 
 
@@ -473,106 +474,3 @@ def handle_liquids(samples: list, mixer: Mixer, solution_storage: list):
         mixing_netlist.append(this_generation)
 
     return solution_details, mixing_netlist
-
-
-# def handle_liquids_old(samples, stock_solutions, solution_storage, min_volume=50):
-#     unique_solutions_required = list(
-#         set(
-#             [
-#                 d.solution
-#                 for s in samples
-#                 for task in s.worklist
-#                 if type(task) == Spincoat
-#                 for d in task.drops
-#             ]
-#         )
-#     )
-#     print(
-#         f"{len(unique_solutions_required)} unique solutions required across {len(samples)} planned samples"
-#     )
-#     solution_details = {}
-#     for s in unique_solutions_required:
-#         ll = s.well["labware"]
-#         well = s.well["well"]
-#         if ll is not None:
-#             if ll not in solution_storage:
-#                 raise Exception(
-#                     f"{s} is saying it is stored in labware {ll} - this labware does not exist!"
-#                 )
-#             if well not in ll._coordinates:
-#                 raise Exception(
-#                     f"{s} is saying it is stored in well {well} of labware {ll} - this well does not exist!"
-#                 )
-#         solution_details[s] = dict(volume=0, labware=ll, well=well)
-
-#     for s in samples:
-#         for sc in [task for task in s.worklist if isinstance(task, Spincoat)]:
-#             for d in sc.drops:
-#                 solution_details[d.solution]["volume"] += d.volume
-
-#     for sol, v in solution_details.items():
-#         v["volume"] = max(min_volume, v["volume"])
-
-#     #####
-#     mixtures = np.array(
-#         [
-#             calculate_mix(
-#                 target=solution, volume=v["volume"], stock_solutions=stock_solutions
-#             )
-#             for solution, v in solution_details.items()
-#         ]
-#     )
-
-#     volumes_needed_per_stock = {
-#         soln: vol for soln, vol in zip(stock_solutions, mixtures.sum(axis=0))
-#     }
-#     for s in solution_details:
-#         solution_details[s]["initial_volume_required"] = volumes_needed_per_stock.get(
-#             s, 0
-#         )
-
-#     to_be_mixed = {
-#         s: v for s, v in solution_details.items() if s not in stock_solutions
-#     }
-
-#     for ll in solution_storage:
-#         ll.unload_all()
-#     for solution, v in solution_details.items():
-#         volume = max(v["volume"], v["initial_volume_required"])
-#         ll = where_to_store(volume, solution_storage)  # which liquid labware
-#         well = ll.load(solution)
-#         solution_details[solution]["labware"] = ll.name
-#         solution_details[solution]["well"] = well
-
-#     for s in samples:
-#         for task in s.worklist:
-#             if not isinstance(task, Spincoat):
-#                 continue
-#             for drop in task.drops:
-#                 d = solution_details[drop.solution]
-#                 drop.solution.well = {
-#                     "labware": d["labware"],
-#                     "well": d["well"],
-#                 }
-
-#     #####
-#     mixing_netlist = {}  # source: {[destinations], [volumes]}
-#     for target_solution, target_vals in solution_details.items():
-#         if target_vals["initial_volume_required"] > 0:
-#             continue  # does not need mixing, comes preloaded, ski
-#         target_well = f"{target_vals['labware']}-{target_vals['well']}"
-#         required_volumes = calculate_mix(
-#             target=target_solution,
-#             volume=target_vals["volume"],
-#             stock_solutions=stock_solutions,
-#         )
-#         for stock_solution, stock_volume in zip(stock_solutions, required_volumes):
-#             if stock_volume > 0:
-#                 stock_v = solution_details[stock_solution]
-#                 source = f"{stock_v['labware']}-{stock_v['well']}"
-#                 if source not in mixing_netlist:
-#                     mixing_netlist[source] = dict(destinations=[], volumes=[])
-#                 mixing_netlist[source]["destinations"].append(target_well)
-#                 mixing_netlist[source]["volumes"].append(stock_volume)
-
-#     return solution_details, mixing_netlist
