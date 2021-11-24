@@ -41,6 +41,10 @@ setup(
         "ortools",
         "matplotlib",
         "pandas",
+        "pyserial",
+        "natsort",
+        "ntplib",
+        "websockets",
     ],
     # extras_require={
     #     'model_saving': ['h5py'],
