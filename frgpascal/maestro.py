@@ -79,7 +79,7 @@ class Maestro:
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
         )
-        
+
         # Labware
         self.hotplates = {
             "HotPlate1": HotPlate(
@@ -219,6 +219,8 @@ class Maestro:
             self.gripper.close()
             raise ValueError("Failed to pick up sample!")
 
+        self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
+
     def release(self):
         """
         Open gripper slowly to release a sample without jogging position too much
@@ -247,13 +249,16 @@ class Maestro:
         if all(
             [a == b for a, b in zip(p1, self.spincoater())]
         ):  # moving off of the spincoater
-            off_thread = Thread(
+            wait_for_vacuum_thread = Thread(
                 target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
             )
+            lock_spincoater_thread = Thread(target=self.spincoater.lock)
             self.spincoater.vacuum_off()
-            off_thread.start()
+            wait_for_vacuum_thread.start()  # wait for vacuum to disengage
+            lock_spincoater_thread.start()  # move the spincoater to registered position
             self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-            off_thread.join()
+            wait_for_vacuum_thread.join()
+            lock_spincoater_thread.join()
             from_spincoater = True
         else:
             self.gantry.moveto(p1, zhop=zhop)
@@ -272,7 +277,10 @@ class Maestro:
         if all(
             [a == b for a, b in zip(p2, self.spincoater())]
         ):  # moving onto the spincoater
+            lock_spincoater_thread = Thread(target=self.spincoater.lock)
+            lock_spincoater_thread.start()  # move the spincoater to registered position
             self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True)
+            lock_spincoater_thread.join()
             self.spincoater.vacuum_on()
             self.gantry.moveto(
                 x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
@@ -290,6 +298,7 @@ class Maestro:
             self.gantry._transition_to_frame(
                 "workspace"
             )  # move gantry out of the liquid handler
+            self.spincoater.idle()  # dont actively hold chuck in registered position
 
     def batch_characterize(self, name, tray_maxslots={}):
         """
