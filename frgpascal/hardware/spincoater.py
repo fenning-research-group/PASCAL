@@ -318,7 +318,10 @@ class SpinCoater:
         while self.__connected:
             time.sleep(1)
             if not self.__logging_active and len(self.odrv0._libfibre.timer_map) > 60:
-                self.odrv0._libfibre.timer_map = {}
+                latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
+                self.odrv0._libfibre.timer_map = {
+                    0: self.odrv0._libfibre.timer_map[latest_idx]
+                }
 
             if self.axis.error > 0:
                 self.axis.clear_errors()
