@@ -198,6 +198,8 @@ class SpinCoater:
         """
         routine to lock rotor in registered position for sample transfer
         """
+        if self._locked:
+            return
         if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
@@ -250,6 +252,8 @@ class SpinCoater:
         """
         stop rotation and locks the rotor in position
         """
+        if self._locked:
+            return
         self.set_rpm(0, 500)
         t0 = time.time()
         min_stopped_time = 2
@@ -264,6 +268,7 @@ class SpinCoater:
     def idle(self):
         if self.axis.requested_state != AXIS_STATE_IDLE:
             self.axis.requested_state = AXIS_STATE_IDLE
+        self._locked = False
 
     def _lookup_error(self):
         for err in dir(odrive.enums):
