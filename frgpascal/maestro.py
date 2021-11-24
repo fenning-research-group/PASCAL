@@ -332,38 +332,6 @@ class Maestro:
             self.characterization.run(f"{tray}-{slot}")
             self.transfer(self.characterization.axis(), self.storage[tray](slot))
 
-    def batch_characterize(self, name, tray_maxslots={}):
-        """
-        Characterize a list of samples.
-        Creates an experiment folder to save data, filenames by tray-slot
-
-        Parameters
-            tray_maxslots (dict): a dictionary of tray names and the highest index filled
-
-                    ie: tray_maxslots = {'SampleTray1': 'A5'} will measure samples A1, A2, A3, A4, A5
-        """
-        self._experiment_checklist(characterization_only=True)
-        self._set_up_experiment_folder(name)
-
-        if any([tray not in self.storage for tray in tray_maxslots]):
-            raise ValueError("Invalid tray specified!")
-
-        samples_to_characterize = []
-        for tray, maxslot in tray_maxslots.items():
-            if maxslot not in self.storage[tray]._coordinates:
-                raise ValueError(f"{maxslot} does not exist in tray {tray}!")
-            for slot in natsorted(self.storage[tray]._coordinates.keys()):
-                samples_to_characterize.append((tray, slot))
-                if slot == tray_maxslots[tray]:
-                    break  # last sample to measure in this tray
-
-        for (tray, slot) in tqdm(
-            samples_to_characterize, desc="Batch Characterization"
-        ):
-            self.transfer(self.storage[tray](slot), self.characterization.axis())
-            self.characterization.run(f"{tray}-{slot}")
-            self.transfer(self.characterization.axis(), self.storage[tray](slot))
-
     ### Batch Sample Execution
     def _load_worklist(self, filepath):
         with open(filepath) as f:
