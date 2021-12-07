@@ -8,7 +8,7 @@ from copy import deepcopy
 import os
 from mixsol import Solution as Solution_mixsol
 
-# from roboflo import Task_roboflo, Transition, System
+from roboflo import Task_roboflo, Transition, System
 
 from frgpascal.hardware import liquidhandler
 from frgpascal.workers import (
@@ -29,9 +29,10 @@ with open(
 
 gg = Worker_GantryGripper(planning=True)
 sclh = Worker_SpincoaterLiquidHandler(planning=True)
-hp = Worker_Hotplate(n_workers=25, planning=True)
-st = Worker_Storage(n_workers=45, planning=True)
+hp = Worker_Hotplate(capacity=25, planning=True)
+st = Worker_Storage(capacity=45, planning=True, initial_fill=45)
 cl = Worker_Characterization(planning=True)
+
 workers = [gg, sclh, hp, st, cl]
 
 ALL_TASKS = {
@@ -311,7 +312,7 @@ class VolatileDrop(Drop):
 
 
 ### Base Class for PASCAL Tasks
-class Task:
+class Task(Task_roboflo):
     def __init__(
         self,
         task: str,
@@ -319,6 +320,7 @@ class Task:
         precedent=None,
         immediate: bool = False,
         sample: Sample = None,
+        details: dict = {},
     ):
         self.sample = sample
         if task not in ALL_TASKS:
@@ -327,20 +329,18 @@ class Task:
         taskinfo = ALL_TASKS[task]
         self.workers = taskinfo["workers"]
         if duration is None:
-            self.duration = taskinfo["estimated_duration"]
+            duration_ = taskinfo["estimated_duration"]
         else:
-            self.duration = int(duration)
-        # self.task_details = task_details
-        self.precedent = precedent
-        # if precedent is None:
-        #     immediate = False
-        self.immediate = immediate
-        # self.reservoir = []
-        # if sum([immediate for task, immediate in precedents]) > 1:
-        #     raise ValueError("Only one precedent can be immediate!")
-        self.__generate_taskid()
-        self.start = np.nan
-        self.end = np.nan
+            duration_ = int(duration)
+
+        super().__init__(
+            name=task,
+            workers=taskinfo["workers"],
+            duration=duration_,
+            precedent=precedent,
+            immediate=immediate,
+            details=details,
+        )
 
     def __generate_taskid(self):
         self.taskid = f"{self.task}-{str(uuid.uuid4())}"
@@ -436,25 +436,19 @@ class Spincoat(Task):
             )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
-    def to_dict(self):
-        out = super().to_dict()
+    def generate_details(self):
         steps = [
             {"rpm": rpm, "acceleration": accel, "duration": duration}
             for rpm, accel, duration in self.steps
         ]
         drops = [d.to_dict() for d in self.drops]
 
-        out["details"] = {
+        return {
             "steps": steps,
             "start_times": self.start_times,
             "duration": self.duration,
             "drops": drops,
         }
-
-        return out
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
 
     def __repr__(self):
         output = "<Spincoat>\n"
@@ -512,16 +506,11 @@ class Anneal(Task):
 
         return f"<Anneal> {round(self.temperature,1)}C for {round(duration,1)} {units}"
 
-    def to_dict(self):
-        out = super().to_dict()
-        out["details"] = {
+    def generate_details(self):
+        return {
             "temperature": self.temperature,
             "duration": self.duration,
         }
-        return out
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -561,16 +550,11 @@ class Rest(Task):
 
         return f"<Rest> {round(duration,1)} {units}"
 
-    def to_dict(self):
-        out = super().to_dict()
-        out["details"] = {
-            "type": "rest",
+    def generate_details(self):
+
+        return {
             "duration": self.duration,
         }
-        return out
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -598,51 +582,51 @@ class Characterize(Task):
         return "<Characterize>"
 
 
-### build task list for a sample
-def generate_sample_worklist(sample: Sample):
-    worklist = deepcopy(sample.worklist)
-    for task0, task1 in zip(worklist, worklist[1:]):
-        task1.precedent = task0  # task1 is preceded by task0
+# ### build task list for a sample
+# def generate_sample_worklist(sample: Sample):
+#     worklist = deepcopy(sample.worklist)
+#     for task0, task1 in zip(worklist, worklist[1:]):
+#         task1.precedent = task0  # task1 is preceded by task0
 
-    sample_tasklist = []
-    p0 = Worker_Storage  # sample begins at storage
-    for task in worklist:
-        task.sample = sample
-        p1 = task.workers[0]
-        if p0 != p1:
-            transition_task = TRANSITION_TASKS[p0][p1]
-            if Worker_Hotplate in [p0, p1]:
-                immediate = True
-            else:
-                immediate = task.immediate
-            sample_tasklist.append(
-                Task(
-                    sample=sample,
-                    task=transition_task,
-                    immediate=immediate,
-                    precedent=task.precedent,
-                )
-            )
-            task.precedent = sample_tasklist[-1]
-        sample_tasklist.append(task)
-        p0 = p1  # update location for next task
-    if p1 != Worker_Storage:
-        transition_task = TRANSITION_TASKS[p0][Worker_Storage]
-        if p1 == Worker_Hotplate:
-            immediate = True
-        else:
-            immediate = False
-        sample_tasklist.append(
-            Task(
-                sample=sample,
-                task=transition_task,
-                precedent=sample_tasklist[-1],
-                immediate=immediate,
-            )
-        )  # sample ends at storage
+#     sample_tasklist = []
+#     p0 = Worker_Storage  # sample begins at storage
+#     for task in worklist:
+#         task.sample = sample
+#         p1 = task.workers[0]
+#         if p0 != p1:
+#             transition_task = TRANSITION_TASKS[p0][p1]
+#             if Worker_Hotplate in [p0, p1]:
+#                 immediate = True
+#             else:
+#                 immediate = task.immediate
+#             sample_tasklist.append(
+#                 Task(
+#                     sample=sample,
+#                     task=transition_task,
+#                     immediate=immediate,
+#                     precedent=task.precedent,
+#                 )
+#             )
+#             task.precedent = sample_tasklist[-1]
+#         sample_tasklist.append(task)
+#         p0 = p1  # update location for next task
+#     if p1 != Worker_Storage:
+#         transition_task = TRANSITION_TASKS[p0][Worker_Storage]
+#         if p1 == Worker_Hotplate:
+#             immediate = True
+#         else:
+#             immediate = False
+#         sample_tasklist.append(
+#             Task(
+#                 sample=sample,
+#                 task=transition_task,
+#                 precedent=sample_tasklist[-1],
+#                 immediate=immediate,
+#             )
+#         )  # sample ends at storage
 
-    min_start = 0
-    for task in sample_tasklist:
-        task.min_start = min_start
-        min_start += task.duration
-    return sample_tasklist
+#     min_start = 0
+#     for task in sample_tasklist:
+#         task.min_start = min_start
+#         min_start += task.duration
+#     return sample_tasklist
