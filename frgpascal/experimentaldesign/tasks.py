@@ -8,7 +8,7 @@ from copy import deepcopy
 import os
 from mixsol import Solution as Solution_mixsol
 from frgpascal.hardware import liquidhandler
-
+from frgpascal.experimentaldesign.characterizationtasks import *
 from frgpascal.workers import (
     Worker_GantryGripper,
     Worker_Characterization,
@@ -584,13 +584,39 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 240, immediate=False):
-        self.duration = duration
+    def __init__(self, tasks, reorder_by_position, immediate=False):
+
+        if self.reorder_by_position:
+            self.characterization_tasks = sorted(tasks, key=lambda x: x.position)
+        else:
+            self.characterization_tasks = tasks
+
+        self.duration = sum([t.duration for t in self.characterization_tasks])
+        positions = [0] + [t.position for t in self.characterization_tasks] + [0]
+        m = constants["characterizationline"]["axis"]["traveltime"]["m"]
+        b = constants["characterizationline"]["axis"]["traveltime"]["b"]
+        for p0, p1 in zip(positions, positions[1:]):
+            distance = p1 - p0
+            self.duration += distance * m + b
+
+        self.
         super().__init__(
             task="characterize",
             duration=self.duration,
             immediate=immediate,
         )
+
+    def to_dict(self):
+        out = super().to_dict()
+        out['duration'] = self.duration
+        out["details"] = {
+            t['name']: t.to_dict() for t in self.characterization_tasks
+        }
+
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
     def __repr__(self):
         return "<Characterize>"

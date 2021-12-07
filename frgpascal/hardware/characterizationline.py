@@ -546,6 +546,9 @@ class PLSpectroscopy(StationTemplate):
 
         self.spectrometer.numscans = self.NUMSCANS
         self.lightswitch.on()  # turn on the laser
+        time.sleep(
+            constants["laser_settling_time"]
+        )  # wait for laser power to stabilize
         all_cts = {}
         for t in self.hdr_times:
             self.spectrometer.dwelltime = t

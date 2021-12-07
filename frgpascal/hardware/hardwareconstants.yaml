@@ -89,7 +89,6 @@ liquidhandler:
     ip: '169.254.160.20' #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
   
-
 sampletray:
   p1: [494.7,22,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
   p2: [424.7,22,65.2] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
@@ -124,6 +123,9 @@ characterizationline:
     x_min: 0     #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
     p0: [565, 250.3, 60.1] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
+      m: 0.0461
+      b: 1.161
   #hardware shared across stations
   switchbox:
     device_identifiers:
@@ -137,6 +139,7 @@ characterizationline:
       pid: 67
       serial_number: "95033313031351611262"
     pollingrate: 0.2
+    max_change_time: 5 #max seconds for shutter to completely open/close
   filterslider:
     device_identifiers:
       vid: 1027
@@ -167,6 +170,7 @@ characterizationline:
     switchindex: 4 #switchbox plug index for light source (red laser)
   transmission: #spectroscopy
     position: 287 #position (mm) at which characterization axis centers sample in FOV
-  #fourpointprobe:
+  laser_settling_time: 0.5 #seconds for laser power outputs to stabilize
+    #fourpointprobe:
     # position:397.5
   

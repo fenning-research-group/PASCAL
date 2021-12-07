@@ -22,6 +22,9 @@ class Shutter:
         self.POLLINGDELAY = constants[
             "pollingrate"
         ]  # delay (seconds) between sending a command and reading a response
+        self.MAXCHANGETIME = constants[
+            "max_change_time"
+        ]  # max time (seconds) to change the shutter state
         self.connect()
 
     def connect(self):
@@ -29,7 +32,7 @@ class Shutter:
 
     def _wait_for_completion(self):
         t0 = time.time()
-        while time.time() - t0 < 5:  # wait for 5 seconds
+        while time.time() - t0 < self.MAXCHANGETIME:  # wait for 5 seconds
             if self._handle.in_waiting:
                 out = self._handle.readline()
                 if b"ok" in out:
