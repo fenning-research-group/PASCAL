@@ -87,6 +87,13 @@ class WorkerTemplate(ABC):
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
         while self.working:
+            while True:
+                if len(self.queue.queue) > 0:
+                    time_until_next = self.queue.queue[0][0] - self.maestro.time
+                    if time_until_next <= 5:  # within 5 seconds of start time
+                        break
+                await asyncio.sleep(0.2)
+
             _, task = await self.queue.get()  # blocking wait for next task
             task_description = f'{task["task"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
@@ -116,7 +123,7 @@ class WorkerTemplate(ABC):
                         first = False
 
             # wait for this task's target start time
-            wait_for = task["start"] - (self.maestro.nist_time() - self.maestro.t0)
+            wait_for = task["start"] - (self.maestro.time)
             if wait_for > 0:
                 self.logger.info(
                     f"waiting {wait_for} seconds for {task_description} start time"
@@ -130,7 +137,7 @@ class WorkerTemplate(ABC):
             #     kwargs=task["kwargs"],
             # )
 
-            sample_task["start_actual"] = self.maestro.nist_time() - self.maestro.t0
+            sample_task["start_actual"] = self.maestro.time
             function = self.functions[task["task"]].function
             details = sample_task.get("details", {})
             if asyncio.iscoroutinefunction(function):
@@ -152,14 +159,12 @@ class WorkerTemplate(ABC):
             if output_dict is None:
                 output_dict = {}
             # update task lists
-            output_dict["finish_actual"] = self.maestro.nist_time() - self.maestro.t0
+            output_dict["finish_actual"] = self.maestro.time
             sample_task.update(output_dict)
 
             self.logger.info(f"finished {task_description}")
             with self.maestro.lock_completedtasks:
-                self.maestro.completed_tasks[task["id"]] = (
-                    self.maestro.nist_time() - self.maestro.t0
-                )
+                self.maestro.completed_tasks[task["id"]] = self.maestro.time
             with self.maestro.lock_pendingtasks:
                 self.maestro.pending_tasks.remove(task["id"])
             self.queue.task_done()
