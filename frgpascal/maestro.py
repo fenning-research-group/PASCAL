@@ -555,6 +555,71 @@ class Maestro:
         for worker in self.workers.values():
             worker.start()
 
+    ### External driver to interface with BO program
+
+    async def _instruction_monitor(self, instruction_directory):
+        while self.working:
+            new_tasks = []
+            fids = [
+                os.path.join(instruction_directory, f)
+                for f in os.listdir(instruction_directory)
+                if f not in self.read_protocol_files
+            ]
+            for filepath in fids:
+                with open(filepath, "r") as f:
+                    this_protocol = json.load(f)
+                new_tasks += this_protocol["tasks"]
+                self.samples += this_protocol["samples"]
+
+            if len(new_tasks) > 0:
+                new_tasks.sort(key=lambda x: x["start"])
+                for t in new_tasks:
+                    assigned = False
+                    for workername, worker in self.workers.items():
+                        if t["task"] in worker.functions:
+                            worker.add_task(t)
+                            assigned = True
+                            self.tasks.append(t)
+                            continue
+                    if not assigned:
+                        raise Exception(f"No worker assigned to task {t['task']}")
+
+    def run_externalcontrol(self, filepath, name, ot2_ip):
+        self._experiment_checklist()
+        self.working = True
+
+        self.liquidhandler.server.ip = ot2_ip
+        # self.liquidhandler.server.start(ip=ot2_ip)
+        self.read_protocol_files = []
+        self.pending_tasks = []
+        self.completed_tasks = {}
+        self.lock_pendingtasks = Lock()
+        self.lock_completedtasks = Lock()
+        folder = self._set_up_experiment_folder(name)
+        protocol_folder = os.path.join(folder, "protocols")
+        os.mkdir(protocol_folder)
+
+        self.workers = {
+            "gantry_gripper": Worker_GantryGripper(maestro=self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
+            "characterization": Worker_Characterization(maestro=self),
+            "hotplates": Worker_Hotplate(
+                maestro=self, n_workers=25
+            ),  # TODO dont hardcode hotplate workers
+            "storage": Worker_Storage(
+                maestro=self, n_workers=45
+            ),  # TODO dont hardcode storage workers
+        }
+
+        self._start_loop()
+        # self.loop = asyncio.new_event_loop()
+        # self.loop.set_debug(True)
+        self.t0 = self.nist_time()
+
+        for worker in self.workers.values():
+            worker.prime(loop=self.loop)
+            worker.start()
+
     def stop(self):
         self.working = False
         # clean up the experiment, save log of actual timings
