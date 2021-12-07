@@ -98,7 +98,8 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self, samplewidth: float = 10,
+        self,
+        samplewidth: float = 10,
     ):
         """Initialze Maestro, which coordinates all the PASCAL hardware
 
@@ -464,9 +465,13 @@ class Maestro:
         sh = logging.StreamHandler(sys.stdout)
         sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
+        sh_formatter = logging.Formatter(
+            "%(asctime)s %(message)s",
+            datefmt="%I:%M:%S",
+        )
         fh.setFormatter(fh_formatter)
         sh.setFormatter(sh_formatter)
         self.logger.addHandler(fh)
