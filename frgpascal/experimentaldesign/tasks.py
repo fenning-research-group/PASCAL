@@ -81,7 +81,11 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self, name: str, substrate: str, worklist: list, storage_slot=None,
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -415,11 +419,17 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(asp + stage + disp - self.drops[0].time, 0,)
+            duration += max(
+                asp + stage + disp - self.drops[0].time,
+                0,
+            )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
+            duration += max(
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -487,7 +497,9 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal", duration=self.duration, immediate=immediate,
+            task="anneal",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -571,7 +583,9 @@ class Characterize(Task):
     def __init__(self, duration: float = 280, immediate=False):
         self.duration = duration
         super().__init__(
-            task="characterize", duration=self.duration, immediate=immediate,
+            task="characterize",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
