@@ -132,6 +132,10 @@ class Maestro:
                 return
         self.__local_nist_offset = response.tx_time - time.time()
 
+    @property
+    def time(self):
+        return self.nist_time() - self.t0
+
     def nist_time(self):
         return time.time() + self.__local_nist_offset
 
