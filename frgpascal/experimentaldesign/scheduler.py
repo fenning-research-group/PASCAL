@@ -70,7 +70,7 @@ class Scheduler:
         ### Task Constraints
         for task in self.tasklist:
             task.end_var = self.model.NewIntVar(
-                task.duration, self.horizon, "end " + str(task.taskid)
+                task.duration, self.horizon, "end " + str(task.id)
             )
             ending_variables.append(task.end_var)
 
@@ -80,7 +80,7 @@ class Scheduler:
                 task.start_var = task.precedent.end_var
             else:
                 task.start_var = self.model.NewIntVar(
-                    0, self.horizon, "start " + str(task.taskid)
+                    0, self.horizon, "start " + str(task.id)
                 )
                 if task.precedent is not None:
                     self.model.Add(task.start_var >= task.precedent.end_var)
@@ -90,7 +90,7 @@ class Scheduler:
                 task.start_var,
                 task.duration,
                 task.end_var,
-                "interval " + str(task.taskid),
+                "interval " + str(task.id),
             )
             for w in task.workers:
                 machine_intervals[w].append(interval_var)
@@ -304,7 +304,7 @@ class Scheduler_PrioritizeFirstSpincoat:
         ### Task Constraints
         for task in self.first_tasklist:
             task.end_var = self.model.NewIntVar(
-                task.duration, self.horizon, "end " + str(task.taskid)
+                task.duration, self.horizon, "end " + str(task.id)
             )
             ending_variables.append(task.end_var)
 
@@ -314,7 +314,7 @@ class Scheduler_PrioritizeFirstSpincoat:
                 task.start_var = task.precedent.end_var
             else:
                 task.start_var = self.model.NewIntVar(
-                    0, self.horizon, "start " + str(task.taskid)
+                    0, self.horizon, "start " + str(task.id)
                 )
                 if task.precedent is not None:
                     self.model.Add(task.start_var >= task.precedent.end_var)
@@ -324,7 +324,7 @@ class Scheduler_PrioritizeFirstSpincoat:
                 task.start_var,
                 task.duration,
                 task.end_var,
-                "interval " + str(task.taskid),
+                "interval " + str(task.id),
             )
             for w in task.workers:
                 machine_intervals[w].append(interval_var)
@@ -371,7 +371,7 @@ class Scheduler_PrioritizeFirstSpincoat:
                 task.end_var = self.model.NewConstant(task.end)
             else:
                 task.end_var = self.model.NewIntVar(
-                    task.duration, self.horizon, "end " + str(task.taskid)
+                    task.duration, self.horizon, "end " + str(task.id)
                 )
                 ending_variables.append(task.end_var)
 
@@ -384,7 +384,7 @@ class Scheduler_PrioritizeFirstSpincoat:
                     task.start_var = self.model.NewConstant(task.start)
                 else:
                     task.start_var = self.model.NewIntVar(
-                        0, self.horizon, "start " + str(task.taskid)
+                        0, self.horizon, "start " + str(task.id)
                     )
                     if task.precedent is not None:
                         self.model.Add(task.start_var >= task.precedent.end_var)
@@ -394,7 +394,7 @@ class Scheduler_PrioritizeFirstSpincoat:
                 task.start_var,
                 task.duration,
                 task.end_var,
-                "interval " + str(task.taskid),
+                "interval " + str(task.id),
             )
             for w in task.workers:
                 machine_intervals[w].append(interval_var)

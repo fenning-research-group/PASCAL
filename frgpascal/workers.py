@@ -177,7 +177,7 @@ class WorkerTemplate(Worker_roboflo):
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
         super().__init__(
-            name="GantryGripper", maestro=maestro, planning=planning, n_workers=1
+            name="GantryGripper", maestro=maestro, planning=planning, capacity=1
         )
         self.functions = {
             # "moveto": self.gantry.moveto,
@@ -405,9 +405,9 @@ class Worker_GantryGripper(WorkerTemplate):
 
 
 class Worker_Hotplate(WorkerTemplate):
-    def __init__(self, n_workers, maestro=None, planning=False):
+    def __init__(self, capacity, maestro=None, planning=False):
         super().__init__(
-            name="Hotplate", maestro=maestro, planning=planning, n_workers=n_workers
+            name="Hotplate", maestro=maestro, planning=planning, capacity=capacity
         )
         self.functions = {
             "anneal": task_tuple(
@@ -420,9 +420,13 @@ class Worker_Hotplate(WorkerTemplate):
 
 
 class Worker_Storage(WorkerTemplate):
-    def __init__(self, n_workers, maestro=None, planning=False):
+    def __init__(self, capacity, maestro=None, planning=False, initial_fill=0):
         super().__init__(
-            name="Storage", maestro=maestro, planning=planning, n_workers=n_workers
+            name="Storage",
+            maestro=maestro,
+            planning=planning,
+            capacity=capacity,
+            initial_fill=initial_fill,
         )
         self.functions = {
             "rest": task_tuple(
@@ -440,7 +444,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             name="SpincoaterLiquidHandler",
             maestro=maestro,
             planning=planning,
-            n_workers=1,
+            capacity=1,
         )
         self.functions = {
             "spincoat": task_tuple(
@@ -994,7 +998,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 class Worker_Characterization(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
         super().__init__(
-            name="Characterization", maestro=maestro, planning=planning, n_workers=1
+            name="Characterization", maestro=maestro, planning=planning, capacity=1
         )
         self.functions = {
             "characterize": task_tuple(
