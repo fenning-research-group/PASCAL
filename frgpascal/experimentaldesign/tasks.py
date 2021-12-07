@@ -592,51 +592,51 @@ class Characterize(Task):
         return "<Characterize>"
 
 
-### build task list for a sample
-def generate_sample_worklist(sample: Sample):
-    worklist = deepcopy(sample.worklist)
-    for task0, task1 in zip(worklist, worklist[1:]):
-        task1.precedent = task0  # task1 is preceded by task0
+# ### build task list for a sample
+# def generate_sample_worklist(sample: Sample):
+#     worklist = deepcopy(sample.worklist)
+#     for task0, task1 in zip(worklist, worklist[1:]):
+#         task1.precedent = task0  # task1 is preceded by task0
 
-    sample_tasklist = []
-    p0 = Worker_Storage  # sample begins at storage
-    for task in worklist:
-        task.sample = sample
-        p1 = task.workers[0]
-        if p0 != p1:
-            transition_task = TRANSITION_TASKS[p0][p1]
-            if Worker_Hotplate in [p0, p1]:
-                immediate = True
-            else:
-                immediate = task.immediate
-            sample_tasklist.append(
-                Task(
-                    sample=sample,
-                    task=transition_task,
-                    immediate=immediate,
-                    precedent=task.precedent,
-                )
-            )
-            task.precedent = sample_tasklist[-1]
-        sample_tasklist.append(task)
-        p0 = p1  # update location for next task
-    if p1 != Worker_Storage:
-        transition_task = TRANSITION_TASKS[p0][Worker_Storage]
-        if p1 == Worker_Hotplate:
-            immediate = True
-        else:
-            immediate = False
-        sample_tasklist.append(
-            Task(
-                sample=sample,
-                task=transition_task,
-                precedent=sample_tasklist[-1],
-                immediate=immediate,
-            )
-        )  # sample ends at storage
+#     sample_tasklist = []
+#     p0 = Worker_Storage  # sample begins at storage
+#     for task in worklist:
+#         task.sample = sample
+#         p1 = task.workers[0]
+#         if p0 != p1:
+#             transition_task = TRANSITION_TASKS[p0][p1]
+#             if Worker_Hotplate in [p0, p1]:
+#                 immediate = True
+#             else:
+#                 immediate = task.immediate
+#             sample_tasklist.append(
+#                 Task(
+#                     sample=sample,
+#                     task=transition_task,
+#                     immediate=immediate,
+#                     precedent=task.precedent,
+#                 )
+#             )
+#             task.precedent = sample_tasklist[-1]
+#         sample_tasklist.append(task)
+#         p0 = p1  # update location for next task
+#     if p1 != Worker_Storage:
+#         transition_task = TRANSITION_TASKS[p0][Worker_Storage]
+#         if p1 == Worker_Hotplate:
+#             immediate = True
+#         else:
+#             immediate = False
+#         sample_tasklist.append(
+#             Task(
+#                 sample=sample,
+#                 task=transition_task,
+#                 precedent=sample_tasklist[-1],
+#                 immediate=immediate,
+#             )
+#         )  # sample ends at storage
 
-    min_start = 0
-    for task in sample_tasklist:
-        task.min_start = min_start
-        min_start += task.duration
-    return sample_tasklist
+#     min_start = 0
+#     for task in sample_tasklist:
+#         task.min_start = min_start
+#         min_start += task.duration
+#     return sample_tasklist
