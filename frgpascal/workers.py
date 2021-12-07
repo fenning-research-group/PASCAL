@@ -4,6 +4,7 @@ import time
 import logging
 from collections import namedtuple
 import uuid
+from roboflo import Worker as Worker_roboflo
 
 # from frgpascal.maestro import Maestro
 from frgpascal.hardware.liquidhandler import expected_timings
@@ -22,14 +23,14 @@ from frgpascal.hardware.liquidhandler import expected_timings
 task_tuple = namedtuple("task", ["function", "estimated_duration", "other_workers"])
 
 
-class WorkerTemplate(ABC):
+class WorkerTemplate(Worker_roboflo):
     """Template class for Workers
     This class contains the nuts and bolts to schedule and execute tasks
     for each "worker". Workers are considered single units of one or more
     hardware components that act in unison to complete tasks.
     """
 
-    def __init__(self, name, n_workers, maestro=None, planning=False):
+    def __init__(self, name, capacity, maestro=None, planning=False, initial_fill=0):
         if not planning:
             self.logger = logging.getLogger("PASCAL")
             self.maestro = maestro
@@ -43,8 +44,8 @@ class WorkerTemplate(ABC):
 
             self.working = False
             self.POLLINGRATE = 0.1  # seconds
-        self.n_workers = n_workers
-        self.name = name
+
+        super().__init__(name=name, capacity=capacity, initial_fill=initial_fill)
 
     def prime(self, loop):
         asyncio.set_event_loop(loop)
@@ -61,7 +62,7 @@ class WorkerTemplate(ABC):
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
         self.working = True
-        for _ in range(self.n_workers):
+        for _ in range(self.capacity):
             future = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
             future.add_done_callback(future_callback)
 
@@ -171,9 +172,6 @@ class WorkerTemplate(ABC):
 
     def __hash__(self):
         return hash(str(type(self)))
-
-    def __eq__(self, other):
-        return type(self) == type(other)
 
 
 class Worker_GantryGripper(WorkerTemplate):
