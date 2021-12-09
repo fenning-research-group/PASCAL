@@ -555,8 +555,24 @@ class Maestro:
         for worker in self.workers.values():
             worker.start()
 
-    ### External driver to interface with BO program
+    def stop(self):
+        self.working = False
+        # clean up the experiment, save log of actual timings
+        with open(
+            os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
+        ) as f:
+            json.dump(self.samples, f)
+        for w in self.workers.values():
+            w.stop_workers()
+        self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+        self.thread.join()
 
+    def __del__(self):
+        if self.working:
+            self.stop()
+        self.liquidhandler.server.stop()
+
+    ### External driver to interface with BO program
     async def _instruction_monitor(self, instruction_directory):
         while self.working:
             new_tasks = []
@@ -572,7 +588,7 @@ class Maestro:
                 self.samples += this_protocol["samples"]
 
             if len(new_tasks) > 0:
-                new_tasks.sort(key=lambda x: x["start"])
+                new_tasks.sort(key=lambda task: task["start"])
                 for t in new_tasks:
                     assigned = False
                     for workername, worker in self.workers.items():
@@ -583,21 +599,23 @@ class Maestro:
                             continue
                     if not assigned:
                         raise Exception(f"No worker assigned to task {t['task']}")
+            await asyncio.sleep(0.5)
 
     def run_externalcontrol(self, filepath, name, ot2_ip):
         self._experiment_checklist()
         self.working = True
 
         self.liquidhandler.server.ip = ot2_ip
-        # self.liquidhandler.server.start(ip=ot2_ip)
         self.read_protocol_files = []
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
         self.lock_completedtasks = Lock()
         folder = self._set_up_experiment_folder(name)
-        protocol_folder = os.path.join(folder, "protocols")
-        os.mkdir(protocol_folder)
+        self.protocol_folder = os.path.join(folder, "protocols")
+        os.mkdir(self.protocol_folder)
+        self.response_folder = os.path.join(folder, "responses")
+        os.mkdir(self.response_folder)
 
         self.workers = {
             "gantry_gripper": Worker_GantryGripper(maestro=self),
