@@ -96,7 +96,7 @@ class WorkerTemplate(Worker_roboflo):
                 await asyncio.sleep(0.2)
 
             _, task = await self.queue.get()  # blocking wait for next task
-            task_description = f'{task["task"]}, {task["sample"]}'
+            task_description = f'{task["name"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
             sample_task = sample["tasks"][task["id"]]
             # print(f"starting {task_description}")
@@ -139,7 +139,7 @@ class WorkerTemplate(Worker_roboflo):
             # )
 
             sample_task["start_actual"] = self.maestro.time
-            function = self.functions[task["task"]].function
+            function = self.functions[task["name"]].function
             details = sample_task.get("details", {})
             if asyncio.iscoroutinefunction(function):
                 self.logger.info(f"executing {task_description} as coroutine")
