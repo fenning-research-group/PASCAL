@@ -108,6 +108,7 @@ class SpinCoater:
         self.axis.trap_traj.config.accel_limit = 0.5
         self.axis.trap_traj.config.decel_limit = 0.5
         self.lock()
+        self.idle()
 
         # start libfibre timer watchdog
         self.__connected = True
@@ -185,7 +186,7 @@ class SpinCoater:
 
         # if acceleration == 0:
         #     acceleration = self.ACCELERATIONRANGE[1]  # default to max acceleration
-        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
+        if self.axis.current_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
         self.axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
@@ -200,7 +201,7 @@ class SpinCoater:
         """
         if self._locked:
             return
-        if self.axis.requested_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
+        if self.axis.current_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
@@ -254,7 +255,7 @@ class SpinCoater:
         """
         if self._locked:
             return
-        self.set_rpm(0, 500)
+        self.set_rpm(0, 1000)
         t0 = time.time()
         min_stopped_time = 2
         while True:
@@ -264,9 +265,10 @@ class SpinCoater:
                 break
             time.sleep(0.1)
         self.lock()
+        self.idle()
 
     def idle(self):
-        if self.axis.requested_state != AXIS_STATE_IDLE:
+        if self.axis.current_state != AXIS_STATE_IDLE:
             self.axis.requested_state = AXIS_STATE_IDLE
         self._locked = False
 
@@ -318,13 +320,18 @@ class SpinCoater:
         while self.__connected:
             time.sleep(1)
             if not self.__logging_active and len(self.odrv0._libfibre.timer_map) > 60:
-                latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
-                self.odrv0._libfibre.timer_map = {
-                    0: self.odrv0._libfibre.timer_map[latest_idx]
-                }
+                try:
+                    latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
+                    self.odrv0._libfibre.timer_map = {
+                        0: self.odrv0._libfibre.timer_map[latest_idx]
+                    }
 
-            if self.axis.error > 0:
-                self.axis.clear_errors()
+                    if self.axis.error > 0:
+                        self.axis.clear_errors()
+                except:
+                    print(
+                        "Spincoater unable to flush - probably disconnected, will try again later"
+                    )
 
     def __del__(self):
         self.disconnect()
