@@ -415,12 +415,12 @@ class Maestro:
             if response not in ["y", "Y"]:
                 raise Exception("Checklist failed!")
 
-        if not self.characterization._calibrated:
-            raise Exception(
-                "Cannot start until characterization line has been calibrated!"
-            )
+        # if not self.characterization._calibrated:
+        #     raise Exception(
+        #         "Cannot start until characterization line has been calibrated!"
+        #     )
 
-        prompt_for_yes("Is the transmission lamp on? (y/n)")
+        # prompt_for_yes("Is the transmission lamp on? (y/n)")
         prompt_for_yes("Is the sample holder(s) loaded and in place? (y/n)")
         if not characterization_only:
             prompt_for_yes("Is the vacuum pump on? (y/n)")

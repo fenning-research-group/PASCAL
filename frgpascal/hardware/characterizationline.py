@@ -33,7 +33,7 @@ class CharacterizationLine:
             os.mkdir(self.rootdir)
         self.switchbox = switchbox
         self.shutter = Shutter()
-        self.filterslider = FilterSlider()
+        # self.filterslider = FilterSlider()
         self.camerahost = ThorcamHost()
         self.darkfieldcamera = self.camerahost.spawn_camera(
             camid=constants["darkfield"]["cameraid"]
@@ -42,35 +42,35 @@ class CharacterizationLine:
             camid=constants["brightfield"]["cameraid"]
         )
         # self.spectrometer = Spectrometer()
-        self.spectrometer = Spectrometer()
+        # self.spectrometer = Spectrometer()
 
         # all characterization stations (in order of measurement!)
         self.stations = [
-            TransmissionSpectroscopy(
-                position=constants["transmission"]["position"],
-                rootdir=self.rootdir,
-                spectrometer=self.spectrometer,
-                slider=self.filterslider,
-                shutter=self.shutter,
-            ),
-            PLSpectroscopy(
-                position=constants["pl_red"]["position"],
-                rootdir=self.rootdir,
-                subdir="PL_635",
-                spectrometer=self.spectrometer,
-                slider=self.filterslider,
-                shutter=self.shutter,
-                lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
-            ),
-            PLPhotostability(
-                position=constants["pl_blue"]["position"],
-                rootdir=self.rootdir,
-                subdir="PLPhotostability_405",
-                spectrometer=self.spectrometer,
-                slider=self.filterslider,
-                shutter=self.shutter,
-                lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
-            ),
+            # TransmissionSpectroscopy(
+            #     position=constants["transmission"]["position"],
+            #     rootdir=self.rootdir,
+            #     spectrometer=self.spectrometer,
+            #     slider=self.filterslider,
+            #     shutter=self.shutter,
+            # ),
+            # PLSpectroscopy(
+            #     position=constants["pl_red"]["position"],
+            #     rootdir=self.rootdir,
+            #     subdir="PL_635",
+            #     spectrometer=self.spectrometer,
+            #     slider=self.filterslider,
+            #     shutter=self.shutter,
+            #     lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
+            # ),
+            # PLPhotostability(
+            #     position=constants["pl_blue"]["position"],
+            #     rootdir=self.rootdir,
+            #     subdir="PLPhotostability_405",
+            #     spectrometer=self.spectrometer,
+            #     slider=self.filterslider,
+            #     shutter=self.shutter,
+            #     lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
+            # ),
             BrightfieldImaging(
                 position=constants["brightfield"]["position"],
                 rootdir=self.rootdir,
@@ -98,7 +98,7 @@ class CharacterizationLine:
         ]
 
         # state variables
-        self._calibrated = False
+        self._calibrated = True  # only true because spectrometer is not involved!
 
     def run(self, samplename):
         """Pass a sample down the line and measure at each station"""
