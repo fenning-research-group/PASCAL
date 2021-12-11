@@ -86,6 +86,23 @@ class OT2:
         )
         return taskid
 
+    def get_tip(
+        self, tray, well, pipette, reuse_tip=False, taskid=None, nist_time=None
+    ):
+        """
+        pick up a tip on pipette for aspiration from a given tray/well
+        """
+        taskid = self.server.add_to_queue(
+            task="get_tip",
+            taskid=taskid,
+            nist_time=nist_time,
+            tray=tray,
+            well=well,
+            pipette=pipette,
+            reuse_tip=reuse_tip,
+        )
+        return taskid
+
     def aspirate_for_spincoating(
         self,
         tray,
@@ -102,7 +119,7 @@ class OT2:
         **kwargs,
     ):
         taskid = self.server.add_to_queue(
-            task="aspirate_for_spincoating",
+            task="aspirate",
             taskid=taskid,
             nist_time=nist_time,
             tray=tray,
@@ -117,45 +134,6 @@ class OT2:
             **kwargs,
         )
         return taskid
-
-    # def aspirate_both_for_spincoating(
-    #     self,
-    #     tray0,
-    #     well0,
-    #     volume0,
-    #     slow_retract0=True,
-    #     air_gap0=True,
-    #     touch_tip0=True,
-    #     pre_mix0=(0, 0),
-    #     reuse_tip0=False,
-    #     tray1,
-    #     well1,
-    #     volume1,
-    #     slow_retract1=True,
-    #     air_gap1=True,
-    #     touch_tip1=True,
-    #     pre_mix1=(0, 0),
-    #     reuse_tip1=False,
-    #     taskid=None,
-    #     nist_time=None,
-    #     **kwargs,
-    # ):
-    #     taskid = self.server.add_to_queue(
-    #         task="aspirate_both_for_spincoating",
-    #         taskid=taskid,
-    #         nist_time=nist_time,
-    #         tray0=psk_tray,
-    #         well0=psk_well,
-    #         volume0=psk_volume,
-    #         tray1=antisolvent_tray,
-    #         well1=antisolvent_well,
-    #         volume1=antisolvent_volume,
-    #         slow_retract=slow_retract,
-    #         air_gap=air_gap,
-    #         touch_tip=touch_tip,
-    #         **kwargs,
-    #     )
-    #     return taskid
 
     def stage_perovskite(
         self, taskid=None, nist_time=None, slow_travel=False, **kwargs
@@ -195,6 +173,15 @@ class OT2:
     def cleanup(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
             task="cleanup",
+            taskid=taskid,
+            nist_time=nist_time,
+            **kwargs,
+        )
+        return taskid
+
+    def final_cleanup(self, taskid=None, nist_time=None, **kwargs):
+        taskid = self.server.add_to_queue(
+            task="finalcleanup",
             taskid=taskid,
             nist_time=nist_time,
             **kwargs,

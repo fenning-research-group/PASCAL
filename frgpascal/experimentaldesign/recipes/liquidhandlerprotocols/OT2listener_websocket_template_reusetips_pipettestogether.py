@@ -251,14 +251,22 @@ class ListenerWebsocket:
 
     def __initialize_tasks(self):
         self.tasks = {
-            "get_" "aspirate_for_spincoating": self.aspirate,
+            "get_tip": self.get_tip,
+            "aspirate": self.aspirate,
             "dispense_onto_chuck": self.dispense_onto_chuck,
             "stage_for_dispense": self.stage_for_dispense,
             "clear_chuck": self.clear_chuck,
             "cleanup": self.cleanup,
+            "final_cleanup": self.final_cleanup(),
         }
 
     def get_tip(self, tray, well, pipette, reuse_tip=False):
+        """
+        pick up a tip to use for aspiration from a given well.
+        if we are reusing tips for the next aspiration, checks to see
+        if that tip is already on the pipette. if not, returns it
+        and picks up a new one.
+        """
         p = self._get_pipette(pipette=pipette)
 
         if reuse_tip:
@@ -295,7 +303,10 @@ class ListenerWebsocket:
         touch_tip=True,
         pre_mix=(0, 0),
     ):
-        """Aspirates from a single source well. Assumes the pipette already has a tip loaded"""
+        """
+        Aspirates from a single source well.
+        Assumes the pipette already has a tip loaded
+        """
         p = self._get_pipette(pipette=pipette)
         if pre_mix[0] > 0:
             p.mix(
@@ -317,6 +328,9 @@ class ListenerWebsocket:
             )  # force a slow airgap
 
     def stage_for_dispense(self, pipette, slow_travel=False):
+        """
+        moves the pipette just away from to the spincoater chuck.
+        """
         p = self._get_pipette(pipette)
         if slow_travel:
             speed = self.SLOW_XY_RATE
@@ -341,8 +355,14 @@ class ListenerWebsocket:
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         if blow_out:
             p.blow_out()
+        time.sleep(
+            1
+        )  # give more viscous fluids some time to actually leave the pipette
 
     def clear_chuck(self):
+        """
+        move pipette out of the way of the gripper
+        """
         self.pipettes["right"].move_to(
             location=types.Location(
                 point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
@@ -368,7 +388,7 @@ class ListenerWebsocket:
                 volumes,
                 source_well,
                 destination_wells,
-                touch_tip=False,
+                touch_tip=True,
                 blow_out=True,
                 disposal_volume=0,
             )
@@ -380,7 +400,7 @@ class ListenerWebsocket:
         the travel (both horizontally and vertically) of the pipette heads
         """
         # drop all tips that dont need to be returned
-        for p, return_this_tip in self.return_current_tip.items():
+        for p, (return_this_tip, (tray, well)) in self.return_current_tip.items():
             if not p.has_tip:
                 continue
             if not return_this_tip:
@@ -413,8 +433,12 @@ class ListenerWebsocket:
 
         # fill tip slot A1 for all racks for calibration of next run
         for tiprack in self.tips.keys():
-            # if tiprack.
-            pass
+            next_tip = tiprack.next_tip()
+            if next_tip is None:
+                continue  # this tiprack is consumed
+            else:
+                p.pick_up_tip(next_tip)
+                p.drop_tip(location=tiprack["A1"])
 
 
 def run(protocol_context):
@@ -473,3 +497,5 @@ def run(protocol_context):
     protocol_context.comment("Waiting for Maestro")
     while listener.status != STATUS_ALL_DONE:
         time.sleep(0.2)
+
+    listener.final_cleanup()
