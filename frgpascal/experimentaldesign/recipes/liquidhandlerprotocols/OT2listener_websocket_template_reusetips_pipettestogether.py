@@ -95,7 +95,10 @@ class ListenerWebsocket:
 
         # will be populated with (tray,well):tip coordinate as protocol proceeds
         self.reusable_tips = {}
-        self.return_current_tip = {p: False for p in self.pipettes.values()}
+        self.return_current_tip = {
+            p: (False, (None, None))
+            for p in self.pipettes.values()  # bool = whether to return, (labware name, well to return to) = key
+        }
 
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
@@ -257,14 +260,29 @@ class ListenerWebsocket:
 
     def get_tip(self, tray, well, pipette, reuse_tip=False):
         p = self._get_pipette(pipette=pipette)
-        if p.has_tip:
-            p.drop_tip()
+
         if reuse_tip:
-            tip = self._get_reusable_tip(tray, well)
-            p.pick_up_tip(tip)
-            self.return_current_tip[p] = True
+            if p.has_tip:
+                if self.return_current_tip[p][1] == (
+                    tray,
+                    well,
+                ):  # we already have the correct tip on
+                    return
+                else:  # put this tip back, get the right one
+                    p.return_tip()
+                    self.return_current_tip[p] = (False, (None, None))
+
+                    tip = self._get_reusable_tip(tray, well)
+                    p.pick_up_tip(tip)
+                    self.return_current_tip[p] = (True, (tray, well))
         else:
-            p.pick_up_tip()
+            if p.has_tip:
+                if self.return_current_tip[p][0]:
+                    p.return_tip()
+                    self.return_current_tip[p] = (False, (None, None))
+                else:
+                    p.drop_tip()
+                p.pick_up_tip()
 
     def aspirate(
         self,
@@ -368,18 +386,35 @@ class ListenerWebsocket:
             if not return_this_tip:
                 p.drop_tip()
 
-        # first blow out all returning tips, then drop them back
+        # first blow out all returning, but leave them on - will be swapped out on next spincoat if they need to change
         for p, return_this_tip in self.return_current_tip.items():
             if return_this_tip:
                 p.blow_out(self.TRASH)
-        for p, return_this_tip in self.return_current_tip.items():
-            if return_this_tip:
-                p.return_tip()
-                self.return_current_tip[p] = False
+        # for p, return_this_tip in self.return_current_tip.items():
+        #     if return_this_tip:
+        #         p.return_tip()
+        #         self.return_current_tip[p] = False
 
-        next_tip = self._next_tip()
         p = self._get_pipette("perovskite")
-        p.move_to(next_tip.top(5))
+        if not p.has_tip:  # if the first pipette is clear, stage it ready to pick up
+            next_tip = self._next_tip()
+            p.move_to(next_tip.top(5))
+
+    def final_cleanup(self):
+        # drop any currently mounted tips
+        for p in self.pipettes.values():
+            if p.has_tip:
+                p.drop_tip()
+
+        # move all the reused tips into the trash
+        for tip in self.reusable_tips.values():
+            p.pick_up_tip(tip)
+            p.drop_tip()
+
+        # fill tip slot A1 for all racks for calibration of next run
+        for tiprack in self.tips.keys():
+            # if tiprack.
+            pass
 
 
 def run(protocol_context):
@@ -435,5 +470,6 @@ def run(protocol_context):
 
     # listen for instructions from maestro
     listener.start()
+    protocol_context.comment("Waiting for Maestro")
     while listener.status != STATUS_ALL_DONE:
         time.sleep(0.2)
