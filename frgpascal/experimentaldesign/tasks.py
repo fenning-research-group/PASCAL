@@ -104,7 +104,7 @@ class Sample:
         self.worklist = worklist
         for t in self.worklist:
             t.sample = self
-        self.status = "not_started"
+        self.status = "not_started"  # currently unused
         self.tasks = []
 
     def to_dict(self):
@@ -367,7 +367,7 @@ class Task(Task_roboflo):
     def to_dict(self):
         out = {
             "name": self.name,
-            "sample": self.sample,  # only change to roboflo Task.to_dict()
+            "sample": self.sample.name,  # only change to roboflo Task.to_dict()
             "start": self.start,
             "id": self.id,
             "details": self.generate_details(),
