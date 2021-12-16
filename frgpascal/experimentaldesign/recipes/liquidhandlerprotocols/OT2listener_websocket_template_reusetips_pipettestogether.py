@@ -484,6 +484,7 @@ def run(protocol_context):
                 dest=destinations,
                 disposal_volume=0,
                 carryover=True,
+                touch_tip=True,
                 mix_before=(3, 50),
                 new_tip="once",
                 blow_out=True,
