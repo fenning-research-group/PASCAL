@@ -24,7 +24,10 @@ def expected_timings(drop):
         drop (dict): dictionary of drop parameters
 
     Returns:
-        float: duration, in seconds
+        pickuptip_duration (float): max duration, in seconds, to get a new pipette tip
+        aspirate_duration (float): duration, seconds, to perform aspirate step
+        staging_duration (float): duration, seconds, to move loaded pipette to spincoater
+        dispense_duration (float): duration, seconds, to dispense onto spincoater
     """
 
     pickuptip_duration = tc["pickuptip"]
