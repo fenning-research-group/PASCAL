@@ -364,23 +364,20 @@ class Task(Task_roboflo):
         result.__generate_taskid()  # give a unique id to the copied task
         return result
 
-    # def to_dict(self):
-    #     if self.sample is None:
-    #         name = None
-    #     else:
-    #         name = self.sample.name
-    #     out = {
-    #         "sample": name,
-    #         "start": self.start,
-    #         "task": self.task,
-    #         "id": self.id,
-    #     }
-    #     if self.precedent is None:
-    #         out["precedent"] = None
-    #     else:
-    #         out["precedent"] = self.precedent.id
+    def to_dict(self):
+        out = {
+            "name": self.name,
+            "sample": self.sample,  # only change to roboflo Task.to_dict()
+            "start": self.start,
+            "id": self.id,
+            "details": self.generate_details(),
+        }
+        if self.precedent is None:
+            out["precedent"] = None
+        else:
+            out["precedent"] = self.precedent.id
 
-    #     return out
+        return out
 
     def to_json(self):
         return json.dumps(self.to_dict())
