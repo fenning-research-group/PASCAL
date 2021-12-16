@@ -72,14 +72,14 @@ liquidhandler:
   timings:
     pickuptip: 10 #time (seconds) to pick up a fresh pipette tip
     aspirate:
-      home: 5 #time (seconds) to home the pipette plunger between moves
+      home: 4 #time (seconds) to home the pipette plunger between moves
       premix: # time (seconds) = (a*volume + b) * num_cycles
         a: 0.0209
         b: 0.5132
       slowretract: 3 #extra time to slowly retract pipette from well
       touchtip: 1.5 #time to touch tip/knock off droplets on side of well
       airgap: 2.5 #time to add an airgap
-    travel: 2 #time to move from tiprack to aspiration well
+    travel: 2.5 #time to move from tiprack to aspiration well
     travel_slow: 4 #time to move if slow_travel active
     dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
     dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active

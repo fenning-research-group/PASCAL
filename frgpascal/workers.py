@@ -474,97 +474,42 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         self.spincoater.stop()
         print(f"\t{t0-self.maestro.nist_time():.2f} finished all spinspeed steps")
 
-    def _expected_tip_pickup_duration(self, n_tips: int) -> float:
-        """Estimate the duration (seconds) it will take to get tips
-
-        Args:
-            n_tips (int): number of tips to be picked up (1 or 2)
-
-        Returns:
-            float: duration, in seconds
-        """
-        assert n_tips in [1, 2]
-        ac = self.liquidhandler.CONSTANTS["aspirate"]  # aspiration constants
-        d = self.liquidhandler.CONSTANTS["pickuptip"]
-
-        if n_tips == 2:
-            d *= 2
-            d += ac["home"]  # first pipette plunger will home between picking up tips
-
-        return d
-
-    def _expected_aspiration_duration(self, drop) -> float:
-        """Estimate the duration (seconds) liquid aspiration will require for a given drop
-
-        Args:
-            drop (dict): dictionary of drop parameters
-
-        Returns:
-            float: duration, in seconds
-        """
-        ac = self.liquidhandler.CONSTANTS["aspirate"]  # aspiration constants
-        d = (
-            self.liquidhandler.CONSTANTS["travel"]  # move to well
-            + drop["volume"] / 100  # 100 uL/sec default aspiration rate
-        )
-        d += drop["pre_mix"][0] * (
-            ac["premix"]["a"] * drop["pre_mix"][1] + ac["premix"]["b"]
-        )  # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
-        if drop["touch_tip"]:
-            d += ac["touchtip"]
-        if drop["slow_retract"]:
-            d += ac["slowretract"]
-        if drop["air_gap"]:
-            d += ac["airgap"]
-
-        return d
-
-    def _expected_staging_duration(self, drop) -> float:
-        if drop["slow_travel"]:
-            return self.liquidhandler.CONSTANTS["travel_slow"]
-        else:
-            return self.liquidhandler.CONSTANTS["travel"]
-
-    def _expected_dispense_duration(self, drop) -> float:
-        if drop["slow_travel"]:
-            return self.liquidhandler.CONSTANTS["dispensedelay_slow"]
-        else:
-            return self.liquidhandler.CONSTANTS["dispensedelay"]
-
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
         (
+            pickuptip_duration,
             aspirate_duration,
             staging_duration,
             dispense_duration,
         ) = expected_timings(drop)
 
         headstart = (
-            aspirate_duration + staging_duration + dispense_duration - drop["time"]
+            pickuptip_duration
+            + aspirate_duration
+            + staging_duration
+            + dispense_duration
+            - drop["time"]
         )
         headstart = max(headstart, 0)  # stick to t=0 start time if it works out
 
+        drop_time = (
+            t0 + drop["time"] + headstart - dispense_duration
+        )  # when to initate the drop step
         aspirate_time = (
-            t0
-            + drop["time"]
-            + headstart
-            - aspirate_duration
-            - staging_duration
-            - dispense_duration
-        )
+            drop_time - staging_duration - aspirate_duration
+        )  # when to start aspirating solutions
+
         liquidhandlertasks["get_tip"] = self.liquidhandler.get_tip(
-            nist_time=aspirate_time,
+            nist_time=None,  # immediate
             tray=drop["solution"]["well"]["labware"],
             well=drop["solution"]["well"]["well"],
             volume=drop["volume"],
             pipette="perovskite",
             reuse_tip=drop["reuse_tip"],
         )
-        liquidhandlertasks[
-            "aspirate_solution"
-        ] = self.liquidhandler.aspirate_for_spincoating(
-            nist_time=aspirate_time + 0.5,
+        liquidhandlertasks["aspirate_solution"] = self.liquidhandler.aspirate(
+            nist_time=aspirate_time,
             tray=drop["solution"]["well"]["labware"],
             well=drop["solution"]["well"]["well"],
             volume=drop["volume"],
@@ -575,12 +520,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             pre_mix=drop["pre_mix"],
         )
         liquidhandlertasks["stage_solution"] = self.liquidhandler.stage_perovskite(
-            nist_time=aspirate_time + 1  # immediately after aspirate
+            nist_time=aspirate_time + 0.5  # immediately after aspirate
         )
 
-        last_time = t0 + drop["time"] + headstart - dispense_duration
         liquidhandlertasks["dispense_solution"] = self.liquidhandler.drop_perovskite(
-            nist_time=last_time, rate=drop["rate"], height=drop["height"]
+            nist_time=drop_time, rate=drop["rate"], height=drop["height"]
         )
 
         self.liquidhandler.cleanup(nist_time=last_time + 0.5)
@@ -589,12 +533,19 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     def _generatelhtasks_twodrops(self, t0, drop0, drop1):
         # TODO
-        aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
-            drop0
-        )
-        aspirate1_duration, staging1_duration, dispense1_duration = expected_timings(
-            drop1
-        )
+        (
+            pickuptip0_duration,
+            aspirate0_duration,
+            staging0_duration,
+            dispense0_duration,
+        ) = expected_timings(drop0)
+        (
+            pickuptip1_duration,
+            aspirate1_duration,
+            staging1_duration,
+            dispense1_duration,
+        ) = expected_timings(drop1)
+
         if (drop1["time"] - drop0["time"]) < (
             aspirate1_duration + staging1_duration + dispense1_duration
         ):  # if the two drops are too close in time, let's aspirate them both at the beginning
@@ -602,9 +553,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 t0,
                 drop0,
                 drop1,
+                pickuptip0_duration,
                 aspirate0_duration,
                 staging0_duration,
                 dispense0_duration,
+                pickuptip1_duration,
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
@@ -615,9 +568,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 t0,
                 drop0,
                 drop1,
+                pickuptip0_duration,
                 aspirate0_duration,
                 staging0_duration,
                 dispense0_duration,
+                pickuptip1_duration,
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
@@ -628,14 +583,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         t0,
         drop0,
         drop1,
-        aspirate0_duration,
-        staging0_duration,
-        dispense0_duration,
-        aspirate1_duration,
-        staging1_duration,
-        dispense1_duration,
     ):
-        """Aspirate both solutions together, not enough time to do them one by one"""
+        """Aspirate both solutions together, not enough time to aspirate second solution after dispensing the first"""
         liquidhandlertasks = {}
 
         # timings
@@ -645,41 +594,62 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             drop0["slow_travel"] = True
             drop1["slow_travel"] = True
 
-            (
-                aspirate0_duration,
-                staging0_duration,
-                dispense0_duration,
-            ) = expected_timings(drop0)
-            (
-                aspirate1_duration,
-                staging1_duration,
-                dispense1_duration,
-            ) = expected_timings(drop1)
+        (
+            pickuptip0_duration,
+            aspirate0_duration,
+            staging0_duration,
+            dispense0_duration,
+        ) = expected_timings(drop0)
+        (
+            pickuptip1_duration,
+            aspirate1_duration,
+            staging1_duration,
+            dispense1_duration,
+        ) = expected_timings(drop1)
+
+        plunger_homing = self.liquidhandler.CONSTANTS["aspirate"]["home"]
 
         headstart = (
-            aspirate0_duration
+            pickuptip1_duration
+            + pickuptip0_duration
+            + aspirate0_duration
             + aspirate1_duration
             + staging0_duration
             + dispense0_duration
             - drop0["time"]
         )
         headstart = max(headstart, 0)
+        dispense0_time = t0 + drop0["time"] + headstart - dispense0_duration
+        dispense1_time = t0 + drop1["time"] + headstart - dispense1_duration
         aspirate_time = (
-            t0
-            + drop0["time"]
-            + headstart
+            dispense0_time
             - aspirate0_duration
             - aspirate1_duration
             - staging0_duration
             - dispense0_duration
         )
-        dispense0_time = t0 + drop0["time"] + headstart - dispense0_duration
-        dispense1_time = t0 + drop1["time"] + headstart - dispense1_duration
 
         # build tasklist
-        liquidhandlertasks[
-            "aspirate_solution0"
-        ] = self.liquidhandler.aspirate_for_spincoating(
+
+        liquidhandlertasks["get_tip1"] = self.liquidhandler.get_tip(
+            nist_time=t0,
+            tray=drop1["solution"]["well"]["labware"],
+            well=drop1["solution"]["well"]["well"],
+            volume=drop1["volume"],
+            pipette="antisolvent",
+            reuse_tip=drop1["reuse_tip"],
+        )
+
+        liquidhandlertasks["get_tip0"] = self.liquidhandler.get_tip(
+            nist_time=t0 + 0.5,
+            tray=drop0["solution"]["well"]["labware"],
+            well=drop0["solution"]["well"]["well"],
+            volume=drop0["volume"],
+            pipette="perovskite",
+            reuse_tip=drop0["reuse_tip"],
+        )
+
+        liquidhandlertasks["aspirate_solution0"] = self.liquidhandler.aspirate(
             nist_time=aspirate_time,
             tray=drop0["solution"]["well"]["labware"],
             well=drop0["solution"]["well"]["well"],
@@ -689,11 +659,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             air_gap=drop0["air_gap"],
             touch_tip=drop0["touch_tip"],
             pre_mix=drop0["pre_mix"],
-            reuse_tip=drop0["reuse_tip"],
         )
-        liquidhandlertasks[
-            "aspirate_solution1"
-        ] = self.liquidhandler.aspirate_for_spincoating(
+        liquidhandlertasks["aspirate_solution1"] = self.liquidhandler.aspirate(
             nist_time=aspirate_time + 0.1,
             tray=drop1["solution"]["well"]["labware"],
             well=drop1["solution"]["well"]["well"],
@@ -703,7 +670,6 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             air_gap=drop1["air_gap"],
             touch_tip=drop1["touch_tip"],
             pre_mix=drop1["pre_mix"],
-            reuse_tip=drop1["reuse_tip"],
         )
         liquidhandlertasks["stage_solution0"] = self.liquidhandler.stage_perovskite(
             nist_time=aspirate_time + 0.2,  # immediately after aspiration
@@ -737,44 +703,64 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         t0,
         drop0,
         drop1,
-        aspirate0_duration,
-        staging0_duration,
-        dispense0_duration,
-        aspirate1_duration,
-        staging1_duration,
-        dispense1_duration,
     ):
         """Aspirate, stage, and dispense first drop before aspirating the second drop."""
+        (
+            pickuptip0_duration,
+            aspirate0_duration,
+            staging0_duration,
+            dispense0_duration,
+        ) = expected_timings(drop0)
+        (
+            pickuptip1_duration,
+            aspirate1_duration,
+            staging1_duration,
+            dispense1_duration,
+        ) = expected_timings(drop1)
+
         liquidhandlertasks = {}
 
         # timings
         headstart = (
-            aspirate0_duration + staging0_duration + dispense0_duration - drop0["time"]
+            pickuptip0_duration
+            + pickuptip1_duration
+            + aspirate0_duration
+            + staging0_duration
+            + dispense0_duration
+            - drop0["time"]
         )
         headstart = max(headstart, 0)
-        aspirate0_time = (
-            t0
-            + drop0["time"]
-            + headstart
-            - aspirate0_duration
-            - staging0_duration
-            - dispense0_duration
-        )
+
         dispense0_time = t0 + drop0["time"] + headstart - dispense0_duration
-        aspirate1_time = (
-            t0
-            + drop1["time"]
-            + headstart
-            - aspirate1_duration
-            - staging1_duration
-            - dispense1_duration
+        aspirate0_time = (
+            dispense0_time - aspirate0_duration - staging0_duration - dispense0_duration
         )
+
         dispense1_time = t0 + drop1["time"] + headstart - dispense1_duration
+        aspirate1_time = (
+            dispense1_time - aspirate1_duration - staging1_duration - dispense1_duration
+        )
 
         # build tasklist
-        liquidhandlertasks[
-            "aspirate_solution0"
-        ] = self.liquidhandler.aspirate_for_spincoating(
+        liquidhandlertasks["get_tip1"] = self.liquidhandler.get_tip(
+            nist_time=t0,
+            tray=drop1["solution"]["well"]["labware"],
+            well=drop1["solution"]["well"]["well"],
+            volume=drop1["volume"],
+            pipette="antisolvent",
+            reuse_tip=drop1["reuse_tip"],
+        )
+
+        liquidhandlertasks["get_tip0"] = self.liquidhandler.get_tip(
+            nist_time=t0 + 0.5,
+            tray=drop0["solution"]["well"]["labware"],
+            well=drop0["solution"]["well"]["well"],
+            volume=drop0["volume"],
+            pipette="perovskite",
+            reuse_tip=drop0["reuse_tip"],
+        )
+
+        liquidhandlertasks["aspirate_solution0"] = self.liquidhandler.aspirate(
             nist_time=aspirate0_time,
             tray=drop0["solution"]["well"]["labware"],
             well=drop0["solution"]["well"]["well"],
@@ -784,7 +770,6 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             air_gap=drop0["air_gap"],
             touch_tip=drop0["touch_tip"],
             pre_mix=drop0["pre_mix"],
-            reuse_tip=drop0["reuse_tip"],
         )
         liquidhandlertasks["stage_solution0"] = self.liquidhandler.stage_perovskite(
             nist_time=aspirate0_time + 0.1,  # immediately after aspiration
@@ -802,9 +787,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 "clear_chuck_between_drops"
             ] = self.liquidhandler.stage_perovskite(nist_time=dispense0_time + 0.1)
 
-        liquidhandlertasks[
-            "aspirate_solution1"
-        ] = self.liquidhandler.aspirate_for_spincoating(
+        liquidhandlertasks["aspirate_solution1"] = self.liquidhandler.aspirate(
             nist_time=aspirate1_time,
             tray=drop1["solution"]["well"]["labware"],
             well=drop1["solution"]["well"]["well"],
@@ -814,8 +797,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             air_gap=drop1["air_gap"],
             touch_tip=drop1["touch_tip"],
             pre_mix=drop1["pre_mix"],
-            reuse_tip=drop1["reuse_tip"],
         )
+
         liquidhandlertasks["stage_solution1"] = self.liquidhandler.stage_antisolvent(
             nist_time=aspirate1_time + 0.1,  # immediately after aspiration
             slow_travel=drop1["slow_travel"],
@@ -867,7 +850,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             try:
                 future.result()
             except Exception as e:
-                self.logger.exception(f"Exception in {self}")
+                self.logger.exception(f"Exception in {self}: {future.exception()}")
                 # if future.exception(): #your long thing had an exception
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
