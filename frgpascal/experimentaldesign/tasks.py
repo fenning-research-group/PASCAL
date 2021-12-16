@@ -426,10 +426,14 @@ class Spincoat(Task):
                 0,
             )
         elif len(drops) == 2:
-            asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
-            asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
+            tip0, asp0, stage0, disp0 = liquidhandler.expected_timings(
+                drops[0].to_dict()
+            )
+            tip1, asp1, stage1, disp1 = liquidhandler.expected_timings(
+                drops[1].to_dict()
+            )
             duration += max(
-                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                (tip0 + tip1 + asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
                 0,
             )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
