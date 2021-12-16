@@ -113,7 +113,6 @@ class OT2:
         air_gap=True,
         touch_tip=True,
         pre_mix=(0, 0),
-        reuse_tip=False,
         taskid=None,
         nist_time=None,
         **kwargs,
@@ -129,7 +128,6 @@ class OT2:
             slow_retract=slow_retract,
             air_gap=air_gap,
             touch_tip=touch_tip,
-            reuse_tip=reuse_tip,
             pre_mix=pre_mix,
             **kwargs,
         )

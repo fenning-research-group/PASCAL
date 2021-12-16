@@ -70,8 +70,9 @@ hotplate:
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
   timings:
+    pickuptip: 10 #time (seconds) to pick up a fresh pipette tip
     aspirate:
-      preparetip: 10 #time (seconds) to pick up a fresh tip
+      home: 5 #time (seconds) to home the pipette plunger between moves
       premix: # time (seconds) = (a*volume + b) * num_cycles
         a: 0.0209
         b: 0.5132
