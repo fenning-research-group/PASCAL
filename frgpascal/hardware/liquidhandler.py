@@ -26,8 +26,14 @@ def expected_timings(drop):
     Returns:
         float: duration, in seconds
     """
+
+    pickuptip_duration = tc["pickuptip"]
+
     ac = tc["aspirate"]  # aspiration constants
-    aspirate_duration = ac["preparetip"] + drop["volume"] / 100 + tc["travel"]
+    aspirate_duration = (
+        tc["travel"]  # move to well
+        + drop["volume"] / 100  # 100 uL/sec default aspiration rate
+    )
     aspirate_duration += drop["pre_mix"][0] * (
         ac["premix"]["a"] * drop["pre_mix"][1] + ac["premix"]["b"]
     )  # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
@@ -45,7 +51,7 @@ def expected_timings(drop):
         staging_duration = tc["travel"]
         dispense_duration = tc["dispensedelay"]
 
-    return aspirate_duration, staging_duration, dispense_duration
+    return pickuptip_duration, aspirate_duration, staging_duration, dispense_duration
 
 
 class OT2:
@@ -103,7 +109,7 @@ class OT2:
         )
         return taskid
 
-    def aspirate_for_spincoating(
+    def aspirate(
         self,
         tray,
         well,
