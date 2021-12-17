@@ -28,16 +28,7 @@ def generate_workers(maestro=None):
     st2.name = "Tray2"
     cl = Worker_Characterization(**kws)
 
-    return {
-        "hotplate1": hp1,
-        "hotplate2": hp2,
-        "hotplate3": hp3,
-        "tray1": st1,
-        "tray2": st2,
-        "gantrygripper": gg,
-        "spincoaterliquidhandler": sclh,
-        "characterization": cl,
-    }
+    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl]}
 
 
 ALL_WORKERS = generate_workers()
@@ -95,7 +86,7 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
         duration=ALL_TASKS[transition_name]["estimated_duration"],
         source=w1,
         destination=w2,
-        workers=[ALL_WORKERS["gantrygripper"]],
+        workers=[ALL_WORKERS["GantryGripper"]],
         immediate=immediate,
     )
     this_transition.name = transition_name
@@ -107,6 +98,6 @@ def build():
     return rf.System(
         workers=list(ALL_WORKERS.values()),
         transitions=transitions,
-        starting_worker=ALL_WORKERS["tray1"],
-        ending_worker=ALL_WORKERS["tray1"],
+        starting_worker=ALL_WORKERS["Tray1"],
+        ending_worker=ALL_WORKERS["Tray1"],
     )
