@@ -522,6 +522,7 @@ class Anneal(Task):
             return (
                 self.duration == other.duration
                 and self.temperature == other.temperature
+                and self.hotplate == other.hotplate
             )
         else:
             return False
