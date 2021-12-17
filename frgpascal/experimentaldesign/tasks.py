@@ -69,11 +69,11 @@ TRANSITION_TASKS = {
     },
 }
 
-hide_me = [
+__hide_me = [
     task for p1 in TRANSITION_TASKS.values() for task in p1.values()
 ]  # user does not need to see transition tasks
 AVAILABLE_TASKS = {
-    task: details for task, details in ALL_TASKS.items() if task not in hide_me
+    task: details for task, details in ALL_TASKS.items() if task not in __hide_me
 }  # tasks to display to user
 
 ### Sample Class
@@ -86,14 +86,9 @@ class Sample:
         substrate: str,
         worklist: list,
         storage_slot=None,
-        sampleid: str = None,
     ):
         self.name = name
         self.substrate = substrate
-        if hash is None:
-            self._sampleid = str(uuid4())
-        else:
-            self._sampleid = sampleid
         if storage_slot is None:
             self.storage_slot = {
                 "tray": None,
@@ -101,7 +96,7 @@ class Sample:
             }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
         else:
             self.storage_slot = storage_slot
-        self.worklist = worklist
+        self.worklist = deepcopy(worklist)
         for t in self.worklist:
             t.sample = self
         self.status = "not_started"  # currently unused
@@ -352,7 +347,7 @@ class Task(Task_roboflo):
             return f"<Task> {self.sample.name}, {self.task}"
 
     def __eq__(self, other):
-        return other == self.id
+        return isinstance(other, self.__class__) and (other.id == self.id)
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -476,15 +471,27 @@ class Spincoat(Task):
 
 
 class Anneal(Task):
-    def __init__(self, duration: float, temperature: float, immediate=True):
+    def __init__(
+        self,
+        duration: float,
+        temperature: float,
+        hotplate: str = "Hotplate1",
+        immediate=True,
+    ):
         """
 
         Args:
             duration (float): duration (seconds) to anneal the sample
             temperature (float): temperature (C) to anneal the sample at
+            hotplate (str): name of the hotplate to use. Must be "Hotplate{1,2,3}"
         """
         self.duration = duration
         self.temperature = temperature
+        if hotplate not in ["Hotplate1", "Hotplate2", "Hotplate3"]:
+            raise ValueError(
+                "hotplate must be one of 'Hotplate1', 'Hotplate2', 'Hotplate3'"
+            )
+        self.hotplate = hotplate
         super().__init__(
             task="anneal",
             duration=self.duration,
@@ -507,6 +514,7 @@ class Anneal(Task):
         return {
             "temperature": self.temperature,
             "duration": self.duration,
+            "hotplate": self.hotplate,
         }
 
     def __eq__(self, other):
