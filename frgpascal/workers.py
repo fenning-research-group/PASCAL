@@ -441,7 +441,7 @@ class Worker_Storage(WorkerTemplate):
 class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
         super().__init__(
-            name="SpincoaterLiquidHandler",
+            name="SpincoaterLiquidhandler",
             maestro=maestro,
             planning=planning,
             capacity=1,
