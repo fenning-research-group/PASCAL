@@ -33,6 +33,8 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
 )
 
+from frgpascal.websocketbridge import Server
+
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
@@ -41,6 +43,51 @@ with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") a
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
 ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL Runs"
+
+
+class MaestroServer(Server):
+    """
+    Websocket server from which Maestro can send and receive messages
+
+    This class is only used when Maestro is controlled externally (ie for active learning)
+    """
+
+    def __init__(self, maestro):
+        self.maestro = maestro
+        super().__init__()
+
+    def _process_message(self, message: str):
+        options = {
+            "start": self.reset_start_time,
+            "protocol": self.add_protocol,
+            "folder": self.share_experiment_directory,
+        }
+
+        d = json.loads(message)
+        func = options[d["type"]]
+        func(d)
+
+    def reset_start_time(self, d: dict):
+        """Update the start time for the current run"""
+        self.maestro.t0 = self.maestro.nist_time()
+
+    def add_protocol(self, d: dict):
+        """Add a protocol to the maestro workers"""
+        for t in d["worklist"]:
+            assigned = False
+            for workername, worker in self.maestro.workers.items():
+                if t["name"] in worker.functions:
+                    worker.add_task(t)
+                    assigned = True
+                    continue
+            if not assigned:
+                raise Exception(f"No worker assigned to task {t['name']}")
+
+    def share_experiment_directory(self, d: dict):
+        """Share the experiment directory with the active learner"""
+        msg_dict = {"type": "folder", "path": self.maestro.experiment_folder}
+        msg = json.dumps(msg_dict)
+        self.send(msg)
 
 
 class Maestro:
@@ -533,16 +580,16 @@ class Maestro:
         self.working = True
 
         self.liquidhandler.server.ip = ot2_ip
-        self.read_protocol_files = []
+        # self.read_protocol_files = []
         self.pending_tasks = []
         self.completed_tasks = {}
         self.lock_pendingtasks = Lock()
         self.lock_completedtasks = Lock()
         folder = self._set_up_experiment_folder(name)
-        self.protocol_folder = os.path.join(folder, "protocols")
-        os.mkdir(self.protocol_folder)
-        self.response_folder = os.path.join(folder, "responses")
-        os.mkdir(self.response_folder)
+        # self.protocol_folder = os.path.join(folder, "protocols")
+        # os.mkdir(self.protocol_folder)
+        # self.response_folder = os.path.join(folder, "responses")
+        # os.mkdir(self.response_folder)
 
         self.workers = {
             "gantry_gripper": Worker_GantryGripper(maestro=self),
@@ -557,10 +604,9 @@ class Maestro:
         }
 
         self._start_loop()
-        # self.loop = asyncio.new_event_loop()
-        # self.loop.set_debug(True)
-        self.t0 = self.nist_time()
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
             worker.start()
+
+        self.server = MaestroServer(maestro=self)

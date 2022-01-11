@@ -26,9 +26,100 @@ from frgpascal.workers import (
     Worker_Characterization,
     Worker_SpincoaterLiquidHandler,
 )
+from frgpascal.websocketbridge import Client
+
+
+class ALClient(Client):
+    """
+    Websocket client to connect to Maestro server
+    """
+
+    def __init__(self, bridge):
+        self.bridge = bridge
+        super().__init__()
+        self.first_protocol_sent = False
+
+    def _process_message(self, message: str):
+        options = {
+            "protocol_complete": self.bridge.process_new_data,
+            "folder": self._set_experiment_directory,
+        }
+
+        d = json.loads(message)
+        func = options[d["type"]]
+        func(d)
+
+    def reset_start_time(self, d: dict):
+        """Update the start time for the current run"""
+        self.maestro.t0 = self.maestro.nist_time()
+
+    def add_protocol(self, protocol: dict):
+        """Send a new protocol to the maestro workers"""
+        if not self.first_protocol_sent:
+            self.reset_start_time()  # set maestro overall start time to current time, since this is the first protocol!
+            self.first_protocol_sent = True
+
+        msg = json.dumps(protocol)
+        self.send(msg)
+
+    def get_experiment_directory(self):
+        """
+        Get the directory where the experiment is being run
+        """
+        msg_dict = {"type": "folder"}
+        msg = json.dumps(msg_dict)
+        self.send(msg)
+
+    def _set_experiment_directory(self, d: dict):
+        """
+        Set the experiment directory
+        """
+        self.bridge.experiment_folder = d["path"]
 
 
 class ALBridge:
+    def __init__(self):
+        # self.protocols = {}
+        # self.responses = {}
+        # self.input_variables = list(input_space.keys())
+        # self.response_variables = response_variables
+        # self.X = []
+        # self.y = []
+        self.websocket = ALClient(bridge=self)
+        self.websocket.get_experiment_directory()
+
+    @abstractmethod
+    async def build_protocol(self, **inputs) -> dict:
+        """convert active learning point into PASCAL experimental protocol"""
+        pass
+
+    @abstractmethod
+    async def process_new_data(self, fid) -> dict:
+        """read the characterization data file to inform active learner of protocol results
+
+        expects a json file with the following format:
+            {
+                "name": name of this protocol/sample
+                "date": date string,
+                "time": time string,
+                "inputs":
+                    {key:value}
+                "responses":
+                    {key:value}
+                "full_protocol":
+                    {full protocol json sent to PASCAL}
+            }
+
+        """
+        pass
+
+    @abstractmethod
+    async def propose_protocol(self) -> dict:
+        """based on current results, propose the next protocol point to be tested"""
+        pass
+
+
+class ALBridgeOld:
     def __init__(self, directory: str, input_space: dict, response_variables: str):
         self.rootdir = directory
         self.protocoldir = os.path.join(self.rootdir, "protocols")
