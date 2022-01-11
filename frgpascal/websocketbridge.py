@@ -24,7 +24,8 @@ class WebsocketBase(ABC):
     async def consumer_handler(self, websocket):
         while self.running:
             async for message in websocket:
-                print(f"{self} received: {message}")
+                # print(f"{self} received: {message}")
+                self._process_message(message)
 
     async def producer_handler(self, websocket):
         while self.running:
@@ -35,7 +36,8 @@ class WebsocketBase(ABC):
                 await asyncio.sleep(0.1)
 
     @abstractmethod
-    async def _main(self):
+    async def _process_message(self, message: str):
+        """processes incoming messages from the websocket"""
         pass
 
     @abstractmethod

@@ -1,24 +1,10 @@
 import asyncio
-from abc import ABC, abstractmethod
-import time
 import logging
 from collections import namedtuple
-import uuid
 from roboflo import Worker as Worker_roboflo
+import json
 
-# from frgpascal.maestro import Maestro
 from frgpascal.hardware.liquidhandler import expected_timings
-
-# from frgpascal.hardware.gantry import Gantry
-# from frgpascal.hardware.gripper import Gripper
-# from frgpascal.hardware.spincoater import SpinCoater
-# from frgpascal.hardware.liquidhandler import OT2
-# from frgpascal.hardware.hotplate import HotPlate
-# from frgpascal.hardware.sampletray import SampleTray
-# from frgpascal.hardware.characterizationline import (
-#     CharacterizationAxis,
-#     CharacterizationLine,
-# )
 
 task_tuple = namedtuple("task", ["function", "estimated_duration", "other_workers"])
 
@@ -1008,3 +994,13 @@ class Worker_Characterization(WorkerTemplate):
 
     def characterize(self, sample, details):
         self.characterization.run(samplename=sample["name"])
+
+        # if maestro is under external control, ping the websocket client to alert that a sample has been characterized
+        if hasattr(self.maestro, "server"):
+            msg_dict = {
+                "type": "sample_complete",
+                "sample": sample["name"],
+                "taskid": details["taskid"],
+            }
+            msg = json.dumps(msg_dict)
+            self.maestro.server.send(msg)
