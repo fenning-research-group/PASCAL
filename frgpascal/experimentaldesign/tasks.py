@@ -584,7 +584,7 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 240, immediate=False):
+    def __init__(self, duration: float = 280, immediate=False):
         self.duration = duration
         super().__init__(
             task="characterize",
