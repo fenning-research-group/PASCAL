@@ -9,6 +9,7 @@ import threading
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.switchbox import SingleSwitch
+from datetime import datetime
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
@@ -100,7 +101,7 @@ class SpinCoater:
             AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
         )
         # odrive defaults
-        self.axis.motor.config.current_lim = 30  # Amps NOT SAME AS POWER SUPPLY CURRENT
+        self.axis.motor.config.current_lim = 20  # Amps NOT SAME AS POWER SUPPLY CURRENT
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
         self.axis.trap_traj.config.vel_limit = (
             0.5  # for position moves to lock position
@@ -114,6 +115,7 @@ class SpinCoater:
         self.__connected = True
         self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
         self._libfibre_watchdog.start()
+        self._error_log = []
 
     def disconnect(self):
         self.__connected = False
@@ -275,8 +277,7 @@ class SpinCoater:
     def _lookup_error(self):
         for err in dir(odrive.enums):
             if self.axis.error == getattr(odrive.enums, err):
-                print(err)
-                break
+                return err
 
     # logging code
     def __logging_worker(self):
@@ -327,6 +328,8 @@ class SpinCoater:
                     }
 
                     if self.axis.error > 0:
+                        dt = datetime.strftime(datetime.now(), "%m/%d %H:%M:%S")
+                        self._error_log.append((dt, self._lookup_error))
                         self.axis.clear_errors()
                 except:
                     print(
