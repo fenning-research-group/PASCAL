@@ -449,10 +449,10 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         self.liquidhandler.server.completed_tasks[taskid] - t0
                     )  # save the completion time of the liquidhandler task
                     print(
-                        f"\t\t{t0-self.maestro.nist_time():.2f} droptime found {taskid}"
+                        f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {taskid}"
                     )
                 await asyncio.sleep(0.1)
-        print(f"\t{t0-self.maestro.nist_time():.2f} found all droptimes")
+        print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
         return completed_tasks
 
     async def _set_spinspeeds(self, steps, t0, headstart):
@@ -461,11 +461,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         for step in steps:
             self.spincoater.set_rpm(rpm=step["rpm"], acceleration=step["acceleration"])
             tnext += step["duration"]
-            while self.maestro.nist_time() - t0 < tnext:
+            while self.maestro.nist_time - t0 < tnext:
                 await asyncio.sleep(0.1)
-            print(f"\t\t{t0-self.maestro.nist_time():.2f} finished step")
+            print(f"\t\t{t0-self.maestro.nist_time:.2f} finished step")
         self.spincoater.stop()
-        print(f"\t{t0-self.maestro.nist_time():.2f} finished all spinspeed steps")
+        print(f"\t{t0-self.maestro.nist_time:.2f} finished all spinspeed steps")
 
     def _expected_aspiration_duration(self, drop) -> float:
         """Estimate the duration (seconds) liquid aspiration will require for a given drop
@@ -812,7 +812,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         """
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
 
-        t0 = self.maestro.nist_time()
+        t0 = self.maestro.nist_time
         self.spincoater.start_logging()
         ### set up liquid handler tasks
         if len(details["drops"]) == 1:
@@ -842,11 +842,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         tasks_future.add_done_callback(future_callback)
 
         drop_times, _ = loop.run_until_complete(tasks_future)
-        print(f"{t0-self.maestro.nist_time():.2f} finished all tasks")
+        print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
         rpm_log = self.spincoater.finish_logging()
-        print(f"{t0-self.maestro.nist_time():.2f} finished logging")
+        print(f"{t0-self.maestro.nist_time:.2f} finished logging")
         self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
-        print(f"{t0-self.maestro.nist_time():.2f} server stopped")
+        print(f"{t0-self.maestro.nist_time:.2f} server stopped")
         return {
             "liquidhandler_timings": {**drop_times},
             "spincoater_log": {**rpm_log},

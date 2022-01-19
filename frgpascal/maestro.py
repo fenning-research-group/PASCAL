@@ -181,9 +181,10 @@ class Maestro:
         self.__local_nist_offset = response.tx_time - time.time()
 
     @property
-    def time(self):
-        return self.nist_time() - self.t0
+    def experiment_time(self):
+        return self.nist_time - self.t0
 
+    @property
     def nist_time(self):
         return time.time() + self.__local_nist_offset
 
@@ -517,7 +518,7 @@ class Maestro:
         self._start_loop()
         # self.loop = asyncio.new_event_loop()
         # self.loop.set_debug(True)
-        self.t0 = self.nist_time()
+        self.t0 = self.nist_time
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)

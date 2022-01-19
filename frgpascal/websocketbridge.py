@@ -4,7 +4,7 @@ from threading import Thread
 from abc import ABC, abstractmethod
 from functools import partial
 
-PORT = 8765
+PORT = 8765  # not chosen for any particular reason, just needs to match between Server and Client
 
 
 def future_callback(source, future):
@@ -12,8 +12,6 @@ def future_callback(source, future):
         future.result()
     except Exception as e:
         print(f"Exception in {source}: {future.exception()}")
-        # if future.exception(): #your long thing had an exception
-        #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
 
 class WebsocketBase(ABC):
@@ -109,14 +107,11 @@ class Client(WebsocketBase):
                 [consumer_task, producer_task],
                 return_when=asyncio.FIRST_COMPLETED,
             )
-            # print(f"{self} done, {pending} pending")
-
-            # for task in asyncio.all_tasks(loop=self.loop):
-            #     task.cancel()
 
 
-### Maestro side (server)
 class Server(WebsocketBase):
+    """This is the Maestro side"""
+
     def __init__(self):
         super().__init__()
         self.run()

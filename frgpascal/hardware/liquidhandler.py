@@ -243,6 +243,7 @@ class OT2Server:
         t_local = time.time()
         self.__local_nist_offset = response.tx_time - t_local
 
+    @property
     def nist_time(self):
         return time.time() + self.__local_nist_offset
 
@@ -383,7 +384,7 @@ class OT2Server:
             taskid = str(uuid.uuid4())
 
         if nist_time is None:
-            nist_time = self.nist_time()
+            nist_time = self.nist_time
 
         task = {
             "task": {
