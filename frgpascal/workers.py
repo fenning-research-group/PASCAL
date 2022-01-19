@@ -84,7 +84,7 @@ class WorkerTemplate(Worker_roboflo):
             _, task = await self.queue.get()  # blocking wait for next task
             task_description = f'{task["name"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
-            sample_task = sample["tasks"][task["id"]]
+            sample_task = [t for t in sample["tasks"] if t["id"] == task["id"]][0]
             # print(f"starting {task_description}")
             if task is None:  # finished flag
                 break
