@@ -1,10 +1,7 @@
 import numpy as np
 import os
-import sys
-from threading import Thread, Lock
-from concurrent.futures import ThreadPoolExecutor
 import time
-import yaml
+from queue import Queue
 import json
 import asyncio
 from abc import ABC, abstractmethod
@@ -35,15 +32,21 @@ class ALClient(Client):
     Websocket client to connect to Maestro server
     """
 
-    def __init__(self, bridge):
-        self.bridge = bridge
+    def __init__(self):
         super().__init__()
-        self.first_protocol_sent = False
+        self.first_sample_sent = False
         self.__calibrate_time_to_nist()
         self.t0 = None
+        self.processed_protocols = []
+        self.completed_but_not_processed = Queue()
+        self.protocols_in_progress = []
 
     @property
     def experiment_time(self):
+        if self.t0 is None:
+            raise Exception(
+                "Experiment has not started, or t0 has not been synced to Maestro!"
+            )
         return self.nist_time - self.t0
 
     @property
@@ -62,33 +65,34 @@ class ALClient(Client):
 
     def _process_message(self, message: str):
         options = {
-            "protocol_complete": self.bridge.process_new_data,
-            "folder": self._set_experiment_directory,
-            "maestro_start_time": self.reset_start_time,
+            "sample_complete": self.move_completed_to_queue,
+            "set_experiment_directory": self._set_experiment_directory,
         }
 
         d = json.loads(message)
         func = options[d["type"]]
         func(d)
 
-    def reset_start_time(self, d: dict):
+    def set_start_time(self, delay: int = 5):
         """Update the start time for the current run"""
-        self.t0 = d["t0"]
+        self.t0 = self.nist_time + delay
+        msg = {"type": "set_start_time", "nist_time": self.t0}
+        self.send(json.dump(msg))
 
-    def add_protocol(self, protocol: dict):
-        """Send a new protocol to the maestro workers"""
-        if not self.first_protocol_sent:
-            self.reset_start_time()  # set maestro overall start time to current time, since this is the first protocol!
-            self.first_protocol_sent = True
+    def add_sample(self, sample: dict):
+        """Send a new sample to the maestro workers"""
+        if not self.first_sample_sent:
+            self.set_start_time()  # set maestro overall start time to current time, since this is the first sample!
+            self.first_sample_sent = True
 
-        msg = json.dumps(protocol)
+        msg = json.dumps(sample)
         self.send(msg)
 
     def get_experiment_directory(self):
         """
         Get the directory where the experiment is being run
         """
-        msg_dict = {"type": "folder"}
+        msg_dict = {"type": "get_experiment_directory"}
         msg = json.dumps(msg_dict)
         self.send(msg)
 
@@ -101,12 +105,6 @@ class ALClient(Client):
 
 class ALBridge:
     def __init__(self):
-        # self.protocols = {}
-        # self.responses = {}
-        # self.input_variables = list(input_space.keys())
-        # self.response_variables = response_variables
-        # self.X = []
-        # self.y = []
         self.websocket = ALClient(bridge=self)
         self.websocket.get_experiment_directory()
 
@@ -139,67 +137,3 @@ class ALBridge:
     async def propose_protocol(self) -> dict:
         """based on current results, propose the next protocol point to be tested"""
         pass
-
-
-class ALBridgeOld:
-    def __init__(self, directory: str, input_space: dict, response_variables: str):
-        self.rootdir = directory
-        self.protocoldir = os.path.join(self.rootdir, "protocols")
-        self.responsedir = os.path.join(self.rootdir, "responses")
-        self.consumed_response_files = []
-        self.protocols = {}
-        self.responses = {}
-        self.input_variables = list(input_space.keys())
-        self.response_variables = response_variables
-        self.X = []
-        self.y = []
-        self.INTERVAL = 5  # seconds between checking for new response files
-
-    @abstractmethod
-    async def build_protocol(self, **inputs) -> dict:
-        """convert active learning point into PASCAL experimental protocol"""
-        pass
-
-    async def read_response(self, fid) -> dict:
-        """read the characterization data file to inform active learner of protocol results
-
-        expects a json file with the following format:
-            {
-                "name": name of this protocol/sample
-                "date": date string,
-                "time": time string,
-                "inputs":
-                    {key:value}
-                "responses":
-                    {key:value}
-                "full_protocol":
-                    {full protocol json sent to PASCAL}
-            }
-
-        """
-        with open(fid, "r") as f:
-            data = json.load(f)
-            name = data.pop["name"]
-            self.responses[data["name"]] = data
-
-            x = [data["inputs"][i] for i in self.input_variables]
-            y = [data["responses"][i] for i in self.response_variables]
-            self.X.append(x)
-            self.y.append(y)
-        self.consumed_response_files.append(fid)
-
-    @abstractmethod
-    async def propose_protocol(self) -> dict:
-        """based on current results, propose the next protocol point to be tested"""
-        pass
-
-    async def reader(self):
-        while self.running:
-            new_fids = [
-                fid
-                for fid in os.listdir(self.responsedir)
-                if fid not in self.consumed_response_files and ".json" in fid
-            ]
-            for fid in new_fids:
-                await self.read_response(os.path.join(self.responsedir, fid))
-            await asyncio.sleep(self.INTERVAL)

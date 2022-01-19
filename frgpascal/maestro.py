@@ -58,34 +58,39 @@ class MaestroServer(Server):
 
     def _process_message(self, message: str):
         options = {
-            "start": self.reset_start_time,
+            "set_start_time": self.set_start_time,
             "protocol": self.add_protocol,
-            "folder": self.share_experiment_directory,
+            "get_experiment_directory": self.share_experiment_directory,
         }
 
         d = json.loads(message)
         func = options[d["type"]]
         func(d)
 
-    def reset_start_time(self, d: dict):
+    def set_start_time(self, d: dict):
         """Update the start time for the current run"""
-        self.maestro.t0 = self.maestro.nist_time()
+        self.maestro.t0 = d["nist_time"]
 
     def add_protocol(self, d: dict):
         """Add a protocol to the maestro workers"""
+        self.maestro.samples.append(d)
         for t in d["worklist"]:
             assigned = False
             for workername, worker in self.maestro.workers.items():
                 if t["name"] in worker.functions:
                     worker.add_task(t)
                     assigned = True
+                    self.maestro.tasks.append(t)
                     continue
             if not assigned:
                 raise Exception(f"No worker assigned to task {t['name']}")
 
     def share_experiment_directory(self, d: dict):
         """Share the experiment directory with the active learner"""
-        msg_dict = {"type": "folder", "path": self.maestro.experiment_folder}
+        msg_dict = {
+            "type": "set_experiment_directory",
+            "path": self.maestro.experiment_folder,
+        }
         msg = json.dumps(msg_dict)
         self.send(msg)
 
@@ -161,6 +166,7 @@ class Maestro:
         # Status
         self.samples = {}
         self.tasks = {}
+        self.t0 = None
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
@@ -182,6 +188,8 @@ class Maestro:
 
     @property
     def experiment_time(self):
+        if self.t0 is None:
+            raise Exception("Experiment has not started!")
         return self.nist_time - self.t0
 
     @property
