@@ -6,9 +6,9 @@ import json
 import yaml
 from copy import deepcopy
 import os
-from mixsol import Solution as Solution_mixsol
+import mixsol
 from frgpascal.system import generate_workers
-from roboflo import Task as Task_roboflo
+import roboflo
 
 from frgpascal.hardware import liquidhandler
 from frgpascal.workers import (
@@ -103,11 +103,14 @@ class Sample:
         self.tasks = []
 
     def to_dict(self):
-        task_output = {task.id: task.to_dict() for task in self.tasks}
+        if isinstance(self.tasks, roboflo.Protocol):
+            task_output = self.tasks.to_dict()["worklist"]
+        else:
+            task_output = None
 
         out = {
             "name": self.name,
-            "sampleid": self._sampleid,
+            # "sampleid": self._sampleid,
             "substrate": self.substrate,
             "storage_slot": self.storage_slot,
             "worklist": [w.to_dict() for w in self.worklist],
@@ -144,7 +147,7 @@ class Sample:
 
 
 ### Subclasses to define a spincoat
-class Solution(Solution_mixsol):
+class Solution(mixsol.Solution):
     def __init__(
         self,
         solvent: str,
@@ -307,7 +310,7 @@ class VolatileDrop(Drop):
 
 
 ### Base Class for PASCAL Tasks
-class Task(Task_roboflo):
+class Task(roboflo.Task):
     def __init__(
         self,
         task: str,
