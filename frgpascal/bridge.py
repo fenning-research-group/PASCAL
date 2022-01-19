@@ -8,6 +8,7 @@ import yaml
 import json
 import asyncio
 from abc import ABC, abstractmethod
+import ntplib
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -38,11 +39,32 @@ class ALClient(Client):
         self.bridge = bridge
         super().__init__()
         self.first_protocol_sent = False
+        self.__calibrate_time_to_nist()
+        self.t0 = None
+
+    @property
+    def experiment_time(self):
+        return self.nist_time - self.t0
+
+    @property
+    def nist_time(self):
+        return time.time() + self.__local_nist_offset
+
+    def __calibrate_time_to_nist(self):
+        client = ntplib.NTPClient()
+        response = None
+        while response is None:
+            try:
+                response = client.request("europe.pool.ntp.org", version=3)
+            except:
+                pass
+        self.__local_nist_offset = response.tx_time - time.time()
 
     def _process_message(self, message: str):
         options = {
             "protocol_complete": self.bridge.process_new_data,
             "folder": self._set_experiment_directory,
+            "maestro_start_time": self.reset_start_time,
         }
 
         d = json.loads(message)
@@ -51,7 +73,7 @@ class ALClient(Client):
 
     def reset_start_time(self, d: dict):
         """Update the start time for the current run"""
-        self.maestro.t0 = self.maestro.nist_time()
+        self.t0 = d["t0"]
 
     def add_protocol(self, protocol: dict):
         """Send a new protocol to the maestro workers"""
