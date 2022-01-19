@@ -101,7 +101,7 @@ class SpinCoater:
             AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
         )
         # odrive defaults
-        self.axis.motor.config.current_lim = 20  # Amps NOT SAME AS POWER SUPPLY CURRENT
+        self.axis.motor.config.current_lim = 20  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~50% of the specified max motor current
         self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
         self.axis.trap_traj.config.vel_limit = (
             0.5  # for position moves to lock position
