@@ -7,7 +7,7 @@ import yaml
 from copy import deepcopy
 import os
 from mixsol import Solution as Solution_mixsol
-
+from frgpascal.system import generate_workers
 from roboflo import Task as Task_roboflo
 
 from frgpascal.hardware import liquidhandler
@@ -27,21 +27,21 @@ with open(
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
-gg = Worker_GantryGripper(planning=True)
-sclh = Worker_SpincoaterLiquidHandler(planning=True)
-hp = Worker_Hotplate(capacity=25, planning=True)
-st = Worker_Storage(capacity=45, planning=True, initial_fill=45)
-cl = Worker_Characterization(planning=True)
+# gg = Worker_GantryGripper(planning=True)
+# sclh = Worker_SpincoaterLiquidHandler(planning=True)
+# hp = Worker_Hotplate(capacity=25, planning=True)
+# st1 = Worker_Storage(capacity=45, planning=True, initial_fill=45)
+# cl = Worker_Characterization(planning=True)
 
-workers = [gg, sclh, hp, st, cl]
-
+# workers = [gg, sclh, hp, st, cl]
+workers = generate_workers()
 ALL_TASKS = {
     task: {
-        "workers": [type(worker)]
+        "workers": [worker]
         + details.other_workers,  # list of workers required to perform task
         "estimated_duration": details.estimated_duration,  # time (s) to complete task
     }
-    for worker in workers
+    for worker in workers.values()
     for task, details in worker.functions.items()
 }
 
