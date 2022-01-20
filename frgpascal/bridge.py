@@ -77,15 +77,25 @@ class ALClient(Client):
         """Update the start time for the current run"""
         self.t0 = self.nist_time + delay
         msg = {"type": "set_start_time", "nist_time": self.t0}
-        self.send(json.dump(msg))
+        self.send(json.dumps(msg))
+
+    def move_completed_to_queue(self, d: dict):
+        """
+        move a completed sample id to the queue for data processing
+        worker to take over
+        """
+        print(f"data ready for {d['sample']}")
+        self.queue.put(d)
 
     def add_sample(self, sample: dict):
         """Send a new sample to the maestro workers"""
-        if not self.first_sample_sent:
-            self.set_start_time()  # set maestro overall start time to current time, since this is the first sample!
-            self.first_sample_sent = True
+        # if not self.first_sample_sent:
+        #     self.set_start_time()  # set maestro overall start time to current time, since this is the first sample!
+        #     self.first_sample_sent = True
 
-        msg = json.dumps(sample)
+        msg_dict = sample.copy()
+        msg_dict["type"] = "protocol"
+        msg = json.dumps(msg_dict)
         self.send(msg)
 
     def get_experiment_directory(self):

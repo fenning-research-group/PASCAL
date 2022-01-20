@@ -64,17 +64,16 @@ class MaestroServer(Server):
         }
 
         d = json.loads(message)
-        func = options[d["type"]]
+        func = options[d.pop("type")]
         func(d)
 
     def set_start_time(self, d: dict):
         """Update the start time for the current run"""
         self.maestro.t0 = d["nist_time"]
 
-    def add_protocol(self, d: dict):
+    def add_protocol(self, sample_dict: dict):
         """Add a protocol to the maestro workers"""
-        self.maestro.samples.append(d)
-        for t in d["worklist"]:
+        for t in sample_dict["worklist"]:
             assigned = False
             for workername, worker in self.maestro.workers.items():
                 if t["name"] in worker.functions:
@@ -84,6 +83,8 @@ class MaestroServer(Server):
                     continue
             if not assigned:
                 raise Exception(f"No worker assigned to task {t['name']}")
+        samplename = sample_dict["name"]
+        self.maestro.samples[samplename] = sample_dict
 
     def share_experiment_directory(self, d: dict):
         """Share the experiment directory with the active learner"""
@@ -164,8 +165,9 @@ class Maestro:
         self.__calibrate_time_to_nist()  # for sync with other hardware
         # Status
         self.samples = {}
-        self.tasks = {}
+        self.tasks = []
         self.t0 = None
+        self._under_external_control = False
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
@@ -412,21 +414,31 @@ class Maestro:
     async def _keep_loop_running(self):
         experiment_started = False
         experiment_completed = False
-        while self.working:
-            if (
-                not experiment_started
-            ):  # wait for the task list to start being populated
-                with self.lock_pendingtasks:
-                    if len(self.pending_tasks) > 0:
-                        experiment_started = True
-                await asyncio.sleep(30)
-            elif not experiment_completed:
-                with self.lock_pendingtasks:
-                    if len(self.pending_tasks) == 0:
-                        experiment_completed = True
-                await asyncio.sleep(5)
-            else:
-                break
+        if self._under_external_control:
+            # if under external control, the pending tasklist might be exhausted before experiment ends
+            while self.working:
+                await asyncio.sleep(1)
+            # once we manually set `self.working = False`, wait for pending tasks to be exhausted
+            while len(self.pending_tasks) > 0:
+                await asyncio.sleep(1)
+            experiment_completed = True
+        else:
+            # if under maestro control, experiment is done when the tasklist is exhausted!
+            while self.working:
+                if (
+                    not experiment_started
+                ):  # wait for the task list to start being populated
+                    with self.lock_pendingtasks:
+                        if len(self.pending_tasks) > 0:
+                            experiment_started = True
+                    await asyncio.sleep(30)
+                elif not experiment_completed:
+                    with self.lock_pendingtasks:
+                        if len(self.pending_tasks) == 0:
+                            experiment_completed = True
+                    await asyncio.sleep(5)
+                else:
+                    break
         if experiment_completed == True:
             self.stop()
 
@@ -511,10 +523,10 @@ class Maestro:
             "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
             "characterization": Worker_Characterization(maestro=self),
             "hotplates": Worker_Hotplate(
-                maestro=self, n_workers=25
+                maestro=self, capacity=25
             ),  # TODO dont hardcode hotplate workers
             "storage": Worker_Storage(
-                maestro=self, n_workers=45
+                maestro=self, capacity=45
             ),  # TODO dont hardcode storage workers
         }
 
@@ -584,9 +596,10 @@ class Maestro:
                         raise Exception(f"No worker assigned to task {t['task']}")
             await asyncio.sleep(0.5)
 
-    def run_externalcontrol(self, filepath, name, ot2_ip):
+    def run_externalcontrol(self, name, ot2_ip):
         self._experiment_checklist()
         self.working = True
+        self._under_external_control = True
 
         self.liquidhandler.server.ip = ot2_ip
         # self.read_protocol_files = []
@@ -605,10 +618,10 @@ class Maestro:
             "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
             "characterization": Worker_Characterization(maestro=self),
             "hotplates": Worker_Hotplate(
-                maestro=self, n_workers=25
+                maestro=self, capacity=25
             ),  # TODO dont hardcode hotplate workers
             "storage": Worker_Storage(
-                maestro=self, n_workers=45
+                maestro=self, capacity=45
             ),  # TODO dont hardcode storage workers
         }
 
