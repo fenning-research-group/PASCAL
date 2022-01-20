@@ -6,6 +6,7 @@ import json
 import asyncio
 from abc import ABC, abstractmethod
 import ntplib
+from frgpascal.experimentaldesign.tasks import Sample
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
@@ -25,24 +26,27 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
 )
 from frgpascal.websocketbridge import Client
+from frgpascal import system
 
 
 class ALClient(Client):
     """
-    Websocket client to connect to Maestro server
+    Websocket client + experiment coordinator, connects to Maestro server
     """
 
     def __init__(self):
         super().__init__()
-        self.first_sample_sent = False
         self.__calibrate_time_to_nist()
-        self.t0 = None
-        self.processed_protocols = []
-        self.completed_but_not_processed = Queue()
-        self.protocols_in_progress = []
+        self.initialize_experiment()
+
+        self.SCHEDULE_SOLVE_TIME = (
+            30  # time allotted (seconds) to determine task schedule
+        )
+        self.BUFFER_TIME = 10  # grace period (seconds) between schedule solution discovery and actual execution time
 
     @property
-    def experiment_time(self):
+    def experiment_time(self) -> float:
+        """time (seconds) since experiment started"""
         if self.t0 is None:
             raise Exception(
                 "Experiment has not started, or t0 has not been synced to Maestro!"
@@ -50,8 +54,34 @@ class ALClient(Client):
         return self.nist_time - self.t0
 
     @property
-    def nist_time(self):
+    def min_allowable_time(self) -> float:
+        """earliest experiment_time (seconds) at which a new task can be scheduled"""
+        return self.experiment_time + self.SCHEDULE_SOLVE_TIME + self.BUFFER_TIME
+
+    @property
+    def nist_time(self) -> float:
         return time.time() + self.__local_nist_offset
+
+    def initialize_experiment(self):
+        self.system = system.build()
+        self.sample_counter = 0
+        self.first_sample_sent = False
+        self.t0 = None
+        self.processed_protocols = []
+        self.completed_but_not_processed = Queue()
+        self.protocols_in_progress = []
+        self.initialize_labware()
+
+    @abstractmethod
+    def initialize_labware(self):
+        """
+        define all:
+            - labware
+                - solution storage
+                - sample trays
+            - solutions
+        """
+        pass
 
     def __calibrate_time_to_nist(self):
         client = ntplib.NTPClient()
@@ -87,11 +117,26 @@ class ALClient(Client):
         print(f"data ready for {d['sample']}")
         self.queue.put(d)
 
-    def add_sample(self, sample: dict):
+    def add_sample(self, sample: Sample, min_start: int = None):
         """Send a new sample to the maestro workers"""
-        # if not self.first_sample_sent:
-        #     self.set_start_time()  # set maestro overall start time to current time, since this is the first sample!
-        #     self.first_sample_sent = True
+        if not self.first_sample_sent:
+            self.set_start_time()
+            self.first_sample_sent = True
+
+        if min_start is None:
+            min_start = self.min_allowable_time
+        min_start = max([min_start, self.min_allowable_time])
+
+        sample.protocol = self.system.generate_protocol(
+            name=sample.name,
+            worklist=sample.worklist,
+            # starting_worker=self.sample_trays[0],
+            # ending_worker=self.sample_trays[0],
+            min_start=min_start,
+        )
+        self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
+        self.add_sample(sample=sample.to_dict())
+        self.sample_counter += 1
 
         msg_dict = sample.copy()
         msg_dict["type"] = "protocol"

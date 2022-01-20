@@ -82,12 +82,8 @@ class SingleTaskGP(ALClient):
     def __init__(self):
         #### Solution Storage Slots
         super().__init__()
-        self.system = system.build()  # TODO wtf is this function name
-        self.SCHEDULE_SOLVE_TIME = 2
-        self.BUFFER_TIME = 2  # seconds of grace period to give between solution discovery and actual execution time
-        self.initialize_experiment()
 
-    def initialize_experiment(self):
+    def initialize_labware(self):
         ### Hardware
         # Solution Storage
         self.solution_storage = [
@@ -120,19 +116,7 @@ class SingleTaskGP(ALClient):
             solvent="MethylAcetate", labware="4mL_Tray1", well="D4"
         )
 
-        self.sample_counter = 0
-
     def build_protocol(self, anneal_duration, min_start=None):
-        if not self.first_sample_sent:
-            self.set_start_time()
-            self.first_sample_sent = True
-
-        min_allowable_start = (
-            self.experiment_time + self.SCHEDULE_SOLVE_TIME + self.BUFFER_TIME
-        )  # cant schedule too early or we cant actually execute
-        if min_start is None:
-            min_start = min_allowable_start
-        min_start = max([min_start, min_allowable_start])
         # spincoat_absorber = Spincoat(
         #     steps=[
         #         [3000, 2000, 50],  # speed (rpm), acceleration (rpm/s), duration (s)
@@ -173,15 +157,9 @@ class SingleTaskGP(ALClient):
                 "slot": self.sample_trays[0].load(name),
             },
         )
-        sample.protocol = self.system.generate_protocol(
-            name=sample.name,
-            worklist=sample.worklist,
-            # starting_worker=self.sample_trays[0],
-            # ending_worker=self.sample_trays[0],
-            min_start=min_start,
-        )
-        self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
-        self.add_sample(sample=sample.to_dict())
-        self.sample_counter += 1
+
+        self.add_sample(
+            sample=sample, min_start=min_start
+        )  # solves schedule + sends to maestro
 
         return sample
