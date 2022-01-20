@@ -1,4 +1,3 @@
-from bridge import ALBridge
 import numpy as np
 import csv
 import pandas as pd
@@ -84,8 +83,10 @@ class SingleTaskGP(ALClient):
         #### Solution Storage Slots
         super().__init__()
         self.system = system.build()  # TODO wtf is this function name
-        self.SCHEDULE_SOLVE_TIME = 20
-        self.BUFFER_TIME = 15 #seconds of grace period to give between solution discovery and actual execution time
+        self.SCHEDULE_SOLVE_TIME = 2
+        self.BUFFER_TIME = 2  # seconds of grace period to give between solution discovery and actual execution time
+        self.initialize_experiment()
+
     def initialize_experiment(self):
         ### Hardware
         # Solution Storage
@@ -104,10 +105,7 @@ class SingleTaskGP(ALClient):
         self.solution_storage.sort(key=lambda labware: labware.volume)
         # Sample Tray
         self.sample_trays = [
-            SampleTray(
-                name="Tray1",
-                version="storage_v1",
-            )
+            SampleTray(name="Tray1", version="storage_v1", gantry="", gripper="")
         ]
 
         ### Solutions
@@ -124,11 +122,17 @@ class SingleTaskGP(ALClient):
 
         self.sample_counter = 0
 
-    def build_protocol(self, anneal_duration, min_start = None):
-        min_allowable_start = self.experiment_time + self.SCHEDULE_SOLVE_TIME + self.BUFFER_TIME #cant schedule too early or we cant actually execute
+    def build_protocol(self, anneal_duration, min_start=None):
+        if not self.first_sample_sent:
+            self.set_start_time()
+            self.first_sample_sent = True
+
+        min_allowable_start = (
+            self.experiment_time + self.SCHEDULE_SOLVE_TIME + self.BUFFER_TIME
+        )  # cant schedule too early or we cant actually execute
         if min_start is None:
             min_start = min_allowable_start
-        min_start = max([min_start, min_allowable_start]) 
+        min_start = max([min_start, min_allowable_start])
         # spincoat_absorber = Spincoat(
         #     steps=[
         #         [3000, 2000, 50],  # speed (rpm), acceleration (rpm/s), duration (s)
@@ -153,27 +157,31 @@ class SingleTaskGP(ALClient):
         #     ],
         # )
         anneal_absorber = Anneal(temperature=100, duration=anneal_duration)
-        
-        name = f'sample{self.sample_counter}'
+
+        name = f"sample{self.sample_counter}"
         sample = Sample(
             name=name,
-            substrate='placeholder',
-            worklist = [
+            substrate="placeholder",
+            worklist=[
                 # spincoat_absorber,
                 anneal_absorber,
                 # Rest(180),
-                # Characterize()
+                Characterize(),
             ],
-            storage_slot = {'tray': self.sample_trays[0].name, 'slot': self.sample_trays[0].load(name)}
+            storage_slot={
+                "tray": self.sample_trays[0].name,
+                "slot": self.sample_trays[0].load(name),
+            },
         )
         sample.protocol = self.system.generate_protocol(
             name=sample.name,
             worklist=sample.worklist,
-            starting_worker = self.sample_trays[0],
-            starting_worker = self.sample_trays[0],
-            min_start = min_start
+            # starting_worker=self.sample_trays[0],
+            # ending_worker=self.sample_trays[0],
+            min_start=min_start,
         )
         self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
-        self.websocket.add_sample(sample=sample.to_dict())
+        self.add_sample(sample=sample.to_dict())
         self.sample_counter += 1
 
+        return sample

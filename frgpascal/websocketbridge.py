@@ -104,8 +104,7 @@ class Client(WebsocketBase):
             for future in [consumer_task, producer_task]:
                 future.add_done_callback(partial(future_callback, self))
             done, pending = await asyncio.wait(
-                [consumer_task, producer_task],
-                return_when=asyncio.FIRST_COMPLETED,
+                [consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED,
             )
 
 
@@ -123,8 +122,7 @@ class Server(WebsocketBase):
         for future in [consumer_task, producer_task]:
             future.add_done_callback(partial(future_callback, self))
         done, pending = await asyncio.wait(
-            [consumer_task, producer_task],
-            return_when=asyncio.FIRST_COMPLETED,
+            [consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED,
         )
         # print(f"{self} done, {pending} pending")
         # for task in pending:

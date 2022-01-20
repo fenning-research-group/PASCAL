@@ -19,7 +19,7 @@ def available_versions(self):
 
 class SampleTray(Workspace):
     def __init__(
-        self, name, version, gantry: Gantry, gripper: Gripper, p0=[None, None, None],
+        self, name, version, gantry: Gantry, gripper: Gripper, p0=[0, 0, 0],
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(

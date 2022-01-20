@@ -75,8 +75,10 @@ class WorkerTemplate(Worker_roboflo):
 
         while self.working:
             while True:
-                if len(self.queue.queue) > 0:
-                    time_until_next = self.queue.queue[0][0] - self.maestro.time
+                if len(self.queue._queue) > 0:
+                    time_until_next = (
+                        self.queue._queue[0][0] - self.maestro.experiment_time
+                    )
                     if time_until_next <= 1:  # within 1 second of start time
                         break
                 await asyncio.sleep(0.2)
@@ -84,7 +86,7 @@ class WorkerTemplate(Worker_roboflo):
             _, task = await self.queue.get()  # blocking wait for next task
             task_description = f'{task["name"]}, {task["sample"]}'
             sample = self.maestro.samples[task["sample"]]
-            sample_task = [t for t in sample["tasks"] if t["id"] == task["id"]][0]
+            sample_task = [t for t in sample["worklist"] if t["id"] == task["id"]][0]
             # print(f"starting {task_description}")
             if task is None:  # finished flag
                 break
@@ -110,7 +112,7 @@ class WorkerTemplate(Worker_roboflo):
                         first = False
 
             # wait for this task's target start time
-            wait_for = task["start"] - (self.maestro.time)
+            wait_for = task["start"] - (self.maestro.experiment_time)
             if wait_for > 0:
                 self.logger.info(
                     f"waiting {wait_for} seconds for {task_description} start time"
@@ -124,7 +126,7 @@ class WorkerTemplate(Worker_roboflo):
             #     kwargs=task["kwargs"],
             # )
 
-            sample_task["start_actual"] = self.maestro.time
+            sample_task["start_actual"] = self.maestro.experiment_time
             function = self.functions[task["name"]].function
             details = sample_task.get("details", {})
             if asyncio.iscoroutinefunction(function):
@@ -134,10 +136,7 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool,
-                        function,
-                        sample,
-                        details,
+                        self.maestro.threadpool, function, sample, details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -146,12 +145,12 @@ class WorkerTemplate(Worker_roboflo):
             if output_dict is None:
                 output_dict = {}
             # update task lists
-            output_dict["finish_actual"] = self.maestro.time
+            output_dict["finish_actual"] = self.maestro.experiment_time
             sample_task.update(output_dict)
 
             self.logger.info(f"finished {task_description}")
             with self.maestro.lock_completedtasks:
-                self.maestro.completed_tasks[task["id"]] = self.maestro.time
+                self.maestro.completed_tasks[task["id"]] = self.maestro.experiment_time
             with self.maestro.lock_pendingtasks:
                 self.maestro.pending_tasks.remove(task["id"])
             self.queue.task_done()
@@ -509,11 +508,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (
-            aspirate_duration,
-            staging_duration,
-            dispense_duration,
-        ) = expected_timings(drop)
+        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
+            drop
+        )
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -866,14 +863,13 @@ class Worker_Characterization(WorkerTemplate):
         }
 
     def characterize(self, sample, details):
-        self.characterization.run(samplename=sample["name"])
+        # self.characterization.run(samplename=sample["name"])
 
         # if maestro is under external control, ping the websocket client to alert that a sample has been characterized
-        if hasattr(self.maestro, "server"):
+        if self.maestro._under_external_control:
             msg_dict = {
                 "type": "sample_complete",
                 "sample": sample["name"],
-                "taskid": details["taskid"],
             }
             msg = json.dumps(msg_dict)
             self.maestro.server.send(msg)
