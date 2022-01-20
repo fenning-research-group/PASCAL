@@ -7,35 +7,20 @@ import asyncio
 from abc import ABC, abstractmethod
 import ntplib
 from frgpascal.experimentaldesign.tasks import Sample
-
-from frgpascal.hardware.spincoater import SpinCoater
-from frgpascal.hardware.gantry import Gantry
-from frgpascal.hardware.gripper import Gripper
-from frgpascal.hardware.liquidhandler import OT2
-from frgpascal.hardware.hotplate import HotPlate
-from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import (
-    CharacterizationAxis,
-    CharacterizationLine,
-)
-from frgpascal.workers import (
-    Worker_Hotplate,
-    Worker_Storage,
-    Worker_GantryGripper,
-    Worker_Characterization,
-    Worker_SpincoaterLiquidHandler,
-)
 from frgpascal.websocketbridge import Client
 from frgpascal import system
 
 
-class ALClient(Client):
+class PASCALAxQueue(Client):
     """
     Websocket client + experiment coordinator, connects to Maestro server
     """
 
     def __init__(self):
         super().__init__()
+        # self.websocket = Client()
+        self.experiment_folder = None
+        self.t0 = None
         self.__calibrate_time_to_nist()
         self.initialize_experiment()
 
@@ -67,10 +52,23 @@ class ALClient(Client):
         self.sample_counter = 0
         self.first_sample_sent = False
         self.t0 = None
-        self.processed_protocols = []
-        self.completed_but_not_processed = Queue()
+        self.completed_protocols = []
         self.protocols_in_progress = []
         self.initialize_labware()
+
+        self.get_experiment_directory()
+
+    @abstractmethod
+    def build_sample(self, parameters) -> Sample:
+        """Given a list of parameters from Ax, return a Sample object
+
+        Args:
+            parameters (dict): kwargs corresponding to Ax SearchSpace
+
+        Returns:
+            (Sample): Sample object to be added to JobQueue, sent to maestro
+        """
+        return None
 
     @abstractmethod
     def initialize_labware(self):
@@ -95,7 +93,7 @@ class ALClient(Client):
 
     def _process_message(self, message: str):
         options = {
-            "sample_complete": self.move_completed_to_queue,
+            "sample_complete": self.mark_sample_completed,
             "set_experiment_directory": self._set_experiment_directory,
         }
 
@@ -108,14 +106,6 @@ class ALClient(Client):
         self.t0 = self.nist_time + delay
         msg = {"type": "set_start_time", "nist_time": self.t0}
         self.send(json.dumps(msg))
-
-    def move_completed_to_queue(self, d: dict):
-        """
-        move a completed sample id to the queue for data processing
-        worker to take over
-        """
-        print(f"data ready for {d['sample']}")
-        self.queue.put(d)
 
     def add_sample(self, sample: Sample, min_start: int = None):
         """Send a new sample to the maestro workers"""
@@ -155,40 +145,9 @@ class ALClient(Client):
         """
         Set the experiment directory
         """
-        self.bridge.experiment_folder = d["path"]
+        self.experiment_folder = d["path"]
 
-
-class ALBridge:
-    def __init__(self):
-        self.websocket = ALClient(bridge=self)
-        self.websocket.get_experiment_directory()
-
-    @abstractmethod
-    async def build_protocol(self, **inputs) -> dict:
-        """convert active learning point into PASCAL experimental protocol"""
-        pass
-
-    @abstractmethod
-    async def process_new_data(self, fid) -> dict:
-        """read the characterization data file to inform active learner of protocol results
-
-        expects a json file with the following format:
-            {
-                "name": name of this protocol/sample
-                "date": date string,
-                "time": time string,
-                "inputs":
-                    {key:value}
-                "responses":
-                    {key:value}
-                "full_protocol":
-                    {full protocol json sent to PASCAL}
-            }
-
-        """
-        pass
-
-    @abstractmethod
-    async def propose_protocol(self) -> dict:
-        """based on current results, propose the next protocol point to be tested"""
-        pass
+    def mark_sample_completed(self, message):
+        sample_name = message["sample"]
+        self.protocols_in_progress.remove(sample_name)
+        self.completed_protocols.append(sample_name)

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from curvehelpers import (
+from frgpascal.analysis.curvehelpers import (
     gaussian,
     fit_gaussian,
     fit_gaussian_series,
