@@ -48,7 +48,7 @@ class WebsocketBase(ABC):
         self.queue = asyncio.Queue()
         loop.run_forever()
 
-    def run(self):
+    def start(self):
         if self.running:
             raise Exception("Already running!")
         self.running = True
@@ -94,7 +94,7 @@ class WebsocketBase(ABC):
 class Client(WebsocketBase):
     def __init__(self):
         super().__init__()
-        self.run()
+        self.start()
         # self.loop.run_until_complete(client_main())
 
     async def _main(self):
@@ -104,7 +104,8 @@ class Client(WebsocketBase):
             for future in [consumer_task, producer_task]:
                 future.add_done_callback(partial(future_callback, self))
             done, pending = await asyncio.wait(
-                [consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED,
+                [consumer_task, producer_task],
+                return_when=asyncio.FIRST_COMPLETED,
             )
 
 
@@ -113,7 +114,7 @@ class Server(WebsocketBase):
 
     def __init__(self):
         super().__init__()
-        self.run()
+        self.start()
         # self.loop.run_until_complete(client_main())
 
     async def server_handler(self, websocket, path):
@@ -122,7 +123,8 @@ class Server(WebsocketBase):
         for future in [consumer_task, producer_task]:
             future.add_done_callback(partial(future_callback, self))
         done, pending = await asyncio.wait(
-            [consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED,
+            [consumer_task, producer_task],
+            return_when=asyncio.FIRST_COMPLETED,
         )
         # print(f"{self} done, {pending} pending")
         # for task in pending:
