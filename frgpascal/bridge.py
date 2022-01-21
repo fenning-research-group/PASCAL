@@ -116,6 +116,7 @@ class PASCALAxQueue(Client):
         if min_start is None:
             min_start = self.min_allowable_time
         min_start = max([min_start, self.min_allowable_time])
+        self.sample_counter += 1
 
         sample.protocol = self.system.generate_protocol(
             name=sample.name,
@@ -125,10 +126,13 @@ class PASCALAxQueue(Client):
             min_start=min_start,
         )
         self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
-        self.add_sample(sample=sample.to_dict())
-        self.sample_counter += 1
 
-        msg_dict = sample.copy()
+        msg_dict = sample.to_dict()
+        with open(
+            os.path.join(self.sample_info_folder, f"{sample.name}.json"), "w"
+        ) as f:
+            json.dump(msg_dict, f)
+
         msg_dict["type"] = "protocol"
         msg = json.dumps(msg_dict)
         self.send(msg)
@@ -146,6 +150,8 @@ class PASCALAxQueue(Client):
         Set the experiment directory
         """
         self.experiment_folder = d["path"]
+        self.sample_info_folder = os.path.join(self.experiment_folder, "samples")
+        os.mkdir(self.sample_info_folder)
 
     def mark_sample_completed(self, message):
         sample_name = message["sample"]

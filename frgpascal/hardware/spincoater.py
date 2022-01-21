@@ -325,15 +325,15 @@ class SpinCoater:
             time.sleep(1)
             if not self.__logging_active and len(self.odrv0._libfibre.timer_map) > 60:
                 try:
-                    latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
-                    self.odrv0._libfibre.timer_map = {
-                        0: self.odrv0._libfibre.timer_map[latest_idx]
-                    }
-
                     if self.axis.error > 0:
                         dt = datetime.strftime(datetime.now(), "%m/%d %H:%M:%S")
                         self._error_log.append((dt, self._lookup_error))
                         self.axis.clear_errors()
+
+                    latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
+                    self.odrv0._libfibre.timer_map = {
+                        0: self.odrv0._libfibre.timer_map[latest_idx]
+                    }
                 except:
                     print(
                         "Spincoater unable to flush - probably disconnected, will try again later"
