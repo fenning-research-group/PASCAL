@@ -280,8 +280,8 @@ class Maestro:
             self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
             self.gripper.close()
             raise ValueError("Failed to pick up sample!")
-
-        self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
+        if from_spincoater:
+            self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
 
     def release(self):
         """

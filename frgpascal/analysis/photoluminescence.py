@@ -85,8 +85,11 @@ def fit_spectrum(wl, cts, wlmin, wlmax, wlguess=None, plot=False):
     }
     if plot:
         plt.figure()
-        plt.scatter(ev, y, color="k", s=2)
+        plt.scatter(ev, cts, color="k", s=2)
         plt.plot(ev, gaussian(ev, *popt), color="r")
+        plt.show()
+
+    return out
 
 
 def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
