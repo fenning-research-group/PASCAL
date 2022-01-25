@@ -37,6 +37,18 @@ class SampleChecker:
         ) as f:
             self.datagen = dill.load(f)
 
+    def sample_is_present_fromfile(self, fpath, return_probability=False) -> bool:
+        """
+        given the filepath to a PASCAL brightfield image, identifies whether or not
+        a sample was present in the characterization stage.
+
+        True = sample is detected on stage, >=0.5 probability
+        False = sample was not detected on stage. probably dropped earlier in the protocol, <0.5 probability
+        """
+
+        img = self._load_model(fpath)
+        return self.sample_is_present(img=img, return_probability=return_probability)
+
     def sample_is_present(self, img, return_probability=False) -> bool:
         """
         given a PASCAL brightfield image, identifies whether or not
