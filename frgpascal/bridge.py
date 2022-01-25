@@ -10,6 +10,36 @@ from frgpascal.experimentaldesign.tasks import Sample
 from frgpascal.websocketbridge import Client
 from frgpascal import system
 
+from typing import Any, Dict, NamedTuple, Union
+import pandas as pd
+
+from ax import *
+from ax.core.base_trial import BaseTrial, TrialStatus
+from ax.core.metric import Metric
+from ax.core.data import Data
+
+from frgpascal.experimentaldesign.tasks import *
+from frgpascal.hardware.liquidlabware import (
+    TipRack,
+    LiquidLabware,
+    AVAILABLE_VERSIONS as liquid_labware_versions,
+)
+from frgpascal.hardware.sampletray import (
+    SampleTray,
+    AVAILABLE_VERSIONS as sampletray_versions,
+)
+from frgpascal.analysis import photoluminescence as PL
+from frgpascal.analysis import brightfield
+from frgpascal.bridge import PASCALAxQueue
+from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
+
+
+class PASCALJob:
+    """Dummy class to represent a job scheduled on `MockJobQueue`."""
+
+    # id: int
+    # parameters: Dict[str, Union[str, float, int, bool]]
+
 
 class PASCALAxQueue(Client):
     """
@@ -23,7 +53,9 @@ class PASCALAxQueue(Client):
         self.t0 = None
         self.__calibrate_time_to_nist()
         self.initialize_experiment()
-
+        self._samplechecker = (
+            brightfield.SampleChecker()
+        )  # to check if sample was present during characterization, ie drop detection
         self.SCHEDULE_SOLVE_TIME = (
             30  # time allotted (seconds) to determine task schedule
         )
@@ -53,6 +85,7 @@ class PASCALAxQueue(Client):
         self.first_sample_sent = False
         self.t0 = None
         self.completed_protocols = []
+        self.failed_protocols = []
         self.protocols_in_progress = []
         self.initialize_labware()
 
@@ -81,6 +114,7 @@ class PASCALAxQueue(Client):
         """
         pass
 
+    ### PASCAL Methods
     def __calibrate_time_to_nist(self):
         client = ntplib.NTPClient()
         response = None
@@ -107,7 +141,7 @@ class PASCALAxQueue(Client):
         msg = {"type": "set_start_time", "nist_time": self.t0}
         self.send(json.dumps(msg))
 
-    def add_sample(self, sample: Sample, min_start: int = None):
+    def _send_sample_to_maestro(self, sample: Sample, min_start: int = None):
         """Send a new sample to the maestro workers"""
         if not self.first_sample_sent:
             self.set_start_time()
@@ -155,5 +189,58 @@ class PASCALAxQueue(Client):
 
     def _mark_sample_completed(self, message):
         sample_name = message["sample"]
+
+        ## check if we have real data (did the sample make it onto the characterization train?)
+        brightfield_filepath = os.path.join(
+            self.experiment_folder, "Brightfield", f"{sample_name}_brightfield.tif"
+        )
+        sample_present = self._samplechecker.sample_is_present_fromfile(
+            brightfield_filepath, return_probability=False
+        )
         self.protocols_in_progress.remove(sample_name)
-        self.completed_protocols.append(sample_name)
+        if sample_present:
+            self.completed_protocols.append(sample_name)
+        else:
+            self.failed_protocols.append(sample_name)
+
+    ### Ax Methods
+    def schedule_job_with_parameters(
+        self, parameters: Dict[str, Union[str, float, int, bool]]
+    ) -> int:
+        """Schedules an evaluation job with given parameters and returns job ID."""
+        # Code to actually schedule the job and produce an ID would go here;
+        # using timestamp as dummy ID for this example.
+        sample = self.build_sample(parameters)
+        self._send_sample_to_maestro(sample=sample)
+        job_id = sample.name
+        self.jobs[job_id] = PASCALJob(job_id, parameters)
+        self.protocols_in_progress.append(job_id)
+        return job_id
+
+    def get_job_status(self, job_id: str) -> TrialStatus:
+        """ "Get status of the job by a given ID. For simplicity of the example,
+        return an Ax `TrialStatus`.
+        """
+        # sample_name = self.jobs[job_id]
+        # Instead of randomizing trial status, code to check actual job status
+        # would go here.
+        # time.sleep(1)
+        if job_id in self.failed_protocols:
+            return TrialStatus.FAILED
+        if job_id in self.completed_protocols:
+            return TrialStatus.COMPLETED
+        return TrialStatus.RUNNING
+
+    def get_outcome_value_for_completed_job(self, job_id: str) -> Dict[str, float]:
+        """Get evaluation results for a given completed job."""
+        job = self.jobs[job_id]
+
+        fid = os.path.join(self.experiment_folder, "PL_635", f"{job_id}_pl.csv")
+        wl, cps = PL.load_spectrum(fid)
+        try:
+            fit = PL.fit_spectrum(
+                wl=wl, cts=cps, wlmin=650, wlmax=1100, wlguess=730, plot=False
+            )
+            return {"redplspec_intensity": fit["intensity"]}
+        except:
+            return {"redplspec_intensity": 0}

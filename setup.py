@@ -45,6 +45,8 @@ setup(
         "natsort",
         "ntplib",
         "websockets",
+        "tensorflow",
+        "dill",
     ],
     # extras_require={
     #     'model_saving': ['h5py'],
