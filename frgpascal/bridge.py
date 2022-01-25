@@ -93,7 +93,7 @@ class PASCALAxQueue(Client):
 
     def _process_message(self, message: str):
         options = {
-            "sample_complete": self.mark_sample_completed,
+            "sample_complete": self._mark_sample_completed,
             "set_experiment_directory": self._set_experiment_directory,
         }
 
@@ -153,7 +153,7 @@ class PASCALAxQueue(Client):
         self.sample_info_folder = os.path.join(self.experiment_folder, "samples")
         os.mkdir(self.sample_info_folder)
 
-    def mark_sample_completed(self, message):
+    def _mark_sample_completed(self, message):
         sample_name = message["sample"]
         self.protocols_in_progress.remove(sample_name)
         self.completed_protocols.append(sample_name)
