@@ -37,7 +37,7 @@ class Spectrometer:
         print("Connected to spectrometer")
         self.dwelltime = self._hdr_times[0]  # ms
         self.numscans = 1  # one scan per spectrum
-        self.smooth = 0  # smoothing factor, units unclear
+        self.smooth = 0  # smoothing factor, units unclear.
 
         self.__baseline_dark = {}
         self.__baseline_light = {}
@@ -150,7 +150,7 @@ class Spectrometer:
         """
         captures a spectrum from the usb spectrometer
 
-        returns counts/second with dark baseline subtracted.
+        returns counts with dark baseline subtracted.
         saturated counts are set to np.nan
         """
         if self.__is_dark_baseline_taken():
@@ -217,6 +217,7 @@ class Spectrometer:
                 mask = self.__baseline_light[t] < self.HDR_THRESHOLD
                 transmission_overall[mask] = transmission[mask]
 
+        self.dwelltime = self._hdr_times[0]
         return wl, transmission_overall
 
     # def estimate_integrationtime(

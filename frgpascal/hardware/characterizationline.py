@@ -41,17 +41,18 @@ class CharacterizationLine:
         self.brightfieldcamera = self.camerahost.spawn_camera(
             camid=constants["brightfield"]["cameraid"]
         )
-        # self.spectrometer = Spectrometer()
         self.spectrometer = Spectrometer()
 
         # all characterization stations (in order of measurement!)
         self.stations = [
-            TransmissionSpectroscopy(
-                position=constants["transmission"]["position"],
+            PLPhotostability(
+                position=constants["pl_blue"]["position"],
                 rootdir=self.rootdir,
+                subdir="PLPhotostability_405",
                 spectrometer=self.spectrometer,
                 slider=self.filterslider,
                 shutter=self.shutter,
+                lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
             PLSpectroscopy(
                 position=constants["pl_red"]["position"],
@@ -62,14 +63,12 @@ class CharacterizationLine:
                 shutter=self.shutter,
                 lightswitch=self.switchbox.Switch(constants["pl_red"]["switchindex"]),
             ),
-            PLPhotostability(
-                position=constants["pl_blue"]["position"],
+            TransmissionSpectroscopy(
+                position=constants["transmission"]["position"],
                 rootdir=self.rootdir,
-                subdir="PLPhotostability_405",
                 spectrometer=self.spectrometer,
                 slider=self.filterslider,
                 shutter=self.shutter,
-                lightswitch=self.switchbox.Switch(constants["pl_blue"]["switchindex"]),
             ),
             BrightfieldImaging(
                 position=constants["brightfield"]["position"],
@@ -128,9 +127,7 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self,
-        gantry,
-        port=None,
+        self, gantry, port=None,
     ):
         # communication variables
         if port is None:
@@ -570,6 +567,7 @@ class PLSpectroscopy(StationTemplate):
                 writer.writerow([wl_] + list(cts_))
 
     def calibrate(self):
+        print(f"Taking dark baselines for {self}")
         self.slider.top_right()  # moves longpass filter out of the transmitted path
         self.shutter.close()  # close the shutter
         self.spectrometer.take_dark_baseline(skip_repeats=True)
