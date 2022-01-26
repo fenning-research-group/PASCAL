@@ -165,7 +165,7 @@ class PASCALAxQueue(Client):
         with open(
             os.path.join(self.sample_info_folder, f"{sample.name}.json"), "w"
         ) as f:
-            json.dump(msg_dict, f)
+            json.dump(msg_dict, f, indent=4, sort_keys=True)
 
         msg_dict["type"] = "protocol"
         msg = json.dumps(msg_dict)
