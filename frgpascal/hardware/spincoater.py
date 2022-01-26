@@ -51,7 +51,9 @@ class SpinCoater:
         )  # rpm
         self.__rpm = 0  # nominal current rpm. does not take ramping into account
         self.__HOMEPOSITION = 0.5  # home coordinate for spincoater chuck, in radial (0-1) coordinates. somewhat arbitrary, but avoid 0 because it wraps around to 1, makes some math annoying
-        self.__TWISTDELTA = -0.05  # turn to make when twisting off sample from chuck.
+        self.__TWISTDELTA = (
+            -0.15
+        )  # turn (fraction of 360deg) to make when twisting off sample from chuck.
         self._locked = False  # true when chuck is holding at home position
         self.gantry = gantry
         self.__calibrated = False
