@@ -59,45 +59,42 @@ class CharacterizationTask(ABC):
 
 
 class Darkfield(CharacterizationTask):
-    def __init__(self, exposure_times=[0.05], num_frames=100, jitter=0):
-        for d in exposure_times:
-            if d < 0.01 or d > 100:
-                raise Exception(
-                    f"Invalid exposure time: {d} seconds. Must be 0.01<exposuretime<100 seconds"
-                )
+    def __init__(
+        self, exposure_time: float = 0.05, num_frames: int = 50, jitter: float = 0
+    ):
+        if exposure_time < 0.01 or exposure_time > 100:
+            raise Exception(
+                f"Invalid exposure time: {exposure_time} seconds. Must be 0.01<exposure_time<100 seconds"
+            )
         if num_frames < 1 or num_frames > 500:
             raise Exception(
                 "num_frames must be between 1 and 500 - user provided {num_frames}"
             )
 
-        self.exposure_times = exposure_times
+        self.exposure_time = exposure_time
         self.num_frames = num_frames
 
         super().__init__(name="Darkfield", station="darkfield", jitter=jitter)
 
     def expected_duration(self):
-        return sum(
-            [d * self.num_frames for d in self.exposure_times]
-        )  # convert to seconds
+        return self.exposure_time * self.num_frames
 
     def _get_details(self):
-        return {"exposure_times": self.exposure_times, "num_frames": self.num_frames}
+        return {"exposure_time": self.exposure_time, "num_frames": self.num_frames}
 
 
 class Brightfield(CharacterizationTask):
     def __init__(self):
-        self.exposure_times = [0.1]  # 100 ms static dwelltime
+        self.exposure_time = 0.1  # 100 ms static dwelltime
         self.num_frames = 1
 
         super().__init__(name="Brightfield", station="brightfield", jitter=0)
 
     def expected_duration(self):
-        return sum(
-            [et * self.num_frames for et in self.exposure_times]
-        )  # convert to seconds
+        return self.exposure_time
 
     def _get_details(self):
-        return {"exposure_times": self.exposure_times, "num_frames": self.num_frames}
+        return {"exposure_time": self.exposure_time, "num_frames": self.num_frames}
 
 
 class PLImaging(CharacterizationTask):

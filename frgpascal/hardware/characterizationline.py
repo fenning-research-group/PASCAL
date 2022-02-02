@@ -393,13 +393,15 @@ class DarkfieldImaging(StationTemplate):
         super().__init__(position=position, rootdir=rootdir, name="Darkfield")
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltime = 0.05  # dwelltime, seconds
-        self.default_frames = 50  # average 500 frames
+        self.DEFAULT_EXPOSURE_TIME = 0.05  # dwelltime, seconds
+        self.DEFAULT_NUM_FRAMES = 50  # average 500 frames
 
     def capture(self, **kwargs):
 
-        self.camera.exposure_time = kwargs.get("dwelltime", self.default_dwelltime)
-        self.camera.num_frames = kwargs.get("numframes", self.default_frames)
+        self.camera.exposure_time = kwargs.get(
+            "exposure_time", self.DEFAULT_EXPOSURE_TIME
+        )
+        self.camera.num_frames = kwargs.get("num_frames", self.DEFAULT_NUM_FRAMES)
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
@@ -418,8 +420,13 @@ class PLImaging(StationTemplate):
         super().__init__(position=position, rootdir=rootdir, name="PLImaging")
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltimes = [0.05, 0.2, 1, 3]  # 50 ms, 200 ms, 1 s dwell times
-        self.default_frames = 5  # average 500 frames
+        self.DEFAULT_EXPOSURE_TIMES = [
+            0.05,
+            0.2,
+            1,
+            3,
+        ]  # 50 ms, 200 ms, 1 s dwell times
+        self.DEFAULT_NUM_FRAMES = 5  # average 500 frames
 
     def capture(self, **kwargs):
         """
@@ -428,13 +435,13 @@ class PLImaging(StationTemplate):
         Returns:
             imgs: dictionary of {dwelltime (ms): image}
         """
-        dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
-        self.camera.num_frames = kwargs.get("numframes", self.default_frames)
+        exposure_times = kwargs.get("exposure_times", self.DEFAULT_EXPOSURE_TIMES)
+        self.camera.num_frames = kwargs.get("num_frames", self.DEFAULT_NUM_FRAMES)
         imgs = {}
 
         self.lightswitch.on()
         time.sleep(1)  # LED lamp takes a second to turn on
-        for t in dwelltimes:
+        for t in exposure_times:
             self.camera.exposure_time = t
             imgs[t] = self.camera.capture()  # save as ms exposure
         self.lightswitch.off()
@@ -444,7 +451,7 @@ class PLImaging(StationTemplate):
 
     def save(self, imgs, sample):
         for t, img in imgs.items():
-            fname = f"{sample}_plimage_{t}ms.tif"
+            fname = f"{sample}_plimage_{int(t*1e3)}ms.tif"
             imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
@@ -456,10 +463,14 @@ class BrightfieldImaging(StationTemplate):
 
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltime = 0.05  # 50 ms dwell time
+        self.DEFAULT_EXPOSURE_TIME = 0.05  # 50 ms dwell time
+        self.DEFAULT_NUM_FRAMES = 1
 
     def capture(self, **kwargs):
-        self.camera.exposure_time = kwargs.get("dwelltime", self.default_dwelltime)
+        self.camera.exposure_time = kwargs.get(
+            "exposure_time", self.DEFAULT_EXPOSURE_TIME
+        )
+        self.camera.num_frames = kwargs.get("num_frames", self.DEFAULT_NUM_FRAMES)
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
@@ -484,20 +495,17 @@ class TransmissionSpectroscopy(StationTemplate):
         self.spectrometer = spectrometer
         self.shutter = shutter
         self.slider = slider
-        self.default_dwelltimes = [15, 50, 200, 1000, 5000, 15000]  # ms
-        self.default_numscans = 3  # take 2 scans per to reduce noise
-        self.spectrometer._exposure_times = list(
-            set(self.spectrometer._exposure_times + self.hdr_times)
-        )
+        self.DEFAULT_EXPOSURE_TIMES = [15, 50, 200, 1000, 5000, 15000]  # ms
+        self.DEFAULT_NUM_SCANS = 3  # take 2 scans per to reduce noise
 
     def capture(self, **kwargs):
         # set scan parameters
-        dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
-        numscans = kwargs.get("numscans", self.default_numscans)
+        exposuretimes = kwargs.get("exposure_times", self.DEFAULT_EXPOSURE_TIMES)
+        numscans = kwargs.get("numscans", self.DEFAULT_NUM_SCANS)
         self.spectrometer.num_scans = numscans
 
-        hdrtimes0 = self.spectrometer._exposure_times
-        self.spectrometer._exposure_times = dwelltimes
+        exposuretimes_0 = self.spectrometer._exposure_times
+        self.spectrometer._exposure_times = exposuretimes
 
         # open shutter + move filter slider
         threads = [
@@ -515,10 +523,8 @@ class TransmissionSpectroscopy(StationTemplate):
         # close shutter, return to defaults
         self.shutter.close()
         self.spectrometer.num_scans = 1
-        self.spectrometer._exposure_times = hdrtimes0
-        self.spectrometer.exposure_time = (
-            20  # set to short dwelltime to prevent bleeding into next measurement
-        )
+        self.spectrometer._exposure_times = exposuretimes_0
+        self.spectrometer.exposure_time = 0.02  # set to short dwelltime (seconds) to prevent bleeding into next measurement
 
         return wl, t
 
@@ -557,11 +563,8 @@ class PLSpectroscopy(StationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
-        self.default_dwelltimes = [1000, 5000, 20000]
-        self.spectrometer._exposure_times = list(
-            set(self.spectrometer._exposure_times + self.hdr_times)
-        )
-        self.NUMSCANS = 1  # take 2 scans per to reduce noise
+        self.DEFAULT_EXPOSURE_TIMES = [1, 5, 20]
+        self.DEFAULT_NUM_SCANS = 1  # take 2 scans per to reduce noise
 
     def capture(self, **kwargs):
         """
@@ -579,19 +582,19 @@ class PLSpectroscopy(StationTemplate):
         for t in threads:
             t.join()
 
-        dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
-        numscans = kwargs.get("numscans", self.default_numscans)
+        exposuretimes = kwargs.get("exposure_times", self.DEFAULT_EXPOSURE_TIMES)
+        numscans = kwargs.get("num_scans", self.DEFAULT_NUM_SCANS)
         self.spectrometer.num_scans = numscans
         self.lightswitch.on()  # turn on the laser
         all_cts = {}
-        for t in dwelltimes:
+        for t in exposuretimes:
             self.spectrometer.exposure_time = t
             wl, cts = self.spectrometer.capture()
             all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
         self.spectrometer.num_scans = 1
         self.spectrometer.exposure_time = (
-            20  # fast dwelltime to prevent bleeding over into next measurement
+            0.02  # fast dwelltime to prevent bleeding over into next measurement
         )
         return [wl, all_cts]
 
