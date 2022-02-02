@@ -126,6 +126,7 @@ class CharacterizationLine:
         for station_name, exposure_times in instructions.items():
             station = self.stations[station_name]
             if hasattr(station, "calibrate"):
+                self.axis.moveto(station.position)
                 station.calibrate(exposure_times=exposure_times)
 
         self.axis.moveto(self.axis.TRANSFERPOSITION)
@@ -133,8 +134,10 @@ class CharacterizationLine:
 
     def set_directory(self, filepath):
         self.rootdir = filepath
-        for s in self.stations:
-            s.set_directory(filepath)
+        if not os.path.exists(self.rootdir):
+            os.makedirs(self.rootdir)
+        # for s in self.stations.values():
+        #     s.set_directory(filepath)
 
     def _create_measurement_folder(self, samplename):
         if not os.path.exists(os.path.join(self.rootdir, samplename)):
@@ -155,9 +158,7 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self,
-        gantry,
-        port=None,
+        self, gantry, port=None,
     ):
         # communication variables
         if port is None:
@@ -370,9 +371,10 @@ class CharacterizationStationTemplate(ABC):
         self.name = name
 
     def set_directory(self, rootdir):
-        self.savedir = os.path.join(rootdir, self.name)
-        if not os.path.exists(self.savedir):
-            os.mkdir(self.savedir)
+        self.savedir = rootdir
+        # self.savedir = os.path.join(rootdir, self.name)
+        # if not os.path.exists(self.savedir):
+        #     os.mkdir(self.savedir)
 
     @abstractmethod
     def capture(self) -> None:
@@ -414,7 +416,13 @@ class DarkfieldImaging(CharacterizationStationTemplate):
 
     def save(self, img, sample):
         fname = f"{sample}_darkfield.tif"
-        imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
+        imwrite(
+            os.path.join(self.savedir, fname),
+            img,
+            compression="zlib",
+            resolution=(1.0 / 1.528, 1.0 / 1.528),  # 1 pixel = 1.528 um
+            metadata={"unit": "um"},
+        )
 
 
 class PLImaging(CharacterizationStationTemplate):
@@ -456,7 +464,13 @@ class PLImaging(CharacterizationStationTemplate):
     def save(self, imgs, sample):
         for t, img in imgs.items():
             fname = f"{sample}_plimage_{int(t*1e3)}ms.tif"
-            imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
+        imwrite(
+            os.path.join(self.savedir, fname),
+            img,
+            compression="zlib",
+            resolution=(1.0 / 1.528, 1.0 / 1.528),  # 1 pixel = 1.528 um
+            metadata={"unit": "um"},
+        )
 
 
 class BrightfieldImaging(CharacterizationStationTemplate):
@@ -546,10 +560,10 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
         self.shutter.close()  # close the shutter
         self.spectrometer._exposure_times = exposure_times
         self.spectrometer.take_dark_baseline(skip_repeats=True)
-        print("spectrometer dark baselines taken")
+        print("Transmission dark baselines taken")
         self.shutter.open()  # open the shutter
         self.spectrometer.take_light_baseline(skip_repeats=True)
-        print("spectrometer light baselines taken")
+        print("Transmission light baselines taken")
         self.shutter.close()  # closes the shutter
 
 
@@ -612,7 +626,7 @@ class PLSpectroscopy(CharacterizationStationTemplate):
         fname = f"{sample}_pl.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Dwelltimes (ms)"] + dwells)
+            writer.writerow(["Dwelltimes (s)"] + dwells)
             writer.writerow(["Wavelength (nm)"] + ["PL (counts)"] * len(dwells))
             for wl_, cts_ in zip(wl, cts):
                 writer.writerow([wl_] + list(cts_))
@@ -651,11 +665,8 @@ class PLPhotostability(CharacterizationStationTemplate):
         self.lightswitch = lightswitch
         self.shutter = shutter
         self.slider = slider
-        self.default_dwelltime = 2000  # ms
-        self.default_duration = 120  # seconds
-        self.spectrometer._exposure_times = list(
-            set(self.spectrometer._exposure_times + [self.dwelltime])
-        )
+        self.DEFAULT_EXPOSURE_TIME = 2000  # ms
+        self.DEFAULT_DURATION = 120  # seconds
 
     def capture(self, **kwargs):
         """Capture a continuous series of photoluminescence spectra
@@ -679,9 +690,10 @@ class PLPhotostability(CharacterizationStationTemplate):
 
         times = []
         spectra = []
-        duration = kwargs.get("duration", self.default_duration)
-        dwelltime = kwargs.get("dwelltime", self.default_dwelltime)
-        self.spectrometer.exposure_time = dwelltime
+        duration = kwargs.get("duration", self.DEFAULT_DURATION)
+        self.spectrometer.exposure_time = kwargs.get(
+            "exposure_time", self.DEFAULT_EXPOSURE_TIME
+        )
         self.spectrometer.num_scans = 1
         self.lightswitch.on()
         t0 = time.time()
@@ -700,7 +712,7 @@ class PLPhotostability(CharacterizationStationTemplate):
         fname = f"{sample}_photostability.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Dwelltime (ms)", self.spectrometer.exposure_time])
+            writer.writerow(["Dwelltime (s)", self.spectrometer.exposure_time])
             writer.writerow(["Number of Spectra", len(spectra)])
             writer.writerow(["Data Start", "Times (s) of acquisition start ->"])
             writer.writerow(["Wavelength (nm)"] + [round(t_, 1) for t_ in times])

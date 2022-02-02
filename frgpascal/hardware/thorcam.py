@@ -60,7 +60,6 @@ class Thorcam:
 
     def connect(self):
         self.camera = self.__host.camera_sdk.open_camera(self.__id)
-        self.camera.image_poll_timeout_ms = 1000  # 1 second polling timeout
         self.__image_width = self.camera.image_width_pixels
         self.__image_height = self.camera.image_height_pixels
         self.__mono2color_params = (
@@ -71,12 +70,13 @@ class Thorcam:
             self.camera.bit_depth,
         )
         self.num_frames = 1
+        self.exposure_time = 0.05
 
     # def disconnect(self):
 
     @property
     def exposure_time(self):
-        return self.camera.exposure_time_us
+        return self.camera.exposure_time_us * 1e-6  # show in seconds
 
     @exposure_time.setter
     def exposure_time(self, exposure: int):
@@ -87,6 +87,10 @@ class Thorcam:
         self.camera.exposure_time_us = int(
             exposure * 1e6
         )  # convert seconds to microseconds - camera expects microseconds
+        self.camera.image_poll_timeout_ms = int(
+            (exposure * self.__frames + 1) * 1e3
+        )  # 1 second longer than the desired exposure time
+
         time.sleep(0.5)
 
     @property
@@ -108,6 +112,9 @@ class Thorcam:
             )
         self.camera.frames_per_trigger_zero_for_unlimited = int(frames)
         self.__frames = frames
+        self.camera.image_poll_timeout_ms = int(
+            (self.exposure_time * self.__frames + 1) * 1e3
+        )  # 1 second longer than the desired exposure time
 
     def capture(self):
         self.camera.arm(self.__frames)

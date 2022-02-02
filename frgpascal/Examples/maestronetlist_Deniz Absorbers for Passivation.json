@@ -326,9 +326,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "SpincoaterLiquidhandler",
+                        "destination": "Characterization",
                         "source": "Tray1"
                     },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                     "id": "storage_to_spincoater--0188a874-975e-46e9-b622-7dca0e1cddc3",
@@ -342,6 +343,10 @@
                     "id": "storage_to_spincoater--670025dc-cc3e-463f-8a9f-52a767173c28",
 >>>>>>> 7c0fe4e (characterization baseline instruction file)
                     "name": "storage_to_spincoater",
+=======
+                    "id": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+                    "name": "storage_to_characterization",
+>>>>>>> fa8cdf9 (working)
                     "precedent": null,
                     "sample": "sample0",
                     "start": 0
@@ -349,6 +354,7 @@
                 },
                 {
                     "details": {
+<<<<<<< HEAD
                         "drops": [
                             {
                                 "air_gap": true,
@@ -658,6 +664,8 @@
                 },
                 {
                     "details": {
+=======
+>>>>>>> fa8cdf9 (working)
                         "characterization_tasks": [
                             {
                                 "details": {
@@ -671,14 +679,24 @@
                             },
                             {
                                 "details": {
+                                    "duration": 10,
+                                    "exposure_time": 0.2,
+                                    "num_measurements": 50
+                                },
+                                "duration": 10.219999999999999,
+                                "name": "Photostability_405nm",
+                                "position": 285,
+                                "station": "pl_blue"
+                            },
+                            {
+                                "details": {
                                     "exposure_times": [
                                         0.1,
-                                        5,
-                                        20
+                                        0.2
                                     ],
                                     "num_scans": 1
                                 },
-                                "duration": 25.32,
+                                "duration": 0.52,
                                 "name": "PL_635nm",
                                 "position": 287,
                                 "station": "pl_red"
@@ -686,16 +704,12 @@
                             {
                                 "details": {
                                     "exposure_times": [
-                                        0.02,
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5,
-                                        15
+                                        0.1,
+                                        0.2
                                     ],
                                     "num_scans": 2
                                 },
-                                "duration": 46.54,
+                                "duration": 4.6,
                                 "name": "Transmission",
                                 "position": 287,
                                 "station": "transmission"
@@ -727,9 +741,10 @@
                             }
                         ]
                     },
-                    "duration": 139,
-                    "id": "characterize-6520f5b4-dbe2-4750-b584-efa46258e971",
+                    "duration": 83,
+                    "id": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
                     "name": "characterize",
+<<<<<<< HEAD
                     "precedent": "storage_to_characterization--88fc6ac3-b031-47ca-8c37-312b38183e81",
                     "sample": "sample0",
                     "start": 2172
@@ -1100,6 +1115,11 @@
 =======
                     "start": 2329
 >>>>>>> 7c0fe4e (characterization baseline instruction file)
+=======
+                    "precedent": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+                    "sample": "sample0",
+                    "start": 15
+>>>>>>> fa8cdf9 (working)
                 },
                 {
                     "details": {
@@ -1116,14 +1136,24 @@
                             },
                             {
                                 "details": {
+                                    "duration": 10,
+                                    "exposure_time": 0.2,
+                                    "num_measurements": 50
+                                },
+                                "duration": 10.219999999999999,
+                                "name": "Photostability_405nm",
+                                "position": 285,
+                                "station": "pl_blue"
+                            },
+                            {
+                                "details": {
                                     "exposure_times": [
                                         0.1,
-                                        5,
-                                        20
+                                        0.2
                                     ],
                                     "num_scans": 1
                                 },
-                                "duration": 25.32,
+                                "duration": 0.52,
                                 "name": "PL_635nm",
                                 "position": 287,
                                 "station": "pl_red"
@@ -1131,16 +1161,12 @@
                             {
                                 "details": {
                                     "exposure_times": [
-                                        0.02,
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5,
-                                        15
+                                        0.1,
+                                        0.2
                                     ],
                                     "num_scans": 2
                                 },
-                                "duration": 46.54,
+                                "duration": 4.6,
                                 "name": "Transmission",
                                 "position": 287,
                                 "station": "transmission"
@@ -1174,6 +1200,7 @@
                     },
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     "duration": 109,
                     "id": "characterize-a41a1d43-c0ba-4a0e-b707-795f83d43f77",
                     "name": "characterize",
@@ -1196,12 +1223,21 @@
 =======
                     "start": 2344
 >>>>>>> 7c0fe4e (characterization baseline instruction file)
+=======
+                    "duration": 83,
+                    "id": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
+                    "name": "characterize",
+                    "precedent": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
+                    "sample": "sample0",
+                    "start": 98
+>>>>>>> fa8cdf9 (working)
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                     "id": "characterization_to_storage--864a7c3c-02fa-4de3-8f22-48403bbb1cd6",
@@ -1987,18 +2023,67 @@
                                 "rpm": 3000.0
                             }
                         ]
+=======
+                    "id": "characterization_to_storage--0e519d74-8fe0-4bff-b064-832155b7a9d1",
+                    "name": "characterization_to_storage",
+                    "precedent": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
+                    "sample": "sample0",
+                    "start": 181
+                }
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+            "name": "storage_to_characterization",
+            "precedent": null,
+            "sample": "sample0",
+            "start": 0
+        },
+        {
+            "details": {
+                "characterization_tasks": [
+                    {
+                        "details": {
+                            "exposure_time": 0.1,
+                            "num_frames": 1
+                        },
+                        "duration": 0.1,
+                        "name": "Brightfield",
+                        "position": 164.4,
+                        "station": "brightfield"
                     },
-                    "id": "spincoat-d3705501-9cee-4ede-8e57-ffc5e3efdff5",
-                    "name": "spincoat",
-                    "precedent": "storage_to_spincoater--d3bb2d0a-3ea7-44a6-bedf-bca64c3a700f",
-                    "sample": "sample10",
-                    "start": 1623
-                },
-                {
-                    "details": {
-                        "destination": "Hotplate",
-                        "source": "SpincoaterLiquidhandler"
+                    {
+                        "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+>>>>>>> fa8cdf9 (working)
                     },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 1
+                        },
+                        "duration": 0.52,
+                        "name": "PL_635nm",
+                        "position": 287,
+                        "station": "pl_red"
+                    },
+<<<<<<< HEAD
                     "id": "spincoater_to_hotplate--5655ad7f-74ec-40e3-adea-1221a1ee6e31",
                     "name": "spincoater_to_hotplate",
                     "precedent": "spincoat-d3705501-9cee-4ede-8e57-ffc5e3efdff5",
@@ -45193,34 +45278,16 @@
                         "name": "Brightfield",
                         "position": 164.4,
                         "station": "brightfield"
-                    },
+=======
                     {
                         "details": {
                             "exposure_times": [
                                 0.1,
-                                5,
-                                20
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 25.32,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.02,
-                                0.05,
-                                0.2,
-                                1,
-                                5,
-                                15
+                                0.2
                             ],
                             "num_scans": 2
                         },
-                        "duration": 46.54,
+                        "duration": 4.6,
                         "name": "Transmission",
                         "position": 287,
                         "station": "transmission"
@@ -45252,34 +45319,12 @@
                     }
                 ]
             },
-            "duration": 139,
-            "id": "characterize-0b8d0ded-45d5-437a-8f57-71890aa5939b",
+            "duration": 83,
+            "id": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
             "name": "characterize",
-            "precedent": "storage_to_characterization--82559942-4633-44a1-9144-46381b979bee",
-            "sample": "sample34",
-            "start": 8061
-        },
-        {
-            "details": {
-                "destination": "Tray1",
-                "source": "Characterization"
-            },
-            "id": "characterization_to_storage--30f3f893-8350-4a26-b136-a0b880c0647c",
-            "name": "characterization_to_storage",
-            "precedent": "characterize-0b8d0ded-45d5-437a-8f57-71890aa5939b",
-            "sample": "sample34",
-            "start": 8200
-        },
-        {
-            "details": {
-                "destination": "Characterization",
-                "source": "Tray2"
-            },
-            "id": "storage_to_characterization--39f71578-6873-425f-860a-a190e250a84b",
-            "name": "storage_to_characterization",
-            "precedent": "rest-18c928d1-1742-4824-911f-d9aa1ba130cc",
-            "sample": "sample35",
-            "start": 8218
+            "precedent": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+            "sample": "sample0",
+            "start": 15
         },
         {
             "details": {
@@ -45296,14 +45341,25 @@
                     },
                     {
                         "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+>>>>>>> fa8cdf9 (working)
+                    },
+                    {
+                        "details": {
                             "exposure_times": [
                                 0.1,
-                                5,
-                                20
+                                0.2
                             ],
                             "num_scans": 1
                         },
-                        "duration": 25.32,
+                        "duration": 0.52,
                         "name": "PL_635nm",
                         "position": 287,
                         "station": "pl_red"
@@ -45311,16 +45367,12 @@
                     {
                         "details": {
                             "exposure_times": [
-                                0.02,
-                                0.05,
-                                0.2,
-                                1,
-                                5,
-                                15
+                                0.1,
+                                0.2
                             ],
                             "num_scans": 2
                         },
-                        "duration": 46.54,
+                        "duration": 4.6,
                         "name": "Transmission",
                         "position": 287,
                         "station": "transmission"
@@ -45352,23 +45404,23 @@
                     }
                 ]
             },
-            "duration": 139,
-            "id": "characterize-bbd02534-4431-4047-afc8-b56c98d7b303",
+            "duration": 83,
+            "id": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
             "name": "characterize",
-            "precedent": "storage_to_characterization--39f71578-6873-425f-860a-a190e250a84b",
-            "sample": "sample35",
-            "start": 8233
+            "precedent": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
+            "sample": "sample0",
+            "start": 98
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--f2a32455-1fa3-4057-86e9-6fead82b28cc",
+            "id": "characterization_to_storage--0e519d74-8fe0-4bff-b064-832155b7a9d1",
             "name": "characterization_to_storage",
-            "precedent": "characterize-bbd02534-4431-4047-afc8-b56c98d7b303",
-            "sample": "sample35",
-            "start": 8372
+            "precedent": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
+            "sample": "sample0",
+            "start": 181
         }
     ]
 >>>>>>> f83eeda (characterization stations accept kwargs)
