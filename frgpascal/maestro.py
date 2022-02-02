@@ -435,7 +435,7 @@ class Maestro:
                     await asyncio.sleep(30)
                 elif not experiment_completed:
                     with self.lock_pendingtasks:
-                        if len(self.pending_tasks) == 0:
+                        if len(self.completed_tasks) == len(self.tasks):
                             experiment_completed = True
                     await asyncio.sleep(5)
                 else:
