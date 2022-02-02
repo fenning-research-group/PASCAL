@@ -87,7 +87,7 @@ class CharacterizationLine:
                     rootdir=self.rootdir,
                     camera=self.darkfieldcamera,
                     lightswitch=self.switchbox.Switch(
-                        constants["darkfield"]["switchindex"]
+                        constants["stations"]["darkfield"]["switchindex"]
                     ),
                 ),
                 PLImaging(
@@ -360,7 +360,7 @@ class StationTemplate(ABC):
     template method itself intact.
     """
 
-    def __init__(self, position, rootdir, name):
+    def __init__(self, position: float, rootdir: str, name: str):
         self.position = position
         self._rootdir = rootdir
         self.name = name
@@ -387,21 +387,23 @@ class StationTemplate(ABC):
 
 
 class DarkfieldImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
+    def __init__(
+        self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
+    ):
         super().__init__(position=position, rootdir=rootdir, name="Darkfield")
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltime = 5e4  # dwelltime in microseconds
-        self.default_frames = 500  # average 500 frames
+        self.default_dwelltime = 0.05  # dwelltime, seconds
+        self.default_frames = 50  # average 500 frames
 
     def capture(self, **kwargs):
 
-        self.camera.exposure = kwargs.get("dwelltime", self.default_dwelltime)
-        self.camera.frames = kwargs.get("frames", self.default_frames)
+        self.camera.exposure_time = kwargs.get("dwelltime", self.default_dwelltime)
+        self.camera.num_frames = kwargs.get("numframes", self.default_frames)
         self.lightswitch.on()
         img = self.camera.capture()
         self.lightswitch.off()
-        self.camera.frames = 1
+        self.camera.num_frames = 1
         return img
 
     def save(self, img, sample):
@@ -410,11 +412,14 @@ class DarkfieldImaging(StationTemplate):
 
 
 class PLImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera: Thorcam, lightswitch):
+    def __init__(
+        self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
+    ):
         super().__init__(position=position, rootdir=rootdir, name="PLImaging")
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltimes = [5e4, 2e5, 1e6, 5e6]  # 50 ms, 200 ms, 1 s dwell times
+        self.default_dwelltimes = [0.05, 0.2, 1, 3]  # 50 ms, 200 ms, 1 s dwell times
+        self.default_frames = 5  # average 500 frames
 
     def capture(self, **kwargs):
         """
@@ -424,17 +429,17 @@ class PLImaging(StationTemplate):
             imgs: dictionary of {dwelltime (ms): image}
         """
         dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
-        self.camera.frames = 5  # average 5 frames
+        self.camera.num_frames = kwargs.get("numframes", self.default_frames)
         imgs = {}
 
         self.lightswitch.on()
         time.sleep(1)  # LED lamp takes a second to turn on
         for t in dwelltimes:
             self.camera.exposure_time = t
-            imgs[int(t / 1000)] = self.camera.capture()  # save as ms exposure
+            imgs[t] = self.camera.capture()  # save as ms exposure
         self.lightswitch.off()
 
-        self.camera.frames = 1
+        self.camera.num_frames = 1
         return imgs
 
     def save(self, imgs, sample):
@@ -444,12 +449,14 @@ class PLImaging(StationTemplate):
 
 
 class BrightfieldImaging(StationTemplate):
-    def __init__(self, position, rootdir, camera, lightswitch):
+    def __init__(
+        self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
+    ):
         super().__init__(position=position, rootdir=rootdir, name="Brightfield")
 
         self.camera = camera
         self.lightswitch = lightswitch
-        self.default_dwelltime = 5e4  # 50 ms dwell time, in microseconds
+        self.default_dwelltime = 0.05  # 50 ms dwell time
 
     def capture(self, **kwargs):
         self.camera.exposure_time = kwargs.get("dwelltime", self.default_dwelltime)
@@ -466,8 +473,8 @@ class BrightfieldImaging(StationTemplate):
 class TransmissionSpectroscopy(StationTemplate):
     def __init__(
         self,
-        position,
-        rootdir,
+        position: float,
+        rootdir: str,
         spectrometer: Spectrometer,
         shutter: Shutter,
         slider: FilterSlider,
@@ -479,18 +486,18 @@ class TransmissionSpectroscopy(StationTemplate):
         self.slider = slider
         self.default_dwelltimes = [15, 50, 200, 1000, 5000, 15000]  # ms
         self.default_numscans = 3  # take 2 scans per to reduce noise
-        self.spectrometer._hdr_times = list(
-            set(self.spectrometer._hdr_times + self.hdr_times)
+        self.spectrometer._exposure_times = list(
+            set(self.spectrometer._exposure_times + self.hdr_times)
         )
 
     def capture(self, **kwargs):
         # set scan parameters
         dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
         numscans = kwargs.get("numscans", self.default_numscans)
-        self.spectrometer.numscans = numscans
+        self.spectrometer.num_scans = numscans
 
-        hdrtimes0 = self.spectrometer._hdr_times
-        self.spectrometer._hdr_times = dwelltimes
+        hdrtimes0 = self.spectrometer._exposure_times
+        self.spectrometer._exposure_times = dwelltimes
 
         # open shutter + move filter slider
         threads = [
@@ -507,9 +514,9 @@ class TransmissionSpectroscopy(StationTemplate):
 
         # close shutter, return to defaults
         self.shutter.close()
-        self.spectrometer.numscans = 1
-        self.spectrometer._hdr_times = hdrtimes0
-        self.spectrometer.dwelltime = (
+        self.spectrometer.num_scans = 1
+        self.spectrometer._exposure_times = hdrtimes0
+        self.spectrometer.exposure_time = (
             20  # set to short dwelltime to prevent bleeding into next measurement
         )
 
@@ -538,8 +545,8 @@ class TransmissionSpectroscopy(StationTemplate):
 class PLSpectroscopy(StationTemplate):
     def __init__(
         self,
-        position,
-        rootdir,
+        position: float,
+        rootdir: str,
         spectrometer: Spectrometer,
         lightswitch: SingleSwitch,
         slider: FilterSlider,
@@ -551,8 +558,8 @@ class PLSpectroscopy(StationTemplate):
         self.shutter = shutter
         self.slider = slider
         self.default_dwelltimes = [1000, 5000, 20000]
-        self.spectrometer._hdr_times = list(
-            set(self.spectrometer._hdr_times + self.hdr_times)
+        self.spectrometer._exposure_times = list(
+            set(self.spectrometer._exposure_times + self.hdr_times)
         )
         self.NUMSCANS = 1  # take 2 scans per to reduce noise
 
@@ -574,16 +581,16 @@ class PLSpectroscopy(StationTemplate):
 
         dwelltimes = kwargs.get("dwelltimes", self.default_dwelltimes)
         numscans = kwargs.get("numscans", self.default_numscans)
-        self.spectrometer.numscans = numscans
+        self.spectrometer.num_scans = numscans
         self.lightswitch.on()  # turn on the laser
         all_cts = {}
         for t in dwelltimes:
-            self.spectrometer.dwelltime = t
+            self.spectrometer.exposure_time = t
             wl, cts = self.spectrometer.capture()
             all_cts[t] = cts
         self.lightswitch.off()  # turn off the laser
-        self.spectrometer.numscans = 1
-        self.spectrometer.dwelltime = (
+        self.spectrometer.num_scans = 1
+        self.spectrometer.exposure_time = (
             20  # fast dwelltime to prevent bleeding over into next measurement
         )
         return [wl, all_cts]
@@ -613,8 +620,8 @@ class PLSpectroscopy(StationTemplate):
 class PLPhotostability(StationTemplate):
     def __init__(
         self,
-        position,
-        rootdir,
+        position: float,
+        rootdir: str,
         spectrometer: Spectrometer,
         lightswitch: SingleSwitch,
         slider: FilterSlider,
@@ -629,8 +636,8 @@ class PLPhotostability(StationTemplate):
         self.slider = slider
         self.default_dwelltime = 2000  # ms
         self.default_duration = 120  # seconds
-        self.spectrometer._hdr_times = list(
-            set(self.spectrometer._hdr_times + [self.dwelltime])
+        self.spectrometer._exposure_times = list(
+            set(self.spectrometer._exposure_times + [self.dwelltime])
         )
 
     def capture(self, **kwargs):
@@ -657,8 +664,8 @@ class PLPhotostability(StationTemplate):
         spectra = []
         duration = kwargs.get("duration", self.default_duration)
         dwelltime = kwargs.get("dwelltime", self.default_dwelltime)
-        self.spectrometer.dwelltime = dwelltime
-        self.spectrometer.numscans = 1
+        self.spectrometer.exposure_time = dwelltime
+        self.spectrometer.num_scans = 1
         self.lightswitch.on()
         t0 = time.time()
         tnow = 0
@@ -676,7 +683,7 @@ class PLPhotostability(StationTemplate):
         fname = f"{sample}_photostability.csv"
         with open(os.path.join(self.savedir, fname), "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Dwelltime (ms)", self.spectrometer.dwelltime])
+            writer.writerow(["Dwelltime (ms)", self.spectrometer.exposure_time])
             writer.writerow(["Number of Spectra", len(spectra)])
             writer.writerow(["Data Start", "Times (s) of acquisition start ->"])
             writer.writerow(["Wavelength (nm)"] + [round(t_, 1) for t_ in times])
