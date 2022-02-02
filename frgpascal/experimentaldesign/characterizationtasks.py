@@ -135,7 +135,7 @@ class TransmissionSpectroscopy(CharacterizationMethod):
         self.numscans = numscans
 
         super().__init__(
-            name="TransmissionSpectroscopy",
+            name="Transmission",
             hardware="transmission",
             jitter=jitter,
         )
@@ -174,7 +174,7 @@ class PLSpectroscopy(CharacterizationMethod):
         self.numscans = numscans
 
         super().__init__(
-            name="TransmissionSpectroscopy",
+            name="PL_635nm",
             hardware="pl_red",
             jitter=jitter,
         )
@@ -209,7 +209,7 @@ class PLPhotostability(CharacterizationMethod):
         self.duration = duration
 
         super().__init__(
-            name="PLPhotostability",
+            name="Photostability_405nm",
             hardware="pl_blue",
             jitter=jitter,
         )
