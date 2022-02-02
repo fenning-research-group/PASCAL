@@ -35,7 +35,10 @@ class CharacterizationMethod(ABC):
         self.hardware = hardware
         self.position = constants[hardware]["position"] + jitter
 
-        if self.position < 0 or self.position > 400:
+        if (
+            self.position < constants["axis"]["x_min"]
+            or self.position > constants["axis"]["x_max"]
+        ):
             raise Exception(
                 f"Invalid position: {self.position}. Must be between 0 and 400. Check your jitter value!"
             )

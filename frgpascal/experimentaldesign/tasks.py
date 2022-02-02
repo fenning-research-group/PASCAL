@@ -18,6 +18,7 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
+from frgpascal.experimentaldesign.characterizationtasks import CharacterizationMethod
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -81,7 +82,11 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self, name: str, substrate: str, worklist: list, storage_slot=None,
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -415,11 +420,17 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(asp + stage + disp - self.drops[0].time, 0,)
+            duration += max(
+                asp + stage + disp - self.drops[0].time,
+                0,
+            )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
+            duration += max(
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -487,7 +498,9 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal", duration=self.duration, immediate=immediate,
+            task="anneal",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -568,14 +581,48 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 280, immediate=False):
-        self.duration = duration
+    def __init__(self, tasks, reorder_by_position=False, immediate=False):
+
+        if any([not isinstance(task, CharacterizationMethod) for task in tasks]):
+            raise Exception(
+                "Invalid tasks: `Characterize` method can only execute `CharacterizationMethod` tasks!"
+            )
+        if reorder_by_position:
+            self.characterization_tasks = sorted(
+                tasks, key=lambda x: x.position, reverse=True
+            )  # starts at the furthest end of the characterization train
+        else:
+            self.characterization_tasks = tasks
+
+        self.duration = sum([t.duration for t in self.characterization_tasks])
+        positions = [0] + [t.position for t in self.characterization_tasks] + [0]
+        m = constants["characterizationline"]["axis"]["traveltime"]["m"]
+        b = constants["characterizationline"]["axis"]["traveltime"]["b"]
+        for p0, p1 in zip(positions, positions[1:]):
+            distance = p1 - p0
+            self.duration += distance * m + b
+
         super().__init__(
-            task="characterize", duration=self.duration, immediate=immediate,
+            task="characterize",
+            duration=self.duration,
+            immediate=immediate,
         )
 
+    def to_dict(self):
+        out = super().to_dict()
+        out["duration"] = self.duration
+        out["details"] = {t["name"]: t.to_dict() for t in self.characterization_tasks}
+
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
     def __repr__(self):
-        return "<Characterize>"
+        s = "<Characterize>"
+        for t in self.characterization_tasks:
+            s += "\n\t" + t.name
+        return s
 
 
 ### build task list for a sample
