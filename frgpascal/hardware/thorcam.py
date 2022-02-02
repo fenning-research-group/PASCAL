@@ -70,30 +70,32 @@ class Thorcam:
             self.camera.get_default_white_balance_matrix(),
             self.camera.bit_depth,
         )
-        self.frames = 1
+        self.num_frames = 1
 
     # def disconnect(self):
 
     @property
-    def exposure(self):
+    def exposure_time(self):
         return self.camera.exposure_time_us
 
-    @exposure.setter
-    def exposure(self, exposure: int):
+    @exposure_time.setter
+    def exposure_time(self, exposure: int):
         """
         Args:
-            exposure (int): Exposure time (microseconds)
+            exposure (int): Exposure time (seconds)
         """
-        self.camera.exposure_time_us = int(exposure)
+        self.camera.exposure_time_us = int(
+            exposure * 1e6
+        )  # convert seconds to microseconds - camera expects microseconds
         time.sleep(0.5)
 
     @property
-    def frames(self):
+    def num_frames(self):
         self.__frames = self.camera.frames_per_trigger_zero_for_unlimited
         return self.__frames
 
-    @frames.setter
-    def frames(self, frames: int):
+    @num_frames.setter
+    def num_frames(self, frames: int):
         """Set the number of frames to average per image capture
 
         Args:

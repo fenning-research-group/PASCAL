@@ -58,81 +58,90 @@ class CharacterizationMethod(ABC):
         }
 
 
-class Darkfield(CharacterizationMethod):
-    def __init__(self, dwelltimes=[0.05], jitter=0):
-        for d in dwelltimes:
-            if d <= 0 or d > 100:
+class Darkfield(CharacterizationTask):
+    def __init__(self, exposure_times=[0.05], num_frames=100, jitter=0):
+        for d in exposure_times:
+            if d < 0.01 or d > 100:
                 raise Exception(
-                    f"Invalid dwelltime: {d} seconds. Must be 0<dwelltime<100 seconds"
+                    f"Invalid exposure time: {d} seconds. Must be 0.01<exposuretime<100 seconds"
                 )
-        self.dwelltimes = dwelltimes
+        if num_frames < 1 or num_frames > 500:
+            raise Exception(
+                "num_frames must be between 1 and 500 - user provided {num_frames}"
+            )
+
+        self.exposure_times = exposure_times
+        self.num_frames = num_frames
 
         super().__init__(name="Darkfield", hardware="darkfield", jitter=jitter)
 
     def expected_duration(self):
-        return sum([d for d in self.dwelltimes])  # convert to seconds
+        return sum(
+            [d * self.num_frames for d in self.exposure_times]
+        )  # convert to seconds
 
     def _get_details(self):
-        return {
-            "dwelltimes": [
-                d * 1e6 for d in self.dwelltimes
-            ],  # camera expect microseconds
-        }
+        return {"exposure_times": self.exposure_times, "num_frames": self.num_frames}
 
 
 class Brightfield(CharacterizationMethod):
     def __init__(self):
-        self.dwelltimes = [0.1]  # 100 ms static dwelltime
+        self.exposure_times = [0.1]  # 100 ms static dwelltime
+        self.num_frames = 1
 
         super().__init__(name="Brightfield", hardware="brightfield", jitter=0)
 
     def expected_duration(self):
-        return sum([d for d in self.dwelltimes])  # convert to seconds
+        return sum(
+            [et * self.num_frames for et in self.exposure_times]
+        )  # convert to seconds
 
     def _get_details(self):
-        return {
-            "dwelltimes": [
-                d * 1e6 for d in self.dwelltimes
-            ],  # camera expect microseconds
-        }
+        return {"exposure_times": self.exposure_times, "num_frames": self.num_frames}
 
 
-class PLImaging(CharacterizationMethod):
-    def __init__(self, dwelltimes=[0.05, 0.2, 1, 5], jitter: int = 0):
-        for d in dwelltimes:
-            if d <= 0 or d > 100:
+class PLImaging(CharacterizationTask):
+    def __init__(
+        self, exposure_times=[0.05, 0.2, 1, 5], num_frames: int = 1, jitter: int = 0
+    ):
+        for et in exposure_times:
+            if et < 0.01 or et > 100:
                 raise Exception(
-                    f"Invalid dwelltime: {d} seconds. Must be 0<dwelltime<100 seconds"
+                    f"Invalid exposure time: {et} seconds. Must be 0.01<dwelltime<100 seconds"
                 )
-        self.dwelltimes = dwelltimes
+
+        if num_frames < 1 or num_frames > 500:
+            raise Exception(
+                "num_frames must be between 1 and 500 - user provided {num_scans}"
+            )
+        self.exposure_times = exposure_times
+        self.num_frames = num_frames
 
         super().__init__(name="PLImaging", hardware="pl_imaging", jitter=jitter)
 
     def expected_duration(self):
-        return sum([d for d in self.dwelltimes])  # seconds
+        return sum([d * self.num_frames for d in self.exposure_times])  # seconds
 
     def _get_details(self):
-        return {
-            "dwelltimes": [
-                d * 1e6 for d in self.dwelltimes
-            ],  # camera expect microseconds
-        }
+        return {"exposure_times": self.exposure_times, "num_frames": self.num_frames}
 
 
-class TransmissionSpectroscopy(CharacterizationMethod):
-    def __init__(self, dwelltimes=[0.015, 0.05, 0.2, 1, 5, 15], numscans=2, jitter=0):
-        for d in dwelltimes:
-            if d <= 0 or d >= 60:
+class TransmissionSpectroscopy(CharacterizationTask):
+    def __init__(
+        self, exposure_times=[0.02, 0.05, 0.2, 1, 5, 15], num_scans=2, jitter=0
+    ):
+        for et in exposure_times:
+            if et < 0.02 or et > 60:
                 raise Exception(
-                    f"Invalid dwelltime: {d} seconds. Must be 0<dwelltime<60 seconds"
+                    f"Invalid exposure time: {et} seconds. Must be 0.02<dwelltime<60 seconds"
                 )
 
-        if numscans < 1 or numscans > 10:
+        if num_scans < 1 or num_scans > 10:
             raise Exception(
-                "numscans must be between 1 and 10 - user provided {numscans}"
+                "num_scans must be between 1 and 10 - user provided {num_scans}"
             )
-        self.dwelltimes = dwelltimes
-        self.numscans = numscans
+        self.exposure_times = exposure_times
+        self.num_scans = num_scans
 
         super().__init__(
             name="Transmission",
@@ -142,7 +151,7 @@ class TransmissionSpectroscopy(CharacterizationMethod):
 
     def expected_duration(self):
         duration = sum(
-            [d * self.numscans for d in self.dwelltimes]
+            [et * self.num_scans for et in self.exposure_times]
         )  # seconds to take scans
         duration += (
             2 * constants["shutter"]["max_change_time"]
@@ -151,27 +160,27 @@ class TransmissionSpectroscopy(CharacterizationMethod):
 
     def _get_details(self):
         return {
-            "dwelltimes": [
-                d * 1000 for d in self.dwelltimes
-            ],  # spectrometer expects ms
-            "numscans": self.numscans,
+            "exposure_times": self.exposure_times,
+            "num_scans": self.num_scans,
         }
 
 
-class PLSpectroscopy(CharacterizationMethod):
-    def __init__(self, dwelltimes=[0.1, 5, 20], numscans: int = 1, jitter: float = 0):
-        for d in dwelltimes:
-            if d <= 0 or d > 60:
+class PLSpectroscopy(CharacterizationTask):
+    def __init__(
+        self, exposure_times=[0.1, 5, 20], num_scans: int = 1, jitter: float = 0
+    ):
+        for et in exposure_times:
+            if et < 0.02 or et > 60:
                 raise Exception(
-                    f"Invalid dwelltime: {d} seconds. Must be 0<dwelltime<60 seconds"
+                    f"Invalid exposure time: {et} seconds. Must be 0.02<dwelltime<60 seconds"
                 )
 
-        if numscans < 1 or numscans > 10:
+        if num_scans < 1 or num_scans > 10:
             raise Exception(
-                "numscans must be between 1 and 10 - user provided {numscans}"
+                "num_scans must be between 1 and 10 - user provided {num_scans}"
             )
-        self.dwelltimes = dwelltimes
-        self.numscans = numscans
+        self.exposure_times = exposure_times
+        self.num_scans = num_scans
 
         super().__init__(
             name="PL_635nm",
@@ -181,7 +190,7 @@ class PLSpectroscopy(CharacterizationMethod):
 
     def expected_duration(self):
         duration = sum(
-            [d * self.numscans for d in self.dwelltimes]
+            [et * self.num_scans for et in self.exposure_times]
         )  # seconds to take scans
         duration += (
             2 * constants["switchbox"]["relayresponsetime"]
@@ -192,21 +201,26 @@ class PLSpectroscopy(CharacterizationMethod):
 
     def _get_details(self):
         return {
-            "dwelltimes": [
-                d * 1000 for d in self.dwelltimes
-            ],  # spectrometer expects ms
-            "numscans": self.numscans,
+            "exposure_times": self.exposure_times,
+            "num_scans": self.num_scans,
         }
 
 
-class PLPhotostability(CharacterizationMethod):
-    def __init__(self, dwelltime: float = 2, duration: int = 120, jitter: float = 0):
-        if dwelltime <= 0 or dwelltime > 60:
+class PLPhotostability(CharacterizationTask):
+    def __init__(
+        self, exposure_time: float = 2, duration: int = 120, jitter: float = 0
+    ):
+        if exposure_time < 0.02 or exposure_time > 60:
             raise Exception(
-                f"Invalid dwelltime: {dwelltime} seconds. Must be 0<dwelltime<60 seconds"
+                f"Invalid exposure time: {exposure_time} seconds. Must be 0.02<dwelltime<60 seconds"
             )
-        self.dwelltime = dwelltime
+        self.exposure_time = exposure_time
         self.duration = duration
+        self.num_measurements = ceil(duration / exposure_time)
+        if self.num_measurements <= 5:
+            print(
+                "Warning: this photostability measurement (exposure time of {self.exposure_time} seconds for {self.duration} total seconds) will only have {self.num_measurements} timepoints!"
+            )
 
         super().__init__(
             name="Photostability_405nm",
@@ -225,8 +239,7 @@ class PLPhotostability(CharacterizationMethod):
 
     def _get_details(self):
         return {
-            "dwelltimes": [
-                d * 1000 for d in self.dwelltimes
-            ],  # spectrometer expects ms
-            "numscans": self.numscans,
+            "exposure_time": self.exposure_time,
+            "duration": self.duration,
+            "num_measurements": self.num_measurements,
         }

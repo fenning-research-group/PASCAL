@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 import sys
 import os
 import time
@@ -19,45 +20,52 @@ class Spectrometer:
 
     def __init__(self, address=0):
         self.id, self.__wl = sn.array_get_spec(address)
-        self._hdr_times = [
-            50,
-            100,
-            250,
-            500,
-            2500,
-            15000,
+        self._exposure_times = [
+            0.05,
+            0.1,
+            0.25,
+            0.5,
+            2.5,
+            15.0,
         ]  # duration times (ms) for high dynamic range measurements
-        self.HDR_THRESHOLD = (
-            2 ** 16 * 0.95
+        self.CTS_THRESHOLD = (
+            2 ** 16 * 0.98
         )  # counts above this are considered saturated
         self.SETTING_DELAY = (
             0.2  # seconds between changing a setting and having it take effect
         )
 
         print("Connected to spectrometer")
-        self.dwelltime = self._hdr_times[0]  # ms
-        self.numscans = 1  # one scan per spectrum
+        self.exposure_time = self._exposure_times[0]  # ms
+        self.num_scans = 1  # one scan per spectrum
         self.smooth = 0  # smoothing factor, units unclear.
 
         self.__baseline_dark = {}
         self.__baseline_light = {}
 
     @property
-    def dwelltime(self):
+    def exposure_time(self):
         return self.__integrationtime
 
-    @dwelltime.setter
-    def dwelltime(self, t):
-        self.id["device"].set_config(int_time=t)
+    @exposure_time.setter
+    def exposure_time(self, t):
+        if t < 0.02 or t > 60:
+            raise ValueError(
+                "Spectrometer dwelltime must be between .02 and 60 seconds!"
+            )
+        newtime = int(
+            t * 1e3
+        )  # convert seconds to milliseconds - spectrometer expects ms
+        self.id["device"].set_config(int_time=newtime)
         time.sleep(self.SETTING_DELAY)
         self.__integrationtime = t
 
     @property
-    def numscans(self):
+    def num_scans(self):
         return self.__numscans
 
-    @numscans.setter
-    def numscans(self, n):
+    @num_scans.setter
+    def num_scans(self, n):
         self.id["device"].set_config(scans_to_avg=n)
         time.sleep(self.SETTING_DELAY)
         self.__numscans = n
@@ -76,27 +84,27 @@ class Spectrometer:
 
     def take_light_baseline(self, skip_repeats=False):
         """takes an illuminated baseline at each integration time from HDR timings"""
-        numscans0 = self.numscans
-        self.numscans = 3
-        for t in self._hdr_times:
+        numscans0 = self.num_scans
+        self.num_scans = 3
+        for t in self._exposure_times:
             if skip_repeats and t in self.__baseline_light:
                 continue  # already taken
-            self.dwelltime = t
+            self.exposure_time = t
             wl, cts = self._capture_raw()
             self.__baseline_light[t] = cts
-        self.numscans = numscans0
+        self.num_scans = numscans0
 
     def take_dark_baseline(self, skip_repeats=False):
         """takes an dark baseline at each integration time from HDR timings"""
-        numscans0 = self.numscans
-        self.numscans = 3
-        for t in self._hdr_times:
+        numscans0 = self.num_scans
+        self.num_scans = 3
+        for t in self._exposure_times:
             if skip_repeats and t in self.__baseline_dark:
                 continue  # already taken
-            self.dwelltime = t
+            self.exposure_time = t
             wl, cts = self._capture_raw()
             self.__baseline_dark[t] = cts
-        self.numscans = numscans0
+        self.num_scans = numscans0
 
     def __is_dark_baseline_taken(self, dwelltime=None):
         """Check whether a baseline has been taken at the current integration time
@@ -107,10 +115,10 @@ class Spectrometer:
         Returns True if dark baseline has been taken at the current integration time
         """
         if dwelltime is None:
-            dwelltime = self.dwelltime
+            dwelltime = self.exposure_time
         if dwelltime not in self.__baseline_dark:
             raise ValueError(
-                f"Dark baseline not taken for current integration time ({self.dwelltime} ms). Taken for {list(self.__baseline_dark.keys())}"
+                f"Dark baseline not taken for current integration time ({self.exposure_time} ms). Taken for {list(self.__baseline_dark.keys())}"
             )
 
         return True
@@ -124,10 +132,10 @@ class Spectrometer:
         Returns True if light baseline has been taken at the current integration time
         """
         if dwelltime is None:
-            dwelltime = self.dwelltime
+            dwelltime = self.exposure_time
         if dwelltime not in self.__baseline_light:
             raise ValueError(
-                f"Illuminated baseline not taken for current integration time ({self.dwelltime}). Taken for {list(self.__baseline_light.keys())}"
+                f"Illuminated baseline not taken for current integration time ({self.exposure_time}). Taken for {list(self.__baseline_light.keys())}"
             )
 
         return True
@@ -156,7 +164,7 @@ class Spectrometer:
         if self.__is_dark_baseline_taken():
             wl, cts = self._capture_raw()
             cts[cts >= (2 ** 16 - 1)] = np.nan  # detector saturated here
-            cts -= self.__baseline_dark[self.dwelltime]
+            cts -= self.__baseline_dark[self.exposure_time]
             return wl, cts
 
     def capture_hdr(self):
@@ -164,18 +172,18 @@ class Spectrometer:
 
         returns spectrum in *counts per second*
         """
-        if not all([self.__is_dark_baseline_taken(t) for t in self._hdr_times]):
+        if not all([self.__is_dark_baseline_taken(t) for t in self._exposure_times]):
             return  # error will be thrown by __is_dark_baseline_taken()
 
-        for i, t in enumerate(self._hdr_times):
-            self.dwelltime = t  # milliseconds
+        for i, t in enumerate(self._exposure_times):
+            self.exposure_time = t  # milliseconds
             wl, cts_raw = self._capture_raw()
             cts = cts_raw - self.__baseline_dark[t]
             cps = cts / (t / 1000)  # counts per second
             if i == 0:
                 cps_overall = cps
             else:
-                mask = cts_raw < self.HDR_THRESHOLD
+                mask = cts_raw < self.CTS_THRESHOLD
                 cps_overall[mask] = cps[mask]
 
         return wl, cps_overall
@@ -184,7 +192,7 @@ class Spectrometer:
         """
         captures a transmission spectrum
         """
-        t = self.dwelltime
+        t = self.exposure_time
         if not self.__is_light_baseline_taken(t) and self.__is_dark_baseline_taken(t):
             return  # error will be thrown by __is_light_baseline_taken() or __is_dark_baseline_taken()
 
@@ -197,13 +205,13 @@ class Spectrometer:
         if not all(
             [
                 self.__is_light_baseline_taken(t) and self.__is_dark_baseline_taken(t)
-                for t in self._hdr_times
+                for t in self._exposure_times
             ]
         ):
             return  # error will be thrown by __is_light_baseline_taken() or __is_dark_baseline_taken()
 
-        for i, t in enumerate(self._hdr_times):
-            self.dwelltime = t  # milliseconds
+        for i, t in enumerate(self._exposure_times):
+            self.exposure_time = t  # milliseconds
             (
                 wl,
                 cts,
@@ -214,10 +222,10 @@ class Spectrometer:
             if i == 0:
                 transmission_overall = transmission
             else:
-                mask = self.__baseline_light[t] < self.HDR_THRESHOLD
+                mask = self.__baseline_light[t] < self.CTS_THRESHOLD
                 transmission_overall[mask] = transmission[mask]
 
-        self.dwelltime = self._hdr_times[0]
+        self.exposure_time = self._exposure_times[0]
         return wl, transmission_overall
 
     # def estimate_integrationtime(
@@ -254,182 +262,3 @@ class Spectrometer:
     #     p = np.polyfit(integrationtime_guesses[~peakedmask], counts[~peakedmask])
 
     #     return np.polyval(p, target).astype(int)
-
-
-class DummySpectrometer:
-    """Empty object to pantomime a Stellarnet spectrometer.
-    Used for testing while spectrometer was in use for other experiments.
-    """
-
-    def __init__(self, address=0):
-        # self.id, self.__wl = sn.array_get_spec(address)
-        self.id = None
-        self.__wl = np.linspace(200, 1200, 400)  # random wavelength range
-        self._baseline_light = None
-        self._baseline_dark = None
-        self._hdr_times = [
-            100,
-            250,
-            500,
-            2000,
-            15000,
-        ]  # duration times (ms) for high dynamic range measurements
-        print("Connected to spectrometer")
-        self.integrationtime = self._hdr_times[0]  # ms
-        self.numscans = 1  # one scan per spectrum
-        self.smooth = 0  # smoothing factor, units unclear
-
-    @property
-    def integrationtime(self):
-        return self.__integrationtime
-
-    @integrationtime.setter
-    def integrationtime(self, t):
-        # self.id["device"].set_config(int_time=t)
-        self.__integrationtime = t
-
-    @property
-    def numscans(self):
-        return self.__numscans
-
-    @numscans.setter
-    def numscans(self, n):
-        # self.id["device"].set_config(scans_to_avg=n)
-        self.__numscans = n
-
-    @property
-    def smooth(self):
-        return self.__smooth
-
-    @smooth.setter
-    def smooth(self, n):
-        # self.id["device"].set_config(x_smooth=n)
-        self.__smooth = n
-
-    def capture(self):
-        """
-        captures a spectrum from the usb spectrometer
-        """
-        # spectrum = sn.array_spectrum(self.id, self.__wl)
-        spectrum = np.vstack((self.__wl, np.random.rand(len(self.__wl))))
-        spectrum[:, 1] /= self.integrationtime  # convert to counts per second
-        return spectrum
-
-    def capture_hdr(self):
-        """captures an HDR spectrum"""
-        threshold = 2 ** 16 * 0.95  # counts above this are considered saturated
-
-        for i, t in enumerate(self._hdr_times):
-            self.integrationtime = t
-            spectrum = self.capture()
-            wl = spectrum[:, 0]
-            cts = spectrum[:, 1]
-            cps = cts / t  # counts per second
-            if i == 0:
-                cps_overall = cps
-            mask = cts < threshold
-            cps_overall[mask] = cps[mask]
-
-        spectrum = np.array([wl, cps_overall]).T
-        return spectrum
-
-    def transmission(self):
-        if (self._baseline_light is None) or (self._baseline_dark is None):
-            raise ValueError(
-                "Baselines not taken! .take_light_baseline(), .take_dark_baseline()"
-            )
-        if self.integrationtime not in self._baseline_light:
-            raise ValueError(
-                f"Baseline not taken for current integration time ({self.integrationtime}). Taken for {list(self._baseline_light.keys())}"
-            )
-
-        spectrum = self.capture()
-        wl = spectrum[:, 0]
-        cts = spectrum[:, 1]
-
-        t = self.integrationtime
-        transmission = (cts - self._baseline_dark[t]) / (
-            self._baseline_light[t] - self._baseline_dark[t]
-        )
-
-        spectrum = np.array([wl, transmission]).T
-        return spectrum
-
-    def transmission_hdr(self):
-        """captures an HDR transmission spectrum"""
-        if (self._baseline_light is None) or (self._baseline_dark is None):
-            raise ValueError(
-                "Baselines not taken! .take_light_baseline(), .take_dark_baseline()"
-            )
-        if self.integrationtime not in self._baseline_light:
-            raise ValueError(
-                f"Baseline not taken for current integration time ({self.integrationtime}). Taken for {list(self._baseline_light.keys())}"
-            )
-
-        for i, t in enumerate(self._hdr_times):
-            self.integrationtime = t
-            spectrum = self.capture()
-            wl = spectrum[:, 0]
-            cts = spectrum[:, 1]
-            transmission = (cts - self._baseline_dark[t]) / (
-                self._baseline_light[t] - self._baseline_dark[t]
-            )
-            if i == 0:
-                transmission_overall = transmission
-            mask = cts < t
-            transmission_overall[mask] = transmission[mask]
-
-        spectrum = np.array([wl, transmission_overall]).T
-        return spectrum
-
-    def estimate_integrationtime(
-        self, wlmin: float = -np.inf, wlmax: float = np.inf, target: float = 0.75
-    ):
-        """finds integration time to hit desired fraction of detector max signal in a given wavelength range
-
-
-        Args:
-            wlmin (float, optional): wavelengths (nm) below this are not considered for exposure time calculation. Defaults to -np.inf.
-            wlmax (float, optional): wavelengths (nm) above this are not considered for exposure time calculation. Defaults to np.inf.
-            target (float, optional): Fraction of detector saturation (2**16) to target. Defaults to 0.8.
-
-        Raises:
-            ValueError: [description]
-
-        Returns:
-            [type]: [description]
-        """
-        if target > 1 or target < 0:
-            raise ValueError(
-                "Target counts must be between 0-1 (fraction of saturated counts)"
-            )
-        target *= 2 ** 16  # aim for some fraction of max counts (of 16 bit depth)
-        mask = np.logical_and(self.__wl >= wlmin, self.__wl <= wlmax)
-
-        def objective(integrationtime):
-            self.integrationtime = integrationtime
-            spectrum = self.capture()
-            return spectrum[mask, 1].max()
-
-        integrationtime_guesses = np.array([100, 200, 400, 800])
-        counts = np.array([objective(it) for it in integrationtime_guesses])
-        peakedmask = counts >= (2 ** 16) * 0.95
-        p = np.polyfit(integrationtime_guesses[~peakedmask], counts[~peakedmask])
-
-        return np.polyval(p, target).astype(int)
-
-    def take_light_baseline(self):
-        """takes an illuminated baseline at each integration time from HDR timings"""
-        self._baseline_light = {}
-        for t in self._hdr_times:
-            self.integrationtime = t
-            spectrum = self.capture()
-            self._baseline_light[t] = spectrum[:, 1]
-
-    def take_dark_baseline(self):
-        """takes an dark baseline at each integration time from HDR timings"""
-        self._baseline_dark = {}
-        for t in self._hdr_times:
-            self.integrationtime = t
-            spectrum = self.capture()
-            self._baseline_dark[t] = spectrum[:, 1]
