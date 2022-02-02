@@ -136,7 +136,10 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool, function, sample, details,
+                        self.maestro.threadpool,
+                        function,
+                        sample,
+                        details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -508,9 +511,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
-            drop
-        )
+        (
+            aspirate_duration,
+            staging_duration,
+            dispense_duration,
+        ) = expected_timings(drop)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -863,7 +868,7 @@ class Worker_Characterization(WorkerTemplate):
         }
 
     def characterize(self, sample, details):
-        self.characterization.run(samplename=sample["name"])
+        self.characterization.run(samplename=sample["name"], details=details)
 
         # if maestro is under external control, ping the websocket client to alert that a sample has been characterized
         if self.maestro._under_external_control:

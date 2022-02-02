@@ -594,7 +594,9 @@ class Characterize(Task):
         else:
             self.characterization_tasks = tasks
 
-        self.duration = sum([t.duration for t in self.characterization_tasks])
+        self.duration = sum(
+            [t.expected_duration() for t in self.characterization_tasks]
+        )
         positions = [0] + [t.position for t in self.characterization_tasks] + [0]
         m = constants["characterizationline"]["axis"]["traveltime"]["m"]
         b = constants["characterizationline"]["axis"]["traveltime"]["b"]
@@ -611,7 +613,9 @@ class Characterize(Task):
     def to_dict(self):
         out = super().to_dict()
         out["duration"] = self.duration
-        out["details"] = {t["name"]: t.to_dict() for t in self.characterization_tasks}
+        out["details"] = {
+            "characterization_tasks": [t.to_dict() for t in self.characterization_tasks]
+        }
 
         return out
 
