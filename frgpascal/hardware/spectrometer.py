@@ -36,7 +36,7 @@ class Spectrometer:
         )
 
         print("Connected to spectrometer")
-        self.exposure_time = self._exposure_times[0]  # ms
+        self.exposure_time = self._exposure_times[0]  # seconds
         self.num_scans = 1  # one scan per spectrum
         self.smooth = 0  # smoothing factor, units unclear.
 

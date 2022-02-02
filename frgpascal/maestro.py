@@ -455,7 +455,7 @@ class Maestro:
         folder_name = f"{todays_date}_{name}"
         folder = os.path.join(ROOTDIR, folder_name)
         os.mkdir(folder)
-        self.characterization.set_directory(folder)
+        self.characterization.set_directory(os.path.join(folder, "Characterization"))
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(
