@@ -124,6 +124,9 @@ characterizationline:
     x_min: 0     #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
     p0: [563.5, 249.9, 63] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
+      m: 0.0461
+      b: 1.161
   #hardware shared across stations
   switchbox:
     device_identifiers:
@@ -137,6 +140,7 @@ characterizationline:
       pid: 67
       serial_number: "95033313031351611262"
     pollingrate: 0.2
+    max_change_time: 2 #max time to open/close transmission lamp shutter
   filterslider:
     device_identifiers:
       vid: 1027
@@ -146,28 +150,32 @@ characterizationline:
     bottom: "0" #address/index for bottom shutter. This should be a string!
     pollingrate: 0.2
     shutterresponsetime: 2 #seconds between telling the shutter to move -> shutter completing the move
-  laser_settling_time: 0.5 #seconds for laser power to stabilize
   #individual stations
-  darkfield:
-    cameraid: '12316' #serial number for Thorlabs Camera
-    position: 75 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 9 #switchbox plug index for light source (ring light)
-  pl_imaging:
-    # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-    position: 75 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 12 #switchbox plug index for light source (blue LED lamp)
-  brightfield:
-    cameraid: '12519' #serial number for Thorlabs Camera
-    position: 164.4 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 8 #switchbox plug index for light source (ring light)
-  pl_blue: #spectroscopy
-    position: 285
-    switchindex: 5
-  pl_red: #spectroscopy
-    position: 287 #position (mm) at which characterization axis centers sample in FOV
-    switchindex: 4 #switchbox plug index for light source (red laser)
-  transmission: #spectroscopy
-    position: 287 #position (mm) at which characterization axis centers sample in FOV
-  #fourpointprobe:
+  stations:
+    darkfield:
+      cameraid: '12316' #serial number for Thorlabs Camera
+      position: 75 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 9 #switchbox plug index for light source (ring light)
+    pl_imaging:
+      # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
+      position: 75 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 12 #switchbox plug index for light source (blue LED lamp)
+    brightfield:
+      cameraid: '12519' #serial number for Thorlabs Camera
+      position: 164.4 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 8 #switchbox plug index for light source (ring light)
+    pl_blue: #spectroscopy
+      position: 285
+      switchindex: 5
+      laser_settling_time: 0.2 #seconds for laser power to stabilize
+
+    pl_red: #spectroscopy
+      position: 287 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 4 #switchbox plug index for light source (red laser)
+      laser_settling_time: 0.2 #seconds for laser power to stabilize
+
+    transmission: #spectroscopy
+      position: 287 #position (mm) at which characterization axis centers sample in FOV
+    #fourpointprobe:
     # position:397.5
   
