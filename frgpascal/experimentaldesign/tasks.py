@@ -18,6 +18,7 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
+from frgpascal.experimentaldesign.characterizationtasks import CharacterizationMethod
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -580,16 +581,48 @@ class Rest(Task):
 
 
 class Characterize(Task):
-    def __init__(self, duration: float = 280, immediate=False):
-        self.duration = duration
+    def __init__(self, tasks, reorder_by_position=False, immediate=False):
+
+        if any([not isinstance(task, CharacterizationMethod) for task in tasks]):
+            raise Exception(
+                "Invalid tasks: `Characterize` method can only execute `CharacterizationMethod` tasks!"
+            )
+        if reorder_by_position:
+            self.characterization_tasks = sorted(
+                tasks, key=lambda x: x.position, reverse=True
+            )  # starts at the furthest end of the characterization train
+        else:
+            self.characterization_tasks = tasks
+
+        self.duration = sum([t.duration for t in self.characterization_tasks])
+        positions = [0] + [t.position for t in self.characterization_tasks] + [0]
+        m = constants["characterizationline"]["axis"]["traveltime"]["m"]
+        b = constants["characterizationline"]["axis"]["traveltime"]["b"]
+        for p0, p1 in zip(positions, positions[1:]):
+            distance = p1 - p0
+            self.duration += distance * m + b
+
         super().__init__(
             task="characterize",
             duration=self.duration,
             immediate=immediate,
         )
 
+    def to_dict(self):
+        out = super().to_dict()
+        out["duration"] = self.duration
+        out["details"] = {t["name"]: t.to_dict() for t in self.characterization_tasks}
+
+        return out
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
     def __repr__(self):
-        return "<Characterize>"
+        s = "<Characterize>"
+        for t in self.characterization_tasks:
+            s += "\n\t" + t.name
+        return s
 
 
 ### build task list for a sample
