@@ -868,7 +868,7 @@ class Worker_Characterization(WorkerTemplate):
         }
 
     def characterize(self, sample, details):
-        self.characterization.run(samplename=sample["name"])
+        self.characterization.run(samplename=sample["name"], details=details)
 
         # if maestro is under external control, ping the websocket client to alert that a sample has been characterized
         if self.maestro._under_external_control:

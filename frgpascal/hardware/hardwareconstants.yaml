@@ -146,6 +146,7 @@ characterizationline:
     bottom: "0" #address/index for bottom shutter. This should be a string!
     pollingrate: 0.2
     shutterresponsetime: 2 #seconds between telling the shutter to move -> shutter completing the move
+  laser_settling_time: 0.5 #seconds for laser power to stabilize
   #individual stations
   darkfield:
     cameraid: '12316' #serial number for Thorlabs Camera
