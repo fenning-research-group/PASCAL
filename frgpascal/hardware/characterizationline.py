@@ -8,6 +8,7 @@ from threading import Thread
 from abc import ABC, abstractmethod
 from tifffile import imwrite
 import csv
+import json
 
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
@@ -116,15 +117,18 @@ class CharacterizationLine:
             )  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
 
-    def calibrate(self):
+    def calibrate(self, instructions_fpath: str):
         """calibrate any stations that require it"""
-        for s in self.stations:
-            if hasattr(s, "calibrate"):
-                print(f"Calibrating {s}")
-                self.axis.moveto(s.position)
-                s.calibrate()
-        self.axis.moveto(self.axis.TRANSFERPOSITION)
 
+        with open(instructions_fpath, "r") as f:
+            instructions = json.load(f)
+
+        for station_name, exposure_times in instructions.items():
+            station = self.stations[station_name]
+            if hasattr(station, "calibrate"):
+                station.calibrate(exposure_times=exposure_times)
+
+        self.axis.moveto(self.axis.TRANSFERPOSITION)
         self._calibrated = True
 
     def set_directory(self, filepath):
@@ -350,7 +354,7 @@ class CharacterizationAxis:
 ### Station Methods
 
 
-class StationTemplate(ABC):
+class CharacterizationStationTemplate(ABC):
     """
     Template method that contains a skeleton of
     some algorithm, composed of calls to (usually) abstract primitive
@@ -386,7 +390,7 @@ class StationTemplate(ABC):
         self.save(output, sample=sample)
 
 
-class DarkfieldImaging(StationTemplate):
+class DarkfieldImaging(CharacterizationStationTemplate):
     def __init__(
         self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
     ):
@@ -413,7 +417,7 @@ class DarkfieldImaging(StationTemplate):
         imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
-class PLImaging(StationTemplate):
+class PLImaging(CharacterizationStationTemplate):
     def __init__(
         self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
     ):
@@ -455,7 +459,7 @@ class PLImaging(StationTemplate):
             imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
-class BrightfieldImaging(StationTemplate):
+class BrightfieldImaging(CharacterizationStationTemplate):
     def __init__(
         self, position: float, rootdir: str, camera: Thorcam, lightswitch: SingleSwitch
     ):
@@ -481,7 +485,7 @@ class BrightfieldImaging(StationTemplate):
         imwrite(os.path.join(self.savedir, fname), img, compression="zlib")
 
 
-class TransmissionSpectroscopy(StationTemplate):
+class TransmissionSpectroscopy(CharacterizationStationTemplate):
     def __init__(
         self,
         position: float,
@@ -537,18 +541,19 @@ class TransmissionSpectroscopy(StationTemplate):
             for wl_, t_ in zip(wl, t):
                 writer.writerow([wl_, t_])
 
-    def calibrate(self):
+    def calibrate(self, exposure_times: list):
         self.slider.top_left()  # moves longpass filter out of the transmitted path
         self.shutter.close()  # close the shutter
-        self.spectrometer.take_dark_baseline()
+        self.spectrometer._exposure_times = exposure_times
+        self.spectrometer.take_dark_baseline(skip_repeats=True)
         print("spectrometer dark baselines taken")
         self.shutter.open()  # open the shutter
-        self.spectrometer.take_light_baseline()
+        self.spectrometer.take_light_baseline(skip_repeats=True)
         print("spectrometer light baselines taken")
         self.shutter.close()  # closes the shutter
 
 
-class PLSpectroscopy(StationTemplate):
+class PLSpectroscopy(CharacterizationStationTemplate):
     def __init__(
         self,
         position: float,
@@ -612,15 +617,24 @@ class PLSpectroscopy(StationTemplate):
             for wl_, cts_ in zip(wl, cts):
                 writer.writerow([wl_] + list(cts_))
 
-    def calibrate(self):
+    def calibrate(self, exposure_times: list):
         print(f"Taking dark baselines for {self}")
-        self.slider.top_right()  # moves longpass filter out of the transmitted path
-        self.shutter.close()  # close the shutter
+        self.spectrometer._exposure_times = exposure_times
+        threads = [
+            Thread(
+                target=self.slider.top_right
+            ),  # move longpass filter into the detector path
+            Thread(target=self.shutter.close),  # close the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
         self.spectrometer.take_dark_baseline(skip_repeats=True)
         print("PL dark baselines taken")
 
 
-class PLPhotostability(StationTemplate):
+class PLPhotostability(CharacterizationStationTemplate):
     def __init__(
         self,
         position: float,
@@ -693,8 +707,17 @@ class PLPhotostability(StationTemplate):
             for wl_, cts in zip(wl, spectra.T):
                 writer.writerow([wl_] + cts.tolist())
 
-    def calibrate(self):
-        self.slider.top_right()  # moves longpass filter out of the transmitted path
-        self.shutter.close()  # close the shutter
+    def calibrate(self, exposure_times: list):
+        threads = [
+            Thread(
+                target=self.slider.top_right
+            ),  # move longpass filter into the detector path
+            Thread(target=self.shutter.close),  # close the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.spectrometer._exposure_times = exposure_times
         self.spectrometer.take_dark_baseline(skip_repeats=True)
         print("PLPhotostability dark baselines taken")
