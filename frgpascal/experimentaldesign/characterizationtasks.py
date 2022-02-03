@@ -2,6 +2,7 @@ import os
 import yaml
 import numpy as np
 from abc import ABC, abstractmethod
+from math import ceil
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(
@@ -9,31 +10,25 @@ with open(
 ) as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
 
-invalid_keys = [
-    "axis",
-    "switchbox",
-    "shutter",
-    "filterslider",
-]  # these are not characterization hardware
-AVAILABLE_HARDWARE = [k for k in constants.keys() if k not in invalid_keys]
+AVAILABLE_STATION = [k for k in constants["stations"].keys()]
 
 
 # individual characterization modes
 
 
-class CharacterizationMethod(ABC):
-    def __init__(self, name, hardware, jitter):
-        if hardware not in AVAILABLE_HARDWARE:
+class CharacterizationTask(ABC):
+    def __init__(self, name, station, jitter):
+        if station not in AVAILABLE_STATION:
             raise Exception(
-                f"Invalid hardware: {hardware}. Choices are {AVAILABLE_HARDWARE}"
+                f"Invalid station: {station}. Choices are {AVAILABLE_STATION}"
             )
-        if np.abs(jitter) > 2.5:  # 2.5 mm offset from default position
+        if np.abs(jitter) > 2:  # 2 mm offset from default position
             print(
-                f"Warning- jitter of {jitter} mm is pretty high, your sample may not be characterized well!"
+                f"Warning- jitter of {jitter} mm is pretty high, your sample may not be positioned properly for characterization!"
             )
         self.name = name
-        self.hardware = hardware
-        self.position = constants[hardware]["position"] + jitter
+        self.station = station
+        self.position = constants["stations"][station]["position"] + jitter
 
         if (
             self.position < constants["axis"]["x_min"]
@@ -48,13 +43,18 @@ class CharacterizationMethod(ABC):
         """calculate the expected time (seconds) to perform this task"""
         pass
 
+    @abstractmethod
+    def _get_details(self) -> dict:
+        """generates dictionary of details for specific characterization task"""
+        return {}
+
     def to_dict(self):
         return {
             "name": self.name,
-            "hardware": self.hardware,
+            "station": self.station,
             "position": self.position,
             "duration": self.expected_duration(),
-            "details": self.details,
+            "details": self._get_details(),
         }
 
 
@@ -74,7 +74,7 @@ class Darkfield(CharacterizationTask):
         self.exposure_time = exposure_time
         self.num_frames = num_frames
 
-        super().__init__(name="Darkfield", hardware="darkfield", jitter=jitter)
+        super().__init__(name="Darkfield", station="darkfield", jitter=jitter)
 
     def expected_duration(self):
         return self.exposure_time * self.num_frames
@@ -83,12 +83,12 @@ class Darkfield(CharacterizationTask):
         return {"exposure_time": self.exposure_time, "num_frames": self.num_frames}
 
 
-class Brightfield(CharacterizationMethod):
+class Brightfield(CharacterizationTask):
     def __init__(self):
         self.exposure_time = 0.1  # 100 ms static dwelltime
         self.num_frames = 1
 
-        super().__init__(name="Brightfield", hardware="brightfield", jitter=0)
+        super().__init__(name="Brightfield", station="brightfield", jitter=0)
 
     def expected_duration(self):
         return self.exposure_time
@@ -114,7 +114,7 @@ class PLImaging(CharacterizationTask):
         self.exposure_times = exposure_times
         self.num_frames = num_frames
 
-        super().__init__(name="PLImaging", hardware="pl_imaging", jitter=jitter)
+        super().__init__(name="PLImaging", station="pl_imaging", jitter=jitter)
 
     def expected_duration(self):
         return sum([d * self.num_frames for d in self.exposure_times])  # seconds
@@ -142,7 +142,7 @@ class TransmissionSpectroscopy(CharacterizationTask):
 
         super().__init__(
             name="Transmission",
-            hardware="transmission",
+            station="transmission",
             jitter=jitter,
         )
 
@@ -181,7 +181,7 @@ class PLSpectroscopy(CharacterizationTask):
 
         super().__init__(
             name="PL_635nm",
-            hardware="pl_red",
+            station="pl_red",
             jitter=jitter,
         )
 
@@ -192,7 +192,9 @@ class PLSpectroscopy(CharacterizationTask):
         duration += (
             2 * constants["switchbox"]["relayresponsetime"]
         )  # relay trigger time for light on/off
-        duration += constants["laser_settling_time"]  # settling time for laser
+        duration += constants["stations"]["pl_red"][
+            "laser_settling_time"
+        ]  # settling time for laser
 
         return duration
 
@@ -221,7 +223,7 @@ class PLPhotostability(CharacterizationTask):
 
         super().__init__(
             name="Photostability_405nm",
-            hardware="pl_blue",
+            station="pl_blue",
             jitter=jitter,
         )
 
@@ -230,7 +232,9 @@ class PLPhotostability(CharacterizationTask):
         duration += (
             2 * constants["switchbox"]["relayresponsetime"]
         )  # relay trigger time for light on/off
-        duration += constants["laser_settling_time"]  # settling time for laser
+        duration += constants["stations"]["pl_red"][
+            "laser_settling_time"
+        ]  # settling time for laser
 
         return duration
 

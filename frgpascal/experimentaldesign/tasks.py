@@ -18,7 +18,7 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
-from frgpascal.experimentaldesign.characterizationtasks import CharacterizationMethod
+from frgpascal.experimentaldesign.characterizationtasks import CharacterizationTask
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -367,11 +367,15 @@ class Task(roboflo.Task):
     def to_dict(self):
         out = {
             "name": self.name,
-            "sample": self.sample.name,  # only change to roboflo Task.to_dict()
             "start": self.start,
             "id": self.id,
             "details": self.generate_details(),
         }
+        if self.sample is None:
+            out["sample"] = "none"
+        else:
+            out["sample"] = self.sample.name  # only change to roboflo Task.to_dict()
+
         if self.precedent is None:
             out["precedent"] = None
         else:
@@ -583,7 +587,7 @@ class Rest(Task):
 class Characterize(Task):
     def __init__(self, tasks, reorder_by_position=False, immediate=False):
 
-        if any([not isinstance(task, CharacterizationMethod) for task in tasks]):
+        if any([not isinstance(task, CharacterizationTask) for task in tasks]):
             raise Exception(
                 "Invalid tasks: `Characterize` method can only execute `CharacterizationMethod` tasks!"
             )
@@ -601,7 +605,7 @@ class Characterize(Task):
         m = constants["characterizationline"]["axis"]["traveltime"]["m"]
         b = constants["characterizationline"]["axis"]["traveltime"]["b"]
         for p0, p1 in zip(positions, positions[1:]):
-            distance = p1 - p0
+            distance = np.abs(p1 - p0)
             self.duration += distance * m + b
 
         super().__init__(

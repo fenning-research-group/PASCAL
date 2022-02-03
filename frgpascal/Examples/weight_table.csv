@@ -2,6 +2,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Solution,Pb_I2 (mg),Pb_Br2 (mg),Cs_I (mg),MA_I (mg),FA_I (mg),Pb_Cl2 (mg)
 1M FA0.78_Cs0.12_MA0.1_(Pb_(I0.9_Cl0.1)3)1.09 in DMF3_DMSO1,438.65,,33.78,17.49,135.85,44.08
 1.25M FA0.78_Cs0.22_(Pb_(I0.9_Br0.1)3)1.09 in DMF3_DMSO1,550.11,72.43,75.1,,170.09,
@@ -49,6 +50,8 @@ MethylAcetate,,,,,,
 1M FA0.78_Cs0.12_MA0.1_(Pb_(I0.8_Br0.2)3)1.09 in DMF3_DMSO1,17.49,363.28,118.18,135.85,,33.78
 >>>>>>> f83eeda (characterization stations accept kwargs)
 =======
+=======
+>>>>>>> characterization_modular2
 Solution,Cs_I (mg),Pb_Cl2 (mg),Pb_I2 (mg),MA_I (mg),FA_I (mg),Pb_Br2 (mg)
 MethylAcetate,,,,,,
 1M FA0.78_Cs0.12_MA0.1_(Pb_(I0.9_Cl0.1)3)1.09 in DMF3_DMSO1,33.78,44.08,438.65,17.49,135.85,
@@ -59,4 +62,7 @@ MethylAcetate,,,,,,
 1.25M FA0.78_Cs0.22_(Pb_(I0.9_Br0.1)3)1.09 in DMF3_DMSO1,75.1,,550.11,,170.09,72.43
 1M FA0.78_Cs0.22_(Pb_(I0.8_Br0.2)3)1.09 in DMF3_DMSO1,60.08,,364.72,,136.07,117.95
 1M FA0.78_Cs0.22_(Pb_(I0.8_Br0.1_Cl0.1)3)1.09 in DMF3_DMSO1,59.76,44.08,365.58,,135.85,58.17
+<<<<<<< HEAD
 >>>>>>> 7c0fe4e (characterization baseline instruction file)
+=======
+>>>>>>> characterization_modular2

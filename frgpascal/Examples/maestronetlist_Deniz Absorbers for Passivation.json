@@ -4,12 +4,16 @@
     "samples": {
         "sample0": {
             "name": "sample0",
+<<<<<<< HEAD
             "sampleid": null,
+=======
+>>>>>>> characterization_modular2
             "storage_slot": {
                 "slot": "A1",
                 "tray": "Tray1"
             },
             "substrate": "1mm glass",
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             "tasks": [
@@ -323,12 +327,15 @@
             },
             "substrate": "1mm glass",
 >>>>>>> 7042241 (refactor)
+=======
+>>>>>>> characterization_modular2
             "worklist": [
                 {
                     "details": {
                         "destination": "Characterization",
                         "source": "Tray1"
                     },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -666,6 +673,16 @@
                     "details": {
 =======
 >>>>>>> fa8cdf9 (working)
+=======
+                    "id": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+                    "name": "storage_to_characterization",
+                    "precedent": null,
+                    "sample": "sample0",
+                    "start": 0
+                },
+                {
+                    "details": {
+>>>>>>> characterization_modular2
                         "characterization_tasks": [
                             {
                                 "details": {
@@ -744,6 +761,7 @@
                     "duration": 83,
                     "id": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
                     "name": "characterize",
+<<<<<<< HEAD
 <<<<<<< HEAD
                     "precedent": "storage_to_characterization--88fc6ac3-b031-47ca-8c37-312b38183e81",
                     "sample": "sample0",
@@ -1120,6 +1138,11 @@
                     "sample": "sample0",
                     "start": 15
 >>>>>>> fa8cdf9 (working)
+=======
+                    "precedent": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+                    "sample": "sample0",
+                    "start": 15
+>>>>>>> characterization_modular2
                 },
                 {
                     "details": {
@@ -1201,6 +1224,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     "duration": 109,
                     "id": "characterize-a41a1d43-c0ba-4a0e-b707-795f83d43f77",
                     "name": "characterize",
@@ -1224,19 +1248,25 @@
                     "start": 2344
 >>>>>>> 7c0fe4e (characterization baseline instruction file)
 =======
+=======
+>>>>>>> characterization_modular2
                     "duration": 83,
                     "id": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
                     "name": "characterize",
                     "precedent": "characterize-4f11ad21-8b0b-42e8-a368-6e9b82d78ba5",
                     "sample": "sample0",
                     "start": 98
+<<<<<<< HEAD
 >>>>>>> fa8cdf9 (working)
+=======
+>>>>>>> characterization_modular2
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2069,6 +2099,52 @@
                         "position": 285,
                         "station": "pl_blue"
 >>>>>>> fa8cdf9 (working)
+=======
+                    "id": "characterization_to_storage--0e519d74-8fe0-4bff-b064-832155b7a9d1",
+                    "name": "characterization_to_storage",
+                    "precedent": "characterize-e1d795e3-8237-494b-a8b5-9c4651a2b6e8",
+                    "sample": "sample0",
+                    "start": 181
+                }
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--08327de2-b346-47a6-80f3-e91d13d12339",
+            "name": "storage_to_characterization",
+            "precedent": null,
+            "sample": "sample0",
+            "start": 0
+        },
+        {
+            "details": {
+                "characterization_tasks": [
+                    {
+                        "details": {
+                            "exposure_time": 0.1,
+                            "num_frames": 1
+                        },
+                        "duration": 0.1,
+                        "name": "Brightfield",
+                        "position": 164.4,
+                        "station": "brightfield"
+                    },
+                    {
+                        "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+>>>>>>> characterization_modular2
                     },
                     {
                         "details": {
@@ -2083,6 +2159,7 @@
                         "position": 287,
                         "station": "pl_red"
                     },
+<<<<<<< HEAD
 <<<<<<< HEAD
                     "id": "spincoater_to_hotplate--5655ad7f-74ec-40e3-adea-1221a1ee6e31",
                     "name": "spincoater_to_hotplate",
@@ -45279,6 +45356,8 @@
                         "position": 164.4,
                         "station": "brightfield"
 =======
+=======
+>>>>>>> characterization_modular2
                     {
                         "details": {
                             "exposure_times": [
@@ -45349,7 +45428,10 @@
                         "name": "Photostability_405nm",
                         "position": 285,
                         "station": "pl_blue"
+<<<<<<< HEAD
 >>>>>>> fa8cdf9 (working)
+=======
+>>>>>>> characterization_modular2
                     },
                     {
                         "details": {
@@ -45423,5 +45505,8 @@
             "start": 181
         }
     ]
+<<<<<<< HEAD
 >>>>>>> f83eeda (characterization stations accept kwargs)
+=======
+>>>>>>> characterization_modular2
 }
