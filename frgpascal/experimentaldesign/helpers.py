@@ -256,21 +256,6 @@ def build_sample_list(
         else:
             listedsteps.append(step)
 
-    def get_storage_slot(name, current_tray, trays):
-        loaded = False
-        while not loaded:
-            try:
-                slot = current_tray.load(name)
-                loaded = True
-            except:
-                try:
-                    current_tray = next(trays)
-                except StopIteration:
-                    raise StopIteration(
-                        "No more slots available in your storage trays!"
-                    )
-        return {"tray": current_tray.name, "slot": slot}, current_tray, trays
-
     all_worklists = []
     for worklist in itertools.product(*listedsteps):
         this_set_of_steps = []
@@ -337,7 +322,26 @@ def load_sample_trays(samples: list, available_trays: list):
         sample.storage_slot = storage_slot
 
 
-def samples_to_dataframe(samples):
+def samples_to_dataframe(samples: list) -> pd.DataFrame:
+    """Takes either a single list of Sample objects, or a
+        nested list of lists of Sample objects.
+
+        Generates a DataFrame with all sample information.
+
+    Args:
+        samples (list): List of Sample's, OR a list of lists of Sample's.
+
+    Returns:
+        pd.DataFrame: DataFrame containing sample information
+    """
+    if isinstance(samples[0], Sample):
+        return _samples_to_dataframe_single(samples)
+    else:
+        individual_dfs = [_samples_to_dataframe_single(s) for s in samples]
+        return pd.concat(individual_dfs)
+
+
+def _samples_to_dataframe_single(samples: list) -> pd.DataFrame:
     dfdata = {c: [] for c in ["name", "storage_tray", "storage_slot", "worklist"]}
     for s in samples:
         dfdata["name"].append(s.name)
@@ -474,3 +478,12 @@ def handle_liquids(samples: list, mixer: Mixer, solution_storage: list):
         mixing_netlist.append(this_generation)
 
     return solution_details, mixing_netlist
+
+
+### Final File Output
+
+
+def export_experiment_files(
+    name: str, description: str, operator: str, sample_trays: list
+):
+    pass
