@@ -117,11 +117,11 @@ class CharacterizationLine:
             )  # combines measure + save methods
         self.axis.moveto(self.axis.TRANSFERPOSITION)
 
-    def calibrate(self, instructions_fpath: str):
+    def calibrate(self, netlist_fpath: str):
         """calibrate any stations that require it"""
 
-        with open(instructions_fpath, "r") as f:
-            instructions = json.load(f)
+        with open(netlist_fpath, "r") as f:
+            instructions = json.load(f)["baselines_required"]
 
         for station_name, exposure_times in instructions.items():
             station = self.stations[station_name]
