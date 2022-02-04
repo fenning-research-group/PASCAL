@@ -19,19 +19,11 @@ from ax.core.metric import Metric
 from ax.core.data import Data
 
 from frgpascal.experimentaldesign.tasks import *
-from frgpascal.hardware.liquidlabware import (
-    TipRack,
-    LiquidLabware,
-    AVAILABLE_VERSIONS as liquid_labware_versions,
-)
-from frgpascal.hardware.sampletray import (
-    SampleTray,
-    AVAILABLE_VERSIONS as sampletray_versions,
-)
 from frgpascal.analysis import photoluminescence as PL
 from frgpascal.analysis import brightfield
-from frgpascal.bridge import PASCALAxQueue
-from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
+
+# from frgpascal.bridge import PASCALAxQueue
+# from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
 
 
 class PASCALJob:
@@ -150,6 +142,7 @@ class PASCALAxQueue(Client):
         if min_start is None:
             min_start = self.min_allowable_time
         min_start = max([min_start, self.min_allowable_time])
+        sample.name = f"sample{self.sample_counter}"
         self.sample_counter += 1
 
         sample.protocol = self.system.generate_protocol(

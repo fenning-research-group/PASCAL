@@ -1,0 +1,23 @@
+{
+    "baselines_required": {
+        "Brightfield": [
+            0.1
+        ],
+        "Darkfield": [
+            0.05
+        ],
+        "PL_635nm": [
+            0.1,
+            20,
+            5
+        ],
+        "Transmission": [
+            0.2,
+            1,
+            0.05,
+            5,
+            15,
+            0.02
+        ]
+    }
+}
