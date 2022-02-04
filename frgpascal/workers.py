@@ -162,6 +162,35 @@ class WorkerTemplate(Worker_roboflo):
         return hash(str(type(self)))
 
 
+### Gantry gripper
+def _to_hotplate(f):
+    """Decorator for GantryGripper worker. This should be applied
+        to any move command that finishes at a hotplate.
+
+        Intended to prevent idling the gripper over the hotplate.
+        Checks to see if there is another move command coming shortly - if
+        not, moves the gantry to the idle position.
+
+    Args:
+        f (function): move function
+    """
+
+    def inner(self, *args, **kwargs):
+        output = f(self, *args, **kwargs)
+        if self.queue.qsize() != 0:
+            next_move_start = self.queue._queue[0][0]
+            time_to_next = next_move_start - self.maestro.experiment_time
+            if (
+                time_to_next <= self.functions["idle_gantry"].estimated_duration
+            ):  # we are about to move anyways
+                return output
+        else:
+            self.maestro.idle_gantry()
+            return output
+
+    return inner
+
+
 class Worker_GantryGripper(WorkerTemplate):
     def __init__(self, maestro=None, planning=False):
         super().__init__(
@@ -238,9 +267,16 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
         }
 
+    def _to_hotplate(self, f, *args, **kwargs):
+        def wrapper():
+            f(*args, **kwargs)
+
+        # idle gantry if we are sitting over the hotplate for too long
+
     def idle_gantry(self, sample, details):
         self.maestro.idle_gantry()
 
+    @_to_hotplate
     def spincoater_to_hotplate(self, sample, details):
         p1 = self.spincoater()
         for hotplate_name, hp in self.hotplates.items():
@@ -324,6 +360,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
 
+    @_to_hotplate
     def storage_to_hotplate(self, sample, details):
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -362,6 +399,7 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
 
+    @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
         p1 = self.characterization.axis()
         for hotplate_name, hp in self.hotplates.items():
