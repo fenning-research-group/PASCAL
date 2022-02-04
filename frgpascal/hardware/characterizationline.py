@@ -158,9 +158,7 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self,
-        gantry,
-        port=None,
+        self, gantry, port=None,
     ):
         # communication variables
         if port is None:
