@@ -6,7 +6,8 @@ from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
 import pandas as pd
-from mixsol import Mixer
+import mixsol
+from mixsol.mix import _solutions_to_matrix
 
 #### General
 def generate_unique_id():
@@ -69,94 +70,45 @@ def where_to_store(volume, options):
 #     return
 
 
-def calculate_mix(
-    target: Solution,
-    volume: float,
-    stock_solutions: list,
-    tolerance: float = 0.05,
-):
+def interpolate_solutions(solutions: list, steps: int) -> list:
+    """Generate a list of solutions that are a linear interpolation between the given solutions
+
+    Args:
+        solutions (list): List of Solution objects to be interpolated between
+        steps (int): number of steps to interpolate between endpoint solutions. 1 will return the original list, 2 will split into 50% increments, 3 split into 33% increments, etc.
+
+    Returns:
+        list: list of unique Solution objects resulting from the interpolation
     """
-    given a target solution, target volume, and list of stock solutions, calculates
-    the volumes needed from individual stocks to achieve target composition
 
-    tolerance (float): maximum error for single site (relative, not absolute) allowed.
-
-    """
-    # get possible solution components from stock list
-    components = set()
-    for s in stock_solutions:
-        components.update(s.solute_dict.keys(), s.solvent_dict.keys())
-    components = list(
-        components
-    )  # sets are not order-preserving, lists are - just safer this way
-
-    # organize components into a stock matrix, keep track of which rows are solvents
-    stock_matrix = np.zeros((len(components), len(stock_solutions)))
-    solvent_idx = set()
-    for n, s in enumerate(stock_solutions):
-        for m, c in enumerate(components):
-            if c in s.solute_dict:
-                stock_matrix[m, n] = s.solute_dict[c] * s.molarity
-            elif c in s.solvent_dict:
-                stock_matrix[m, n] = s.solvent_dict[c]
-                solvent_idx.add(m)
-    solvent_idx = list(solvent_idx)
-
-    # organize target solution into a matrix of total mols desired of each component
-    target_matrix = np.zeros((len(components),))
-    for m, c in enumerate(components):
-        if c in target.solute_dict:
-            target_matrix[m] = target.solute_dict[c] * target.molarity * volume
-        elif c in target.solvent_dict:
-            target_matrix[m] = target.solvent_dict[c] * volume
-
-    # solve for the mixture amounts
-    amount_matrix, *data = nnls(
-        stock_matrix, target_matrix, maxiter=1e3
-    )  # volumes to mix. math is better if not such small values in matrix, so scale to uL for calculation
-    amount_matrix[
-        amount_matrix < 1
-    ] = 0  # clean up values that are essentially 0. If we have a significant negative value here, should get caught downstream
-    amount_matrix = np.round(
-        amount_matrix
-    )  # round to nearest uL (values are in L at this point)
-
-    # double check that the solved amounts make sense
-    doublecheck = stock_matrix @ amount_matrix
-    doublecheck[solvent_idx] /= (
-        doublecheck[solvent_idx].sum() / volume
-    )  # solvents should sum to one
-    # print(stock_matrix)
-    # print(amount_matrix)
-    # print(target_matrix)
-    composition_error = max(
-        [np.abs(1 - c / t) for c, t in zip(doublecheck, target_matrix) if t > 0]
-    )  # max single-component error fraction
-
-    if (
-        composition_error < tolerance
-    ):  # check that we are within error tolerance wrt target composition AT EACH SOLUTE/SOLVENT SPECIES
-        return amount_matrix
-    else:
-        solute = components_to_name(
+    solution_matrix, solvent_idx, components = _solutions_to_matrix(solutions)
+    solvent_components = [components[i] for i in solvent_idx]
+    solution_idx = list(range(len(solutions)))
+    tweened_solutions = []
+    for solution_indices in itertools.combinations_with_replacement(
+        solution_idx, steps
+    ):
+        svector = np.mean([solution_matrix[i] for i in solution_indices], axis=0)
+        molarity = np.mean([solutions[i].molarity for i in solution_indices])
+        solutes = components_to_name(
             {
-                c: amt / target.molarity / volume
-                for c, amt in zip(components, doublecheck)
-                if amt > 0 and c not in target.solvent_dict
+                c: v / molarity
+                for c, v in zip(components, svector)
+                if v > 0 and c not in solvent_components
             }
         )
         solvent = components_to_name(
             {
-                c: amt / target.molarity / volume
-                for c, amt in zip(components, doublecheck)
-                if amt > 0 and c in target.solvent_dict
+                c: v
+                for c, v in zip(components, svector)
+                if v > 0 and c in solvent_components
             }
         )
-        # print(solvent)
-        raise Exception(
-            f"Unable to generate target solution ({volume} uL of {target}) with current stock solutions.\n\n"
-            f"Closest match ({volume} uL of {target.molarity}M {solute} in {solvent}) has a max site error of {composition_error*100:.2f}%"
-        )  # {Off by {composition_error*100:.2f}%%')
+        new_solution = Solution(solutes=solutes, solvent=solvent, molarity=molarity)
+        if new_solution not in tweened_solutions:
+            tweened_solutions.append(new_solution)
+
+    return tweened_solutions
 
 
 #### Plot contents of sample tray for loading guidance
@@ -399,7 +351,7 @@ def where_to_store(volume, options):
     raise ValueError(f"No options have enough space to hold {volume/1e3:.2f} mL!")
 
 
-def handle_liquids(samples: list, mixer: Mixer, solution_storage: list):
+def handle_liquids(samples: list, mixer: mixsol.Mixer, solution_storage: list):
     solution_details = {}
     for s in mixer.solutions:
         solution_details[s] = {
