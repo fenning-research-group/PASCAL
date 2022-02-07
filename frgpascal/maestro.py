@@ -562,6 +562,7 @@ class Maestro:
         self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
 
         self.logger.handlers = []
+        self.thread.join()
 
     def __del__(self):
         if self.working:
