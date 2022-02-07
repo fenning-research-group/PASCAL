@@ -267,12 +267,6 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
         }
 
-    def _to_hotplate(self, f, *args, **kwargs):
-        def wrapper():
-            f(*args, **kwargs)
-
-        # idle gantry if we are sitting over the hotplate for too long
-
     def idle_gantry(self, sample, details):
         self.maestro.idle_gantry()
 
