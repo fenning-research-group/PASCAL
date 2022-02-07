@@ -103,10 +103,13 @@ def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
     scale = x["scale"]
     rate = x["rate"]
     saturation = x["offset"]
+    normscale = series["intensity"][-1] / series["intensity"][0]
+
     x = fit_exponential(times, series["peakev"])
     evscale = x["scale"]
     evrate = x["rate"]
     evsaturation = x["offset"]
+    deltaev = series["peakev"][-1] - series["peakev"][0]
 
     if plot:
         fig, ax = plt.subplots(1, 3, figsize=(12, 4))
@@ -132,11 +135,15 @@ def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
     return dict(
         intensity=dict(
             scale=scale,
-            scale_norm=scale / series["intensity"][0],
+            scale_norm=normscale,
             rate=rate,
             saturation=saturation,
         ),
         peakev=dict(
-            scale=evscale, scale_norm=evscale / series["ev"][0], saturation=evsaturation
+            scale=evscale,
+            scale_norm=evscale / series["ev"][0],
+            rate=evrate,
+            delta=deltaev,
+            saturation=evsaturation,
         ),
     )
