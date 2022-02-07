@@ -33,7 +33,7 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
 )
 
-from frgpascal.websocketbridge import Server
+from frgpascal.closedloop.websocket import Server
 
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
