@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 import os
 import time
@@ -7,10 +8,10 @@ import asyncio
 from abc import ABC, abstractmethod
 import ntplib
 from frgpascal.experimentaldesign.tasks import Sample
-from frgpascal.websocketbridge import Client
+from frgpascal.closedloop.websocket import Client
 from frgpascal import system
 
-from typing import Any, Dict, NamedTuple, Union
+from typing import Any, Dict, NamedTuple, Union, Iterable, Set
 import pandas as pd
 
 from ax import *
@@ -18,31 +19,23 @@ from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.metric import Metric
 from ax.core.data import Data
 
-from frgpascal.experimentaldesign.tasks import *
-from frgpascal.hardware.liquidlabware import (
-    TipRack,
-    LiquidLabware,
-    AVAILABLE_VERSIONS as liquid_labware_versions,
-)
-from frgpascal.hardware.sampletray import (
-    SampleTray,
-    AVAILABLE_VERSIONS as sampletray_versions,
-)
 from frgpascal.analysis.processer import process_sample
 from frgpascal.analysis import brightfield
-from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
 
 
 class PASCALJob:
-    """Dummy class to represent a job scheduled on `MockJobQueue`."""
-
-    # id: int
-    # parameters: Dict[str, Union[str, float, int, bool]]
+    def __init__(self, job_id, parameters):
+        self.job_id = job_id
+        self.parameters = parameters
+        self.outcome = {}
+        self.status = TrialStatus.RUNNING
 
 
 class PASCALAxQueue(Client):
     """
     Websocket client + experiment coordinator, connects to Maestro server
+
+    note that job_id is sample_name is sample.name
     """
 
     def __init__(self):
@@ -83,9 +76,7 @@ class PASCALAxQueue(Client):
         self.sample_counter = 0
         self.first_sample_sent = False
         self.t0 = None
-        self.completed_protocols = []
-        self.failed_protocols = []
-        self.protocols_in_progress = []
+        self.jobs = {}
         self.initialize_labware()
 
         self.get_experiment_directory()
@@ -201,24 +192,25 @@ class PASCALAxQueue(Client):
         sample_present = self._samplechecker.sample_is_present_fromfile(
             brightfield_filepath, return_probability=False
         )
-        self.protocols_in_progress.remove(sample_name)
 
         if sample_present:
-            self.completed_protocols.append(sample_name)
-            output = process_sample(
+            outcome = process_sample(
                 sample=sample_name, datadir=self.characterization_folder
             )
-            output["success"] = True
+            outcome["success"] = True
+            self.jobs[sample_name].status = TrialStatus.COMPLETED
 
         else:
-            self.failed_protocols.append(sample_name)
-            output = {"success": False}
+            outcome = {"success": False}
+            self.jobs[sample_name].status = TrialStatus.FAILED
+        self.jobs[sample_name].outcome = outcome
 
+        # save results to sample json file
         with open(
             os.path.join(self.sample_info_folder, f"{sample_name}.json"), "r"
         ) as f:
             sample_dict = json.load(f)
-        sample_dict["outcome"] = output
+        sample_dict["outcome"] = outcome
         with open(
             os.path.join(self.sample_info_folder, f"{sample_name}.json"), "w"
         ) as f:
@@ -235,26 +227,70 @@ class PASCALAxQueue(Client):
         self._send_sample_to_maestro(sample=sample)
         job_id = sample.name
         self.jobs[job_id] = PASCALJob(job_id, parameters)
-        self.protocols_in_progress.append(job_id)
         return job_id
 
     def get_job_status(self, job_id: str) -> TrialStatus:
         """ "Get status of the job by a given ID. For simplicity of the example,
         return an Ax `TrialStatus`.
         """
-        # sample_name = self.jobs[job_id]
-        # Instead of randomizing trial status, code to check actual job status
-        # would go here.
-        # time.sleep(1)
-        if job_id in self.failed_protocols:
-            return TrialStatus.FAILED
-        if job_id in self.completed_protocols:
-            return TrialStatus.COMPLETED
-        return TrialStatus.RUNNING
+        return self.jobs[job_id].status
 
     def get_outcome_value_for_completed_job(self, job_id: str) -> Dict[str, float]:
         """Get evaluation results for a given completed job."""
         # update the sample info file with outcomes
-        with open(os.path.join(self.sample_info_folder, f"{job_id}.json"), "r") as f:
-            sample_dict = json.load(f)
-        return sample_dict["outcome"]
+        # with open(os.path.join(self.sample_info_folder, f"{job_id}.json"), "r") as f:
+        #     sample_dict = json.load(f)
+        return self.jobs[job_id].outcome
+
+
+class PASCALRunner(Runner):  # Deploys trials to external system.
+    def __init__(self, queue: PASCALAxQueue):
+        self._pascalqueue = queue
+        super().__init__()
+
+    def run(self, trial: BaseTrial) -> Dict[str, Any]:
+        """Deploys a trial based on custom runner subclass implementation.
+
+        Args:
+            trial: The trial to deploy.
+
+        Returns:
+            Dict of run metadata from the deployment process.
+        """
+        if not isinstance(trial, Trial):
+            raise ValueError("This runner only handles `Trial`.")
+
+        job_id = self._pascalqueue.schedule_job_with_parameters(
+            parameters=trial.arm.parameters
+        )
+        # This run metadata will be attached to trial as `trial.run_metadata`
+        # by the base `Scheduler`.
+        return {"job_id": job_id}
+
+    def poll_trial_status(
+        self, trials: Iterable[BaseTrial]
+    ) -> Dict[TrialStatus, Set[int]]:
+        """Checks the status of any non-terminal trials and returns their
+        indices as a mapping from TrialStatus to a list of indices. Required
+        for runners used with Ax ``Scheduler``.
+
+        NOTE: Does not need to handle waiting between polling calls while trials
+        are running; this function should just perform a single poll.
+
+        Args:
+            trials: Trials to poll.
+
+        Returns:
+            A dictionary mapping TrialStatus to a list of trial indices that have
+            the respective status at the time of the polling. This does not need to
+            include trials that at the time of polling already have a terminal
+            (ABANDONED, FAILED, COMPLETED) status (but it may).
+        """
+        status_dict = defaultdict(set)
+        for trial in trials:
+            status = self._pascalqueue.get_job_status(
+                job_id=trial.run_metadata.get("job_id")
+            )
+            status_dict[status].add(trial.index)
+
+        return status_dict
