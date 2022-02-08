@@ -11,7 +11,7 @@ import numpy as np
 ### PL Metrics
 class PLIntensity(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         super().__init__(name="pl_intensity", lower_is_better=False, *args, **kwargs)
 
     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -20,7 +20,7 @@ class PLIntensity(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
@@ -39,7 +39,7 @@ class PLIntensity(Metric):
 
 class PLPeak(Metric):
     def __init__(self, queue: PASCALAxQueue, targetev: float, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         self.targetev = targetev
         super().__init__(name="pl_peakev", lower_is_better=True, *args, **kwargs)
 
@@ -49,7 +49,7 @@ class PLPeak(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
@@ -68,7 +68,7 @@ class PLPeak(Metric):
 
 class PLFWHM(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         super().__init__(name="pl_fwhm", lower_is_better=True)
 
     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -77,7 +77,7 @@ class PLFWHM(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
@@ -97,7 +97,7 @@ class PLFWHM(Metric):
 ### Photostability Metrics
 class PSIntensityScale(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         super().__init__(
             name="ps_intensity_scale", lower_is_better=False, *args, **kwargs
         )
@@ -108,7 +108,7 @@ class PSIntensityScale(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
@@ -127,7 +127,7 @@ class PSIntensityScale(Metric):
 
 # class PSIntensityRate(Metric):
 #     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-#         self._pascalqueue = queue
+#         self.queue = queue
 #         super().__init__(name="ps_intensity_rate", *args, **kwargs)
 
 #     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -136,7 +136,7 @@ class PSIntensityScale(Metric):
 #             raise ValueError("This metric only handles `Trial`.")
 
 #         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+#         sample_data = self.queue.get_outcome_value_for_completed_job(
 #             job_id=trial.run_metadata.get("job_id")
 #         )
 #         df_dict = {
@@ -155,7 +155,7 @@ class PSIntensityScale(Metric):
 
 # class PSPeakDelta(Metric):
 #     def __init__(self, queue: PASCALAxQueue):
-#         self._pascalqueue = queue
+#         self.queue = queue
 #         super().__init__()
 
 #     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -164,7 +164,7 @@ class PSIntensityScale(Metric):
 #             raise ValueError("This metric only handles `Trial`.")
 
 #         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+#         sample_data = self.queue.get_outcome_value_for_completed_job(
 #             job_id=trial.run_metadata.get("job_id")
 #         )
 #         df_dict = {
@@ -183,7 +183,7 @@ class PSIntensityScale(Metric):
 
 # class PSPeakRate(Metric):
 #     def __init__(self, queue: PASCALAxQueue):
-#         self._pascalqueue = queue
+#         self.queue = queue
 #         super().__init__()
 
 #     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -192,7 +192,7 @@ class PSIntensityScale(Metric):
 #             raise ValueError("This metric only handles `Trial`.")
 
 #         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+#         sample_data = self.queue.get_outcome_value_for_completed_job(
 #             job_id=trial.run_metadata.get("job_id")
 #         )
 #         df_dict = {
@@ -212,7 +212,7 @@ class PSIntensityScale(Metric):
 ### Transmission Metrics
 class TBandgap(Metric):
     def __init__(self, queue: PASCALAxQueue, targetbandgap: float, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         self.targetbandgap = targetbandgap
         super().__init__(name="t_bandgap", lower_is_better=True, *args, **kwargs)
 
@@ -222,7 +222,7 @@ class TBandgap(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
@@ -242,7 +242,7 @@ class TBandgap(Metric):
 ### Darfield Metrics
 class DFMedian(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self._pascalqueue = queue
+        self.queue = queue
         super().__init__(name="df_median", lower_is_better=True, *args, **kwargs)
 
     def fetch_trial_data(self, trial: BaseTrial) -> Data:
@@ -251,7 +251,7 @@ class DFMedian(Metric):
             raise ValueError("This metric only handles `Trial`.")
 
         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self._pascalqueue.get_outcome_value_for_completed_job(
+        sample_data = self.queue.get_outcome_value_for_completed_job(
             job_id=trial.run_metadata.get("job_id")
         )
         df_dict = {
