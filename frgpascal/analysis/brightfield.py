@@ -1,5 +1,8 @@
 from tifffile import imread
 import numpy as np
+from frgpascal.analysis.curvehelpers import plane, fit_plane_to_image
+import dill
+import os
 
 # try:
 #     from tensorflow.keras.models import load_model
@@ -8,19 +11,38 @@ import numpy as np
 #     TENSORFLOW_AVAILABLE = True
 # except ImportError:
 TENSORFLOW_AVAILABLE = False
-import dill
-import os
 
 MODULE_DIR = os.path.dirname(__file__)
 
+### brightfield image coordinates within the window of the characterization sample carrier
+CENTER_SLICE_Y = slice(300, 780)
+CENTER_SLICE_X = slice(400, 1040)
 
-def load(fid):
+
+def load_image(fid):
     """
     Loads an image file from a given fid,
     then converts it from float64 to float32
     """
     img = imread(fid) * 64
     return img.astype(np.float32)
+
+
+def inhomogeneity(img: np.ndarray) -> float:
+    """
+    Calculates the "inhomogeneity" of an RGB image. "Inhomogeneity" is taken as
+    deviation from the best fit plane in R,G,B spaces.
+
+    lower = better
+    """
+    flatnesses = []
+    for color_index in range(img.shape[2]):
+        plane_params = fit_plane_to_image(
+            img[CENTER_SLICE_Y, CENTER_SLICE_X, color_index]
+        )
+        delta = np.abs(img - plane_params["plane"])
+        flatnesses.append(np.mean(delta) + np.std(delta))
+    return np.mean(flatnesses)
 
 
 class SampleChecker:
@@ -59,7 +81,7 @@ class SampleChecker:
         False = sample was not detected on stage. probably dropped earlier in the protocol, <0.5 probability
         """
 
-        img = load(fpath)
+        img = load_image(fpath)
         return self.sample_is_present(img=img, return_probability=return_probability)
 
     def sample_is_present(self, img, return_probability=False) -> bool:

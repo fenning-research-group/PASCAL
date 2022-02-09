@@ -137,9 +137,7 @@ def load_sample(
             if os.path.exists(bffid):
                 img = analysis.brightfield.load(bffid)
                 raw[f"bf_{cidx}"] = img
-                # metrics[f"bf_homogeneity_{cidx}"] = brightfield.(
-                #     im=img
-                # )
+                metrics[f"bf_inhomogeneity_{cidx}"] = brightfield.inhomogeneity(img=img)
 
     return metrics, raw
 

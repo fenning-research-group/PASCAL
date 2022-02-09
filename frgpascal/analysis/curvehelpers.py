@@ -100,3 +100,41 @@ def fit_exponential(x, y):
     except:
         popt = [np.nan, np.nan, np.nan]
     return {"scale": popt[0], "rate": popt[1], "offset": popt[2]}
+
+
+### Planes
+def plane(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
+    """computes z values for a 2-D plane
+
+    Args:
+        x (np.ndarray): 2-D array of [n x 2], where x,y are columns
+        a (float): slope with respect to x
+        b (float): slope with respect to y
+        c (float): intercept
+
+    Returns:
+        np.ndarray: values of z for each x,y pair
+    """
+    return a * x[:, 0] + b * x[:, 1] + c
+
+
+def fit_plane_to_image(img: np.ndarray) -> dict:
+    """given a 2d array, finds a best-fit plane through the surface
+
+    Args:
+        img (np.ndarray): 2d array of z values per x,y coordinate (note that x,y coordinates here are array indices)
+
+
+    Returns:
+        dict: parameters describing plane of form z = ax + by + c
+    """
+    xc, yc = np.meshgrid(np.arange(img.shape[0]), np.arange(img.shape[1]))
+    x = np.hstack([xc.reshape(-1, 1), yc.reshape(-1, 1)])
+
+    popt, pcov = curve_fit(
+        f=plane,
+        xdata=x,
+        ydata=img.ravel(),
+        p0=[0, 0, img.mean()],
+    )
+    return {"a": popt[0], "b": popt[1], "c": popt[2], "plane": plane(x, *popt)}
