@@ -62,4 +62,8 @@ def process_sample(sample: str, datadir: str):
             img = darkfield.load_image(dffid, red_only=True)
             metrics[f"df_median_{cidx}"] = darkfield.get_median(im=img)
 
+        bffid = os.path.join(chardir, f"{sample}_brightfield.tif")
+        if os.path.exists(bffid):
+            img = brightfield.load_image(bffid)
+            metrics[f"bf_inhomogeneity_{cidx}"] = brightfield.inhomogeneity(img=img)
     return metrics

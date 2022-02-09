@@ -69,7 +69,7 @@ class PLPeak(Metric):
 class PLFWHM(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
         self.queue = queue
-        super().__init__(name="pl_fwhm", lower_is_better=True)
+        super().__init__(name="pl_fwhm", lower_is_better=True, *args, **kwargs)
 
     def fetch_trial_data(self, trial: BaseTrial) -> Data:
         """Obtains data via fetching it from ` for a given trial."""
@@ -239,7 +239,7 @@ class TBandgap(Metric):
         return Data(df=pd.DataFrame.from_records([df_dict]))
 
 
-### Darfield Metrics
+### Darkfield Metrics
 class DFMedian(Metric):
     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
         self.queue = queue
@@ -259,6 +259,37 @@ class DFMedian(Metric):
             "metric_name": "df_median",
             "arm_name": trial.arm.name,
             "mean": sample_data.get("df_median_0"),
+            # Can be set to 0.0 if function is known to be noiseless
+            # or to an actual value when SEM is known. Setting SEM to
+            # `None` results in Ax assuming unknown noise and inferring
+            # noise level from data.
+            "sem": None,
+        }
+        return Data(df=pd.DataFrame.from_records([df_dict]))
+
+
+### Brightfield Metrics
+
+
+class BFInhomogeneity(Metric):
+    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
+        self.queue = queue
+        super().__init__(name="bf_inhomogeneity", lower_is_better=True, *args, **kwargs)
+
+    def fetch_trial_data(self, trial: BaseTrial) -> Data:
+        """Obtains data via fetching it from ` for a given trial."""
+        if not isinstance(trial, Trial):
+            raise ValueError("This metric only handles `Trial`.")
+
+        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
+        sample_data = self.queue.get_outcome_value_for_completed_job(
+            job_id=trial.run_metadata.get("job_id")
+        )
+        df_dict = {
+            "trial_index": trial.index,
+            "metric_name": "bf_inhomogeneity",
+            "arm_name": trial.arm.name,
+            "mean": sample_data.get("bf_inhomogeneity_0"),
             # Can be set to 0.0 if function is known to be noiseless
             # or to an actual value when SEM is known. Setting SEM to
             # `None` results in Ax assuming unknown noise and inferring
