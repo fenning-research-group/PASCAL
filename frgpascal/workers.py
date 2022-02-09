@@ -181,9 +181,9 @@ def _to_hotplate(f):
                 time_to_next <= self.functions["idle_gantry"].estimated_duration
             ):  # we are about to move anyways
                 return output
-        else:
-            self.maestro.idle_gantry()
-            return output
+
+        self.maestro.idle_gantry()
+        return output
 
     return inner
 
