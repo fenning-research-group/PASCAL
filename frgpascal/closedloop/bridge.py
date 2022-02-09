@@ -23,6 +23,16 @@ from frgpascal.analysis.processer import process_sample
 from frgpascal.analysis import brightfield
 
 
+class NumpyFloatValuesEncoder(json.JSONEncoder):
+    """Converts np.float32 to float to allow dumping to json file
+    """
+
+    def default(self, obj):
+        if isinstance(obj, np.float32):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 class PASCALJob:
     def __init__(self, job_id, parameters):
         self.job_id = job_id
@@ -186,6 +196,7 @@ class PASCALAxQueue(Client):
         ## check if we have real data (did the sample make it onto the characterization train?)
         brightfield_filepath = os.path.join(
             self.characterization_folder,
+            sample_name,
             "characterization0",
             f"{sample_name}_brightfield.tif",
         )  # TODO only checks failures/dropped samples in the first characterization!
@@ -214,7 +225,9 @@ class PASCALAxQueue(Client):
         with open(
             os.path.join(self.sample_info_folder, f"{sample_name}.json"), "w"
         ) as f:
-            json.dump(sample_dict, f, indent=4, sort_keys=True)
+            json.dump(
+                sample_dict, f, indent=4, sort_keys=True, cls=NumpyFloatValuesEncoder
+            )
 
     ### Ax Methods
     def schedule_job_with_parameters(

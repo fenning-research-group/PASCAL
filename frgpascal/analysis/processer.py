@@ -3,6 +3,7 @@ import numpy as np
 import json
 
 from frgpascal.analysis import darkfield, brightfield, photoluminescence, transmittance
+from frgpascal.experimentaldesign.characterizationtasks import PLPhotostability
 
 
 def process_sample(sample: str, datadir: str):
@@ -15,16 +16,12 @@ def process_sample(sample: str, datadir: str):
     metrics = {}
     while True:
         cidx += 1
-        chardir = os.path.exists(
-            os.path.join(sampledir, f"characterization{cidx}.json")
-        )
+        chardir = os.path.join(sampledir, f"characterization{cidx}")
         if not os.path.exists(chardir):
             break
 
-        charfids = os.listdir(chardir)
-
         plfid = os.path.join(chardir, f"{sample}_pl.csv")
-        if plfid in charfids:
+        if os.path.exists(plfid):
             wl, cps = photoluminescence.load_spectrum(plfid)
             plfit = photoluminescence.fit_spectrum(
                 wl=wl, cts=cps, wlmin=640, wlmax=1100, plot=False
@@ -34,8 +31,8 @@ def process_sample(sample: str, datadir: str):
             metrics[f"pl_fwhm_{cidx}"] = plfit["fwhm"]
 
         psfid = os.path.join(chardir, f"{sample}_photostability.csv")
-        if psfid in charfids:
-            time, wl, cps = photoluminescence.load_spectrum(plfid)
+        if os.path.exists(psfid):
+            time, wl, cps = photoluminescence.load_photostability(psfid)
             psfit = photoluminescence.fit_photostability(
                 times=time, wl=wl, cts=cps, wlmin=640, wlmax=1100, plot=False
             )
@@ -53,16 +50,16 @@ def process_sample(sample: str, datadir: str):
             ]  # final peakev / initial peakev
 
         tfid = os.path.join(chardir, f"{sample}_transmission.csv")
-        if tfid in charfids:
+        if os.path.exists(tfid):
             wl, t = transmittance.load_spectrum(tfid)
             a = -np.log10(t)
-            metrics["t_bandgap_{cidx}"] = transmittance.tauc(
+            metrics[f"t_bandgap_{cidx}"] = transmittance.tauc(
                 wl=wl, a=a, bandgap_type="direct", wlmin=400, wlmax=1050, plot=False
             )
 
-        dffid = os.path.join(chardir, f"{sample}_darkfield.csv")
-        if dffid in charfids:
+        dffid = os.path.join(chardir, f"{sample}_darkfield.tif")
+        if os.path.exists(dffid):
             img = darkfield.load_image(dffid, red_only=True)
-            metrics["df_median_{cidx}"] = darkfield.get_median(im=img)
+            metrics[f"df_median_{cidx}"] = darkfield.get_median(im=img)
 
     return metrics

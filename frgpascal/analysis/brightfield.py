@@ -1,13 +1,13 @@
 from tifffile import imread
 import numpy as np
 
-try:
-    from tensorflow.keras.models import load_model
-    from tensorflow.image import resize
+# try:
+#     from tensorflow.keras.models import load_model
+#     from tensorflow.image import resize
 
-    TENSORFLOW_AVAILABLE = True
-except ImportError:
-    TENSORFLOW_AVAILABLE = False
+#     TENSORFLOW_AVAILABLE = True
+# except ImportError:
+TENSORFLOW_AVAILABLE = False
 import dill
 import os
 
@@ -19,7 +19,7 @@ def load(fid):
     Loads an image file from a given fid,
     then converts it from float64 to float32
     """
-    img = imread(fid) * 64 * 255
+    img = imread(fid) * 64
     return img.astype(np.float32)
 
 
@@ -59,7 +59,7 @@ class SampleChecker:
         False = sample was not detected on stage. probably dropped earlier in the protocol, <0.5 probability
         """
 
-        img = self._load_model(fpath)
+        img = load(fpath)
         return self.sample_is_present(img=img, return_probability=return_probability)
 
     def sample_is_present(self, img, return_probability=False) -> bool:
@@ -73,12 +73,12 @@ class SampleChecker:
         # use the ImageDataGenerator to preprocess the image
         if not self.__model_loaded:
             return True
-        img = self.datagen.standardize(img)
+        img1 = self.datagen.standardize(img)
         # resize image to match model input
-        img = resize(img, [200, 200])
-        img = np.expand_dims(img, axis=0)
+        img1 = resize(img1, [200, 200])
+        img1 = np.expand_dims(img1, axis=0)
         # predict the probability of sample being present
-        ans = self.model.predict(img)
+        ans = self.model.predict(img1)
         # return bool and the probability
         if return_probability:
             response = (ans[0][0] > self.THRESHOLD, ans[0][0])

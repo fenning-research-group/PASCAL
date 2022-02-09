@@ -171,3 +171,7 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 Icon
+
+
+# Keras Models too big 
+*Model.h5

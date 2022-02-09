@@ -85,7 +85,7 @@ class Darkfield(CharacterizationTask):
 
 class Brightfield(CharacterizationTask):
     def __init__(self):
-        self.exposure_time = 0.1  # 100 ms static dwelltime
+        self.exposure_time = 0.05  # 50 ms static dwelltime
         self.num_frames = 1
 
         super().__init__(name="Brightfield", station="brightfield", jitter=0)
