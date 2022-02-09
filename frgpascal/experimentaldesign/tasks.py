@@ -82,11 +82,7 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self,
-        name: str,
-        substrate: str,
-        worklist: list,
-        storage_slot=None,
+        self, name: str, substrate: str, worklist: list, storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -208,8 +204,8 @@ class Drop:
             raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
         self.time = time
-        if rate < 0 or rate > 200:
-            raise ValueError("dispense rate must be 0<rate<=200 uL/sec")
+        if rate < 0 or rate > 800:
+            raise ValueError("dispense rate must be 0<rate<=800 uL/sec")
         self.rate = rate
 
         if height <= 0 or height > 10:
@@ -424,17 +420,11 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(
-                asp + stage + disp - self.drops[0].time,
-                0,
-            )
+            duration += max(asp + stage + disp - self.drops[0].time, 0,)
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max(
-                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
-                0,
-            )
+            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -502,9 +492,7 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal",
-            duration=self.duration,
-            immediate=immediate,
+            task="anneal", duration=self.duration, immediate=immediate,
         )
 
     def __repr__(self):
@@ -609,9 +597,7 @@ class Characterize(Task):
             self.duration += distance * m + b
 
         super().__init__(
-            task="characterize",
-            duration=self.duration,
-            immediate=immediate,
+            task="characterize", duration=self.duration, immediate=immediate,
         )
 
     def to_dict(self):
