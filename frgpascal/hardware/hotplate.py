@@ -138,7 +138,7 @@ class Omega:
     def __init__(self, id: int, port: str = None):
         if id not in [1, 2, 3]:
             raise ValueError("Hotplate ID must be 1 (green), 2 (pink), or 3 (blue)!")
-        self.address = id
+        self.address = 1  # this is 1 despite the hotplate ID!
         constants = hotplateconstants[f"hp{id}"]
         if port is None:
             self.port = get_port(constants["device_identifiers"])
@@ -225,6 +225,46 @@ class Omega:
 
         payload = self.__build_payload(
             address=self.address, command=6, dataAddress=1001, content=setpoint
+        )
+        response = self.query(payload)
+
+        if response == payload:
+            return True
+        else:
+            return False
+
+    def autotune(self, setpoint: float, pid_channel: int):
+        self.set_setpoint(setpoint)
+
+        # set PID channel
+
+        # turn on autotuning
+        payload = self.__build_payload(
+            address=self.address, command=5, dataAddress="0813", content=0xFF00
+        )
+        response = self.query(payload)
+
+        if response == payload:
+            return True
+        else:
+            return False
+
+    def _autotune_in_progress(self):
+        payload = self.__build_payload(
+            address=self.address, command=2, dataAddress="0813", content=1
+        )
+        response = self.query(payload)
+        if response.decode().strip()[-3] == "1":
+            return True
+        else:
+            return False
+
+    def _set_PIDchannel(self, pid_channel: int):
+        if pid_channel not in [0, 1, 2, 3, 4]:
+            raise ValueError("Only 0, 1, 2, 3, and 4 (auto) are valid PID channels!")
+
+        payload = self.__build_payload(
+            address=self.address, command=6, dataAddress="101C", content=pid_channel
         )
         response = self.query(payload)
 
