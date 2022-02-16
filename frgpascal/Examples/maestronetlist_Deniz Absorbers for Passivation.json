@@ -41,10 +41,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate1",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--6d5b17d4-2051-44e5-b8b7-91769a6fc802",
+                    "id": "storage_to_hotplate--4b9ab643-a8ac-492c-9046-f3118d295794",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample0",
@@ -56,106 +56,43 @@
                         "hotplate": "Hotplate1",
                         "temperature": 75
                     },
-                    "id": "anneal-12405246-344e-418e-b0f7-d869dc4ca96a",
+                    "id": "anneal-d7aa8032-538f-473f-967a-011b38301ab9",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--6d5b17d4-2051-44e5-b8b7-91769a6fc802",
+                    "precedent": "storage_to_hotplate--4b9ab643-a8ac-492c-9046-f3118d295794",
                     "sample": "sample0",
                     "start": 18
                 },
                 {
                     "details": {
-                        "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "destination": "Tray1",
+                        "source": "Hotplate1"
                     },
-                    "id": "hotplate_to_characterization--170d5a6e-9617-4f29-8c65-03fe890a1926",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-12405246-344e-418e-b0f7-d869dc4ca96a",
+                    "id": "hotplate_to_storage--7bd6cdc3-8e37-4db7-a771-3eecf5fcb1ef",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-d7aa8032-538f-473f-967a-011b38301ab9",
                     "sample": "sample0",
                     "start": 1818
                 },
                 {
                     "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
+                        "duration": 180
                     },
-                    "duration": 83,
-                    "id": "characterize-aaedae3c-34b9-41ce-ba10-c3f9572c48a6",
-                    "name": "characterize",
-                    "precedent": "hotplate_to_characterization--170d5a6e-9617-4f29-8c65-03fe890a1926",
+                    "id": "rest-d9c49535-40c2-4426-ae17-d45aa014f2c4",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--7bd6cdc3-8e37-4db7-a771-3eecf5fcb1ef",
                     "sample": "sample0",
                     "start": 1836
+                },
+                {
+                    "details": {
+                        "destination": "Characterization",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_characterization--29e01b96-296f-4225-963c-37308eb5922e",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-d9c49535-40c2-4426-ae17-d45aa014f2c4",
+                    "sample": "sample0",
+                    "start": 2016
                 },
                 {
                     "details": {
@@ -235,22 +172,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-6f477574-f7ce-4b30-8d2c-7d4e5b097893",
+                    "id": "characterize-07811b5a-f9a9-4294-8d9f-81422acdc532",
                     "name": "characterize",
-                    "precedent": "characterize-aaedae3c-34b9-41ce-ba10-c3f9572c48a6",
+                    "precedent": "storage_to_characterization--29e01b96-296f-4225-963c-37308eb5922e",
                     "sample": "sample0",
-                    "start": 1919
+                    "start": 2031
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--9ffeefd1-6285-4d34-ba1a-fc7c4b221830",
+                    "id": "characterization_to_storage--d1500c16-b35d-41b9-98f3-f915b6866266",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-6f477574-f7ce-4b30-8d2c-7d4e5b097893",
+                    "precedent": "characterize-07811b5a-f9a9-4294-8d9f-81422acdc532",
                     "sample": "sample0",
-                    "start": 2002
+                    "start": 2114
                 }
             ]
         },
@@ -264,10 +201,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate1",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--69fb325d-c2b0-4043-9614-3b77b1c5735b",
+                    "id": "storage_to_hotplate--f0b2c7e9-8224-4d7c-87ca-6fb65d9eb912",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample1",
@@ -279,22 +216,43 @@
                         "hotplate": "Hotplate1",
                         "temperature": 75
                     },
-                    "id": "anneal-815f4e99-7b02-4ee7-a1e6-a7f3a9e6c59d",
+                    "id": "anneal-c289d748-3fab-4b5a-b5b9-130ee87e8704",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--69fb325d-c2b0-4043-9614-3b77b1c5735b",
+                    "precedent": "storage_to_hotplate--f0b2c7e9-8224-4d7c-87ca-6fb65d9eb912",
                     "sample": "sample1",
                     "start": 36
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate1"
+                    },
+                    "id": "hotplate_to_storage--a746cca5-d74f-4c7d-9c73-0cbebdbf63fd",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-c289d748-3fab-4b5a-b5b9-130ee87e8704",
+                    "sample": "sample1",
+                    "start": 1836
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-99b82595-f90e-47b9-8cf7-fd5f2352dacf",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--a746cca5-d74f-4c7d-9c73-0cbebdbf63fd",
+                    "sample": "sample1",
+                    "start": 1854
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--aca462a6-2697-4674-b87b-328949303fec",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-815f4e99-7b02-4ee7-a1e6-a7f3a9e6c59d",
+                    "id": "storage_to_characterization--690bf581-43a1-4b1e-8798-d37102f70be1",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-99b82595-f90e-47b9-8cf7-fd5f2352dacf",
                     "sample": "sample1",
-                    "start": 2020
+                    "start": 2132
                 },
                 {
                     "details": {
@@ -374,106 +332,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-076795fb-8de5-4d1c-bf91-83585e69a4b8",
+                    "id": "characterize-33165d65-efe2-4e04-b8d3-1c5edc052295",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--aca462a6-2697-4674-b87b-328949303fec",
+                    "precedent": "storage_to_characterization--690bf581-43a1-4b1e-8798-d37102f70be1",
                     "sample": "sample1",
-                    "start": 2038
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-fabf8757-bc54-4626-876f-a68372158262",
-                    "name": "characterize",
-                    "precedent": "characterize-076795fb-8de5-4d1c-bf91-83585e69a4b8",
-                    "sample": "sample1",
-                    "start": 2121
+                    "start": 2147
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--e8266a89-8840-4ae8-84af-74bf1f19ad4f",
+                    "id": "characterization_to_storage--0e476157-86d2-4a40-94b0-1688a16ded1c",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-fabf8757-bc54-4626-876f-a68372158262",
+                    "precedent": "characterize-33165d65-efe2-4e04-b8d3-1c5edc052295",
                     "sample": "sample1",
-                    "start": 2204
+                    "start": 2230
                 }
             ]
         },
@@ -487,10 +361,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate1",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--3685fe90-e189-49d3-b034-d8d00c2aafbb",
+                    "id": "storage_to_hotplate--86dfc42f-9b3a-4f2a-939b-ce58b036b824",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample2",
@@ -502,22 +376,43 @@
                         "hotplate": "Hotplate1",
                         "temperature": 75
                     },
-                    "id": "anneal-599d4e20-1d42-4b3d-b494-b1c3485b677e",
+                    "id": "anneal-eb141d26-29eb-4fa0-add2-5564ca458e7e",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--3685fe90-e189-49d3-b034-d8d00c2aafbb",
+                    "precedent": "storage_to_hotplate--86dfc42f-9b3a-4f2a-939b-ce58b036b824",
                     "sample": "sample2",
                     "start": 54
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate1"
+                    },
+                    "id": "hotplate_to_storage--cc08f3c3-10a9-49cb-9bec-d69aa1089c6b",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-eb141d26-29eb-4fa0-add2-5564ca458e7e",
+                    "sample": "sample2",
+                    "start": 1854
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-73fe09c6-65f5-4cb2-a097-91333a3a5c1e",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--cc08f3c3-10a9-49cb-9bec-d69aa1089c6b",
+                    "sample": "sample2",
+                    "start": 1872
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--f0ce553b-286e-4b0a-8f19-138e43baf156",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-599d4e20-1d42-4b3d-b494-b1c3485b677e",
+                    "id": "storage_to_characterization--27ae6d8b-69b6-4bc7-b8c3-54f2e45bba06",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-73fe09c6-65f5-4cb2-a097-91333a3a5c1e",
                     "sample": "sample2",
-                    "start": 2222
+                    "start": 2248
                 },
                 {
                     "details": {
@@ -597,106 +492,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-10bb55ea-be41-489c-9970-dc0ac6f1da39",
+                    "id": "characterize-7ad42717-6a61-47e2-ae11-f39fc323ed69",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--f0ce553b-286e-4b0a-8f19-138e43baf156",
+                    "precedent": "storage_to_characterization--27ae6d8b-69b6-4bc7-b8c3-54f2e45bba06",
                     "sample": "sample2",
-                    "start": 2240
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-7fc9109b-d1b6-48a5-a384-5dee82bb5108",
-                    "name": "characterize",
-                    "precedent": "characterize-10bb55ea-be41-489c-9970-dc0ac6f1da39",
-                    "sample": "sample2",
-                    "start": 2323
+                    "start": 2263
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--e36a9d06-42e6-460d-bced-fd6f4b90b105",
+                    "id": "characterization_to_storage--c6100867-8c41-4cc4-9895-ce675101773d",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-7fc9109b-d1b6-48a5-a384-5dee82bb5108",
+                    "precedent": "characterize-7ad42717-6a61-47e2-ae11-f39fc323ed69",
                     "sample": "sample2",
-                    "start": 2406
+                    "start": 2346
                 }
             ]
         },
@@ -710,10 +521,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate1",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--ea13045b-7890-4551-9284-5822291ce7ed",
+                    "id": "storage_to_hotplate--fcacdaf0-d34c-4324-a261-fb8571fcdb87",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample3",
@@ -725,22 +536,43 @@
                         "hotplate": "Hotplate1",
                         "temperature": 75
                     },
-                    "id": "anneal-ec494972-9c59-4618-9f08-dd23580eed1b",
+                    "id": "anneal-2fb87710-704f-44b8-9951-3fbf0761a532",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--ea13045b-7890-4551-9284-5822291ce7ed",
+                    "precedent": "storage_to_hotplate--fcacdaf0-d34c-4324-a261-fb8571fcdb87",
                     "sample": "sample3",
                     "start": 72
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate1"
+                    },
+                    "id": "hotplate_to_storage--cc5c247e-d03d-41b4-ac75-71138640ac6f",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-2fb87710-704f-44b8-9951-3fbf0761a532",
+                    "sample": "sample3",
+                    "start": 1872
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-c0b8d8d7-c949-43dc-8e44-bd1bd576564c",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--cc5c247e-d03d-41b4-ac75-71138640ac6f",
+                    "sample": "sample3",
+                    "start": 1890
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--e443867d-9e0d-403a-a37b-9f7bb7b8d4f1",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-ec494972-9c59-4618-9f08-dd23580eed1b",
+                    "id": "storage_to_characterization--2bb6908c-20e7-4d6a-8732-1afa186a6431",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-c0b8d8d7-c949-43dc-8e44-bd1bd576564c",
                     "sample": "sample3",
-                    "start": 2424
+                    "start": 2364
                 },
                 {
                     "details": {
@@ -820,106 +652,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-851b6c15-4bcd-44d3-bfe4-3370f6c81406",
+                    "id": "characterize-4b5f1df6-a4e9-4579-841f-41fae3592670",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--e443867d-9e0d-403a-a37b-9f7bb7b8d4f1",
+                    "precedent": "storage_to_characterization--2bb6908c-20e7-4d6a-8732-1afa186a6431",
                     "sample": "sample3",
-                    "start": 2442
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-217808dc-9153-4fd7-aec7-cc03384ceac1",
-                    "name": "characterize",
-                    "precedent": "characterize-851b6c15-4bcd-44d3-bfe4-3370f6c81406",
-                    "sample": "sample3",
-                    "start": 2525
+                    "start": 2379
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--453bb519-b28e-474b-b69d-edd61ab4c09b",
+                    "id": "characterization_to_storage--ffcae62e-5f56-42e1-9337-f64409071658",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-217808dc-9153-4fd7-aec7-cc03384ceac1",
+                    "precedent": "characterize-4b5f1df6-a4e9-4579-841f-41fae3592670",
                     "sample": "sample3",
-                    "start": 2608
+                    "start": 2462
                 }
             ]
         },
@@ -933,10 +681,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate1",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--412c9dd8-a32d-43ba-9cb8-5fb83b4a7b4c",
+                    "id": "storage_to_hotplate--08de737c-47cb-4fcf-9432-34ce092ab9a2",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample4",
@@ -948,22 +696,43 @@
                         "hotplate": "Hotplate1",
                         "temperature": 75
                     },
-                    "id": "anneal-e9594185-efa2-4696-9610-b143259f0783",
+                    "id": "anneal-fc627f52-4a29-4fea-995e-6e189a1c5c33",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--412c9dd8-a32d-43ba-9cb8-5fb83b4a7b4c",
+                    "precedent": "storage_to_hotplate--08de737c-47cb-4fcf-9432-34ce092ab9a2",
                     "sample": "sample4",
                     "start": 90
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate1"
+                    },
+                    "id": "hotplate_to_storage--1530c6df-2232-439b-aca6-516d7c36adcc",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-fc627f52-4a29-4fea-995e-6e189a1c5c33",
+                    "sample": "sample4",
+                    "start": 1890
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-44ff415a-230d-4b10-a954-9b3430b5c23b",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--1530c6df-2232-439b-aca6-516d7c36adcc",
+                    "sample": "sample4",
+                    "start": 1908
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--c6524c1e-5744-42d1-8f93-0a367d2e4778",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-e9594185-efa2-4696-9610-b143259f0783",
+                    "id": "storage_to_characterization--7a456f4f-9070-407b-874f-b839ef47f67b",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-44ff415a-230d-4b10-a954-9b3430b5c23b",
                     "sample": "sample4",
-                    "start": 2626
+                    "start": 2480
                 },
                 {
                     "details": {
@@ -1043,106 +812,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-f2372e68-8ad8-4268-ba4f-8699b3f60b13",
+                    "id": "characterize-49496705-1d0f-40e6-8b1a-6c6bc006d05f",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--c6524c1e-5744-42d1-8f93-0a367d2e4778",
+                    "precedent": "storage_to_characterization--7a456f4f-9070-407b-874f-b839ef47f67b",
                     "sample": "sample4",
-                    "start": 2644
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-171b59cf-3e62-4699-b345-5ffdc13dcdaf",
-                    "name": "characterize",
-                    "precedent": "characterize-f2372e68-8ad8-4268-ba4f-8699b3f60b13",
-                    "sample": "sample4",
-                    "start": 2727
+                    "start": 2495
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--c647e214-3a97-4d85-b5e2-8ef80bb8aada",
+                    "id": "characterization_to_storage--1f530402-7bb9-44f4-a3de-fbcc21ced165",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-171b59cf-3e62-4699-b345-5ffdc13dcdaf",
+                    "precedent": "characterize-49496705-1d0f-40e6-8b1a-6c6bc006d05f",
                     "sample": "sample4",
-                    "start": 2810
+                    "start": 2578
                 }
             ]
         },
@@ -1156,10 +841,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate2",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--9e7343e2-d72e-4f7c-8a71-f5e075c7cf1f",
+                    "id": "storage_to_hotplate--cc662dd4-1a11-47f4-bae1-e8f6962975eb",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample5",
@@ -1171,21 +856,362 @@
                         "hotplate": "Hotplate2",
                         "temperature": 125
                     },
-                    "id": "anneal-168e770d-8653-470a-ba66-77b0134c999f",
+                    "id": "anneal-a19c1570-63b3-4262-94ef-9a71ff9db4e1",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--9e7343e2-d72e-4f7c-8a71-f5e075c7cf1f",
+                    "precedent": "storage_to_hotplate--cc662dd4-1a11-47f4-bae1-e8f6962975eb",
                     "sample": "sample5",
                     "start": 108
                 },
                 {
                     "details": {
-                        "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "destination": "Tray1",
+                        "source": "Hotplate2"
                     },
-                    "id": "hotplate_to_characterization--7a31478d-f49f-4740-8a35-53f6e6f9e826",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-168e770d-8653-470a-ba66-77b0134c999f",
+                    "id": "hotplate_to_storage--733dee29-93cb-4f44-991e-9e781b0d3bdb",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-a19c1570-63b3-4262-94ef-9a71ff9db4e1",
                     "sample": "sample5",
+                    "start": 1908
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-9f8ffcc5-249b-4e69-9cec-bc32460ba232",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--733dee29-93cb-4f44-991e-9e781b0d3bdb",
+                    "sample": "sample5",
+                    "start": 1926
+                },
+                {
+                    "details": {
+                        "destination": "Characterization",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_characterization--14a9e9a4-1b54-48bc-9653-b4785c5472bc",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-9f8ffcc5-249b-4e69-9cec-bc32460ba232",
+                    "sample": "sample5",
+                    "start": 2596
+                },
+                {
+                    "details": {
+                        "characterization_tasks": [
+                            {
+                                "details": {
+                                    "exposure_time": 0.05,
+                                    "num_frames": 1
+                                },
+                                "duration": 0.05,
+                                "name": "Brightfield",
+                                "position": 164.4,
+                                "station": "brightfield"
+                            },
+                            {
+                                "details": {
+                                    "duration": 10,
+                                    "exposure_time": 0.2,
+                                    "num_measurements": 50
+                                },
+                                "duration": 10.219999999999999,
+                                "name": "Photostability_405nm",
+                                "position": 285,
+                                "station": "pl_blue"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.1,
+                                        0.2
+                                    ],
+                                    "num_scans": 1
+                                },
+                                "duration": 0.52,
+                                "name": "PL_635nm",
+                                "position": 287,
+                                "station": "pl_red"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.1,
+                                        0.2
+                                    ],
+                                    "num_scans": 2
+                                },
+                                "duration": 4.6,
+                                "name": "Transmission",
+                                "position": 287,
+                                "station": "transmission"
+                            },
+                            {
+                                "details": {
+                                    "exposure_time": 0.05,
+                                    "num_frames": 50
+                                },
+                                "duration": 2.5,
+                                "name": "Darkfield",
+                                "position": 74.2,
+                                "station": "darkfield"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.05,
+                                        0.2,
+                                        1,
+                                        5
+                                    ],
+                                    "num_frames": 5
+                                },
+                                "duration": 31.25,
+                                "name": "PLImaging",
+                                "position": 74.2,
+                                "station": "pl_imaging"
+                            }
+                        ]
+                    },
+                    "duration": 83,
+                    "id": "characterize-127fdd45-9ab9-41cd-92bc-5d6be513175f",
+                    "name": "characterize",
+                    "precedent": "storage_to_characterization--14a9e9a4-1b54-48bc-9653-b4785c5472bc",
+                    "sample": "sample5",
+                    "start": 2611
+                },
+                {
+                    "details": {
+                        "destination": "Tray1",
+                        "source": "Characterization"
+                    },
+                    "id": "characterization_to_storage--fdbbf06c-2703-4cbd-8c04-1d490987e255",
+                    "name": "characterization_to_storage",
+                    "precedent": "characterize-127fdd45-9ab9-41cd-92bc-5d6be513175f",
+                    "sample": "sample5",
+                    "start": 2694
+                }
+            ]
+        },
+        "sample6": {
+            "name": "sample6",
+            "storage_slot": {
+                "slot": "B2",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm glass",
+            "worklist": [
+                {
+                    "details": {
+                        "destination": "Hotplate2",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_hotplate--4a0c33b0-0ef8-4222-b1af-c263bb55f82a",
+                    "name": "storage_to_hotplate",
+                    "precedent": null,
+                    "sample": "sample6",
+                    "start": 108
+                },
+                {
+                    "details": {
+                        "duration": 1800,
+                        "hotplate": "Hotplate2",
+                        "temperature": 125
+                    },
+                    "id": "anneal-2d728596-5835-4a22-9622-9edb50ed517e",
+                    "name": "anneal",
+                    "precedent": "storage_to_hotplate--4a0c33b0-0ef8-4222-b1af-c263bb55f82a",
+                    "sample": "sample6",
+                    "start": 126
+                },
+                {
+                    "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate2"
+                    },
+                    "id": "hotplate_to_storage--fa7c0312-2f1a-453e-ac3b-22f74fbbfad2",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-2d728596-5835-4a22-9622-9edb50ed517e",
+                    "sample": "sample6",
+                    "start": 1926
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-733672f0-6649-4360-b749-5348ea73ac49",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--fa7c0312-2f1a-453e-ac3b-22f74fbbfad2",
+                    "sample": "sample6",
+                    "start": 1944
+                },
+                {
+                    "details": {
+                        "destination": "Characterization",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_characterization--0aaaca67-52a5-4de7-94d3-e3b07b39c3cc",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-733672f0-6649-4360-b749-5348ea73ac49",
+                    "sample": "sample6",
+                    "start": 2712
+                },
+                {
+                    "details": {
+                        "characterization_tasks": [
+                            {
+                                "details": {
+                                    "exposure_time": 0.05,
+                                    "num_frames": 1
+                                },
+                                "duration": 0.05,
+                                "name": "Brightfield",
+                                "position": 164.4,
+                                "station": "brightfield"
+                            },
+                            {
+                                "details": {
+                                    "duration": 10,
+                                    "exposure_time": 0.2,
+                                    "num_measurements": 50
+                                },
+                                "duration": 10.219999999999999,
+                                "name": "Photostability_405nm",
+                                "position": 285,
+                                "station": "pl_blue"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.1,
+                                        0.2
+                                    ],
+                                    "num_scans": 1
+                                },
+                                "duration": 0.52,
+                                "name": "PL_635nm",
+                                "position": 287,
+                                "station": "pl_red"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.1,
+                                        0.2
+                                    ],
+                                    "num_scans": 2
+                                },
+                                "duration": 4.6,
+                                "name": "Transmission",
+                                "position": 287,
+                                "station": "transmission"
+                            },
+                            {
+                                "details": {
+                                    "exposure_time": 0.05,
+                                    "num_frames": 50
+                                },
+                                "duration": 2.5,
+                                "name": "Darkfield",
+                                "position": 74.2,
+                                "station": "darkfield"
+                            },
+                            {
+                                "details": {
+                                    "exposure_times": [
+                                        0.05,
+                                        0.2,
+                                        1,
+                                        5
+                                    ],
+                                    "num_frames": 5
+                                },
+                                "duration": 31.25,
+                                "name": "PLImaging",
+                                "position": 74.2,
+                                "station": "pl_imaging"
+                            }
+                        ]
+                    },
+                    "duration": 83,
+                    "id": "characterize-6844d1e3-32cf-4ab0-84d3-b248e461d430",
+                    "name": "characterize",
+                    "precedent": "storage_to_characterization--0aaaca67-52a5-4de7-94d3-e3b07b39c3cc",
+                    "sample": "sample6",
+                    "start": 2727
+                },
+                {
+                    "details": {
+                        "destination": "Tray1",
+                        "source": "Characterization"
+                    },
+                    "id": "characterization_to_storage--94ffd2c4-6b67-4153-8f10-f5b5a25e5ca6",
+                    "name": "characterization_to_storage",
+                    "precedent": "characterize-6844d1e3-32cf-4ab0-84d3-b248e461d430",
+                    "sample": "sample6",
+                    "start": 2810
+                }
+            ]
+        },
+        "sample7": {
+            "name": "sample7",
+            "storage_slot": {
+                "slot": "B3",
+                "tray": "Tray1"
+            },
+            "substrate": "1mm glass",
+            "worklist": [
+                {
+                    "details": {
+                        "destination": "Hotplate2",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_hotplate--3c370d01-ac06-4fcc-b9a1-d41456e92252",
+                    "name": "storage_to_hotplate",
+                    "precedent": null,
+                    "sample": "sample7",
+                    "start": 126
+                },
+                {
+                    "details": {
+                        "duration": 1800,
+                        "hotplate": "Hotplate2",
+                        "temperature": 125
+                    },
+                    "id": "anneal-f21dc79a-360b-48ef-ba52-024acb92e4ea",
+                    "name": "anneal",
+                    "precedent": "storage_to_hotplate--3c370d01-ac06-4fcc-b9a1-d41456e92252",
+                    "sample": "sample7",
+                    "start": 144
+                },
+                {
+                    "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate2"
+                    },
+                    "id": "hotplate_to_storage--ccb350fa-8502-4d29-a582-daa31de7e7e7",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-f21dc79a-360b-48ef-ba52-024acb92e4ea",
+                    "sample": "sample7",
+                    "start": 1944
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-c53fd133-e491-4f71-8037-fe60ef9b909b",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--ccb350fa-8502-4d29-a582-daa31de7e7e7",
+                    "sample": "sample7",
+                    "start": 1962
+                },
+                {
+                    "details": {
+                        "destination": "Characterization",
+                        "source": "Tray1"
+                    },
+                    "id": "storage_to_characterization--9bb7cb5b-ecbf-4eca-a375-9658cc059f16",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-c53fd133-e491-4f71-8037-fe60ef9b909b",
+                    "sample": "sample7",
                     "start": 2828
                 },
                 {
@@ -1266,552 +1292,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-e37be7f3-1531-46f4-9035-f1b40417e9d2",
+                    "id": "characterize-ef0b922d-a6ac-4308-9228-6fecc330d5d0",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--7a31478d-f49f-4740-8a35-53f6e6f9e826",
-                    "sample": "sample5",
-                    "start": 2846
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-8262fbcd-e98e-45ef-a31a-9706d4e62933",
-                    "name": "characterize",
-                    "precedent": "characterize-e37be7f3-1531-46f4-9035-f1b40417e9d2",
-                    "sample": "sample5",
-                    "start": 2929
+                    "precedent": "storage_to_characterization--9bb7cb5b-ecbf-4eca-a375-9658cc059f16",
+                    "sample": "sample7",
+                    "start": 2843
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--b5f2ca59-14bb-43cb-8dbf-f7d268291e4d",
+                    "id": "characterization_to_storage--900142f9-f77f-4457-8129-e4a03afe68f4",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-8262fbcd-e98e-45ef-a31a-9706d4e62933",
-                    "sample": "sample5",
-                    "start": 3012
-                }
-            ]
-        },
-        "sample6": {
-            "name": "sample6",
-            "storage_slot": {
-                "slot": "B2",
-                "tray": "Tray1"
-            },
-            "substrate": "1mm glass",
-            "worklist": [
-                {
-                    "details": {
-                        "destination": "Hotplate3",
-                        "source": "Tray1"
-                    },
-                    "id": "storage_to_hotplate--1bc7d34b-a299-469c-9721-76d3cfc6812e",
-                    "name": "storage_to_hotplate",
-                    "precedent": null,
-                    "sample": "sample6",
-                    "start": 108
-                },
-                {
-                    "details": {
-                        "duration": 1800,
-                        "hotplate": "Hotplate2",
-                        "temperature": 125
-                    },
-                    "id": "anneal-e8e5e9e5-1949-4900-8e11-edf9fe2c3637",
-                    "name": "anneal",
-                    "precedent": "storage_to_hotplate--1bc7d34b-a299-469c-9721-76d3cfc6812e",
-                    "sample": "sample6",
-                    "start": 126
-                },
-                {
-                    "details": {
-                        "destination": "Characterization",
-                        "source": "Hotplate3"
-                    },
-                    "id": "hotplate_to_characterization--167ddb7f-5717-44f0-bb03-ca0c67bc78c8",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-e8e5e9e5-1949-4900-8e11-edf9fe2c3637",
-                    "sample": "sample6",
-                    "start": 3030
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-de5c1ea1-2c24-49fc-a391-e91486824557",
-                    "name": "characterize",
-                    "precedent": "hotplate_to_characterization--167ddb7f-5717-44f0-bb03-ca0c67bc78c8",
-                    "sample": "sample6",
-                    "start": 3048
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-e1dec099-89fe-439a-b3f6-c1ae6bc3e45f",
-                    "name": "characterize",
-                    "precedent": "characterize-de5c1ea1-2c24-49fc-a391-e91486824557",
-                    "sample": "sample6",
-                    "start": 3131
-                },
-                {
-                    "details": {
-                        "destination": "Tray1",
-                        "source": "Characterization"
-                    },
-                    "id": "characterization_to_storage--76277d51-0f23-4f11-afa6-3e19040516e0",
-                    "name": "characterization_to_storage",
-                    "precedent": "characterize-e1dec099-89fe-439a-b3f6-c1ae6bc3e45f",
-                    "sample": "sample6",
-                    "start": 3214
-                }
-            ]
-        },
-        "sample7": {
-            "name": "sample7",
-            "storage_slot": {
-                "slot": "B3",
-                "tray": "Tray1"
-            },
-            "substrate": "1mm glass",
-            "worklist": [
-                {
-                    "details": {
-                        "destination": "Hotplate3",
-                        "source": "Tray1"
-                    },
-                    "id": "storage_to_hotplate--3d5685ad-3d25-408b-b0ba-e441678e3872",
-                    "name": "storage_to_hotplate",
-                    "precedent": null,
+                    "precedent": "characterize-ef0b922d-a6ac-4308-9228-6fecc330d5d0",
                     "sample": "sample7",
-                    "start": 126
-                },
-                {
-                    "details": {
-                        "duration": 1800,
-                        "hotplate": "Hotplate2",
-                        "temperature": 125
-                    },
-                    "id": "anneal-eb9d294b-2b5a-4002-b95b-2f5f4cc56179",
-                    "name": "anneal",
-                    "precedent": "storage_to_hotplate--3d5685ad-3d25-408b-b0ba-e441678e3872",
-                    "sample": "sample7",
-                    "start": 144
-                },
-                {
-                    "details": {
-                        "destination": "Characterization",
-                        "source": "Hotplate3"
-                    },
-                    "id": "hotplate_to_characterization--f5d4c65f-7f41-4569-8372-5cec9f16f094",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-eb9d294b-2b5a-4002-b95b-2f5f4cc56179",
-                    "sample": "sample7",
-                    "start": 3232
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-c5c9fc85-32ff-4c2c-b8f7-3ed8ff6b8f85",
-                    "name": "characterize",
-                    "precedent": "hotplate_to_characterization--f5d4c65f-7f41-4569-8372-5cec9f16f094",
-                    "sample": "sample7",
-                    "start": 3250
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-3e2c002d-1163-4536-9472-0435b3667912",
-                    "name": "characterize",
-                    "precedent": "characterize-c5c9fc85-32ff-4c2c-b8f7-3ed8ff6b8f85",
-                    "sample": "sample7",
-                    "start": 3333
-                },
-                {
-                    "details": {
-                        "destination": "Tray1",
-                        "source": "Characterization"
-                    },
-                    "id": "characterization_to_storage--3c11fe22-4723-40a2-8e24-fb8d1467a02a",
-                    "name": "characterization_to_storage",
-                    "precedent": "characterize-3e2c002d-1163-4536-9472-0435b3667912",
-                    "sample": "sample7",
-                    "start": 3416
+                    "start": 2926
                 }
             ]
         },
@@ -1825,10 +1321,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate2",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--38e46fce-0a97-453d-b070-b8ff5d2a01d1",
+                    "id": "storage_to_hotplate--52defb95-7756-400b-978b-313b73f23279",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample8",
@@ -1840,22 +1336,43 @@
                         "hotplate": "Hotplate2",
                         "temperature": 125
                     },
-                    "id": "anneal-92e24b04-9696-44de-bbc7-be1e8fc51302",
+                    "id": "anneal-eeeb1d5b-ab02-4896-a6ec-a7fa8d15227e",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--38e46fce-0a97-453d-b070-b8ff5d2a01d1",
+                    "precedent": "storage_to_hotplate--52defb95-7756-400b-978b-313b73f23279",
                     "sample": "sample8",
                     "start": 162
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate2"
+                    },
+                    "id": "hotplate_to_storage--0878f94e-1231-40b4-846d-7c1d0ca3405a",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-eeeb1d5b-ab02-4896-a6ec-a7fa8d15227e",
+                    "sample": "sample8",
+                    "start": 1962
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-834e49cb-0147-44d7-b01b-a116ebe89a57",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--0878f94e-1231-40b4-846d-7c1d0ca3405a",
+                    "sample": "sample8",
+                    "start": 1980
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--10645da6-3e58-47ae-bdd3-4dc178533cb1",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-92e24b04-9696-44de-bbc7-be1e8fc51302",
+                    "id": "storage_to_characterization--5e00192a-3dfa-4e3d-95be-b70182ab9a11",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-834e49cb-0147-44d7-b01b-a116ebe89a57",
                     "sample": "sample8",
-                    "start": 3434
+                    "start": 2944
                 },
                 {
                     "details": {
@@ -1935,106 +1452,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-85e10387-4314-4876-97f0-b0957e2ac69f",
+                    "id": "characterize-a8a4d306-fa86-4b22-ac7e-90ffc39402a7",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--10645da6-3e58-47ae-bdd3-4dc178533cb1",
+                    "precedent": "storage_to_characterization--5e00192a-3dfa-4e3d-95be-b70182ab9a11",
                     "sample": "sample8",
-                    "start": 3452
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-f3c50b77-4290-4bd4-a740-e5068f5e8ddf",
-                    "name": "characterize",
-                    "precedent": "characterize-85e10387-4314-4876-97f0-b0957e2ac69f",
-                    "sample": "sample8",
-                    "start": 3535
+                    "start": 2959
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--7cb0f03e-21cc-4ff3-8f8e-f76b5101ed33",
+                    "id": "characterization_to_storage--7259e41d-c22f-406a-8fde-52c3cab496b0",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-f3c50b77-4290-4bd4-a740-e5068f5e8ddf",
+                    "precedent": "characterize-a8a4d306-fa86-4b22-ac7e-90ffc39402a7",
                     "sample": "sample8",
-                    "start": 3618
+                    "start": 3042
                 }
             ]
         },
@@ -2048,10 +1481,10 @@
             "worklist": [
                 {
                     "details": {
-                        "destination": "Hotplate3",
+                        "destination": "Hotplate2",
                         "source": "Tray1"
                     },
-                    "id": "storage_to_hotplate--4e32ca3d-8cda-4e7c-895e-b6011954b605",
+                    "id": "storage_to_hotplate--6e9cb02f-54c3-4cc9-99ac-bd73bd7fd5dd",
                     "name": "storage_to_hotplate",
                     "precedent": null,
                     "sample": "sample9",
@@ -2063,22 +1496,43 @@
                         "hotplate": "Hotplate2",
                         "temperature": 125
                     },
-                    "id": "anneal-5f50e628-9d03-46f0-b6c0-64c285a0e3ae",
+                    "id": "anneal-536d36a8-e302-4a2b-bf67-31db3d0750cb",
                     "name": "anneal",
-                    "precedent": "storage_to_hotplate--4e32ca3d-8cda-4e7c-895e-b6011954b605",
+                    "precedent": "storage_to_hotplate--6e9cb02f-54c3-4cc9-99ac-bd73bd7fd5dd",
                     "sample": "sample9",
                     "start": 180
                 },
                 {
                     "details": {
+                        "destination": "Tray1",
+                        "source": "Hotplate2"
+                    },
+                    "id": "hotplate_to_storage--143c17df-5978-4696-b996-cfb5444a772d",
+                    "name": "hotplate_to_storage",
+                    "precedent": "anneal-536d36a8-e302-4a2b-bf67-31db3d0750cb",
+                    "sample": "sample9",
+                    "start": 1980
+                },
+                {
+                    "details": {
+                        "duration": 180
+                    },
+                    "id": "rest-be01faf2-b828-4cdf-879e-da41e6a145b4",
+                    "name": "rest",
+                    "precedent": "hotplate_to_storage--143c17df-5978-4696-b996-cfb5444a772d",
+                    "sample": "sample9",
+                    "start": 1998
+                },
+                {
+                    "details": {
                         "destination": "Characterization",
-                        "source": "Hotplate3"
+                        "source": "Tray1"
                     },
-                    "id": "hotplate_to_characterization--44a73b15-46f5-4c4e-bf97-1407ff7360bf",
-                    "name": "hotplate_to_characterization",
-                    "precedent": "anneal-5f50e628-9d03-46f0-b6c0-64c285a0e3ae",
+                    "id": "storage_to_characterization--653bd38c-184f-4151-b7fa-2be8f4b45970",
+                    "name": "storage_to_characterization",
+                    "precedent": "rest-be01faf2-b828-4cdf-879e-da41e6a145b4",
                     "sample": "sample9",
-                    "start": 3636
+                    "start": 3060
                 },
                 {
                     "details": {
@@ -2158,106 +1612,22 @@
                         ]
                     },
                     "duration": 83,
-                    "id": "characterize-e98f9d6a-1ec0-4ae5-b5ca-08919302d775",
+                    "id": "characterize-4d5e6fa1-a2e0-4e36-a35a-e3a2516453bf",
                     "name": "characterize",
-                    "precedent": "hotplate_to_characterization--44a73b15-46f5-4c4e-bf97-1407ff7360bf",
+                    "precedent": "storage_to_characterization--653bd38c-184f-4151-b7fa-2be8f4b45970",
                     "sample": "sample9",
-                    "start": 3654
-                },
-                {
-                    "details": {
-                        "characterization_tasks": [
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 1
-                                },
-                                "duration": 0.05,
-                                "name": "Brightfield",
-                                "position": 164.4,
-                                "station": "brightfield"
-                            },
-                            {
-                                "details": {
-                                    "duration": 10,
-                                    "exposure_time": 0.2,
-                                    "num_measurements": 50
-                                },
-                                "duration": 10.219999999999999,
-                                "name": "Photostability_405nm",
-                                "position": 285,
-                                "station": "pl_blue"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 1
-                                },
-                                "duration": 0.52,
-                                "name": "PL_635nm",
-                                "position": 287,
-                                "station": "pl_red"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.1,
-                                        0.2
-                                    ],
-                                    "num_scans": 2
-                                },
-                                "duration": 4.6,
-                                "name": "Transmission",
-                                "position": 287,
-                                "station": "transmission"
-                            },
-                            {
-                                "details": {
-                                    "exposure_time": 0.05,
-                                    "num_frames": 50
-                                },
-                                "duration": 2.5,
-                                "name": "Darkfield",
-                                "position": 74.2,
-                                "station": "darkfield"
-                            },
-                            {
-                                "details": {
-                                    "exposure_times": [
-                                        0.05,
-                                        0.2,
-                                        1,
-                                        5
-                                    ],
-                                    "num_frames": 5
-                                },
-                                "duration": 31.25,
-                                "name": "PLImaging",
-                                "position": 74.2,
-                                "station": "pl_imaging"
-                            }
-                        ]
-                    },
-                    "duration": 83,
-                    "id": "characterize-1e30a528-afea-4c6a-97c6-f81e8e3aaa55",
-                    "name": "characterize",
-                    "precedent": "characterize-e98f9d6a-1ec0-4ae5-b5ca-08919302d775",
-                    "sample": "sample9",
-                    "start": 3737
+                    "start": 3075
                 },
                 {
                     "details": {
                         "destination": "Tray1",
                         "source": "Characterization"
                     },
-                    "id": "characterization_to_storage--aaee48a1-a550-4a63-b082-6d4b51a6ab4a",
+                    "id": "characterization_to_storage--011749f2-c6ca-4151-9b20-50f8c26e7ceb",
                     "name": "characterization_to_storage",
-                    "precedent": "characterize-1e30a528-afea-4c6a-97c6-f81e8e3aaa55",
+                    "precedent": "characterize-4d5e6fa1-a2e0-4e36-a35a-e3a2516453bf",
                     "sample": "sample9",
-                    "start": 3820
+                    "start": 3158
                 }
             ]
         }
@@ -2265,10 +1635,10 @@
     "tasks": [
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate1",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--6d5b17d4-2051-44e5-b8b7-91769a6fc802",
+            "id": "storage_to_hotplate--4b9ab643-a8ac-492c-9046-f3118d295794",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample0",
@@ -2280,18 +1650,18 @@
                 "hotplate": "Hotplate1",
                 "temperature": 75
             },
-            "id": "anneal-12405246-344e-418e-b0f7-d869dc4ca96a",
+            "id": "anneal-d7aa8032-538f-473f-967a-011b38301ab9",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--6d5b17d4-2051-44e5-b8b7-91769a6fc802",
+            "precedent": "storage_to_hotplate--4b9ab643-a8ac-492c-9046-f3118d295794",
             "sample": "sample0",
             "start": 18
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate1",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--69fb325d-c2b0-4043-9614-3b77b1c5735b",
+            "id": "storage_to_hotplate--f0b2c7e9-8224-4d7c-87ca-6fb65d9eb912",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample1",
@@ -2303,18 +1673,18 @@
                 "hotplate": "Hotplate1",
                 "temperature": 75
             },
-            "id": "anneal-815f4e99-7b02-4ee7-a1e6-a7f3a9e6c59d",
+            "id": "anneal-c289d748-3fab-4b5a-b5b9-130ee87e8704",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--69fb325d-c2b0-4043-9614-3b77b1c5735b",
+            "precedent": "storage_to_hotplate--f0b2c7e9-8224-4d7c-87ca-6fb65d9eb912",
             "sample": "sample1",
             "start": 36
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate1",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--3685fe90-e189-49d3-b034-d8d00c2aafbb",
+            "id": "storage_to_hotplate--86dfc42f-9b3a-4f2a-939b-ce58b036b824",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample2",
@@ -2326,18 +1696,18 @@
                 "hotplate": "Hotplate1",
                 "temperature": 75
             },
-            "id": "anneal-599d4e20-1d42-4b3d-b494-b1c3485b677e",
+            "id": "anneal-eb141d26-29eb-4fa0-add2-5564ca458e7e",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--3685fe90-e189-49d3-b034-d8d00c2aafbb",
+            "precedent": "storage_to_hotplate--86dfc42f-9b3a-4f2a-939b-ce58b036b824",
             "sample": "sample2",
             "start": 54
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate1",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--ea13045b-7890-4551-9284-5822291ce7ed",
+            "id": "storage_to_hotplate--fcacdaf0-d34c-4324-a261-fb8571fcdb87",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample3",
@@ -2349,18 +1719,18 @@
                 "hotplate": "Hotplate1",
                 "temperature": 75
             },
-            "id": "anneal-ec494972-9c59-4618-9f08-dd23580eed1b",
+            "id": "anneal-2fb87710-704f-44b8-9951-3fbf0761a532",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--ea13045b-7890-4551-9284-5822291ce7ed",
+            "precedent": "storage_to_hotplate--fcacdaf0-d34c-4324-a261-fb8571fcdb87",
             "sample": "sample3",
             "start": 72
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate1",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--412c9dd8-a32d-43ba-9cb8-5fb83b4a7b4c",
+            "id": "storage_to_hotplate--08de737c-47cb-4fcf-9432-34ce092ab9a2",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample4",
@@ -2372,18 +1742,18 @@
                 "hotplate": "Hotplate1",
                 "temperature": 75
             },
-            "id": "anneal-e9594185-efa2-4696-9610-b143259f0783",
+            "id": "anneal-fc627f52-4a29-4fea-995e-6e189a1c5c33",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--412c9dd8-a32d-43ba-9cb8-5fb83b4a7b4c",
+            "precedent": "storage_to_hotplate--08de737c-47cb-4fcf-9432-34ce092ab9a2",
             "sample": "sample4",
             "start": 90
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate2",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--9e7343e2-d72e-4f7c-8a71-f5e075c7cf1f",
+            "id": "storage_to_hotplate--cc662dd4-1a11-47f4-bae1-e8f6962975eb",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample5",
@@ -2395,18 +1765,18 @@
                 "hotplate": "Hotplate2",
                 "temperature": 125
             },
-            "id": "anneal-168e770d-8653-470a-ba66-77b0134c999f",
+            "id": "anneal-a19c1570-63b3-4262-94ef-9a71ff9db4e1",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--9e7343e2-d72e-4f7c-8a71-f5e075c7cf1f",
+            "precedent": "storage_to_hotplate--cc662dd4-1a11-47f4-bae1-e8f6962975eb",
             "sample": "sample5",
             "start": 108
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate2",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--1bc7d34b-a299-469c-9721-76d3cfc6812e",
+            "id": "storage_to_hotplate--4a0c33b0-0ef8-4222-b1af-c263bb55f82a",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample6",
@@ -2418,18 +1788,18 @@
                 "hotplate": "Hotplate2",
                 "temperature": 125
             },
-            "id": "anneal-e8e5e9e5-1949-4900-8e11-edf9fe2c3637",
+            "id": "anneal-2d728596-5835-4a22-9622-9edb50ed517e",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--1bc7d34b-a299-469c-9721-76d3cfc6812e",
+            "precedent": "storage_to_hotplate--4a0c33b0-0ef8-4222-b1af-c263bb55f82a",
             "sample": "sample6",
             "start": 126
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate2",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--3d5685ad-3d25-408b-b0ba-e441678e3872",
+            "id": "storage_to_hotplate--3c370d01-ac06-4fcc-b9a1-d41456e92252",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample7",
@@ -2441,18 +1811,18 @@
                 "hotplate": "Hotplate2",
                 "temperature": 125
             },
-            "id": "anneal-eb9d294b-2b5a-4002-b95b-2f5f4cc56179",
+            "id": "anneal-f21dc79a-360b-48ef-ba52-024acb92e4ea",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--3d5685ad-3d25-408b-b0ba-e441678e3872",
+            "precedent": "storage_to_hotplate--3c370d01-ac06-4fcc-b9a1-d41456e92252",
             "sample": "sample7",
             "start": 144
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate2",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--38e46fce-0a97-453d-b070-b8ff5d2a01d1",
+            "id": "storage_to_hotplate--52defb95-7756-400b-978b-313b73f23279",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample8",
@@ -2464,18 +1834,18 @@
                 "hotplate": "Hotplate2",
                 "temperature": 125
             },
-            "id": "anneal-92e24b04-9696-44de-bbc7-be1e8fc51302",
+            "id": "anneal-eeeb1d5b-ab02-4896-a6ec-a7fa8d15227e",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--38e46fce-0a97-453d-b070-b8ff5d2a01d1",
+            "precedent": "storage_to_hotplate--52defb95-7756-400b-978b-313b73f23279",
             "sample": "sample8",
             "start": 162
         },
         {
             "details": {
-                "destination": "Hotplate3",
+                "destination": "Hotplate2",
                 "source": "Tray1"
             },
-            "id": "storage_to_hotplate--4e32ca3d-8cda-4e7c-895e-b6011954b605",
+            "id": "storage_to_hotplate--6e9cb02f-54c3-4cc9-99ac-bd73bd7fd5dd",
             "name": "storage_to_hotplate",
             "precedent": null,
             "sample": "sample9",
@@ -2487,402 +1857,338 @@
                 "hotplate": "Hotplate2",
                 "temperature": 125
             },
-            "id": "anneal-5f50e628-9d03-46f0-b6c0-64c285a0e3ae",
+            "id": "anneal-536d36a8-e302-4a2b-bf67-31db3d0750cb",
             "name": "anneal",
-            "precedent": "storage_to_hotplate--4e32ca3d-8cda-4e7c-895e-b6011954b605",
+            "precedent": "storage_to_hotplate--6e9cb02f-54c3-4cc9-99ac-bd73bd7fd5dd",
             "sample": "sample9",
             "start": 180
         },
         {
             "details": {
-                "destination": "Characterization",
-                "source": "Hotplate3"
+                "destination": "Tray1",
+                "source": "Hotplate1"
             },
-            "id": "hotplate_to_characterization--170d5a6e-9617-4f29-8c65-03fe890a1926",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-12405246-344e-418e-b0f7-d869dc4ca96a",
+            "id": "hotplate_to_storage--7bd6cdc3-8e37-4db7-a771-3eecf5fcb1ef",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-d7aa8032-538f-473f-967a-011b38301ab9",
             "sample": "sample0",
             "start": 1818
         },
         {
             "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
+                "duration": 180
             },
-            "duration": 83,
-            "id": "characterize-aaedae3c-34b9-41ce-ba10-c3f9572c48a6",
-            "name": "characterize",
-            "precedent": "hotplate_to_characterization--170d5a6e-9617-4f29-8c65-03fe890a1926",
+            "id": "rest-d9c49535-40c2-4426-ae17-d45aa014f2c4",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--7bd6cdc3-8e37-4db7-a771-3eecf5fcb1ef",
             "sample": "sample0",
             "start": 1836
         },
         {
             "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
+                "destination": "Tray1",
+                "source": "Hotplate1"
             },
-            "duration": 83,
-            "id": "characterize-6f477574-f7ce-4b30-8d2c-7d4e5b097893",
-            "name": "characterize",
-            "precedent": "characterize-aaedae3c-34b9-41ce-ba10-c3f9572c48a6",
+            "id": "hotplate_to_storage--a746cca5-d74f-4c7d-9c73-0cbebdbf63fd",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-c289d748-3fab-4b5a-b5b9-130ee87e8704",
+            "sample": "sample1",
+            "start": 1836
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-99b82595-f90e-47b9-8cf7-fd5f2352dacf",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--a746cca5-d74f-4c7d-9c73-0cbebdbf63fd",
+            "sample": "sample1",
+            "start": 1854
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate1"
+            },
+            "id": "hotplate_to_storage--cc08f3c3-10a9-49cb-9bec-d69aa1089c6b",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-eb141d26-29eb-4fa0-add2-5564ca458e7e",
+            "sample": "sample2",
+            "start": 1854
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-73fe09c6-65f5-4cb2-a097-91333a3a5c1e",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--cc08f3c3-10a9-49cb-9bec-d69aa1089c6b",
+            "sample": "sample2",
+            "start": 1872
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate1"
+            },
+            "id": "hotplate_to_storage--cc5c247e-d03d-41b4-ac75-71138640ac6f",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-2fb87710-704f-44b8-9951-3fbf0761a532",
+            "sample": "sample3",
+            "start": 1872
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-c0b8d8d7-c949-43dc-8e44-bd1bd576564c",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--cc5c247e-d03d-41b4-ac75-71138640ac6f",
+            "sample": "sample3",
+            "start": 1890
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate1"
+            },
+            "id": "hotplate_to_storage--1530c6df-2232-439b-aca6-516d7c36adcc",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-fc627f52-4a29-4fea-995e-6e189a1c5c33",
+            "sample": "sample4",
+            "start": 1890
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-44ff415a-230d-4b10-a954-9b3430b5c23b",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--1530c6df-2232-439b-aca6-516d7c36adcc",
+            "sample": "sample4",
+            "start": 1908
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate2"
+            },
+            "id": "hotplate_to_storage--733dee29-93cb-4f44-991e-9e781b0d3bdb",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-a19c1570-63b3-4262-94ef-9a71ff9db4e1",
+            "sample": "sample5",
+            "start": 1908
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-9f8ffcc5-249b-4e69-9cec-bc32460ba232",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--733dee29-93cb-4f44-991e-9e781b0d3bdb",
+            "sample": "sample5",
+            "start": 1926
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate2"
+            },
+            "id": "hotplate_to_storage--fa7c0312-2f1a-453e-ac3b-22f74fbbfad2",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-2d728596-5835-4a22-9622-9edb50ed517e",
+            "sample": "sample6",
+            "start": 1926
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-733672f0-6649-4360-b749-5348ea73ac49",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--fa7c0312-2f1a-453e-ac3b-22f74fbbfad2",
+            "sample": "sample6",
+            "start": 1944
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate2"
+            },
+            "id": "hotplate_to_storage--ccb350fa-8502-4d29-a582-daa31de7e7e7",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-f21dc79a-360b-48ef-ba52-024acb92e4ea",
+            "sample": "sample7",
+            "start": 1944
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-c53fd133-e491-4f71-8037-fe60ef9b909b",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--ccb350fa-8502-4d29-a582-daa31de7e7e7",
+            "sample": "sample7",
+            "start": 1962
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate2"
+            },
+            "id": "hotplate_to_storage--0878f94e-1231-40b4-846d-7c1d0ca3405a",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-eeeb1d5b-ab02-4896-a6ec-a7fa8d15227e",
+            "sample": "sample8",
+            "start": 1962
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-834e49cb-0147-44d7-b01b-a116ebe89a57",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--0878f94e-1231-40b4-846d-7c1d0ca3405a",
+            "sample": "sample8",
+            "start": 1980
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Hotplate2"
+            },
+            "id": "hotplate_to_storage--143c17df-5978-4696-b996-cfb5444a772d",
+            "name": "hotplate_to_storage",
+            "precedent": "anneal-536d36a8-e302-4a2b-bf67-31db3d0750cb",
+            "sample": "sample9",
+            "start": 1980
+        },
+        {
+            "details": {
+                "duration": 180
+            },
+            "id": "rest-be01faf2-b828-4cdf-879e-da41e6a145b4",
+            "name": "rest",
+            "precedent": "hotplate_to_storage--143c17df-5978-4696-b996-cfb5444a772d",
+            "sample": "sample9",
+            "start": 1998
+        },
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--29e01b96-296f-4225-963c-37308eb5922e",
+            "name": "storage_to_characterization",
+            "precedent": "rest-d9c49535-40c2-4426-ae17-d45aa014f2c4",
             "sample": "sample0",
-            "start": 1919
+            "start": 2016
         },
         {
             "details": {
-                "destination": "Tray1",
-                "source": "Characterization"
+                "characterization_tasks": [
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 1
+                        },
+                        "duration": 0.05,
+                        "name": "Brightfield",
+                        "position": 164.4,
+                        "station": "brightfield"
+                    },
+                    {
+                        "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 1
+                        },
+                        "duration": 0.52,
+                        "name": "PL_635nm",
+                        "position": 287,
+                        "station": "pl_red"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 2
+                        },
+                        "duration": 4.6,
+                        "name": "Transmission",
+                        "position": 287,
+                        "station": "transmission"
+                    },
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 50
+                        },
+                        "duration": 2.5,
+                        "name": "Darkfield",
+                        "position": 74.2,
+                        "station": "darkfield"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.05,
+                                0.2,
+                                1,
+                                5
+                            ],
+                            "num_frames": 5
+                        },
+                        "duration": 31.25,
+                        "name": "PLImaging",
+                        "position": 74.2,
+                        "station": "pl_imaging"
+                    }
+                ]
             },
-            "id": "characterization_to_storage--9ffeefd1-6285-4d34-ba1a-fc7c4b221830",
-            "name": "characterization_to_storage",
-            "precedent": "characterize-6f477574-f7ce-4b30-8d2c-7d4e5b097893",
+            "duration": 83,
+            "id": "characterize-07811b5a-f9a9-4294-8d9f-81422acdc532",
+            "name": "characterize",
+            "precedent": "storage_to_characterization--29e01b96-296f-4225-963c-37308eb5922e",
             "sample": "sample0",
-            "start": 2002
-        },
-        {
-            "details": {
-                "destination": "Characterization",
-                "source": "Hotplate3"
-            },
-            "id": "hotplate_to_characterization--aca462a6-2697-4674-b87b-328949303fec",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-815f4e99-7b02-4ee7-a1e6-a7f3a9e6c59d",
-            "sample": "sample1",
-            "start": 2020
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-076795fb-8de5-4d1c-bf91-83585e69a4b8",
-            "name": "characterize",
-            "precedent": "hotplate_to_characterization--aca462a6-2697-4674-b87b-328949303fec",
-            "sample": "sample1",
-            "start": 2038
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-fabf8757-bc54-4626-876f-a68372158262",
-            "name": "characterize",
-            "precedent": "characterize-076795fb-8de5-4d1c-bf91-83585e69a4b8",
-            "sample": "sample1",
-            "start": 2121
+            "start": 2031
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--e8266a89-8840-4ae8-84af-74bf1f19ad4f",
+            "id": "characterization_to_storage--d1500c16-b35d-41b9-98f3-f915b6866266",
             "name": "characterization_to_storage",
-            "precedent": "characterize-fabf8757-bc54-4626-876f-a68372158262",
+            "precedent": "characterize-07811b5a-f9a9-4294-8d9f-81422acdc532",
+            "sample": "sample0",
+            "start": 2114
+        },
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--690bf581-43a1-4b1e-8798-d37102f70be1",
+            "name": "storage_to_characterization",
+            "precedent": "rest-99b82595-f90e-47b9-8cf7-fd5f2352dacf",
             "sample": "sample1",
-            "start": 2204
-        },
-        {
-            "details": {
-                "destination": "Characterization",
-                "source": "Hotplate3"
-            },
-            "id": "hotplate_to_characterization--f0ce553b-286e-4b0a-8f19-138e43baf156",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-599d4e20-1d42-4b3d-b494-b1c3485b677e",
-            "sample": "sample2",
-            "start": 2222
+            "start": 2132
         },
         {
             "details": {
@@ -2962,117 +2268,33 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-10bb55ea-be41-489c-9970-dc0ac6f1da39",
+            "id": "characterize-33165d65-efe2-4e04-b8d3-1c5edc052295",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--f0ce553b-286e-4b0a-8f19-138e43baf156",
-            "sample": "sample2",
-            "start": 2240
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-7fc9109b-d1b6-48a5-a384-5dee82bb5108",
-            "name": "characterize",
-            "precedent": "characterize-10bb55ea-be41-489c-9970-dc0ac6f1da39",
-            "sample": "sample2",
-            "start": 2323
+            "precedent": "storage_to_characterization--690bf581-43a1-4b1e-8798-d37102f70be1",
+            "sample": "sample1",
+            "start": 2147
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--e36a9d06-42e6-460d-bced-fd6f4b90b105",
+            "id": "characterization_to_storage--0e476157-86d2-4a40-94b0-1688a16ded1c",
             "name": "characterization_to_storage",
-            "precedent": "characterize-7fc9109b-d1b6-48a5-a384-5dee82bb5108",
-            "sample": "sample2",
-            "start": 2406
+            "precedent": "characterize-33165d65-efe2-4e04-b8d3-1c5edc052295",
+            "sample": "sample1",
+            "start": 2230
         },
         {
             "details": {
                 "destination": "Characterization",
-                "source": "Hotplate3"
+                "source": "Tray1"
             },
-            "id": "hotplate_to_characterization--e443867d-9e0d-403a-a37b-9f7bb7b8d4f1",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-ec494972-9c59-4618-9f08-dd23580eed1b",
-            "sample": "sample3",
-            "start": 2424
+            "id": "storage_to_characterization--27ae6d8b-69b6-4bc7-b8c3-54f2e45bba06",
+            "name": "storage_to_characterization",
+            "precedent": "rest-73fe09c6-65f5-4cb2-a097-91333a3a5c1e",
+            "sample": "sample2",
+            "start": 2248
         },
         {
             "details": {
@@ -3152,117 +2374,33 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-851b6c15-4bcd-44d3-bfe4-3370f6c81406",
+            "id": "characterize-7ad42717-6a61-47e2-ae11-f39fc323ed69",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--e443867d-9e0d-403a-a37b-9f7bb7b8d4f1",
-            "sample": "sample3",
-            "start": 2442
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-217808dc-9153-4fd7-aec7-cc03384ceac1",
-            "name": "characterize",
-            "precedent": "characterize-851b6c15-4bcd-44d3-bfe4-3370f6c81406",
-            "sample": "sample3",
-            "start": 2525
+            "precedent": "storage_to_characterization--27ae6d8b-69b6-4bc7-b8c3-54f2e45bba06",
+            "sample": "sample2",
+            "start": 2263
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--453bb519-b28e-474b-b69d-edd61ab4c09b",
+            "id": "characterization_to_storage--c6100867-8c41-4cc4-9895-ce675101773d",
             "name": "characterization_to_storage",
-            "precedent": "characterize-217808dc-9153-4fd7-aec7-cc03384ceac1",
-            "sample": "sample3",
-            "start": 2608
+            "precedent": "characterize-7ad42717-6a61-47e2-ae11-f39fc323ed69",
+            "sample": "sample2",
+            "start": 2346
         },
         {
             "details": {
                 "destination": "Characterization",
-                "source": "Hotplate3"
+                "source": "Tray1"
             },
-            "id": "hotplate_to_characterization--c6524c1e-5744-42d1-8f93-0a367d2e4778",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-e9594185-efa2-4696-9610-b143259f0783",
-            "sample": "sample4",
-            "start": 2626
+            "id": "storage_to_characterization--2bb6908c-20e7-4d6a-8732-1afa186a6431",
+            "name": "storage_to_characterization",
+            "precedent": "rest-c0b8d8d7-c949-43dc-8e44-bd1bd576564c",
+            "sample": "sample3",
+            "start": 2364
         },
         {
             "details": {
@@ -3342,11 +2480,33 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-f2372e68-8ad8-4268-ba4f-8699b3f60b13",
+            "id": "characterize-4b5f1df6-a4e9-4579-841f-41fae3592670",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--c6524c1e-5744-42d1-8f93-0a367d2e4778",
+            "precedent": "storage_to_characterization--2bb6908c-20e7-4d6a-8732-1afa186a6431",
+            "sample": "sample3",
+            "start": 2379
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Characterization"
+            },
+            "id": "characterization_to_storage--ffcae62e-5f56-42e1-9337-f64409071658",
+            "name": "characterization_to_storage",
+            "precedent": "characterize-4b5f1df6-a4e9-4579-841f-41fae3592670",
+            "sample": "sample3",
+            "start": 2462
+        },
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--7a456f4f-9070-407b-874f-b839ef47f67b",
+            "name": "storage_to_characterization",
+            "precedent": "rest-44ff415a-230d-4b10-a954-9b3430b5c23b",
             "sample": "sample4",
-            "start": 2644
+            "start": 2480
         },
         {
             "details": {
@@ -3426,10 +2586,222 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-171b59cf-3e62-4699-b345-5ffdc13dcdaf",
+            "id": "characterize-49496705-1d0f-40e6-8b1a-6c6bc006d05f",
             "name": "characterize",
-            "precedent": "characterize-f2372e68-8ad8-4268-ba4f-8699b3f60b13",
+            "precedent": "storage_to_characterization--7a456f4f-9070-407b-874f-b839ef47f67b",
             "sample": "sample4",
+            "start": 2495
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Characterization"
+            },
+            "id": "characterization_to_storage--1f530402-7bb9-44f4-a3de-fbcc21ced165",
+            "name": "characterization_to_storage",
+            "precedent": "characterize-49496705-1d0f-40e6-8b1a-6c6bc006d05f",
+            "sample": "sample4",
+            "start": 2578
+        },
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--14a9e9a4-1b54-48bc-9653-b4785c5472bc",
+            "name": "storage_to_characterization",
+            "precedent": "rest-9f8ffcc5-249b-4e69-9cec-bc32460ba232",
+            "sample": "sample5",
+            "start": 2596
+        },
+        {
+            "details": {
+                "characterization_tasks": [
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 1
+                        },
+                        "duration": 0.05,
+                        "name": "Brightfield",
+                        "position": 164.4,
+                        "station": "brightfield"
+                    },
+                    {
+                        "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 1
+                        },
+                        "duration": 0.52,
+                        "name": "PL_635nm",
+                        "position": 287,
+                        "station": "pl_red"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 2
+                        },
+                        "duration": 4.6,
+                        "name": "Transmission",
+                        "position": 287,
+                        "station": "transmission"
+                    },
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 50
+                        },
+                        "duration": 2.5,
+                        "name": "Darkfield",
+                        "position": 74.2,
+                        "station": "darkfield"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.05,
+                                0.2,
+                                1,
+                                5
+                            ],
+                            "num_frames": 5
+                        },
+                        "duration": 31.25,
+                        "name": "PLImaging",
+                        "position": 74.2,
+                        "station": "pl_imaging"
+                    }
+                ]
+            },
+            "duration": 83,
+            "id": "characterize-127fdd45-9ab9-41cd-92bc-5d6be513175f",
+            "name": "characterize",
+            "precedent": "storage_to_characterization--14a9e9a4-1b54-48bc-9653-b4785c5472bc",
+            "sample": "sample5",
+            "start": 2611
+        },
+        {
+            "details": {
+                "destination": "Tray1",
+                "source": "Characterization"
+            },
+            "id": "characterization_to_storage--fdbbf06c-2703-4cbd-8c04-1d490987e255",
+            "name": "characterization_to_storage",
+            "precedent": "characterize-127fdd45-9ab9-41cd-92bc-5d6be513175f",
+            "sample": "sample5",
+            "start": 2694
+        },
+        {
+            "details": {
+                "destination": "Characterization",
+                "source": "Tray1"
+            },
+            "id": "storage_to_characterization--0aaaca67-52a5-4de7-94d3-e3b07b39c3cc",
+            "name": "storage_to_characterization",
+            "precedent": "rest-733672f0-6649-4360-b749-5348ea73ac49",
+            "sample": "sample6",
+            "start": 2712
+        },
+        {
+            "details": {
+                "characterization_tasks": [
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 1
+                        },
+                        "duration": 0.05,
+                        "name": "Brightfield",
+                        "position": 164.4,
+                        "station": "brightfield"
+                    },
+                    {
+                        "details": {
+                            "duration": 10,
+                            "exposure_time": 0.2,
+                            "num_measurements": 50
+                        },
+                        "duration": 10.219999999999999,
+                        "name": "Photostability_405nm",
+                        "position": 285,
+                        "station": "pl_blue"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 1
+                        },
+                        "duration": 0.52,
+                        "name": "PL_635nm",
+                        "position": 287,
+                        "station": "pl_red"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.1,
+                                0.2
+                            ],
+                            "num_scans": 2
+                        },
+                        "duration": 4.6,
+                        "name": "Transmission",
+                        "position": 287,
+                        "station": "transmission"
+                    },
+                    {
+                        "details": {
+                            "exposure_time": 0.05,
+                            "num_frames": 50
+                        },
+                        "duration": 2.5,
+                        "name": "Darkfield",
+                        "position": 74.2,
+                        "station": "darkfield"
+                    },
+                    {
+                        "details": {
+                            "exposure_times": [
+                                0.05,
+                                0.2,
+                                1,
+                                5
+                            ],
+                            "num_frames": 5
+                        },
+                        "duration": 31.25,
+                        "name": "PLImaging",
+                        "position": 74.2,
+                        "station": "pl_imaging"
+                    }
+                ]
+            },
+            "duration": 83,
+            "id": "characterize-6844d1e3-32cf-4ab0-84d3-b248e461d430",
+            "name": "characterize",
+            "precedent": "storage_to_characterization--0aaaca67-52a5-4de7-94d3-e3b07b39c3cc",
+            "sample": "sample6",
             "start": 2727
         },
         {
@@ -3437,21 +2809,21 @@
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--c647e214-3a97-4d85-b5e2-8ef80bb8aada",
+            "id": "characterization_to_storage--94ffd2c4-6b67-4153-8f10-f5b5a25e5ca6",
             "name": "characterization_to_storage",
-            "precedent": "characterize-171b59cf-3e62-4699-b345-5ffdc13dcdaf",
-            "sample": "sample4",
+            "precedent": "characterize-6844d1e3-32cf-4ab0-84d3-b248e461d430",
+            "sample": "sample6",
             "start": 2810
         },
         {
             "details": {
                 "destination": "Characterization",
-                "source": "Hotplate3"
+                "source": "Tray1"
             },
-            "id": "hotplate_to_characterization--7a31478d-f49f-4740-8a35-53f6e6f9e826",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-168e770d-8653-470a-ba66-77b0134c999f",
-            "sample": "sample5",
+            "id": "storage_to_characterization--9bb7cb5b-ecbf-4eca-a375-9658cc059f16",
+            "name": "storage_to_characterization",
+            "precedent": "rest-c53fd133-e491-4f71-8037-fe60ef9b909b",
+            "sample": "sample7",
             "start": 2828
         },
         {
@@ -3532,117 +2904,33 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-e37be7f3-1531-46f4-9035-f1b40417e9d2",
+            "id": "characterize-ef0b922d-a6ac-4308-9228-6fecc330d5d0",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--7a31478d-f49f-4740-8a35-53f6e6f9e826",
-            "sample": "sample5",
-            "start": 2846
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-8262fbcd-e98e-45ef-a31a-9706d4e62933",
-            "name": "characterize",
-            "precedent": "characterize-e37be7f3-1531-46f4-9035-f1b40417e9d2",
-            "sample": "sample5",
-            "start": 2929
+            "precedent": "storage_to_characterization--9bb7cb5b-ecbf-4eca-a375-9658cc059f16",
+            "sample": "sample7",
+            "start": 2843
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--b5f2ca59-14bb-43cb-8dbf-f7d268291e4d",
+            "id": "characterization_to_storage--900142f9-f77f-4457-8129-e4a03afe68f4",
             "name": "characterization_to_storage",
-            "precedent": "characterize-8262fbcd-e98e-45ef-a31a-9706d4e62933",
-            "sample": "sample5",
-            "start": 3012
+            "precedent": "characterize-ef0b922d-a6ac-4308-9228-6fecc330d5d0",
+            "sample": "sample7",
+            "start": 2926
         },
         {
             "details": {
                 "destination": "Characterization",
-                "source": "Hotplate3"
+                "source": "Tray1"
             },
-            "id": "hotplate_to_characterization--167ddb7f-5717-44f0-bb03-ca0c67bc78c8",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-e8e5e9e5-1949-4900-8e11-edf9fe2c3637",
-            "sample": "sample6",
-            "start": 3030
+            "id": "storage_to_characterization--5e00192a-3dfa-4e3d-95be-b70182ab9a11",
+            "name": "storage_to_characterization",
+            "precedent": "rest-834e49cb-0147-44d7-b01b-a116ebe89a57",
+            "sample": "sample8",
+            "start": 2944
         },
         {
             "details": {
@@ -3722,117 +3010,33 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-de5c1ea1-2c24-49fc-a391-e91486824557",
+            "id": "characterize-a8a4d306-fa86-4b22-ac7e-90ffc39402a7",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--167ddb7f-5717-44f0-bb03-ca0c67bc78c8",
-            "sample": "sample6",
-            "start": 3048
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-e1dec099-89fe-439a-b3f6-c1ae6bc3e45f",
-            "name": "characterize",
-            "precedent": "characterize-de5c1ea1-2c24-49fc-a391-e91486824557",
-            "sample": "sample6",
-            "start": 3131
+            "precedent": "storage_to_characterization--5e00192a-3dfa-4e3d-95be-b70182ab9a11",
+            "sample": "sample8",
+            "start": 2959
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--76277d51-0f23-4f11-afa6-3e19040516e0",
+            "id": "characterization_to_storage--7259e41d-c22f-406a-8fde-52c3cab496b0",
             "name": "characterization_to_storage",
-            "precedent": "characterize-e1dec099-89fe-439a-b3f6-c1ae6bc3e45f",
-            "sample": "sample6",
-            "start": 3214
+            "precedent": "characterize-a8a4d306-fa86-4b22-ac7e-90ffc39402a7",
+            "sample": "sample8",
+            "start": 3042
         },
         {
             "details": {
                 "destination": "Characterization",
-                "source": "Hotplate3"
+                "source": "Tray1"
             },
-            "id": "hotplate_to_characterization--f5d4c65f-7f41-4569-8372-5cec9f16f094",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-eb9d294b-2b5a-4002-b95b-2f5f4cc56179",
-            "sample": "sample7",
-            "start": 3232
+            "id": "storage_to_characterization--653bd38c-184f-4151-b7fa-2be8f4b45970",
+            "name": "storage_to_characterization",
+            "precedent": "rest-be01faf2-b828-4cdf-879e-da41e6a145b4",
+            "sample": "sample9",
+            "start": 3060
         },
         {
             "details": {
@@ -3912,486 +3116,22 @@
                 ]
             },
             "duration": 83,
-            "id": "characterize-c5c9fc85-32ff-4c2c-b8f7-3ed8ff6b8f85",
+            "id": "characterize-4d5e6fa1-a2e0-4e36-a35a-e3a2516453bf",
             "name": "characterize",
-            "precedent": "hotplate_to_characterization--f5d4c65f-7f41-4569-8372-5cec9f16f094",
-            "sample": "sample7",
-            "start": 3250
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-3e2c002d-1163-4536-9472-0435b3667912",
-            "name": "characterize",
-            "precedent": "characterize-c5c9fc85-32ff-4c2c-b8f7-3ed8ff6b8f85",
-            "sample": "sample7",
-            "start": 3333
+            "precedent": "storage_to_characterization--653bd38c-184f-4151-b7fa-2be8f4b45970",
+            "sample": "sample9",
+            "start": 3075
         },
         {
             "details": {
                 "destination": "Tray1",
                 "source": "Characterization"
             },
-            "id": "characterization_to_storage--3c11fe22-4723-40a2-8e24-fb8d1467a02a",
+            "id": "characterization_to_storage--011749f2-c6ca-4151-9b20-50f8c26e7ceb",
             "name": "characterization_to_storage",
-            "precedent": "characterize-3e2c002d-1163-4536-9472-0435b3667912",
-            "sample": "sample7",
-            "start": 3416
-        },
-        {
-            "details": {
-                "destination": "Characterization",
-                "source": "Hotplate3"
-            },
-            "id": "hotplate_to_characterization--10645da6-3e58-47ae-bdd3-4dc178533cb1",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-92e24b04-9696-44de-bbc7-be1e8fc51302",
-            "sample": "sample8",
-            "start": 3434
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-85e10387-4314-4876-97f0-b0957e2ac69f",
-            "name": "characterize",
-            "precedent": "hotplate_to_characterization--10645da6-3e58-47ae-bdd3-4dc178533cb1",
-            "sample": "sample8",
-            "start": 3452
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-f3c50b77-4290-4bd4-a740-e5068f5e8ddf",
-            "name": "characterize",
-            "precedent": "characterize-85e10387-4314-4876-97f0-b0957e2ac69f",
-            "sample": "sample8",
-            "start": 3535
-        },
-        {
-            "details": {
-                "destination": "Tray1",
-                "source": "Characterization"
-            },
-            "id": "characterization_to_storage--7cb0f03e-21cc-4ff3-8f8e-f76b5101ed33",
-            "name": "characterization_to_storage",
-            "precedent": "characterize-f3c50b77-4290-4bd4-a740-e5068f5e8ddf",
-            "sample": "sample8",
-            "start": 3618
-        },
-        {
-            "details": {
-                "destination": "Characterization",
-                "source": "Hotplate3"
-            },
-            "id": "hotplate_to_characterization--44a73b15-46f5-4c4e-bf97-1407ff7360bf",
-            "name": "hotplate_to_characterization",
-            "precedent": "anneal-5f50e628-9d03-46f0-b6c0-64c285a0e3ae",
+            "precedent": "characterize-4d5e6fa1-a2e0-4e36-a35a-e3a2516453bf",
             "sample": "sample9",
-            "start": 3636
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-e98f9d6a-1ec0-4ae5-b5ca-08919302d775",
-            "name": "characterize",
-            "precedent": "hotplate_to_characterization--44a73b15-46f5-4c4e-bf97-1407ff7360bf",
-            "sample": "sample9",
-            "start": 3654
-        },
-        {
-            "details": {
-                "characterization_tasks": [
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 1
-                        },
-                        "duration": 0.05,
-                        "name": "Brightfield",
-                        "position": 164.4,
-                        "station": "brightfield"
-                    },
-                    {
-                        "details": {
-                            "duration": 10,
-                            "exposure_time": 0.2,
-                            "num_measurements": 50
-                        },
-                        "duration": 10.219999999999999,
-                        "name": "Photostability_405nm",
-                        "position": 285,
-                        "station": "pl_blue"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 1
-                        },
-                        "duration": 0.52,
-                        "name": "PL_635nm",
-                        "position": 287,
-                        "station": "pl_red"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.1,
-                                0.2
-                            ],
-                            "num_scans": 2
-                        },
-                        "duration": 4.6,
-                        "name": "Transmission",
-                        "position": 287,
-                        "station": "transmission"
-                    },
-                    {
-                        "details": {
-                            "exposure_time": 0.05,
-                            "num_frames": 50
-                        },
-                        "duration": 2.5,
-                        "name": "Darkfield",
-                        "position": 74.2,
-                        "station": "darkfield"
-                    },
-                    {
-                        "details": {
-                            "exposure_times": [
-                                0.05,
-                                0.2,
-                                1,
-                                5
-                            ],
-                            "num_frames": 5
-                        },
-                        "duration": 31.25,
-                        "name": "PLImaging",
-                        "position": 74.2,
-                        "station": "pl_imaging"
-                    }
-                ]
-            },
-            "duration": 83,
-            "id": "characterize-1e30a528-afea-4c6a-97c6-f81e8e3aaa55",
-            "name": "characterize",
-            "precedent": "characterize-e98f9d6a-1ec0-4ae5-b5ca-08919302d775",
-            "sample": "sample9",
-            "start": 3737
-        },
-        {
-            "details": {
-                "destination": "Tray1",
-                "source": "Characterization"
-            },
-            "id": "characterization_to_storage--aaee48a1-a550-4a63-b082-6d4b51a6ab4a",
-            "name": "characterization_to_storage",
-            "precedent": "characterize-1e30a528-afea-4c6a-97c6-f81e8e3aaa55",
-            "sample": "sample9",
-            "start": 3820
+            "start": 3158
         }
     ]
 }

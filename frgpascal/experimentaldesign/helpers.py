@@ -1,7 +1,14 @@
 from enum import unique
 import numpy as np
 import itertools
-from frgpascal.experimentaldesign.tasks import Solution, Sample, Spincoat, Drop, Anneal
+from frgpascal.experimentaldesign.tasks import (
+    Solution,
+    Sample,
+    Spincoat,
+    Drop,
+    Anneal,
+    Rest,
+)
 from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
@@ -11,10 +18,9 @@ from mixsol.mix import _solutions_to_matrix
 from frgpascal.system import generate_workers
 from frgpascal.workers import Worker_Hotplate
 
+WORKERS = generate_workers()
 HOTPLATE_NAMES = [
-    name
-    for name, worker in generate_workers().items()
-    if isinstance(worker, Worker_Hotplate)
+    name for name, worker in WORKERS.items() if isinstance(worker, Worker_Hotplate)
 ]
 
 #### General
@@ -268,6 +274,9 @@ def load_sample_trays(samples: list, available_trays: list):
             sample, current_tray, trays
         )
         sample.storage_slot = storage_slot
+        for task in sample.worklist:
+            if isinstance(task, Rest):
+                task.workers = [WORKERS[storage_slot["tray"]]]
 
 
 def samples_to_dataframe(samples):
@@ -349,6 +358,7 @@ def assign_hotplates(samples: list):
     for temperature, hp in zip(unique_temperatures, HOTPLATE_NAMES):
         for task in temperatures[temperature]:
             task.hotplate = hp
+            task.workers = [WORKERS[hp]]
         hotplate_settings[hp] = temperature
     return hotplate_settings
 

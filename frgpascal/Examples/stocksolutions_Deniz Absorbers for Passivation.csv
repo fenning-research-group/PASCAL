@@ -1,10 +1,10 @@
 Labware,Well,Volume (uL),Solutes,Molarity (M),Solvent
-4mL_b_AntisolventTray,D1,Empty Vial,,1,MethylAcetate
-4mL_a_SolutionTray,D1,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.8_Br0.1_Cl0.1)3)1.09,1,DMF3_DMSO1
 4mL_a_SolutionTray,B2,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.9_Br0.1)3)1.09,1,DMF3_DMSO1
-4mL_a_SolutionTray,A2,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.8_Br0.2)3)1.09,1,DMF3_DMSO1
-4mL_a_SolutionTray,C1,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.9_Cl0.1)3)1.09,1,DMF3_DMSO1
-4mL_a_SolutionTray,D2,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.9_Br0.1)3)1.09,1.25,DMF3_DMSO1
-4mL_a_SolutionTray,B1,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.9_Cl0.1)3)1.09,1,DMF3_DMSO1
 4mL_a_SolutionTray,C2,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.8_Br0.2)3)1.09,1,DMF3_DMSO1
+4mL_a_SolutionTray,B1,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.9_Cl0.1)3)1.09,1,DMF3_DMSO1
+4mL_a_SolutionTray,D2,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.9_Br0.1)3)1.09,1.25,DMF3_DMSO1
+4mL_a_SolutionTray,C1,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.9_Cl0.1)3)1.09,1,DMF3_DMSO1
+4mL_a_SolutionTray,D1,Empty Vial,FA0.78_Cs0.22_(Pb_(I0.8_Br0.1_Cl0.1)3)1.09,1,DMF3_DMSO1
+4mL_b_AntisolventTray,D1,Empty Vial,,1,MethylAcetate
+4mL_a_SolutionTray,A2,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.8_Br0.2)3)1.09,1,DMF3_DMSO1
 4mL_a_SolutionTray,A1,Empty Vial,FA0.78_Cs0.12_MA0.1_(Pb_(I0.8_Br0.1_Cl0.1)3)1.09,1,DMF3_DMSO1
