@@ -28,7 +28,7 @@ def generate_workers(maestro=None):
     st2.name = "Tray2"
     cl = Worker_Characterization(**kws)
 
-    return {w.name: w for w in [gg, sclh, hp1, st1, st2, cl]}
+    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl]}
 
 
 ALL_WORKERS = generate_workers()

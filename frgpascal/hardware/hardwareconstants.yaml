@@ -64,7 +64,7 @@ gripper:
   springs_loaded_threshold: 2000 #(650 original value) if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
   catch_attempts: 3 #number of times to try picking up a sample before erroring out
 
-hotplate:
+hotplates:
   hp1:
     device_identifiers:
       vid: 1027

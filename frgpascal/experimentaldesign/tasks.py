@@ -27,14 +27,6 @@ with open(
 ) as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
-
-# gg = Worker_GantryGripper(planning=True)
-# sclh = Worker_SpincoaterLiquidHandler(planning=True)
-# hp = Worker_Hotplate(capacity=25, planning=True)
-# st1 = Worker_Storage(capacity=45, planning=True, initial_fill=45)
-# cl = Worker_Characterization(planning=True)
-
-# workers = [gg, sclh, hp, st, cl]
 workers = generate_workers()
 ALL_TASKS = {
     task: {
@@ -82,7 +74,11 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self, name: str, substrate: str, worklist: list, storage_slot=None,
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -420,11 +416,17 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(asp + stage + disp - self.drops[0].time, 0,)
+            duration += max(
+                asp + stage + disp - self.drops[0].time,
+                0,
+            )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
+            duration += max(
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -474,7 +476,7 @@ class Anneal(Task):
         self,
         duration: float,
         temperature: float,
-        hotplate: str = "Hotplate1",
+        hotplate: str = None,
         immediate=True,
     ):
         """
@@ -486,13 +488,15 @@ class Anneal(Task):
         """
         self.duration = duration
         self.temperature = temperature
-        if hotplate not in ["Hotplate1", "Hotplate2", "Hotplate3"]:
+        if hotplate not in [None, "Hotplate1", "Hotplate2", "Hotplate3"]:
             raise ValueError(
                 "hotplate must be one of 'Hotplate1', 'Hotplate2', 'Hotplate3'"
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal", duration=self.duration, immediate=immediate,
+            task="anneal",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -597,7 +601,9 @@ class Characterize(Task):
             self.duration += distance * m + b
 
         super().__init__(
-            task="characterize", duration=self.duration, immediate=immediate,
+            task="characterize",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def to_dict(self):
@@ -617,53 +623,3 @@ class Characterize(Task):
         for t in self.characterization_tasks:
             s += "\n\t" + t.name
         return s
-
-
-### build task list for a sample
-def generate_sample_worklist(sample: Sample):
-    worklist = deepcopy(sample.worklist)
-    for task0, task1 in zip(worklist, worklist[1:]):
-        task1.precedent = task0  # task1 is preceded by task0
-
-    sample_tasklist = []
-    p0 = Worker_Storage  # sample begins at storage
-    for task in worklist:
-        task.sample = sample
-        p1 = task.workers[0]
-        if p0 != p1:
-            transition_task = TRANSITION_TASKS[p0][p1]
-            if Worker_Hotplate in [p0, p1]:
-                immediate = True
-            else:
-                immediate = task.immediate
-            sample_tasklist.append(
-                Task(
-                    sample=sample,
-                    task=transition_task,
-                    immediate=immediate,
-                    precedent=task.precedent,
-                )
-            )
-            task.precedent = sample_tasklist[-1]
-        sample_tasklist.append(task)
-        p0 = p1  # update location for next task
-    if p1 != Worker_Storage:
-        transition_task = TRANSITION_TASKS[p0][Worker_Storage]
-        if p1 == Worker_Hotplate:
-            immediate = True
-        else:
-            immediate = False
-        sample_tasklist.append(
-            Task(
-                sample=sample,
-                task=transition_task,
-                precedent=sample_tasklist[-1],
-                immediate=immediate,
-            )
-        )  # sample ends at storage
-
-    min_start = 0
-    for task in sample_tasklist:
-        task.min_start = min_start
-        min_start += task.duration
-    return sample_tasklist

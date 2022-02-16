@@ -1,13 +1,21 @@
+from enum import unique
 import numpy as np
 import itertools
-from frgpascal.experimentaldesign.tasks import Solution, Sample, Spincoat, Drop
-from scipy.optimize import nnls
+from frgpascal.experimentaldesign.tasks import Solution, Sample, Spincoat, Drop, Anneal
 from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
 import pandas as pd
 import mixsol
 from mixsol.mix import _solutions_to_matrix
+from frgpascal.system import generate_workers
+from frgpascal.workers import Worker_Hotplate
+
+HOTPLATE_NAMES = [
+    name
+    for name, worker in generate_workers().items()
+    if isinstance(worker, Worker_Hotplate)
+]
 
 #### General
 def generate_unique_id():
@@ -59,15 +67,6 @@ def where_to_store(volume, options):
         if volume <= ll.volume and len(ll._openwells) > 0:
             return ll
     raise ValueError(f"No options have enough space to hold {volume/1e3:.2f} mL!")
-
-
-# def suggest_stock_solutions(target_solutions):
-#     """
-#     suggests smallest number of stock solutions required to cover the
-#     target solution space
-#     """
-
-#     return
 
 
 def interpolate_solutions(solutions: list, steps: int) -> list:
@@ -195,7 +194,7 @@ def build_sample_list(
     steps: list,
     solution_mesh: dict = {},
     n_repeats: int = 1,
-    available_trays: list = None,
+    starting_index: int = 0,
 ) -> list:
     """
     Permutes experimental mesh into sample list
@@ -207,21 +206,6 @@ def build_sample_list(
             listedsteps.append([step])
         else:
             listedsteps.append(step)
-
-    def get_storage_slot(name, current_tray, trays):
-        loaded = False
-        while not loaded:
-            try:
-                slot = current_tray.load(name)
-                loaded = True
-            except:
-                try:
-                    current_tray = next(trays)
-                except StopIteration:
-                    raise StopIteration(
-                        "No more slots available in your storage trays!"
-                    )
-        return {"tray": current_tray.name, "slot": slot}, current_tray, trays
 
     all_worklists = []
     for worklist in itertools.product(*listedsteps):
@@ -235,7 +219,7 @@ def build_sample_list(
                 this_set_of_steps.append([deepcopy(step)])
         all_worklists += list(itertools.product(*this_set_of_steps))
 
-    idx = 0
+    idx = starting_index
     for wl in all_worklists:
         for sub in input_substrates:
             for r in range(n_repeats):
@@ -249,9 +233,6 @@ def build_sample_list(
                     # sampleid=sampleid
                 )
                 sample_list.append(this_sample)
-
-    if available_trays is not None:
-        load_sample_trays(samples=sample_list, available_trays=available_trays)
     return sample_list
 
 
@@ -339,6 +320,37 @@ def samples_to_dataframe(samples):
                         dfdata[key].append(v)
 
     return pd.DataFrame(dfdata)
+
+
+def assign_hotplates(samples: list):
+    temperatures = {}
+
+    for s in samples:
+        for task in s.worklist:
+            if isinstance(task, Anneal):
+                if task.temperature not in temperatures:
+                    temperatures[task.temperature] = []
+                temperatures[task.temperature].append(task)
+
+    unique_temperatures = list(temperatures.keys())
+    unique_temperatures.sort()
+
+    if len(temperatures) > 3:
+        raise Exception(
+            f"Maximum three unique temperatures allowed: currently requesting {len(temperatures)} ({unique_temperatures})"
+        )
+
+    if max(unique_temperatures) > 200:
+        raise Exception(
+            f"Maximum hotplate temperature allowed is 200°C: currently requesting {max(unique_temperatures)}°C"
+        )
+
+    hotplate_settings = {}
+    for temperature, hp in zip(unique_temperatures, HOTPLATE_NAMES):
+        for task in temperatures[temperature]:
+            task.hotplate = hp
+        hotplate_settings[hp] = temperature
+    return hotplate_settings
 
 
 #### Set liquid storage locations + amounts needed
