@@ -71,21 +71,21 @@ hotplates:
       pid: 24577
       serial_number: 'AB0OYUYZA'
     address: 1 #rs485 address
-    p0: [273.4, 217.5, 88]
+    p0: [214.4,  73.3,  56.0]
   hp2:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: 'AB0OYQKDA'
     address: 2
-    p0: [273.4, 217.5, 88]
+    p0: [214.2, 216.3,  55.0 ]
   hp3:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: 'AB0OYQKPA'
     address: 3
-    p0: [273.4, 217.5, 88]
+    p0: [367.2, 217.3,  51.0]
     
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server

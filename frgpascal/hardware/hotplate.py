@@ -235,15 +235,11 @@ class HotPlate(Workspace):
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
-            name=name,
-            gantry=gantry,
-            gripper=gripper,
-            p0=p0,
-            **workspace_kwargs,
+            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs,
         )
         if id is not None:
             self.controller = Omega(id=id)
-            self.controller._set_pid_channel(
+            self.controller._set_PIDchannel(
                 4
             )  # auto select PID settings based on setpoint
 
@@ -327,7 +323,6 @@ class HotPlate(Workspace):
             "pitch": (constants["xpitch"], constants["ypitch"]),
             "gridsize": (constants["numx"], constants["numy"]),
             "z_clearance": constants["z_clearance"],
-            "openwidth": constants["openwidth"],
         }
         if "testslots" in constants:  # override 4 corner default
             workspace_kwargs["testslots"] = constants["testslots"]

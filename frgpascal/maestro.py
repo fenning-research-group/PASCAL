@@ -98,8 +98,7 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self,
-        samplewidth: float = 10,
+        self, samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -129,25 +128,7 @@ class Maestro:
             gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
         )
         self.liquidhandler = OT2()
-        self.spincoater = SpinCoater(
-            gantry=self.gantry,
-            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-        )
 
-        ### Workers to run tasks in parallel
-        self.workers = {
-            "gantry_gripper": Worker_GantryGripper(maestro=self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            "characterization": Worker_Characterization(maestro=self),
-            "hotplates": Worker_Hotplate(
-                maestro=self,
-                capacity=sum([hp.capacity for hp in self.hotplates.values()]),
-            ),
-            "storage": Worker_Storage(
-                maestro=self,
-                capacity=sum([hp.capacity for hp in self.storage.values()]),
-            ),
-        }
         # Labware
         self.hotplates = {
             "Hotplate1": HotPlate(
@@ -191,7 +172,26 @@ class Maestro:
                 p0=constants["sampletray"]["p2"],
             ),
         }
-        # Stock Solutions
+
+        self.spincoater = SpinCoater(
+            gantry=self.gantry,
+            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+        )
+
+        ### Workers to run tasks in parallel
+        self.workers = {
+            "gantry_gripper": Worker_GantryGripper(maestro=self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
+            "characterization": Worker_Characterization(maestro=self),
+            "hotplates": Worker_Hotplate(
+                maestro=self,
+                capacity=sum([hp.capacity for hp in self.hotplates.values()]),
+            ),
+            "storage": Worker_Storage(
+                maestro=self,
+                capacity=sum([hp.capacity for hp in self.storage.values()]),
+            ),
+        }
 
         self._load_calibrations()  # load coordinate calibrations for labware
         self.__calibrate_time_to_nist()  # for sync with other hardware
@@ -502,13 +502,9 @@ class Maestro:
         sh = logging.StreamHandler(sys.stdout)
         sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s",
-            datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter(
-            "%(asctime)s %(message)s",
-            datefmt="%I:%M:%S",
-        )
+        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
         fh.setFormatter(fh_formatter)
         sh.setFormatter(sh_formatter)
         self.logger.addHandler(fh)

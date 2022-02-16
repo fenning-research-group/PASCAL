@@ -3,9 +3,9 @@
 samplewidth: 10   #intended sample width (mm)
 xpitch: 12       #horizontal center-center distance (mm) between adjacent slots
 ypitch: 15        #vertical center-center distance (mm) between adjacent slots
-numx: 5           #number of slot columns
-numy: 4         #number of slot rows
+numx: 6           #number of slot columns
+numy: 5         #number of slot rows
 z_clearance: 5    #extra z clearance for gantry to use when calibrating positions
 temperature_max: 200  #max temperature (Celsius)
 temperature_min: 30   #min temperature (Celsius)
-testslots: ['A1', 'A5', 'D5', 'D1'] #slots to touch during calibration
+testslots: ['E1', 'E6', 'A6', 'A1'] #slots to touch during calibration
