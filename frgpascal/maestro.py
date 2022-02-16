@@ -101,7 +101,7 @@ class Maestro:
         self,
         samplewidth: float = 10,
     ):
-        """Initialze Maestro, which coordinates all the PASCAL hardware
+        """Initialize Maestro, which coordinates all the PASCAL hardware
 
         Args:
             numsamples (int): number of substrates loaded in sampletray
@@ -134,15 +134,46 @@ class Maestro:
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
         )
 
+        ### Workers to run tasks in parallel
+        self.workers = {
+            "gantry_gripper": Worker_GantryGripper(maestro=self),
+            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
+            "characterization": Worker_Characterization(maestro=self),
+            "hotplates": Worker_Hotplate(
+                maestro=self,
+                capacity=sum([hp.capacity for hp in self.hotplates.values()]),
+            ),
+            "storage": Worker_Storage(
+                maestro=self,
+                capacity=sum([hp.capacity for hp in self.storage.values()]),
+            ),
+        }
         # Labware
         self.hotplates = {
-            "HotPlate1": HotPlate(
+            "Hotplate1": HotPlate(
                 name="Hotplate1",
-                version="hotplate_SCILOGEX_tighter",
+                version="hotplate_frg4inch",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["hotplate"]["p0"],
-            )
+                id=1,
+                p0=constants["hotplates"]["hp1"]["p0"],
+            ),
+            "Hotplate2": HotPlate(
+                name="Hotplate2",
+                version="hotplate_frg4inch",
+                gantry=self.gantry,
+                gripper=self.gripper,
+                id=2,
+                p0=constants["hotplates"]["hp2"]["p0"],
+            ),
+            "Hotplate3": HotPlate(
+                name="Hotplate3",
+                version="hotplate_frg4inch",
+                gantry=self.gantry,
+                gripper=self.gripper,
+                id=3,
+                p0=constants["hotplates"]["hp3"]["p0"],
+            ),
         }
         self.storage = {
             "Tray1": SampleTray(
@@ -167,6 +198,8 @@ class Maestro:
         # Status
         self.samples = {}
         self.tasks = []
+        self.lock_pendingtasks = Lock()
+        self.lock_completedtasks = Lock()
         self.t0 = None
         self._under_external_control = False
 
@@ -396,12 +429,6 @@ class Maestro:
             self.transfer(self.characterization.axis(), self.storage[tray](slot))
 
     ### Batch Sample Execution
-    def _load_worklist(self, filepath):
-        with open(filepath, "r") as f:
-            worklist = json.load(f)
-        self.tasks = worklist["tasks"]
-        self.samples = worklist["samples"]
-
     def make_background_event_loop(self):
         def exception_handler(loop, context):
             print("Exception raised in Maestro loop")
@@ -451,6 +478,16 @@ class Maestro:
         # self.loop = asyncio.new_event_loop()
         # self.loop.set_debug(True)
 
+    def _load_worklist(self, filepath):
+        with open(filepath, "r") as f:
+            worklist = json.load(f)
+        self.tasks = worklist["tasks"]
+        self.samples = worklist["samples"]
+        for hp_name, temperature in worklist["hotplate_setpoints"].items():
+            self.hotplates[hp_name].controller.setpoint = temperature
+            print(f"Hotplate {hp_name} set to {temperature:.1f}C")
+        # self._characterization_baselines_required = worklist["baselines_required"]
+
     def _set_up_experiment_folder(self, name):
         todays_date = datetime.datetime.now().strftime("%Y%m%d")
         folder_name = f"{todays_date}_{name}"
@@ -482,7 +519,6 @@ class Maestro:
     def _experiment_checklist(self, characterization_only=False):
         """prompt user to go through checklist to ensure that
         all hardware is set properly for PASCAL to run
-
         """
 
         def prompt_for_yes(s):
@@ -511,33 +547,17 @@ class Maestro:
 
         # if we make it this far, checklist has been passed
 
-    def run(self, filepath, name, ot2_ip):
-        self._experiment_checklist()
-
-        self.liquidhandler.server.ip = ot2_ip
-        # self.liquidhandler.server.start(ip=ot2_ip)
-        self.pending_tasks = []
-        self.completed_tasks = {}
-        self.lock_pendingtasks = Lock()
-        self.lock_completedtasks = Lock()
+    def load_netlist(self, filepath: str, name: str):
         self._load_worklist(filepath)
         self._set_up_experiment_folder(name)
 
-        self.workers = {
-            "gantry_gripper": Worker_GantryGripper(maestro=self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            "characterization": Worker_Characterization(maestro=self),
-            "hotplates": Worker_Hotplate(
-                maestro=self, capacity=25
-            ),  # TODO dont hardcode hotplate workers
-            "storage": Worker_Storage(
-                maestro=self, capacity=45
-            ),  # TODO dont hardcode storage workers
-        }
+    def run(self, ot2_ip):
+        self._experiment_checklist()
+        self.pending_tasks = []
+        self.completed_tasks = {}
+        self.liquidhandler.server.ip = ot2_ip
 
         self._start_loop()
-        # self.loop = asyncio.new_event_loop()
-        # self.loop.set_debug(True)
         self.t0 = self.nist_time
 
         for worker in self.workers.values():
@@ -565,6 +585,8 @@ class Maestro:
         for w in self.workers.values():
             w.stop_workers()
         self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+        for hp in self.hotplates.values():
+            hp.setpoint = 0
 
         self.logger.handlers = []
         self.thread.join()
@@ -612,26 +634,7 @@ class Maestro:
         # self.read_protocol_files = []
         self.pending_tasks = []
         self.completed_tasks = {}
-        self.lock_pendingtasks = Lock()
-        self.lock_completedtasks = Lock()
         folder = self._set_up_experiment_folder(name)
-        # self.protocol_folder = os.path.join(folder, "protocols")
-        # os.mkdir(self.protocol_folder)
-        # self.response_folder = os.path.join(folder, "responses")
-        # os.mkdir(self.response_folder)
-
-        self.workers = {
-            "gantry_gripper": Worker_GantryGripper(maestro=self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            "characterization": Worker_Characterization(maestro=self),
-            "hotplates": Worker_Hotplate(
-                maestro=self, capacity=25
-            ),  # TODO dont hardcode hotplate workers
-            "storage": Worker_Storage(
-                maestro=self, capacity=45
-            ),  # TODO dont hardcode storage workers
-        }
-
         self._start_loop()
 
         for worker in self.workers.values():
