@@ -136,7 +136,10 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool, function, sample, details,
+                        self.maestro.threadpool,
+                        function,
+                        sample,
+                        details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -179,7 +182,7 @@ def _to_hotplate(f):
             time_to_next = next_move_start - self.maestro.experiment_time
             if (
                 time_to_next <= self.functions["idle_gantry"].estimated_duration
-            ):  # we are about to move anyways
+            ):  # we are about to move anyways, no need to move gantry to idle position
                 return output
 
         self.maestro.idle_gantry()
@@ -270,18 +273,15 @@ class Worker_GantryGripper(WorkerTemplate):
     @_to_hotplate
     def spincoater_to_hotplate(self, sample, details):
         p1 = self.spincoater()
-        for hotplate_name, hp in self.hotplates.items():
-            try:
-                slot = hp.get_open_slot()
-                break
-            except:
-                slot = None
-        if slot is None:
-            raise ValueError("No slots available on any hotplate!")
-        p2 = self.hotplates[hotplate_name](slot)
+
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        slot = hotplate.get_open_slot()
+        p2 = hotplate(slot)
+
         self.maestro.transfer(p1, p2)
 
-        self.hotplates[hotplate_name].load(slot, sample)
+        hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
             "hotplate": hotplate_name,
             "slot": slot,
@@ -358,17 +358,15 @@ class Worker_GantryGripper(WorkerTemplate):
             sample["storage_slot"]["slot"],
         )
         p1 = self.maestro.storage[tray](slot)
-        for hotplate_name, hp in self.hotplates.items():
-            try:
-                slot = hp.get_open_slot()
-                break
-            except:
-                slot = None
-        if slot is None:
-            raise ValueError("No slots available on any hotplate!")
-        p2 = self.hotplates[hotplate_name](slot)
+
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        slot = hotplate.get_open_slot()
+        p2 = hotplate(slot)
+
         self.maestro.transfer(p1, p2)
-        self.hotplates[hotplate_name].load(slot, sample)
+
+        hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
             "hotplate": hotplate_name,
             "slot": slot,
@@ -393,18 +391,15 @@ class Worker_GantryGripper(WorkerTemplate):
     @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
         p1 = self.characterization.axis()
-        for hotplate_name, hp in self.hotplates.items():
-            try:
-                slot = hp.get_open_slot()
-                break
-            except:
-                slot = None
-        if slot is None:
-            raise ValueError("No slots available on any hotplate!")
-        p2 = self.hotplates[hotplate_name](slot)
+
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        slot = hotplate.get_open_slot()
+        p2 = hotplate(slot)
 
         self.maestro.transfer(p1, p2)
-        self.hotplates[hotplate_name].load(slot, sample)
+
+        hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
             "hotplate": hotplate_name,
             "slot": slot,
@@ -540,9 +535,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
-            drop
-        )
+        (
+            aspirate_duration,
+            staging_duration,
+            dispense_duration,
+        ) = expected_timings(drop)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
