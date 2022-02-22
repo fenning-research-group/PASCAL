@@ -1,4 +1,9 @@
+import os
+import csv
 import numpy as np
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
+
 
 
 def load_spectrum(fid):
