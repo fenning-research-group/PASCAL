@@ -21,11 +21,14 @@ from ax.core.data import Data
 
 from frgpascal.analysis.processer import process_sample
 from frgpascal.analysis import brightfield
+from frgpascal.experimentaldesign.tasks import Rest
+from frgpascal.system import generate_workers
+
+WORKERS = generate_workers()
 
 
 class NumpyFloatValuesEncoder(json.JSONEncoder):
-    """Converts np.float32 to float to allow dumping to json file
-    """
+    """Converts np.float32 to float to allow dumping to json file"""
 
     def default(self, obj):
         if isinstance(obj, np.float32):
@@ -152,11 +155,15 @@ class PASCALAxQueue(Client):
         min_start = max([min_start, self.min_allowable_time])
         self.sample_counter += 1
 
+        tray_worker = WORKERS[sample.storage_slot["tray"]]
+        for task in sample.worklist:  # make sure sample is resting in its storage tray
+            if isinstance(task, Rest):
+                task.workers = [tray_worker]
         sample.protocol = self.system.generate_protocol(
             name=sample.name,
             worklist=sample.worklist,
-            # starting_worker=self.sample_trays[0],
-            # ending_worker=self.sample_trays[0],
+            starting_worker=tray_worker,
+            ending_worker=tray_worker,
             min_start=min_start,
         )
         self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
