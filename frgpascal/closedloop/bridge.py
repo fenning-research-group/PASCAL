@@ -2,9 +2,7 @@ from collections import defaultdict
 import numpy as np
 import os
 import time
-from queue import Queue
 import json
-import asyncio
 from abc import ABC, abstractmethod
 import ntplib
 from frgpascal.experimentaldesign.tasks import Sample
@@ -12,19 +10,15 @@ from frgpascal.closedloop.websocket import Client
 from frgpascal import system
 
 from typing import Any, Dict, NamedTuple, Union, Iterable, Set
-import pandas as pd
 
 from ax import *
 from ax.core.base_trial import BaseTrial, TrialStatus
-from ax.core.metric import Metric
-from ax.core.data import Data
 
 from frgpascal.analysis.processer import process_sample
 from frgpascal.analysis import brightfield
 from frgpascal.experimentaldesign.tasks import Rest
-from frgpascal.system import generate_workers
 
-WORKERS = generate_workers()
+WORKERS = system.generate_workers()
 
 
 class NumpyFloatValuesEncoder(json.JSONEncoder):

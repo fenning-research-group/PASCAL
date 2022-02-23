@@ -1,5 +1,3 @@
-from ortools.sat.python import cp_model
-import matplotlib.pyplot as plt
 import numpy as np
 import uuid
 import json

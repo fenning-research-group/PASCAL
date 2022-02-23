@@ -1,4 +1,3 @@
-from enum import unique
 import numpy as np
 import itertools
 from frgpascal.experimentaldesign.tasks import (
