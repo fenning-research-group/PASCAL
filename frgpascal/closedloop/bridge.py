@@ -14,7 +14,7 @@ from typing import Any, Dict, NamedTuple, Union, Iterable, Set
 from ax import *
 from ax.core.base_trial import BaseTrial, TrialStatus
 
-from frgpascal.analysis.processer import process_sample
+from frgpascal.analysis.processing import load_sample
 from frgpascal.analysis import brightfield
 from frgpascal.experimentaldesign.tasks import Rest
 
@@ -206,7 +206,7 @@ class PASCALAxQueue(Client):
         )
 
         if sample_present:
-            outcome = process_sample(
+            outcome = load_sample(
                 sample=sample_name, datadir=self.characterization_folder
             )
             outcome["success"] = True
