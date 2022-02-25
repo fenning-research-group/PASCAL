@@ -299,6 +299,7 @@ def samples_to_dataframe(samples):
                     "solutes",
                     "solvent",
                     "molarity",
+                    "volume",
                     "time",
                     "height",
                     "rate",
@@ -314,7 +315,7 @@ def samples_to_dataframe(samples):
             for c, v in s.worklist[step_idx].to_dict().get("details", {}).items():
                 if c == "drops":
                     for drop_idx, d in enumerate(v):
-                        for aspect in ["time", "height", "rate"]:
+                        for aspect in ["time", "height", "rate", "volume"]:
                             dfdata[header + f"drop{drop_idx}_{aspect}"].append(
                                 d[aspect]
                             )
