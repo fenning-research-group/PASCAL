@@ -17,6 +17,7 @@ import mixsol
 from mixsol.mix import _solutions_to_matrix
 from frgpascal.system import generate_workers
 from frgpascal.workers import Worker_Hotplate
+from typing import Tuple
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
@@ -355,6 +356,20 @@ def assign_hotplates(samples: list):
     return hotplate_settings
 
 
+def process_sample_list(
+    samples: list, sample_trays: list, experiment_name: str
+) -> Tuple[pd.DataFrame, dict]:
+    hotplate_settings = assign_hotplates(samples)
+    load_sample_trays(samples, sample_trays)
+    df = samples_to_dataframe(samples)
+
+    filename = f"SampleDataframe_{experiment_name}.csv"
+    df.to_csv(filename)
+    print(f"Sample dataframe saved to {filename}")
+
+    return df, hotplate_settings
+
+
 #### Set liquid storage locations + amounts needed
 
 
@@ -379,13 +394,13 @@ def handle_liquids(samples: list, mixer: mixsol.Mixer, solution_storage: list):
         ll.unload_all()
 
     for solution, v in solution_details.items():
-        if solution.well["labware"] is None:
-            continue
-        volume = v["largest_volume_required"]
-        ll = [ll for ll in solution_storage if ll.name == solution.well["labware"]][0]
-        well = ll.load(solution, well=solution.well["well"])
-        solution_details[solution]["labware"] = ll.name
-        solution_details[solution]["well"] = well
+        # if solution.well["labware"] is None:
+        #     continue
+        # volume = v["largest_volume_required"]
+        # ll = [ll for ll in solution_storage if ll.name == solution.well["labware"]][0]
+        # well = ll.load(solution, well=solution.well["well"])
+        solution_details[solution]["labware"] = solution.well["labware"]
+        solution_details[solution]["well"] = solution.well["well"]
         if v["is_stock"]:
             solution_details[solution]["initial_volume_required"] = v[
                 "largest_volume_required"

@@ -3,6 +3,7 @@ import json
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
+from frgpascal.experimentaldesign.tasks import Solution
 
 MODULE_DIR = os.path.dirname(__file__)
 LL_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "liquidlabware")
@@ -99,6 +100,7 @@ class LiquidLabware:
         allwells = natsorted(list(self._coordinates.keys()))
         self._unavailablewells = []
         self._openwells = []
+        self._fixedwells = []
         unavailable = True
         for well in allwells:
             if well == self.__starting_well:
@@ -115,7 +117,7 @@ class LiquidLabware:
 
         Args:
             contents (object): SolutionRecipe or a string representing the solution
-
+            well (str): specific well to load contents into. if None, next available well will be selected
         Raises:
             IndexError: If the labware is full
 
@@ -127,7 +129,6 @@ class LiquidLabware:
                 well = self._openwells.pop(0)  # take the next open slot
                 self.contents[well] = contents
                 self._openwells = natsorted(self._openwells)
-                return well
             except IndexError as e:
                 raise IndexError("This labware is full!")
         else:
@@ -136,9 +137,12 @@ class LiquidLabware:
             if well not in self._openwells:
                 raise IndexError(f"Well {well} was already filled!")
             self.contents[well] = contents
+            self._fixedwells.append(well)
             self._openwells.remove(well)
             self._openwells = natsorted(self._openwells)
-            return well
+
+        if isinstance(contents, Solution):
+            contents.well = {"labware": self.name, "well": well}
 
     def unload(self, well: str):
         """Unload contents from a slot in the labware.
@@ -156,20 +160,24 @@ class LiquidLabware:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
         self._openwells.append(well)
         self._openwells = natsorted(self._openwells)
-        return self.contents.pop(well)
+        return self.contents.pop(well)[0]
 
     def __repr__(self):
         out = f"<LiquidLabware> {self.name}, {self.volume/1e3} mL volume, {self.capacity} wells"
         return out
 
-    def unload_all(self):
+    def unload_all(self, unload_fixed=False):
         """
         resets the labware to an empty state
         """
-        self._openwells = natsorted(
-            [well for well in self._coordinates if well not in self._unavailablewells]
-        )
-        self.contents = {}
+        newcontents = {}
+        for well, contents in self.contents.items():
+            if unload_fixed or (well not in self._fixedwells):
+                self._openwells.append(well)
+            else:
+                newcontents[well] = contents
+        self._openwells = natsorted(self._openwells)
+        self.contents = newcontents
 
     def plot(self, solution_details=None, ax=None):
         """
