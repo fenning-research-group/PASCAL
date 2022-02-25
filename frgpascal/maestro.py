@@ -98,7 +98,8 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self, samplewidth: float = 10,
+        self,
+        samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -459,12 +460,12 @@ class Maestro:
                     with self.lock_pendingtasks:
                         if len(self.pending_tasks) > 0:
                             experiment_started = True
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(2)
                 elif not experiment_completed:
                     with self.lock_pendingtasks:
                         if len(self.completed_tasks) == len(self.tasks):
                             experiment_completed = True
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(2)
                 else:
                     break
         if experiment_completed == True:
@@ -502,9 +503,13 @@ class Maestro:
         sh = logging.StreamHandler(sys.stdout)
         sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
+        sh_formatter = logging.Formatter(
+            "%(asctime)s %(message)s",
+            datefmt="%I:%M:%S",
+        )
         fh.setFormatter(fh_formatter)
         sh.setFormatter(sh_formatter)
         self.logger.addHandler(fh)
@@ -527,15 +532,15 @@ class Maestro:
                 "Cannot start until characterization line has been calibrated!"
             )
 
-        prompt_for_yes("Is the transmission lamp on? (y/n)")
-        prompt_for_yes("Is the sample holder(s) loaded and in place? (y/n)")
+        # prompt_for_yes("Is the transmission lamp on? (y/n)")
+        prompt_for_yes("Is the sample tray(s) loaded and in place? (y/n)")
         if not characterization_only:
             prompt_for_yes("Is the vacuum pump on? (y/n)")
             prompt_for_yes(
                 "Are the vials loaded into the liquid handler with the caps off? (y/n)"
             )
             prompt_for_yes(
-                "Are there fresh pipette tips loaded into the liquid handler (starting with deck slot 7)? (y/n)"
+                "Are there pipette tips loaded into the liquid handler? (y/n)"
             )
             prompt_for_yes(
                 "Has the liquid handler listener protocol been run up to the waiting point? (y/n)"
@@ -555,6 +560,7 @@ class Maestro:
 
         self._start_loop()
         self.t0 = self.nist_time
+        self._under_external_control = False
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
@@ -585,7 +591,6 @@ class Maestro:
             hp.setpoint = 0
 
         self.logger.handlers = []
-        self.thread.join()
 
     def __del__(self):
         if self.working:
@@ -621,16 +626,14 @@ class Maestro:
                         raise Exception(f"No worker assigned to task {t['task']}")
             await asyncio.sleep(0.5)
 
-    def run_externalcontrol(self, name, ot2_ip):
+    def run_externalcontrol(self, ot2_ip):
         self._experiment_checklist()
         self.working = True
         self._under_external_control = True
 
         self.liquidhandler.server.ip = ot2_ip
-        # self.read_protocol_files = []
         self.pending_tasks = []
         self.completed_tasks = {}
-        folder = self._set_up_experiment_folder(name)
         self._start_loop()
 
         for worker in self.workers.values():
