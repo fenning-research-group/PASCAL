@@ -147,8 +147,11 @@ class Solution(mixsol.Solution):
         molarity: float = 0,
         labware: str = None,
         well: str = None,
+        alias: str = None,
     ):
-        super().__init__(solutes=solutes, solvent=solvent, molarity=molarity)
+        super().__init__(
+            solutes=solutes, solvent=solvent, molarity=molarity, alias=alias
+        )
         if solutes != "" and molarity == 0:
             raise ValueError(
                 "If the solution contains solutes, the molarity must be >0!"

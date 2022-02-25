@@ -359,6 +359,8 @@ def assign_hotplates(samples: list):
 def process_sample_list(
     samples: list, sample_trays: list, experiment_name: str
 ) -> Tuple[pd.DataFrame, dict]:
+    for i, s in enumerate(samples):
+        s.name = f"sample{i}"
     hotplate_settings = assign_hotplates(samples)
     load_sample_trays(samples, sample_trays)
     df = samples_to_dataframe(samples)
