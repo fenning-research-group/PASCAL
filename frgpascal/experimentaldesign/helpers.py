@@ -1,4 +1,5 @@
 import numpy as np
+import json
 import itertools
 from frgpascal.experimentaldesign.tasks import (
     Solution,
@@ -216,6 +217,8 @@ def build_sample_list(
     for worklist in itertools.product(*listedsteps):
         this_set_of_steps = []
         for step in worklist:
+            if step is None:
+                continue
             if type(step) == Spincoat:
                 this_set_of_steps.append(
                     apply_solution_mesh(deepcopy(step), solution_mesh)
@@ -279,54 +282,43 @@ def load_sample_trays(samples: list, available_trays: list):
 
 
 def samples_to_dataframe(samples):
-    dfdata = {c: [] for c in ["name", "storage_tray", "storage_slot", "worklist"]}
-    for s in samples:
-        dfdata["name"].append(s.name)
-        dfdata["storage_tray"].append(s.storage_slot["tray"])
-        dfdata["storage_slot"].append(s.storage_slot["slot"])
-        dfdata["worklist"].append([t.to_dict() for t in s.worklist])
-
-    task_idx = {name: 0 for name in ["spincoat", "anneal", "rest", "characterize"]}
-
-    for step_idx, step in enumerate(samples[0].worklist):
-        idx = task_idx[step.task]
-        task_idx[step.task] += 1
-        header = f"{step.task}{idx}_"
-        if step.task == "spincoat":
-            cols = []
-            for drop_idx, d in enumerate(step.drops):
-                for aspect in [
-                    "solutes",
-                    "solvent",
-                    "molarity",
-                    "volume",
-                    "time",
-                    "height",
-                    "rate",
-                ]:
-                    cols.append(f"drop{drop_idx}_{aspect}")
-            for c in ["steps", "duration"] + cols:
-                dfdata[header + c] = []
-        else:
-            for c in [header + c for c in step.to_dict().get("details", {}).keys()]:
-                dfdata[c] = []
-
-        for s in samples:
-            for c, v in s.worklist[step_idx].to_dict().get("details", {}).items():
+    dfdata = []
+    for sample in samples:
+        this = {
+            "name": sample.name,
+            "storage_tray": sample.storage_slot["tray"],
+            "storage_slot": sample.storage_slot["slot"],
+            "worklist": json.dumps([task.to_dict() for task in sample.worklist]),
+        }
+        task_idx = {}
+        for task in sample.worklist:
+            if task.task not in task_idx:
+                task_idx[task.task] = 0
+            header = f"{task.task}{task_idx[task.task]}_"
+            task_idx[task.task] += 1
+            for c, v in task.to_dict().get("details", {}).items():
                 if c == "drops":
                     for drop_idx, d in enumerate(v):
+                        key = header + f"drop{drop_idx}_"
                         for aspect in ["time", "height", "rate", "volume"]:
-                            dfdata[header + f"drop{drop_idx}_{aspect}"].append(
-                                d[aspect]
-                            )
-                        for aspect in ["solutes", "solvent", "molarity"]:
-                            dfdata[header + f"drop{drop_idx}_{aspect}"].append(
-                                d["solution"][aspect]
-                            )
+                            this[key + aspect] = d[aspect]
+
+                        this[key + "molarity"] = d["solution"]["molarity"]
+                        this[key + "solutes"] = d["solution"]["solutes"]
+                        this[key + "solutes_dict"] = json.dumps(
+                            task.drops[drop_idx].solution.solute_dict
+                        )
+
+                        this[key + "solvent"] = d["solution"]["solvent"]
+                        this[key + "solvent_dict"] = json.dumps(
+                            task.drops[drop_idx].solution.solvent_dict
+                        )
+
                 else:
                     key = header + c
                     if key in dfdata:
-                        dfdata[key].append(v)
+                        this[key] = v
+        dfdata.append(this)
 
     return pd.DataFrame(dfdata)
 
