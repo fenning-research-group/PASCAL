@@ -98,7 +98,8 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self, samplewidth: float = 10,
+        self,
+        samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -481,8 +482,13 @@ class Maestro:
     def _load_worklist(self, filepath):
         with open(filepath, "r") as f:
             worklist = json.load(f)
-        self.tasks = worklist["tasks"]
+        # self.tasks = worklist["tasks"]
         self.samples = worklist["samples"]
+        self.tasks = []
+        for details in self.samples.values():
+            self.tasks.extend(details["worklist"])
+        self.tasks.sort(key=lambda t: t["start"])
+
         for hp_name, temperature in worklist["hotplate_setpoints"].items():
             self.hotplates[hp_name].controller.setpoint = temperature
             print(f"Hotplate {hp_name} set to {temperature:.1f}C")
@@ -502,9 +508,13 @@ class Maestro:
         sh = logging.StreamHandler(sys.stdout)
         sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
+        sh_formatter = logging.Formatter(
+            "%(asctime)s %(message)s",
+            datefmt="%I:%M:%S",
+        )
         fh.setFormatter(fh_formatter)
         sh.setFormatter(sh_formatter)
         self.logger.addHandler(fh)
