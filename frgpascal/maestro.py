@@ -546,8 +546,6 @@ class Maestro:
                 "Has the liquid handler listener protocol been run up to the waiting point? (y/n)"
             )
 
-        # if we make it this far, checklist has been passed
-
     def load_netlist(self, filepath: str, name: str):
         self._load_worklist(filepath)
         self._set_up_experiment_folder(name)
