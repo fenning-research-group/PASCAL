@@ -492,13 +492,23 @@ class Maestro:
         for hp_name, temperature in worklist["hotplate_setpoints"].items():
             self.hotplates[hp_name].controller.setpoint = temperature
             print(f"Hotplate {hp_name} set to {temperature:.1f}C")
+        return worklist["name"]
         # self._characterization_baselines_required = worklist["baselines_required"]
 
     def _set_up_experiment_folder(self, name):
         todays_date = datetime.datetime.now().strftime("%Y%m%d")
         folder_name = f"{todays_date}_{name}"
-        folder = os.path.join(ROOTDIR, folder_name)
+        suffix = ""
+        idx = 0
+        while True:
+            folder = os.path.join(ROOTDIR, f"{folder_name}{suffix}")
+            if os.path.exists(folder):
+                idx += 1
+                suffix = f"_{idx}"
+            else:
+                break
         os.mkdir(folder)
+        print(f"Experiment folder created at {folder}")
         self.characterization.set_directory(os.path.join(folder, "Characterization"))
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
@@ -553,9 +563,9 @@ class Maestro:
 
         # if we make it this far, checklist has been passed
 
-    def load_netlist(self, filepath: str, name: str):
-        self._load_worklist(filepath)
-        self._set_up_experiment_folder(name)
+    def load_netlist(self, filepath: str):
+        experiment_name = self._load_worklist(filepath)
+        self._set_up_experiment_folder(experiment_name)
 
     def run(self, ot2_ip):
         self._experiment_checklist()
