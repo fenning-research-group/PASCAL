@@ -293,6 +293,7 @@ def samples_to_dataframe(samples):
             "name": sample.name,
             "storage_tray": sample.storage_slot["tray"],
             "storage_slot": sample.storage_slot["slot"],
+            "substrate": sample.substrate,
             "worklist": json.dumps([task.to_dict() for task in sample.worklist]),
         }
         task_idx = {}
@@ -554,9 +555,9 @@ class PASCALPlanner:
             )
         self.system.scheduler.solve(**kwargs)
         self.system.scheduler.plot_solution()
-        filename = f"{self.name} schedule.jpeg"
+        filename = f"schedule_{self.name}.jpeg"
         plt.savefig(filename, bbox_inches="tight")
-        print(f"schedule image saved to {filename}")
+        print(f'schedule image saved to "{filename}"')
 
     def export(self):
         ## plot solution destinations
@@ -660,3 +661,8 @@ class PASCALPlanner:
         with open(fname, "w") as f:
             json.dump(out, f, indent=4, sort_keys=True)
         print(f'Maestro Netlist dumped to "{fname}"')
+
+        df = samples_to_dataframe(samples=self.samples)
+        fname = f"sampledataframe_{self.name}.csv"
+        df.to_csv(fname)
+        print(f'Sample dataframe dumped to "{fname}"')
