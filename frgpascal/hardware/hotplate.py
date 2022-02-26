@@ -235,7 +235,11 @@ class HotPlate(Workspace):
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
-            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs,
+            name=name,
+            gantry=gantry,
+            gripper=gripper,
+            p0=p0,
+            **workspace_kwargs,
         )
         if id is not None:
             self.controller = Omega(id=id)

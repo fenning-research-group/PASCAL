@@ -602,10 +602,11 @@ class Maestro:
             w.stop_workers()
         self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
         for hp in self.hotplates.values():
-            hp.setpoint = 0
+            hp.controller.setpoint = 0
 
         self.logger.handlers = []
-        self.thread.join()
+
+        # self.thread.join()
 
     def __del__(self):
         if self.working:
