@@ -19,7 +19,12 @@ def available_versions(self):
 
 class SampleTray(Workspace):
     def __init__(
-        self, name, version, gantry: Gantry, gripper: Gripper, p0=[0, 0, 0],
+        self,
+        name,
+        version,
+        gantry: Gantry,
+        gripper: Gripper,
+        p0=[0, 0, 0],
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
@@ -49,3 +54,21 @@ class SampleTray(Workspace):
         routine to export tray data to save file. used to keep track of experimental conditions in certain tray.
         """
         return None
+
+
+class Tray1(SampleTray):
+    """Wrapper class with default arguments for Tray1"""
+
+    def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+        super().__init__(
+            name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0
+        )
+
+
+class Tray2(SampleTray):
+    """Wrapper class with default arguments for Tray2"""
+
+    def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+        super().__init__(
+            name="Tray2", version=version, gantry=gantry, gripper=gripper, p0=p0
+        )

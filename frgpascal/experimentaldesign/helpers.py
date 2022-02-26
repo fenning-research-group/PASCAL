@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import csv
 import itertools
 from frgpascal.experimentaldesign.tasks import (
     Solution,
@@ -15,9 +16,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import mixsol
 from mixsol.mix import _solutions_to_matrix
-from frgpascal.system import generate_workers
+from frgpascal.system import generate_workers, build
 from frgpascal.workers import Worker_Hotplate
+from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
 from typing import Tuple
+import mixsol as mx
+import random
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
@@ -457,3 +461,202 @@ def handle_liquids(samples: list, mixer: mixsol.Mixer, solution_storage: list):
         mixing_netlist.append(this_generation)
 
     return solution_details, mixing_netlist
+
+
+### Class to bring it all together
+
+
+class PASCALPlanner:
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        operator: str,
+        samples: list,
+        sample_trays: list,
+        tip_racks: list,
+        solution_storage: list,
+        stock_solutions: list,
+    ):
+        self.name = name
+        self.description = description
+        self.operator = operator
+        self.sample_trays = sample_trays
+        self.tip_racks = tip_racks
+        self.solution_storage = solution_storage
+        self.solution_storage.sort(key=lambda labware: labware.name)
+        self.solution_storage.sort(key=lambda labware: labware.volume)
+        self.stock_solutions = stock_solutions
+        self.samples = self._process_samples(samples=samples, sample_trays=sample_trays)
+        self.hotplate_settings = assign_hotplates(self.samples)
+
+    def _process_samples(self, samples, sample_trays):
+        """Make sure all samples have a unique name
+
+        Args:
+            samples (list): list of Sample objects
+
+        Returns:
+            list: list of Sample objects with unique names
+        """
+        for i, sample in enumerate(samples):
+            sample.name = f"sample{i}"
+        load_sample_trays(samples, sample_trays)
+        return samples
+
+    def process_solutions(
+        self, min_volume: float = 50, min_transfer_volume: float = 20, **mixsol_kwargs
+    ):
+        required_solutions = {}
+        for s in self.samples:
+            for task in s.worklist:
+                if isinstance(task, Spincoat):
+                    for d in task.drops:
+                        sol = d.solution
+                        if sol in required_solutions:
+                            required_solutions[sol] += d.volume
+                        else:
+                            required_solutions[sol] = (
+                                d.volume + min_volume
+                            )  # minimum volume per well for successful aspiration
+        self.mixer = mx.Mixer(
+            stock_solutions=self.stock_solutions,
+            targets=required_solutions,
+        )
+
+        default_mixsol_kwargs = dict(
+            min_volume=min_transfer_volume,
+            max_inputs=4,
+            tolerance=1e-4,
+            strategy="prefer_stock",
+        )
+
+        default_mixsol_kwargs.update(mixsol_kwargs)
+        default_mixsol_kwargs
+        self.mixer.solve(**default_mixsol_kwargs)
+        self.solution_details, self.mixing_netlist = handle_liquids(
+            samples=self.samples,
+            mixer=self.mixer,
+            solution_storage=self.solution_storage,
+        )
+        self.mixer.print()
+
+    def solve_schedule(self, shuffle=True, **kwargs):
+        self.system = build()
+        if shuffle:
+            sample_it = iter(random.sample(self.samples, len(self.samples)))
+        else:
+            sample_it = iter(self.samples)
+
+        for sample in sample_it:
+            sample.protocol = self.system.generate_protocol(
+                worklist=sample.worklist, name=sample.name
+            )
+        self.system.scheduler.solve(**kwargs)
+        self.system.scheduler.plot_solution()
+        filename = f"{self.name} schedule.jpeg"
+        plt.savefig(filename, bbox_inches="tight")
+        print(f"schedule image saved to {filename}")
+
+    def export(self):
+        ## plot solution destinations
+        ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
+
+        fig, ax = plt.subplots(
+            len(ll_with_solutions), 1, figsize=(6, 4 * len(ll_with_solutions))
+        )
+        try:
+            ax = ax.flat
+        except:
+            ax = [ax]
+        for ll, ax_ in zip(ll_with_solutions, ax):
+            ll.plot(solution_details=self.solution_details, ax=ax_)
+        plt.savefig(f"solutionmap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
+
+        ## write solution details to csv
+        with open(f"stocksolutions_{self.name}.csv", "w", newline="") as f:
+            writer = csv.writer(f, delimiter=",")
+            header = [
+                "Labware",
+                "Well",
+                "Volume (uL)",
+                "Solutes",
+                "Molarity (M)",
+                "Solvent",
+            ]
+            writer.writerow(header)
+            for solution, details in self.solution_details.items():
+                volume = details["initial_volume_required"]
+                if volume == 0:
+                    volume = "Empty Vial"
+                line = [
+                    details["labware"],
+                    details["well"],
+                    volume,
+                    solution.solutes,
+                    solution.molarity,
+                    solution.solvent,
+                ]
+                writer.writerow(line)
+
+        ##plot sample tray map
+        st_with_samples = [st for st in self.sample_trays if len(st.contents) > 0]
+
+        fig, ax = plt.subplots(
+            len(st_with_samples), 1, figsize=(3, 4 * len(st_with_samples))
+        )
+        try:
+            ax = ax.flat
+        except:
+            ax = [ax]
+        for ll, ax_ in zip(st_with_samples, ax):
+            ll.plot(ax=ax_)
+        plt.savefig(f"traymap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
+
+        ## export opentrons protocol
+        generate_ot2_protocol(
+            title=self.name,
+            mixing_netlist=self.mixing_netlist,
+            labware=self.solution_storage,
+            tipracks=self.tip_racks,
+        )
+
+        ## export maestro netlist
+        samples_output = {}
+        ordered_task_output = []
+        for sample in self.samples:
+            sd = sample.to_dict()
+            samples_output[sample.name] = sd
+            ordered_task_output.extend(sd["worklist"])
+        ordered_task_output.sort(key=lambda t: t["start"])
+
+        baselines_required = {}
+        for task in ordered_task_output:
+            if task["name"] != "characterize":
+                continue
+            for ctask in task["details"]["characterization_tasks"]:
+                if ctask["name"] not in baselines_required:
+                    baselines_required[ctask["name"]] = set()
+
+                if "exposure_time" in ctask["details"]:
+                    baselines_required[ctask["name"]].add(
+                        ctask["details"]["exposure_time"]
+                    )
+                if "exposure_times" in ctask["details"]:
+                    for et in ctask["details"]["exposure_times"]:
+                        baselines_required[ctask["name"]].add(et)
+        baselines_required = {k: list(v) for k, v in baselines_required.items()}
+
+        out = {
+            "name": self.name,
+            "description": self.description,
+            "samples": samples_output,
+            # 'tasks': ordered_task_output,
+            "baselines_required": baselines_required,
+            "hotplate_setpoints": self.hotplate_settings,
+        }
+
+        fname = f"maestronetlist_{self.name}.json"
+        with open(fname, "w") as f:
+            json.dump(out, f, indent=4, sort_keys=True)
+        print(f'Maestro Netlist dumped to "{fname}"')
