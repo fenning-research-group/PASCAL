@@ -65,10 +65,10 @@ def load_sample(sample: str, datadir: str) -> Tuple[dict, dict]:
             metrics[f"ps_intensity_rate_{cidx}"] = psfit["intensity"][
                 "rate"
             ]  # time constant for exponential decay/rise
-            metrics[f"ps_peakev_delta_{cidx}"] = plfit["peakev"][
+            metrics[f"ps_peakev_delta_{cidx}"] = psfit["peakev"][
                 "delta"
             ]  # final peakev / initial peakev
-            metrics[f"ps_peakev_rate_{cidx}"] = plfit["peakev"][
+            metrics[f"ps_peakev_rate_{cidx}"] = psfit["peakev"][
                 "rate"
             ]  # final peakev / initial peakev
 
