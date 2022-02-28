@@ -118,7 +118,9 @@ def load_all(datadir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
         Tuple[pd.DataFrame, pd.DataFrame]: dataframe with all fitted metrics from acquired data, dataframe with all raw data
     """
 
-    all_samples = [s for s in os.listdir(datadir) if os.path.isdir(s)]
+    all_samples = [
+        s for s in os.listdir(datadir) if os.path.isdir(os.path.join(datadir, s))
+    ]
     all_metrics = {}
     all_raw = {}
     for s in all_samples:

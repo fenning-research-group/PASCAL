@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 def gaussian(x, amplitude, center, sigma):
-    return amplitude * np.exp(-((x - center) ** 2) / (2 * sigma ** 2))
+    return amplitude * np.exp(-((x - center) ** 2) / (2 * sigma**2))
 
 
 def fit_gaussian(
@@ -95,5 +95,8 @@ def exponential(x, scale, rate, offset):
 def fit_exponential(x, y):
     bounds = [[-np.inf, 0, 0], [np.inf, 1, np.inf]]
     p0 = [y[0] - y[-1], 0.02, y[-1]]
-    popt, _ = curve_fit(exponential, x, y, p0=p0, bounds=bounds)
+    try:
+        popt, _ = curve_fit(exponential, x, y, p0=p0, bounds=bounds)
+    except:
+        popt = [np.nan, np.nan, np.nan]
     return {"scale": popt[0], "rate": popt[1], "offset": popt[2]}

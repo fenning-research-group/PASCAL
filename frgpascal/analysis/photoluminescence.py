@@ -74,7 +74,10 @@ def fit_spectrum(wl, cts, wlmin, wlmax, wlguess=None, plot=False):
 
     p0 = [y_fit.max(), ev_guess, 0.025]
 
-    popt, _ = curve_fit(gaussian, ev_fit, y_fit, p0=p0, bounds=bounds)
+    try:
+        popt, _ = curve_fit(gaussian, ev_fit, y_fit, p0=p0, bounds=bounds)
+    except:
+        popt = [np.nan, np.nan, np.nan]
     out = {
         "intensity": popt[0],
         "peakev": popt[1],
