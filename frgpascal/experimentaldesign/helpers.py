@@ -14,13 +14,12 @@ from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
 import pandas as pd
-import mixsol
-from mixsol.mix import _solutions_to_matrix
 from frgpascal.system import generate_workers, build
 from frgpascal.workers import Worker_Hotplate
 from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
 from typing import Tuple
 import mixsol as mx
+from mixsol.mix import _solutions_to_matrix
 import random
 
 WORKERS = generate_workers()
@@ -387,7 +386,7 @@ def where_to_store(volume, options):
     raise ValueError(f"No options have enough space to hold {volume/1e3:.2f} mL!")
 
 
-def handle_liquids(samples: list, mixer: mixsol.Mixer, solution_storage: list):
+def handle_liquids(samples: list, mixer: mx.Mixer, solution_storage: list):
     solution_details = {}
     for s in mixer.solutions:
         solution_details[s] = {
