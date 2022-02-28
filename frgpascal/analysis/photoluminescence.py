@@ -100,8 +100,8 @@ def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
         wl, cts, fit_range=(wlmin, wlmax), wlguess=wlguess, adjust_baseline=False
     )
 
-    if np.nanmax(series["intensity"]) < 0.15:
-        raise Exception("No visible pl data")
+    # if np.nanmax(series["intensity"]) < 0.15:
+    #     raise Exception("No visible pl data")
     x = fit_exponential(times, series["intensity"])
     scale = x["scale"]
     rate = x["rate"]
@@ -144,7 +144,7 @@ def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
         ),
         peakev=dict(
             scale=evscale,
-            scale_norm=evscale / series["ev"][0],
+            scale_norm=evscale / series["peakev"][0],
             rate=evrate,
             delta=deltaev,
             saturation=evsaturation,
