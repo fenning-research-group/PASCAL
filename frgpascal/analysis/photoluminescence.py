@@ -55,7 +55,7 @@ def load_photostability(fid):
     return times, wl, cps
 
 
-def fit_spectrum(wl, cts, wlmin, wlmax, wlguess=None, plot=False):
+def fit_spectrum(wl, cts, wlmin=675, wlmax=1100, wlguess=None, plot=False):
     ev = 1240 / wl
     evmin = 1240 / wlmax
     evmax = 1240 / wlmin
@@ -95,7 +95,7 @@ def fit_spectrum(wl, cts, wlmin, wlmax, wlguess=None, plot=False):
     return out
 
 
-def fit_photostability(times, wl, cts, wlmin, wlmax, wlguess=None, plot=False):
+def fit_photostability(times, wl, cts, wlmin=675, wlmax=1100, wlguess=None, plot=False):
     series = fit_gaussian_series(
         wl, cts, fit_range=(wlmin, wlmax), wlguess=wlguess, adjust_baseline=False
     )

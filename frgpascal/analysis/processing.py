@@ -42,7 +42,7 @@ def load_sample(sample: str, datadir: str) -> Tuple[dict, dict]:
                 "cps": cps,
             }
             plfit = photoluminescence.fit_spectrum(
-                wl=wl, cts=cps, wlmin=640, wlmax=1100, plot=False
+                wl=wl, cts=cps, wlmin=675, wlmax=1100, plot=False
             )
             metrics[f"pl_intensity_{cidx}"] = plfit["intensity"]
             metrics[f"pl_peakev_{cidx}"] = plfit["peakev"]
@@ -57,7 +57,7 @@ def load_sample(sample: str, datadir: str) -> Tuple[dict, dict]:
                 "cps": cps,
             }
             psfit = photoluminescence.fit_photostability(
-                times=time, wl=wl, cts=cps, wlmin=640, wlmax=1100, plot=False
+                times=time, wl=wl, cts=cps, wlmin=675, wlmax=1100, plot=False
             )
             metrics[f"ps_intensity_scale_{cidx}"] = psfit["intensity"][
                 "scale_norm"
@@ -129,5 +129,7 @@ def load_all(datadir: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
         except:
             print(f"Could not load data for sample {s}")
     metric_df = pd.DataFrame(all_metrics).T
+    metric_df["name"] = metric_df.index
     raw_df = pd.DataFrame(all_raw).T
+    raw_df["name"] = raw_df.index
     return metric_df, raw_df
