@@ -49,6 +49,10 @@ setup(
         "dill",
         "roboflo",
         "PyQt5",
+        "tifffile",
+        "scikit-image",
+        "ax-platform",
+        "ntplib",
     ],
     # extras_require={
     #     'model_saving': ['h5py'],
