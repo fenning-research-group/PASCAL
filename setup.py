@@ -47,6 +47,8 @@ setup(
         "websockets",
         "tensorflow",
         "dill",
+        "roboflo",
+        "PyQt5",
     ],
     # extras_require={
     #     'model_saving': ['h5py'],
