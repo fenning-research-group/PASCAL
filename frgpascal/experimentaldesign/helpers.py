@@ -541,7 +541,7 @@ class PASCALPlanner:
         )
         self.mixer.print()
 
-    def solve_schedule(self, shuffle=True, **kwargs):
+    def solve_schedule(self, shuffle=True, prioritize_first_spincoat=False, **kwargs):
         self.system = build()
         if shuffle:
             sample_it = iter(random.sample(self.samples, len(self.samples)))
@@ -552,7 +552,15 @@ class PASCALPlanner:
             sample.protocol = self.system.generate_protocol(
                 worklist=sample.worklist, name=sample.name
             )
-        self.system.scheduler.solve(**kwargs)
+        breakpoints = []
+        if prioritize_first_spincoat:
+            for sample in self.samples:
+                for task in sample.protocol.worklist:
+                    if isinstance(task, Spincoat):
+                        breakpoints.append(task)
+                        break
+        
+        self.system.scheduler.solve(breakpoints = breakpoints, **kwargs)
         self.system.scheduler.plot_solution()
         filename = f"schedule_{self.name}.jpeg"
         plt.savefig(filename, bbox_inches="tight")
