@@ -43,9 +43,7 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name,
-    factor=1,
-    delimiter="_",
+    name, factor=1, delimiter="_",
 ):
     """
     given a chemical formula, returns dictionary with individual components/amounts
@@ -156,8 +154,7 @@ def plot_tray(tray, ax=None):
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
     plt.title(tray.name)
     plt.yticks(
-        yvals[::-1],
-        [chr(65 + i) for i in range(len(yvals))],
+        yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
     )
     plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
@@ -190,10 +187,7 @@ def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
         apply_solution_mesh_to_drop(d, solution_mesh) for d in spincoat.drops
     ]
     spincoats = [
-        Spincoat(
-            steps=spincoat.steps,
-            drops=ds,
-        )
+        Spincoat(steps=spincoat.steps, drops=ds,)
         for ds in itertools.product(*drop_options)
     ]
     return spincoats
@@ -400,9 +394,9 @@ def handle_liquids(samples: list, mixer: mx.Mixer, solution_storage: list):
         ll.unload_all()
 
     for solution, v in solution_details.items():
-        # if solution.well["labware"] is None:
-        #     continue
-        # volume = v["largest_volume_required"]
+        if solution.well["labware"] is None:
+            continue
+        volume = v["largest_volume_required"]
         # ll = [ll for ll in solution_storage if ll.name == solution.well["labware"]][0]
         # well = ll.load(solution, well=solution.well["well"])
         solution_details[solution]["labware"] = solution.well["labware"]
@@ -520,8 +514,7 @@ class PASCALPlanner:
                                 d.volume + min_volume
                             )  # minimum volume per well for successful aspiration
         self.mixer = mx.Mixer(
-            stock_solutions=self.stock_solutions,
-            targets=required_solutions,
+            stock_solutions=self.stock_solutions, targets=required_solutions,
         )
 
         default_mixsol_kwargs = dict(
@@ -559,8 +552,8 @@ class PASCALPlanner:
                     if isinstance(task, Spincoat):
                         breakpoints.append(task)
                         break
-        
-        self.system.scheduler.solve(breakpoints = breakpoints, **kwargs)
+
+        self.system.scheduler.solve(breakpoints=breakpoints, **kwargs)
         self.system.scheduler.plot_solution()
         filename = f"schedule_{self.name}.jpeg"
         plt.savefig(filename, bbox_inches="tight")
