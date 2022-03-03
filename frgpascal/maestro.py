@@ -589,15 +589,16 @@ class Maestro:
     def stop(self):
         self.working = False
         # clean up the experiment, save log of actual timings
+        for hp in self.hotplates.values():
+            hp.controller.setpoint = 0
         with open(
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
+
         for w in self.workers.values():
             w.stop_workers()
         self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
-        for hp in self.hotplates.values():
-            hp.controller.setpoint = 0
 
         self.logger.handlers = []
 

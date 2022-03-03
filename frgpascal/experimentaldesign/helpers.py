@@ -513,6 +513,16 @@ class PASCALPlanner:
                             required_solutions[sol] = (
                                 d.volume + min_volume
                             )  # minimum volume per well for successful aspiration
+        if len(required_solutions) == 0:
+            print("No solutions required for this experiment!")
+            self.solution_details = {}
+            self.mixing_netlist = {}
+            return
+
+        if len(self.stock_solutions) == 0:
+            raise Exception(
+                "Cannot make any solutions because no stock solutions were provided during initalization of PASCALPlanner!"
+            )
         self.mixer = mx.Mixer(
             stock_solutions=self.stock_solutions, targets=required_solutions,
         )
@@ -563,64 +573,67 @@ class PASCALPlanner:
         ## plot solution destinations
         ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
 
-        fig, ax = plt.subplots(
-            len(ll_with_solutions), 1, figsize=(6, 4 * len(ll_with_solutions))
-        )
-        try:
-            ax = ax.flat
-        except:
-            ax = [ax]
-        for ll, ax_ in zip(ll_with_solutions, ax):
-            ll.plot(solution_details=self.solution_details, ax=ax_)
-        plt.savefig(f"solutionmap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
+        if len(ll_with_solutions) > 0:
+            fig, ax = plt.subplots(
+                len(ll_with_solutions), 1, figsize=(6, 4 * len(ll_with_solutions))
+            )
+            try:
+                ax = ax.flat
+            except:
+                ax = [ax]
+            for ll, ax_ in zip(ll_with_solutions, ax):
+                ll.plot(solution_details=self.solution_details, ax=ax_)
+            plt.savefig(f"solutionmap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
 
-        ## write solution details to csv
-        with open(f"stocksolutions_{self.name}.csv", "w", newline="") as f:
-            writer = csv.writer(f, delimiter=",")
-            header = [
-                "Labware",
-                "Well",
-                "Volume (uL)",
-                "Solutes",
-                "Molarity (M)",
-                "Solvent",
-            ]
-            writer.writerow(header)
-            for solution, details in self.solution_details.items():
-                volume = details["initial_volume_required"]
-                if volume == 0:
-                    volume = "Empty Vial"
-                line = [
-                    details["labware"],
-                    details["well"],
-                    volume,
-                    solution.solutes,
-                    solution.molarity,
-                    solution.solvent,
+            ## write solution details to csv
+            with open(f"stocksolutions_{self.name}.csv", "w", newline="") as f:
+                writer = csv.writer(f, delimiter=",")
+                header = [
+                    "Labware",
+                    "Well",
+                    "Volume (uL)",
+                    "Solutes",
+                    "Molarity (M)",
+                    "Solvent",
                 ]
-                writer.writerow(line)
+                writer.writerow(header)
+                for solution, details in self.solution_details.items():
+                    volume = details["initial_volume_required"]
+                    if volume == 0:
+                        volume = "Empty Vial"
+                    line = [
+                        details["labware"],
+                        details["well"],
+                        volume,
+                        solution.solutes,
+                        solution.molarity,
+                        solution.solvent,
+                    ]
+                    writer.writerow(line)
 
         ##plot sample tray map
         st_with_samples = [st for st in self.sample_trays if len(st.contents) > 0]
 
-        fig, ax = plt.subplots(
-            len(st_with_samples), 1, figsize=(3, 4 * len(st_with_samples))
-        )
-        try:
-            ax = ax.flat
-        except:
-            ax = [ax]
-        for ll, ax_ in zip(st_with_samples, ax):
-            ll.plot(ax=ax_)
-        plt.savefig(f"traymap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
+        if len(st_with_samples) > 0:
+            fig, ax = plt.subplots(
+                len(st_with_samples), 1, figsize=(3, 4 * len(st_with_samples))
+            )
+            try:
+                ax = ax.flat
+            except:
+                ax = [ax]
+            for ll, ax_ in zip(st_with_samples, ax):
+                ll.plot(ax=ax_)
+            plt.savefig(f"traymap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
 
         ## export opentrons protocol
-        generate_ot2_protocol(
-            title=self.name,
-            mixing_netlist=self.mixing_netlist,
-            labware=self.solution_storage,
-            tipracks=self.tip_racks,
-        )
+        if any([isinstance(task, Spincoat) for task in self.system.scheduler.tasklist]):
+            generate_ot2_protocol(
+                title=self.name,
+                mixing_netlist=self.mixing_netlist,
+                labware=self.solution_storage,
+                tipracks=self.tip_racks,
+            )
 
         ## export maestro netlist
         samples_output = {}

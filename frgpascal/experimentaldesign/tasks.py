@@ -72,11 +72,7 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self,
-        name: str,
-        substrate: str,
-        worklist: list,
-        storage_slot=None,
+        self, name: str, substrate: str, worklist: list, storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -417,17 +413,11 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(
-                asp + stage + disp - self.drops[0].time,
-                0,
-            )
+            duration += max(asp + stage + disp - self.drops[0].time, 0,)
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max(
-                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
-                0,
-            )
+            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -474,11 +464,7 @@ class Spincoat(Task):
 
 class Anneal(Task):
     def __init__(
-        self,
-        duration: float,
-        temperature: float,
-        hotplate: str = None,
-        immediate=True,
+        self, duration: float, temperature: float, hotplate: str = None, immediate=True,
     ):
         """
 
@@ -495,9 +481,7 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal",
-            duration=self.duration,
-            immediate=immediate,
+            task="anneal", duration=self.duration, immediate=immediate,
         )
 
     def __repr__(self):
@@ -594,6 +578,8 @@ class Characterize(Task):
         self.duration = sum(
             [t.expected_duration() for t in self.characterization_tasks]
         )
+        self.duration += 10  # buffer time (s)
+
         positions = [0] + [t.position for t in self.characterization_tasks] + [0]
         m = constants["characterizationline"]["axis"]["traveltime"]["m"]
         b = constants["characterizationline"]["axis"]["traveltime"]["b"]
@@ -602,9 +588,7 @@ class Characterize(Task):
             self.duration += distance * m + b
 
         super().__init__(
-            task="characterize",
-            duration=self.duration,
-            immediate=immediate,
+            task="characterize", duration=self.duration, immediate=immediate,
         )
 
     def to_dict(self):
