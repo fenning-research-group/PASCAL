@@ -305,12 +305,12 @@ def samples_to_dataframe(samples):
                         this[key + "molarity"] = d["solution"]["molarity"]
                         this[key + "solutes"] = d["solution"]["solutes"]
                         this[key + "solutes_dict"] = json.dumps(
-                            task.drops[drop_idx].solution.solute_dict
+                            task.drops[drop_idx].solution.solutes
                         )
 
                         this[key + "solvent"] = d["solution"]["solvent"]
                         this[key + "solvent_dict"] = json.dumps(
-                            task.drops[drop_idx].solution.solvent_dict
+                            task.drops[drop_idx].solution.solvent
                         )
 
                 else:
@@ -563,7 +563,7 @@ class PASCALPlanner:
                         breakpoints.append(task)
                         break
 
-        self.system.scheduler.solve(breakpoints=breakpoints, **kwargs)
+        self.system.scheduler.solve(breakpoints=[breakpoints], **kwargs)
         self.system.scheduler.plot_solution()
         filename = f"schedule_{self.name}.jpeg"
         plt.savefig(filename, bbox_inches="tight")
