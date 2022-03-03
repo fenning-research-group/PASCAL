@@ -4,7 +4,8 @@ import json
 import yaml
 from copy import deepcopy
 import os
-import mixsol
+import mixsol as mx
+from mixsol.helpers import components_to_name
 from frgpascal.system import generate_workers
 import roboflo
 
@@ -72,7 +73,11 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self, name: str, substrate: str, worklist: list, storage_slot=None,
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -135,7 +140,7 @@ class Sample:
 
 
 ### Subclasses to define a spincoat
-class Solution(mixsol.Solution):
+class Solution(mx.Solution):
     def __init__(
         self,
         solvent: str,
@@ -164,10 +169,16 @@ class Solution(mixsol.Solution):
         }  # tray, slot that solution is stored in. Initialized to None, will be filled during experiment planning
 
     def to_dict(self):
+        if self.molarity > 0:
+            factor = 1/self.molarity
+        else:
+            factor = 1
         out = {
-            "solutes": self.solutes,
+            "solutes": components_to_name(
+                self.solutes, delimiter="_", factor=factor
+            ),
             "molarity": self.molarity,
-            "solvent": self.solvent,
+            "solvent": components_to_name(self.solvent, delimiter="_", factor=1),
             "well": self.well,
         }
         return out
@@ -413,11 +424,17 @@ class Spincoat(Task):
 
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(asp + stage + disp - self.drops[0].time, 0,)
+            duration += max(
+                asp + stage + disp - self.drops[0].time,
+                0,
+            )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
+            duration += max(
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -464,7 +481,11 @@ class Spincoat(Task):
 
 class Anneal(Task):
     def __init__(
-        self, duration: float, temperature: float, hotplate: str = None, immediate=True,
+        self,
+        duration: float,
+        temperature: float,
+        hotplate: str = None,
+        immediate=True,
     ):
         """
 
@@ -481,7 +502,9 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal", duration=self.duration, immediate=immediate,
+            task="anneal",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -588,7 +611,9 @@ class Characterize(Task):
             self.duration += distance * m + b
 
         super().__init__(
-            task="characterize", duration=self.duration, immediate=immediate,
+            task="characterize",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def to_dict(self):
