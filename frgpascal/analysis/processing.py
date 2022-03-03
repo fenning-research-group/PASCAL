@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Tuple
 
 from frgpascal import analysis
+from tqdm import tqdm
 
 
 def load_sample(
@@ -148,7 +149,7 @@ def load_all(
     ]
     all_metrics = {}
     all_raw = {}
-    for s in all_samples:
+    for s in tqdm(all_samples, desc="Loading data", unit="sample"):
         try:
             all_metrics[s], all_raw[s] = load_sample(
                 sample=s,
@@ -160,7 +161,7 @@ def load_all(
                 darkfield=darkfield,
             )
         except:
-            print(f"Could not load data for sample {s}")
+            tqdm.write(f"Could not load data for sample {s}")
     metric_df = pd.DataFrame(all_metrics).T
     metric_df["name"] = metric_df.index
     raw_df = pd.DataFrame(all_raw).T
