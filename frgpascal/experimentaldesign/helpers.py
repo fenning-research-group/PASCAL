@@ -43,9 +43,7 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name,
-    factor=1,
-    delimiter="_",
+    name, factor=1, delimiter="_",
 ):
     """
     given a chemical formula, returns dictionary with individual components/amounts
@@ -156,8 +154,7 @@ def plot_tray(tray, ax=None):
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
     plt.title(tray.name)
     plt.yticks(
-        yvals[::-1],
-        [chr(65 + i) for i in range(len(yvals))],
+        yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
     )
     plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
@@ -190,10 +187,7 @@ def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
         apply_solution_mesh_to_drop(d, solution_mesh) for d in spincoat.drops
     ]
     spincoats = [
-        Spincoat(
-            steps=spincoat.steps,
-            drops=ds,
-        )
+        Spincoat(steps=spincoat.steps, drops=ds,)
         for ds in itertools.product(*drop_options)
     ]
     return spincoats
@@ -345,11 +339,11 @@ def assign_hotplates(samples: list):
         raise Exception(
             f"Maximum three unique temperatures allowed: currently requesting {len(temperatures)} ({unique_temperatures})"
         )
-
-    if max(unique_temperatures) > 200:
-        raise Exception(
-            f"Maximum hotplate temperature allowed is 200°C: currently requesting {max(unique_temperatures)}°C"
-        )
+    elif len(temperatures) > 0:
+        if max(unique_temperatures) > 200:
+            raise Exception(
+                f"Maximum hotplate temperature allowed is 200°C: currently requesting {max(unique_temperatures)}°C"
+            )
 
     hotplate_settings = {}
     for temperature, hp in zip(unique_temperatures, HOTPLATE_NAMES):
@@ -530,8 +524,7 @@ class PASCALPlanner:
                 "Cannot make any solutions because no stock solutions were provided during initalization of PASCALPlanner!"
             )
         self.mixer = mx.Mixer(
-            stock_solutions=self.stock_solutions,
-            targets=required_solutions,
+            stock_solutions=self.stock_solutions, targets=required_solutions,
         )
 
         default_mixsol_kwargs = dict(
