@@ -301,7 +301,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.spincoater()
         p2 = self.characterization.axis()
 
-        self.transfer(p1, p2)
+        self.maestro.transfer(p1, p2)
 
     def hotplate_to_storage(self, sample, details):
         hotplate, hpslot = (
