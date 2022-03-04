@@ -15,6 +15,11 @@ def load_sample(
     transmission=True,
     brightfield=True,
     darkfield=True,
+    pl_kwargs={},
+    ps_kwargs={},
+    t_kwargs={},
+    bf_kwargs={},
+    df_kwargs={},
 ) -> Tuple[dict, dict]:
     """Loads all available characterization data + extracts standard metrics for a given sample
 
@@ -51,8 +56,9 @@ def load_sample(
                     "wl": wl,
                     "cps": cps,
                 }
+                pl_kws = dict(wlmin=675, wlmax=1100, plot=False).update(pl_kwargs)
                 plfit = analysis.photoluminescence.fit_spectrum(
-                    wl=wl, cts=cps, wlmin=675, wlmax=1100, plot=False
+                    wl=wl, cts=cps, **pl_kws
                 )
                 metrics[f"pl_intensity_{cidx}"] = plfit["intensity"]
                 metrics[f"pl_peakev_{cidx}"] = plfit["peakev"]
@@ -67,8 +73,9 @@ def load_sample(
                     "wl": wl,
                     "cps": cps,
                 }
+                ps_kws = dict(wlmin=675, wlmax=1100, plot=False).update(ps_kwargs)
                 psfit = analysis.photoluminescence.fit_photostability(
-                    times=time, wl=wl, cts=cps, wlmin=675, wlmax=1100, plot=False
+                    times=time, wl=wl, cts=cps, **ps_kws
                 )
                 metrics[f"ps_intensity_scale_{cidx}"] = psfit["intensity"][
                     "scale_norm"
@@ -94,22 +101,26 @@ def load_sample(
                     "t": t,
                     "a": a,
                 }
+                t_kws = dict(
+                    bandgap_type="direct",
+                    wlmin=400,
+                    wlmax=1050,
+                    plot=False,
+                ).update(t_kwargs)
                 try:
                     metrics[f"t_bandgap_{cidx}"] = analysis.transmittance.tauc(
                         wl=wl,
                         a=a,
-                        bandgap_type="direct",
-                        wlmin=400,
-                        wlmax=1050,
-                        plot=False,
+                        **t_kws,
                     )
                 except:
                     metrics[f"t_bandgap_{cidx}"] = np.nan
 
         if darkfield:
             dffid = os.path.join(chardir, f"{sample}_darkfield.tif")
+            df_kws = dict(red_only=False).update(df_kwargs)
             if os.path.exists(dffid):
-                img = analysis.darkfield.load_image(dffid, red_only=False)
+                img = analysis.darkfield.load_image(dffid, **df_kws)
                 raw[f"df_{cidx}"] = img
                 metrics[f"df_median_{cidx}"] = analysis.darkfield.get_median(
                     im=img[:, :, 0]
@@ -134,6 +145,11 @@ def load_all(
     transmission=True,
     brightfield=True,
     darkfield=True,
+    pl_kwargs={},
+    ps_kwargs={},
+    t_kwargs={},
+    bf_kwargs={},
+    df_kwargs={},
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Loads + processes all characterization data, returns as DataFrame's
 
@@ -159,6 +175,11 @@ def load_all(
                 transmission=transmission,
                 brightfield=brightfield,
                 darkfield=darkfield,
+                pl_kwargs=pl_kwargs,
+                ps_kwargs=ps_kwargs,
+                t_kwargs=t_kwargs,
+                bf_kwargs=bf_kwargs,
+                df_kwargs=df_kwargs,
             )
         except:
             tqdm.write(f"Could not load data for sample {s}")
