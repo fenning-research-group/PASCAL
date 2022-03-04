@@ -56,7 +56,8 @@ def load_sample(
                     "wl": wl,
                     "cps": cps,
                 }
-                pl_kws = dict(wlmin=675, wlmax=1100, plot=False).update(pl_kwargs)
+                pl_kws = dict(wlmin=675, wlmax=1100, plot=False)
+                pl_kws.update(pl_kwargs)
                 plfit = analysis.photoluminescence.fit_spectrum(
                     wl=wl, cts=cps, **pl_kws
                 )
@@ -73,7 +74,8 @@ def load_sample(
                     "wl": wl,
                     "cps": cps,
                 }
-                ps_kws = dict(wlmin=675, wlmax=1100, plot=False).update(ps_kwargs)
+                ps_kws = dict(wlmin=675, wlmax=1100, plot=False)
+                ps_kws.update(ps_kwargs)
                 psfit = analysis.photoluminescence.fit_photostability(
                     times=time, wl=wl, cts=cps, **ps_kws
                 )
@@ -106,7 +108,8 @@ def load_sample(
                     wlmin=400,
                     wlmax=1050,
                     plot=False,
-                ).update(t_kwargs)
+                )
+                t_kws.update(t_kwargs)
                 try:
                     metrics[f"t_bandgap_{cidx}"] = analysis.transmittance.tauc(
                         wl=wl,
@@ -118,7 +121,8 @@ def load_sample(
 
         if darkfield:
             dffid = os.path.join(chardir, f"{sample}_darkfield.tif")
-            df_kws = dict(red_only=False).update(df_kwargs)
+            df_kws = dict(red_only=False)
+            df_kws.update(df_kwargs)
             if os.path.exists(dffid):
                 img = analysis.darkfield.load_image(dffid, **df_kws)
                 raw[f"df_{cidx}"] = img
@@ -128,6 +132,8 @@ def load_sample(
 
         if brightfield:
             bffid = os.path.join(chardir, f"{sample}_brightfield.tif")
+            bf_kws = dict()
+            bf_kws.update(bf_kwargs)
             if os.path.exists(bffid):
                 img = analysis.brightfield.load(bffid)
                 raw[f"bf_{cidx}"] = img
