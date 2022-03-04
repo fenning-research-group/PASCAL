@@ -1,0 +1,5 @@
+Labware,Well,Volume (uL),Solutes,Molarity (M),Solvent
+4mL_Tray1,A1,1210,"{'FA': 0.9359999999999999, 'Cs': 0.144, 'MA': 0.12, 'Pb': 1.308, 'I': 3.1392000000000007, 'Br': 0.5886, 'Cl': 0.19620000000000004}",1.2,"{'DMF': 0.75, 'DMSO': 0.25}"
+4mL_Tray1,B3,920,"{'MEO-': 1.2, 'PAcZ': 0.6}",0.6,{'IPA': 1.0}
+4mL_Tray1,D1,2370,{},0,{'MethylAcetate': 1.0}
+4mL_Tray1,C2,330,{'PCBM': 30.0},30,{'Chlorobenzene': 1.0}
