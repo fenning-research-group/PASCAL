@@ -453,9 +453,10 @@ def run(protocol_context):
 
     ### run through the pre-experiment mixing
     # identify the generation of the final incoming transfer per each well. We will mix after this move
+
     final_generation = {}
     for gen_idx, generation in enumerate(mixing_netlist):
-        for destination_strings in generation.items():
+        for destination_strings in generation.values():
             for destination_str in destination_strings.keys():
                 final_generation[destination_str] = gen_idx
 
@@ -467,10 +468,12 @@ def run(protocol_context):
 
             destinations = []
             volumes = []
+            is_last_transfer = []
             for destination_str, volume in destination_strings.items():
                 destination_labware, destination_well = destination_str.split("-")
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
+                is_last_transfer.append(final_generation[destination_str] == gen_idx)
 
             if gen_idx == 0:
                 # first generation, we dont need to worry about cross contamination
@@ -485,8 +488,10 @@ def run(protocol_context):
                     blow_out_location="source well",
                 )
             else:
-                for dest, vol in zip(destinations, volumes):
-                    if final_generation[dest] == gen_idx:
+                for dest, vol, last_transfer in zip(
+                    destinations, volumes, is_last_transfer
+                ):
+                    if last_transfer:
                         mix_after = (
                             5,
                             50,
