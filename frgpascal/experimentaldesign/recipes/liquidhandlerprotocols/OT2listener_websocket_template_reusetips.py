@@ -83,11 +83,7 @@ class ListenerWebsocket:
             )
             for side in ["left", "right"]
         }
-        for tiprack, unavailable_tips in self.tips.items():
-            for tip in unavailable_tips:
-                tiprack.use_tips(
-                    start_well=tiprack[tip], num_channels=1
-                )  # remove these tips from the tip iterator
+        self.set_starting_tips()
 
         for p in self.pipettes.values():
             p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
@@ -175,6 +171,15 @@ class ListenerWebsocket:
         ot2 = {"completed": self.all_completed_tasks}
         await websocket.send(json.dumps(ot2))
         self.recently_completed_tasks = {}
+
+    def set_starting_tips(self):
+        for p in self.pipettes.values():
+            p.reset_tipracks()
+        for tiprack, unavailable_tips in self.tips.items():
+            for tip in unavailable_tips:
+                tiprack.use_tips(
+                    start_well=tiprack[tip], num_channels=1
+                )  # remove these tips from the tip iterator
 
     # start it all
     def start(self):
@@ -415,6 +420,7 @@ class ListenerWebsocket:
 
 
 def run(protocol_context):
+    protocol_context.set_rail_lights(on=False)
     # define your hardware
     tips = {}
     labwares = {}
@@ -437,6 +443,13 @@ def run(protocol_context):
             p.move_to(labware["A1"].top(30))
         for labware in tips:
             p.move_to(labware["A1"].top(30))
+
+    # starting with Opentrons v5.0, labware cannot be calibrated unless at least one pipette picks up a tip.
+    # If we don't have a mixing netlist, then we need to pick a tip up here to calibrate the labware.
+    if len(mixing_netlist) == 0:
+        listener.pipettes["right"].pick_up_tip()
+        listener.pipettes["right"].return_tip()
+        listener.set_starting_tips()  # reset the starting tips since we just "used" one.
 
     # run through the pre-experiment mixing
     for generation in mixing_netlist:
@@ -466,6 +479,7 @@ def run(protocol_context):
         return
 
     # listen for instructions from maestro
+    protocol_context.comment("Ready to receive commands from Maestro")
     listener.start()
     while listener.status != STATUS_ALL_DONE:
-        time.sleep(0.2)
+        time.sleep(0.1)
