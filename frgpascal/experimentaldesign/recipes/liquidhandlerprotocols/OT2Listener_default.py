@@ -453,7 +453,6 @@ def run(protocol_context):
 
     ### run through the pre-experiment mixing
     # identify the generation of the final incoming transfer per each well. We will mix after this move
-
     final_generation = {}
     for gen_idx, generation in enumerate(mixing_netlist):
         for destination_strings in generation.values():
@@ -507,6 +506,7 @@ def run(protocol_context):
                         mix_after=mix_after,
                         blow_out=True,
                         blow_out_location="destination well",
+                        touch_tip=True,
                     )
 
     protocol_context.comment("Ready to receive commands from Maestro")
