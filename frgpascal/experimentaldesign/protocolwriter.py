@@ -6,7 +6,7 @@ MODULE_DIR = os.path.dirname(__file__)
 PROTOCOL_DIR = os.path.join(MODULE_DIR, "recipes", "liquidhandlerprotocols")
 AVAILABLE_PROTOCOLS = []
 for fid in os.listdir(PROTOCOL_DIR):
-    if fid.startswith("OT2listener_"):
+    if fid.startswith("OT2Listener_"):
         AVAILABLE_PROTOCOLS.append(fid.split("_")[1][:-3])
 
 
