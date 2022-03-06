@@ -19,7 +19,7 @@ STATUS_ALL_DONE = 9
 
 
 metadata = {
-    "protocolName": "Maestro Listener",
+    "protocolName": "Maestro Listener - Default",
     "author": "Rishi Kumar",
     "source": "FRG",
     "apiLevel": "2.10",
@@ -451,8 +451,16 @@ def run(protocol_context):
         listener.pipettes["right"].return_tip()
         listener.set_starting_tips()  # reset the starting tips since we just "used" one.
 
-    # run through the pre-experiment mixing
-    for generation in mixing_netlist:
+    ### run through the pre-experiment mixing
+    # identify the generation of the final incoming transfer per each well. We will mix after this move
+    final_generation = {}
+    for gen_idx, generation in enumerate(mixing_netlist):
+        for destination_strings in generation.items():
+            for destination_str in destination_strings.keys():
+                final_generation[destination_str] = gen_idx
+
+    # run through the mixing protocol
+    for gen_idx, generation in enumerate(mixing_netlist):
         for source_str, destination_strings in generation.items():
             source_labware, source_well = source_str.split("-")
             source = labwares[source_labware][source_well]
@@ -464,22 +472,43 @@ def run(protocol_context):
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
 
-            listener.pipettes["right"].transfer(
-                volume=volumes,
-                source=source,
-                dest=destinations,
-                disposal_volume=0,
-                carryover=True,
-                mix_before=(3, 50),
-                new_tip="once",
-                blow_out=True,
-            )
+            if gen_idx == 0:
+                # first generation, we dont need to worry about cross contamination
+                listener.pipettes["right"].transfer(
+                    volume=volumes,
+                    source=source,
+                    dest=destinations,
+                    disposal_volume=0,
+                    carryover=True,
+                    new_tip="once",
+                    blow_out=True,
+                    blow_out_location="source well",
+                )
+            else:
+                for dest, vol in zip(destinations, volumes):
+                    if final_generation[dest] == gen_idx:
+                        mix_after = (
+                            5,
+                            50,
+                        )  # mix now that all liquid has reached the well
+                    else:
+                        mix_after = None
+                    listener.pipettes["right"].transfer(
+                        volume=vol,
+                        source=source,
+                        dest=dest,
+                        disposal_volume=0,
+                        mix_before=(3, 50),
+                        mix_after=mix_after,
+                        blow_out=True,
+                        blow_out_location="destination well",
+                    )
 
+    protocol_context.comment("Ready to receive commands from Maestro")
     if protocol_context.is_simulating():  # stop here during simulation
         return
 
     # listen for instructions from maestro
-    protocol_context.comment("Ready to receive commands from Maestro")
     listener.start()
     while listener.status != STATUS_ALL_DONE:
         time.sleep(0.1)

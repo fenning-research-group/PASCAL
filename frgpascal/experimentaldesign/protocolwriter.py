@@ -3,15 +3,28 @@ import json
 
 MODULE_DIR = os.path.dirname(__file__)
 
+PROTOCOL_DIR = os.path.join(MODULE_DIR, "recipes", "liquidhandlerprotocols")
+AVAILABLE_PROTOCOLS = []
+for fid in os.listdir(PROTOCOL_DIR):
+    if fid.startswith("OT2listener_"):
+        AVAILABLE_PROTOCOLS.append(fid.split("_")[1][:-3])
 
-def generate_ot2_protocol(title, mixing_netlist, labware, tipracks, directory="."):
+
+def generate_ot2_protocol(
+    title, mixing_netlist, labware, tipracks, directory=".", base="default"
+):
+    if base not in AVAILABLE_PROTOCOLS:
+        raise ValueError(
+            f"{base} is not a valid protocol base! Available: {AVAILABLE_PROTOCOLS}"
+        )
     fpath = os.path.join(directory, f"OT2PASCALProtocol_{title}.py")
+
     with open(
         os.path.join(
             MODULE_DIR,
             "recipes",
             "liquidhandlerprotocols",
-            "OT2listener_websocket_template_reusetips.py",
+            f"OT2listener_{base}.py",
         ),
         "r",
     ) as f:
