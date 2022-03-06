@@ -19,7 +19,7 @@ STATUS_ALL_DONE = 9
 
 
 metadata = {
-    "protocolName": "Maestro Listener",
+    "protocolName": "Maestro Listener - Default",
     "author": "Rishi Kumar",
     "source": "FRG",
     "apiLevel": "2.10",
@@ -82,11 +82,7 @@ class ListenerWebsocket:
             )
             for side in ["left", "right"]
         }
-        for tiprack, unavailable_tips in self.tips.items():
-            for tip in unavailable_tips:
-                tiprack.use_tips(
-                    start_well=tiprack[tip], num_channels=1
-                )  # remove these tips from the tip iterator
+        self.set_starting_tips()
 
         for p in self.pipettes.values():
             p.well_bottom_clearance.aspirate = self.ASPIRATE_HEIGHT
@@ -174,6 +170,15 @@ class ListenerWebsocket:
         ot2 = {"completed": self.all_completed_tasks}
         await websocket.send(json.dumps(ot2))
         self.recently_completed_tasks = {}
+
+    def set_starting_tips(self):
+        for p in self.pipettes.values():
+            p.reset_tipracks()
+        for tiprack, unavailable_tips in self.tips.items():
+            for tip in unavailable_tips:
+                tiprack.use_tips(
+                    start_well=tiprack[tip], num_channels=1
+                )  # remove these tips from the tip iterator
 
     # start it all
     def start(self):
@@ -414,6 +419,7 @@ class ListenerWebsocket:
 
 
 def run(protocol_context):
+    protocol_context.set_rail_lights(on=False)
     # define your hardware
     tips = {
         protocol_context.load_labware(
@@ -444,34 +450,76 @@ def run(protocol_context):
         for labware in tips:
             p.move_to(labware["A1"].top(30))
 
-    # run through the pre-experiment mixing
-    for generation in mixing_netlist:
+    # starting with Opentrons v5.0, labware cannot be calibrated unless at least one pipette picks up a tip.
+    # If we don't have a mixing netlist, then we need to pick a tip up here to calibrate the labware.
+    if len(mixing_netlist) == 0:
+        listener.pipettes["right"].pick_up_tip()
+        listener.pipettes["right"].return_tip()
+        listener.set_starting_tips()  # reset the starting tips since we just "used" one.
+
+    ### run through the pre-experiment mixing
+    # identify the generation of the final incoming transfer per each well. We will mix after this move
+    final_generation = {}
+    for gen_idx, generation in enumerate(mixing_netlist):
+        for destination_strings in generation.values():
+            for destination_str in destination_strings.keys():
+                final_generation[destination_str] = gen_idx
+
+    # run through the mixing protocol
+    for gen_idx, generation in enumerate(mixing_netlist):
         for source_str, destination_strings in generation.items():
             source_labware, source_well = source_str.split("-")
             source = labwares[source_labware][source_well]
 
             destinations = []
             volumes = []
+            is_last_transfer = []
             for destination_str, volume in destination_strings.items():
                 destination_labware, destination_well = destination_str.split("-")
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
+                is_last_transfer.append(final_generation[destination_str] == gen_idx)
 
-            listener.pipettes["right"].transfer(
-                volume=volumes,
-                source=source,
-                dest=destinations,
-                disposal_volume=0,
-                carryover=True,
-                mix_before=(3, 50),
-                new_tip="once",
-                blow_out=True,
-            )
+            if gen_idx == 0:
+                # first generation, we dont need to worry about cross contamination
+                listener.pipettes["right"].transfer(
+                    volume=volumes,
+                    source=source,
+                    dest=destinations,
+                    disposal_volume=0,
+                    carryover=True,
+                    new_tip="once",
+                    blow_out=True,
+                    blow_out_location="source well",
+                )
+            else:
+                for dest, vol, last_transfer in zip(
+                    destinations, volumes, is_last_transfer
+                ):
+                    if last_transfer:
+                        mix_after = (
+                            5,
+                            50,
+                        )  # mix now that all liquid has reached the well
+                    else:
+                        mix_after = None
+                    listener.pipettes["right"].transfer(
+                        volume=vol,
+                        source=source,
+                        dest=dest,
+                        disposal_volume=0,
+                        mix_before=(3, 50),
+                        mix_after=mix_after,
+                        blow_out=True,
+                        blow_out_location="destination well",
+                        touch_tip=True,
+                    )
 
+    protocol_context.comment("Ready to receive commands from Maestro")
     if protocol_context.is_simulating():  # stop here during simulation
         return
 
     # listen for instructions from maestro
     listener.start()
     while listener.status != STATUS_ALL_DONE:
-        time.sleep(0.2)
+        time.sleep(0.1)
