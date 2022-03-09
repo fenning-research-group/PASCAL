@@ -511,19 +511,19 @@ class Maestro:
         self.characterization.set_directory(os.path.join(folder, "Characterization"))
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
-        fh = logging.FileHandler(
+        self._fh = logging.FileHandler(
             os.path.join(self.experiment_folder, f"{folder_name}.log")
         )
-        sh = logging.StreamHandler(sys.stdout)
-        sh.setLevel(logging.INFO)
+        self._sh = logging.StreamHandler(sys.stdout)
+        self._sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
             "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
         )
         sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
-        fh.setFormatter(fh_formatter)
-        sh.setFormatter(sh_formatter)
-        self.logger.addHandler(fh)
-        self.logger.addHandler(sh)
+        self._fh.setFormatter(fh_formatter)
+        self._sh.setFormatter(sh_formatter)
+        self.logger.addHandler(self._fh)
+        self.logger.addHandler(self._sh)
 
         return folder
 
@@ -598,11 +598,15 @@ class Maestro:
 
         for w in self.workers.values():
             w.stop_workers()
-        self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+        if self.liquidhandler.server.ip is not None:
+            self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
 
-        self.logger.handlers = []
+        self.logger.info("Finished experiment, stopping now.")
+        for h in self.logger.handlers:
+            self.logger.removeHandler(h)
 
         print("Maestro stopped!")
+        self.gantry.movetoclear()
         # self.thread.join()
 
     def __del__(self):

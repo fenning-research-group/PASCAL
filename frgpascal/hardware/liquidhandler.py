@@ -185,19 +185,13 @@ class OT2:
 
     def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="clear_chuck",
-            taskid=taskid,
-            nist_time=nist_time,
-            **kwargs,
+            task="clear_chuck", taskid=taskid, nist_time=nist_time, **kwargs,
         )
         return taskid
 
     def cleanup(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="cleanup",
-            taskid=taskid,
-            nist_time=nist_time,
-            **kwargs,
+            task="cleanup", taskid=taskid, nist_time=nist_time, **kwargs,
         )
         return taskid
 
