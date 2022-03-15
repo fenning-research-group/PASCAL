@@ -43,7 +43,9 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name, factor=1, delimiter="_",
+    name,
+    factor=1,
+    delimiter="_",
 ):
     """
     given a chemical formula, returns dictionary with individual components/amounts
@@ -154,7 +156,8 @@ def plot_tray(tray, ax=None):
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
     plt.title(tray.name)
     plt.yticks(
-        yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
+        yvals[::-1],
+        [chr(65 + i) for i in range(len(yvals))],
     )
     plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
@@ -187,7 +190,10 @@ def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
         apply_solution_mesh_to_drop(d, solution_mesh) for d in spincoat.drops
     ]
     spincoats = [
-        Spincoat(steps=spincoat.steps, drops=ds,)
+        Spincoat(
+            steps=spincoat.steps,
+            drops=ds,
+        )
         for ds in itertools.product(*drop_options)
     ]
     return spincoats
@@ -524,7 +530,8 @@ class PASCALPlanner:
                 "Cannot make any solutions because no stock solutions were provided during initalization of PASCALPlanner!"
             )
         self.mixer = mx.Mixer(
-            stock_solutions=self.stock_solutions, targets=required_solutions,
+            stock_solutions=self.stock_solutions,
+            targets=required_solutions,
         )
 
         default_mixsol_kwargs = dict(
@@ -679,3 +686,43 @@ class PASCALPlanner:
         fname = f"sampledataframe_{self.name}.csv"
         df.to_csv(fname)
         print(f'Sample dataframe dumped to "{fname}"')
+
+
+def export_closedloop(name, characterization_task, labware, tipracks):
+
+    # empty labware will not make it into the opentrons protocol
+    labware_ = deepcopy(labware)
+    for l in labware_:
+        if len(l.contents) == 0:
+            l.load("dummy_contents")
+
+    generate_ot2_protocol(
+        title=name,
+        mixing_netlist={},
+        labware=labware_,
+        tipracks=tipracks,
+    )
+
+    baselines_required = {}
+    for ctask in characterization_task.to_dict()["details"]["characterization_tasks"]:
+        if ctask["name"] not in baselines_required:
+            baselines_required[ctask["name"]] = set()
+
+        if "exposure_time" in ctask["details"]:
+            baselines_required[ctask["name"]].add(ctask["details"]["exposure_time"])
+        if "exposure_times" in ctask["details"]:
+            for et in ctask["details"]["exposure_times"]:
+                baselines_required[ctask["name"]].add(et)
+    baselines_required = {k: list(v) for k, v in baselines_required.items()}
+
+    out = {
+        "name": name,
+        # 'tasks': ordered_task_output,
+        "baselines_required": baselines_required,
+        "hotplate_setpoints": {},  # TODO hotplate settings
+    }
+
+    fname = f"maestronetlist_closedloop_{name}.json"
+    with open(fname, "w") as f:
+        json.dump(out, f, indent=4, sort_keys=True)
+    print(f'Closed Loop Maestro Netlist dumped to "{fname}"')
