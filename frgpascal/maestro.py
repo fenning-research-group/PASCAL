@@ -105,8 +105,7 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self,
-        samplewidth: float = 10,
+        self, samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -525,13 +524,9 @@ class Maestro:
         self._sh = logging.StreamHandler(sys.stdout)
         self._sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s",
-            datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter(
-            "%(asctime)s %(message)s",
-            datefmt="%I:%M:%S",
-        )
+        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
         self._fh.setFormatter(fh_formatter)
         self._sh.setFormatter(sh_formatter)
         self.logger.addHandler(self._fh)
@@ -569,6 +564,10 @@ class Maestro:
             )
 
         # if we make it this far, checklist has been passed
+
+    def turn_off_hotplates(self):
+        for hp in self.hotplates.values():
+            hp.controller.setpoint = 0
 
     def load_netlist(self, filepath: str):
         experiment_name = self._load_worklist(filepath)
@@ -671,4 +670,4 @@ class Maestro:
             worker.prime(loop=self.loop)
             worker.start()
 
-        self.server = MaestroServer(maestro=self)
+        self.server = MaestroServer(maestro=self)  # open for external commands

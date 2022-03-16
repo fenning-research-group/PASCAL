@@ -90,6 +90,7 @@ class PASCALAxQueue(Client):
         self.t0 = None
         self.jobs = {}
         self.initialize_labware()
+        self.assign_hotplates()
 
         self.get_experiment_directory()
 
