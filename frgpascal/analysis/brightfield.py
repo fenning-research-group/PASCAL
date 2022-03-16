@@ -37,10 +37,9 @@ def inhomogeneity(img: np.ndarray) -> float:
     """
     flatnesses = []
     for color_index in range(img.shape[2]):
-        plane_params = fit_plane_to_image(
-            img[CENTER_SLICE_Y, CENTER_SLICE_X, color_index]
-        )
-        delta = np.abs(img - plane_params["plane"])
+        img_to_fit = img[CENTER_SLICE_Y, CENTER_SLICE_X, color_index]
+        plane_params = fit_plane_to_image(img_to_fit)
+        delta = np.abs(img_to_fit - plane_params["plane"])
         flatnesses.append(np.mean(delta) + np.std(delta))
     return np.mean(flatnesses)
 

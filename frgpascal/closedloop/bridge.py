@@ -52,9 +52,9 @@ class PASCALAxQueue(Client):
         self.t0 = None
         self.__calibrate_time_to_nist()
         self.initialize_experiment()
-        self._samplechecker = (
-            brightfield.SampleChecker()
-        )  # to check if sample was present during characterization, ie drop detection
+        # self._samplechecker = (
+        #     brightfield.SampleChecker()
+        # )  # to check if sample was present during characterization, ie drop detection
         self.SCHEDULE_SOLVE_TIME = (
             30  # time allotted (seconds) to determine task schedule
         )
@@ -195,15 +195,17 @@ class PASCALAxQueue(Client):
         sample_name = message["sample"]
 
         ## check if we have real data (did the sample make it onto the characterization train?)
-        brightfield_filepath = os.path.join(
-            self.characterization_folder,
-            sample_name,
-            "characterization0",
-            f"{sample_name}_brightfield.tif",
-        )  # TODO only checks failures/dropped samples in the first characterization!
-        sample_present = self._samplechecker.sample_is_present_fromfile(
-            brightfield_filepath, return_probability=False
-        )
+        # brightfield_filepath = os.path.join(
+        #     self.characterization_folder,
+        #     sample_name,
+        #     "characterization0",
+        #     f"{sample_name}_brightfield.tif",
+        # )  # TODO only checks failures/dropped samples in the first characterization!
+        # sample_present = self._samplechecker.sample_is_present_fromfile(
+        #     brightfield_filepath, return_probability=False
+        # )
+
+        sample_present = True
 
         if sample_present:
             outcome = load_sample(

@@ -137,4 +137,9 @@ def fit_plane_to_image(img: np.ndarray) -> dict:
         ydata=img.ravel(),
         p0=[0, 0, img.mean()],
     )
-    return {"a": popt[0], "b": popt[1], "c": popt[2], "plane": plane(x, *popt)}
+    return {
+        "a": popt[0],
+        "b": popt[1],
+        "c": popt[2],
+        "plane": plane(x, *popt).reshape(img.shape),
+    }

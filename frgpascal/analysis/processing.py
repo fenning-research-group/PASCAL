@@ -135,9 +135,11 @@ def load_sample(
             bf_kws = dict()
             bf_kws.update(bf_kwargs)
             if os.path.exists(bffid):
-                img = analysis.brightfield.load(bffid)
+                img = analysis.brightfield.load_image(bffid)
                 raw[f"bf_{cidx}"] = img
-                metrics[f"bf_inhomogeneity_{cidx}"] = brightfield.inhomogeneity(img=img)
+                metrics[
+                    f"bf_inhomogeneity_{cidx}"
+                ] = analysis.brightfield.inhomogeneity(img=img)
 
     return metrics, raw
 
