@@ -61,6 +61,7 @@ class MaestroServer(Server):
             "set_start_time": self.set_start_time,
             "protocol": self.add_protocol,
             "get_experiment_directory": self.share_experiment_directory,
+            "set_hotplate_setpoint": self.set_hotplate_setpoint,
         }
 
         d = json.loads(message)
@@ -95,10 +96,17 @@ class MaestroServer(Server):
         msg = json.dumps(msg_dict)
         self.send(msg)
 
+    def set_hotplate_setpoint(self, d: dict):
+        """Set the hotplate setpoint"""
+        hp = self.maestro.hotplates[d["hotplate_name"]]
+        hp.controller.setpoint = d["setpoint"]
+        print(f"Maestro Client remotely set {d['hotplate_name']} to {d['setpoint']} C")
+
 
 class Maestro:
     def __init__(
-        self, samplewidth: float = 10,
+        self,
+        samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -517,9 +525,13 @@ class Maestro:
         self._sh = logging.StreamHandler(sys.stdout)
         self._sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
+        sh_formatter = logging.Formatter(
+            "%(asctime)s %(message)s",
+            datefmt="%I:%M:%S",
+        )
         self._fh.setFormatter(fh_formatter)
         self._sh.setFormatter(sh_formatter)
         self.logger.addHandler(self._fh)

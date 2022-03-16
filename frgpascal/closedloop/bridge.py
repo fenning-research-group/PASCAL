@@ -1,4 +1,5 @@
 from collections import defaultdict
+from enum import unique
 import numpy as np
 import os
 import time
@@ -16,9 +17,13 @@ from ax.core.base_trial import BaseTrial, TrialStatus
 
 from frgpascal.analysis.processing import load_sample
 from frgpascal.analysis import brightfield
-from frgpascal.experimentaldesign.tasks import Rest
+from frgpascal.experimentaldesign.tasks import Rest, Anneal
+from frgpascal.workers import Worker_Hotplate
 
 WORKERS = system.generate_workers()
+HOTPLATE_NAMES = [
+    name for name, worker in WORKERS.items() if isinstance(worker, Worker_Hotplate)
+]
 
 
 class NumpyFloatValuesEncoder(json.JSONEncoder):
@@ -88,6 +93,37 @@ class PASCALAxQueue(Client):
 
         self.get_experiment_directory()
 
+    def assign_hotplates(self):
+        if not hasattr(self, "hotplate_temperatures"):
+            self.hotplate_temperatures = []
+            print(
+                "Note: self.hotplate_temperatures was not defined in self.initialize_labware, currently there are no temperatures/hotplates allocated for this experiment!"
+            )
+
+        unique_temperatures = list(set(self.hotplate_temperatures))
+        unique_temperatures.sort()
+
+        if len(unique_temperatures) > 3:
+            raise Exception(
+                f"Maximum three unique temperatures allowed: currently requesting {len(unique_temperatures)} ({unique_temperatures})"
+            )
+        elif len(unique_temperatures) > 0:
+            if max(unique_temperatures) > 200:
+                raise Exception(
+                    f"Maximum hotplate temperature allowed is 200°C: currently requesting {max(unique_temperatures)}°C"
+                )
+        self.HOTPLATE_ASSIGNMENTS = {}
+        for t, hp in zip(unique_temperatures, HOTPLATE_NAMES):
+            self.HOTPLATE_ASSIGNMENTS[t] = WORKERS[
+                hp
+            ]  # hotplate worker dedicated to each temperature
+            msg = {
+                "type": "set_hotplate_setpoint",
+                "hotplate_name": hp,
+                "setpoint": t,
+            }
+            self.send(json.dumps(msg))
+
     @abstractmethod
     def build_sample(self, parameters) -> Sample:
         """Given a list of parameters from Ax, return a Sample object
@@ -149,12 +185,20 @@ class PASCALAxQueue(Client):
         if min_start is None:
             min_start = self.min_allowable_time
         min_start = max([min_start, self.min_allowable_time])
-        self.sample_counter += 1
 
+        # make sure sample is resting in its storage tray, annealing on correct hotplate
         tray_worker = WORKERS[sample.storage_slot["tray"]]
-        for task in sample.worklist:  # make sure sample is resting in its storage tray
+        for task in sample.worklist:
             if isinstance(task, Rest):
                 task.workers = [tray_worker]
+            if isinstance(task, Anneal):
+                hp = self.HOTPLATE_ASSIGNMENTS.get(task.temperature, None)
+                if hp is None:
+                    raise Exception(
+                        "No hotplate assigned for temperature {task.temperature}!"
+                    )
+                task.workers = [hp]
+
         sample.protocol = self.system.generate_protocol(
             name=sample.name,
             worklist=sample.worklist,
@@ -174,6 +218,7 @@ class PASCALAxQueue(Client):
         msg_dict["type"] = "protocol"
         msg = json.dumps(msg_dict)
         self.send(msg)
+        self.sample_counter += 1
 
     def get_experiment_directory(self):
         """

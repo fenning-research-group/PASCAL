@@ -341,11 +341,11 @@ def assign_hotplates(samples: list):
     unique_temperatures = list(temperatures.keys())
     unique_temperatures.sort()
 
-    if len(temperatures) > 3:
+    if len(unique_temperatures) > 3:
         raise Exception(
-            f"Maximum three unique temperatures allowed: currently requesting {len(temperatures)} ({unique_temperatures})"
+            f"Maximum three unique temperatures allowed: currently requesting {len(unique_temperatures)} ({unique_temperatures})"
         )
-    elif len(temperatures) > 0:
+    elif len(unique_temperatures) > 0:
         if max(unique_temperatures) > 200:
             raise Exception(
                 f"Maximum hotplate temperature allowed is 200°C: currently requesting {max(unique_temperatures)}°C"
