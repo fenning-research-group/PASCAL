@@ -138,7 +138,9 @@ class PASCALAxQueue(Client):
         msg = {"type": "set_start_time", "nist_time": self.t0}
         self.send(json.dumps(msg))
 
-    def _send_sample_to_maestro(self, sample: Sample, min_start: int = None):
+    def _send_sample_to_maestro(
+        self, sample: Sample, parameters: dict, min_start: int = None
+    ):
         """Send a new sample to the maestro workers"""
         if not self.first_sample_sent:
             self.set_start_time()
@@ -163,6 +165,7 @@ class PASCALAxQueue(Client):
         self.system.scheduler.solve(self.SCHEDULE_SOLVE_TIME)
 
         msg_dict = sample.to_dict()
+        msg_dict["parameters"] = parameters
         with open(
             os.path.join(self.sample_info_folder, f"{sample.name}.json"), "w"
         ) as f:
@@ -240,7 +243,7 @@ class PASCALAxQueue(Client):
         # Code to actually schedule the job and produce an ID would go here;
         # using timestamp as dummy ID for this example.
         sample = self.build_sample(parameters)
-        self._send_sample_to_maestro(sample=sample)
+        self._send_sample_to_maestro(sample=sample, parameters=parameters)
         job_id = sample.name
         self.jobs[job_id] = PASCALJob(job_id, parameters)
         return job_id
