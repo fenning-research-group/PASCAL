@@ -211,7 +211,7 @@ class PASCALAxQueue(Client):
         sample_present = True
 
         if sample_present:
-            outcome = load_sample(
+            outcome, raw_data = load_sample(
                 sample=sample_name, datadir=self.characterization_folder
             )
             outcome["success"] = True
