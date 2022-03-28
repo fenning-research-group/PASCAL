@@ -68,6 +68,7 @@ setup(
             "hardware/*/*/*.yaml",
             "hardware/*/*/*.json",
             "Examples/*.ipynb",
+            "experimentaldesign/recipes/liquidhandlerprotocols/*.py",
         ],
     },
     include_package_data=True,
