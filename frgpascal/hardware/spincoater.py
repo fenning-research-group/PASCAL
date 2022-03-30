@@ -181,6 +181,11 @@ class SpinCoater:
                         rpm (int): target angular velocity, in rpm
                         acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
         """
+        if rpm < self.SPEEDRANGE[0] or rpm > self.SPEEDRANGE[1]:
+            raise ValueError(f"RPM out of range. Must be between {self.SPEEDRANGE[0]} and {self.SPEEDRANGE[1]}")
+        if acceleration < self.ACCELERATIONRANGE[0] or acceleration > self.ACCELERATIONRANGE[1]:
+            raise ValueError(f"Acceleration out of range. Must be between {self.ACCELERATIONRANGE[0]} and {self.ACCELERATIONRANGE[1]}")
+        
         rps = int(rpm / 60)  # convert rpm to rps for odrive
         acceleration = int(acceleration / 60)  # convert rpm/s to rps/s for odrive
         self.axis.controller.config.vel_ramp_rate = acceleration
