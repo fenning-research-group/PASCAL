@@ -170,13 +170,11 @@ class Solution(mx.Solution):
 
     def to_dict(self):
         if self.molarity > 0:
-            factor = 1/self.molarity
+            factor = 1 / self.molarity
         else:
             factor = 1
         out = {
-            "solutes": components_to_name(
-                self.solutes, delimiter="_", factor=factor
-            ),
+            "solutes": components_to_name(self.solutes, delimiter="_", factor=factor),
             "molarity": self.molarity,
             "solvent": components_to_name(self.solvent, delimiter="_", factor=1),
             "well": self.well,
@@ -407,9 +405,9 @@ class Spincoat(Task):
             raise ValueError(
                 "steps must be an nx3 nested list/array where each row = [speed, acceleration, duration]."
             )
-        if len(drops) > 2:
+        if len(drops) not in [1, 2]:
             raise ValueError(
-                "Cannot plan more than two drops in one spincoating routine (yet)!"
+                "Must have either one or two drops per spincoating routine!"
             )
         self.drops = drops
         first_drop_time = min([d.time for d in self.drops])
@@ -421,7 +419,6 @@ class Spincoat(Task):
         duration = self.steps[:, 2].sum() + self.start_times[0]
 
         # add overhead time based on number of pipetting steps. These numbers are calibrated from experiments
-
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
             duration += max(
@@ -466,8 +463,12 @@ class Spincoat(Task):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
+            if self.steps.shape != other.steps.shape:
+                return False
+            if len(self.drops) != len(other.drops):
+                return False
             return (self.steps == other.steps).all() and all(
-                ds in other.drops for ds in self.drops
+                ds == do for ds, do in zip(self.drops, other.drops)
             )
         else:
             return False
