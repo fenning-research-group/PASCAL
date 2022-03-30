@@ -24,7 +24,7 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(
     os.path.join(MODULE_DIR, "..", "hardware", "hardwareconstants.yaml"), "r"
 ) as f:
-    constants = yaml.load(f, Loader=yaml.FullLoader)
+    HARDWARECONSTANTS = yaml.load(f, Loader=yaml.FullLoader)
 
 workers = generate_workers()
 ALL_TASKS = {
@@ -191,26 +191,26 @@ class Drop:
         solution: Solution,
         volume: float,
         time: float,
-        rate: float = 100,
+        rate: float = 80,
         height: float = 2,
         slow_retract: bool = True,
         touch_tip: bool = True,
         air_gap: bool = True,
-        pre_mix: tuple = (0, 0),
+        pre_mix: tuple = (3, 50),
         reuse_tip: bool = False,
         slow_travel: bool = False,
-        blow_out: bool = False,
+        blow_out: bool = True,
     ):
         self.solution = solution
         if volume <= 0:
             raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
         self.time = time
-        if rate < 0 or rate > 800:
-            raise ValueError("dispense rate must be 0<rate<=800 uL/sec")
+        if rate < 10 or rate > 1000:
+            raise ValueError("dispense rate must be 10<rate<=1000 uL/sec")
         self.rate = rate
 
-        if height <= 0 or height > 10:
+        if height < 0.5 or height > 10:
             raise ValueError("dispense height must be 0.5<height<=10 mm")
         self.height = (
             height  # distance from pipette tip to substrate must be at least 0.5mm
@@ -285,16 +285,17 @@ class VolatileDrop(Drop):
         solution: Solution,
         volume: float,
         time: float,
-        rate: float = 100,
-        height: float = 2,
-        slow_retract: bool = False,
+        rate: float = None,
+        height: float = None,
+        slow_retract: bool = True,  # move slow to prevent drip
         touch_tip: bool = False,
-        air_gap: bool = True,
-        pre_mix: int = 3,
-        reuse_tip: bool = False,
-        slow_travel: bool = True,
+        air_gap: bool = None,
+        pre_mix: int = (5, 100),  # pre wet tip to prevent drip
+        reuse_tip: bool = None,
+        slow_travel: bool = True,  # move slow to prevent drip
+        blow_out: bool = None,
     ):
-        super().__init__(
+        kwargs = dict(
             solution=solution,
             volume=volume,
             time=time,
@@ -306,7 +307,12 @@ class VolatileDrop(Drop):
             pre_mix=pre_mix,
             reuse_tip=reuse_tip,
             slow_travel=slow_travel,
+            blow_out=blow_out,
         )
+        kwargs = {
+            k: v for k, v in kwargs.items() if v is not None
+        }  # drop None arguments, let them default to the Drop default args
+        super().__init__(**kwargs)
 
 
 ### Base Class for PASCAL Tasks
@@ -404,6 +410,26 @@ class Spincoat(Task):
         if self.steps.shape[1] != 3:
             raise ValueError(
                 "steps must be an nx3 nested list/array where each row = [speed, acceleration, duration]."
+            )
+
+        if (
+            any(
+                rpm < HARDWARECONSTANTS["spincoater"]["rpm_min"]
+                for rpm in self.steps[:, 0]
+                if rpm != 0
+            )
+            or (self.steps[:, 0] > HARDWARECONSTANTS["spincoater"]["rpm_max"]).any()
+        ):
+            raise ValueError(
+                f"RPM must be either 0 (fully stopped), or between {HARDWARECONSTANTS['spincoater']['rpm_min']} and {HARDWARECONSTANTS['spincoater']['rpm_max']} rpm."
+            )
+        if (
+            self.steps[:, 1] < HARDWARECONSTANTS["spincoater"]["acceleration_min"]
+        ).any() or (
+            self.steps[:, 1] > HARDWARECONSTANTS["spincoater"]["acceleration_max"]
+        ).any():
+            raise ValueError(
+                f"Acceleration must be between {HARDWARECONSTANTS['spincoater']['acceleration_min']} and {HARDWARECONSTANTS['spincoater']['acceleration_max']} rpm/second."
             )
         if len(drops) not in [1, 2]:
             raise ValueError(
@@ -605,8 +631,8 @@ class Characterize(Task):
         self.duration += 10  # buffer time (s)
 
         positions = [0] + [t.position for t in self.characterization_tasks] + [0]
-        m = constants["characterizationline"]["axis"]["traveltime"]["m"]
-        b = constants["characterizationline"]["axis"]["traveltime"]["b"]
+        m = HARDWARECONSTANTS["characterizationline"]["axis"]["traveltime"]["m"]
+        b = HARDWARECONSTANTS["characterizationline"]["axis"]["traveltime"]["b"]
         for p0, p1 in zip(positions, positions[1:]):
             distance = np.abs(p1 - p0)
             self.duration += distance * m + b
