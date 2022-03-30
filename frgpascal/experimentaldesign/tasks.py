@@ -571,11 +571,11 @@ class Anneal(Task):
 
 
 class Rest(Task):
-    def __init__(self, duration: float, immediate=True):
+    def __init__(self, duration: float = 300, immediate=True):
         """
 
         Args:
-            duration (float): duration (seconds) to anneal the sample
+            duration (float): duration (seconds) to anneal the sample. Default = 5 minutes, typical to cool off sample
         """
         self.duration = duration
         super().__init__(task="rest", duration=self.duration, immediate=immediate)

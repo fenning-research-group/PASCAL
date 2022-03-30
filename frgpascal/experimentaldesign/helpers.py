@@ -3,6 +3,7 @@ import json
 import csv
 import itertools
 from frgpascal.experimentaldesign.tasks import (
+    Characterize,
     Solution,
     Sample,
     Spincoat,
@@ -21,6 +22,7 @@ from typing import Tuple
 import mixsol as mx
 from mixsol.mix import _solutions_to_matrix
 import random
+import warnings
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
@@ -199,12 +201,43 @@ def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
     return spincoats
 
 
+def _is_bad_worklist(worklist: list) -> bool:
+    """Checks if a worklist has undesirable sequences of tasks. For example, we dont want to go straight from a hotplate to the characterization train, since hot samples may measure differently or warp the train
+
+    Args:
+        worklist (list): list of frgpascal.experimentaldesign.tasks.Task objects in order of execution
+
+    Returns:
+        bool: True = this worklist is undesirable! False = things look good
+    """
+    is_bad = False
+    for t1, t2 in zip(worklist, worklist[1:]):
+        if isinstance(t1, Anneal) and isinstance(t2, Characterize):
+            warnings.warn(
+                "Anneal followed by Characterize - this can lead to bad measurements (hot sample) or damage to the characterization train (melting the PLA). Maybe add a Rest step between."
+            )
+            is_bad = True  # we do not want to do this
+        if isinstance(t1, Anneal) and isinstance(t2, Spincoat):
+            is_bad = True
+            warnings.warn(
+                "Anneal followed by Spincoat - this can damage the spincoater chuck if too hot. Maybe add a Rest step between."
+            )
+        if (isinstance(t1, Characterize) and isinstance(t2, Spincoat)) or (
+            isinstance(t1, Spincoat) and isinstance(t2, Characterize)
+        ):
+            warnings.warn(
+                "Back to back Spincoat and Characterization is ok, but can seriously rate limit the experiment (both have single substrate capacity). Consider inserting a Rest step if you can tolerate it."
+            )
+    return is_bad
+
+
 def build_sample_list(
     input_substrates: list,
     steps: list,
     solution_mesh: dict = {},
     n_repeats: int = 1,
     starting_index: int = 0,
+    override_bad_worklists: bool = False,
 ) -> list:
     """
     Permutes experimental mesh into sample list
@@ -232,19 +265,26 @@ def build_sample_list(
         all_worklists += list(itertools.product(*this_set_of_steps))
 
     idx = starting_index
-    for wl in all_worklists:
-        for sub in input_substrates:
-            for r in range(n_repeats):
-                name = f"sample{idx}"
-                idx += 1
-                this_sample = Sample(
-                    name=name,
-                    substrate=sub,
-                    worklist=deepcopy(wl),
-                    storage_slot=None
-                    # sampleid=sampleid
+    with warnings.catch_warnings():
+        warnings.simplefilter("once")
+        for wl in all_worklists:
+            is_bad = _is_bad_worklist(wl)
+            if is_bad and not override_bad_worklists:
+                raise Exception(
+                    "Bad worklist detected. Either correct the issue, or use override_bad_worklists=True to ignore."
                 )
-                sample_list.append(this_sample)
+            for sub in input_substrates:
+                for r in range(n_repeats):
+                    name = f"sample{idx}"
+                    idx += 1
+                    this_sample = Sample(
+                        name=name,
+                        substrate=sub,
+                        worklist=deepcopy(wl),
+                        storage_slot=None
+                        # sampleid=sampleid
+                    )
+                    sample_list.append(this_sample)
     return sample_list
 
 
