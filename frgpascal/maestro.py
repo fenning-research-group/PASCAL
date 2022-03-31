@@ -24,6 +24,7 @@ from frgpascal.hardware.characterizationline import (
     CharacterizationLine,
 )
 from frgpascal.hardware.switchbox import Switchbox
+from frgpascal.analysis.processing import load_all
 
 from frgpascal.workers import (
     Worker_Hotplate,
@@ -404,38 +405,6 @@ class Maestro:
             )  # move gantry out of the liquid handler
             self.spincoater.idle()  # dont actively hold chuck in registered position
 
-    def batch_characterize(self, name, tray_maxslots={}):
-        """
-        Characterize a list of samples.
-        Creates an experiment folder to save data, filenames by tray-slot
-
-        Parameters
-            tray_maxslots (dict): a dictionary of tray names and the highest index filled
-
-                    ie: tray_maxslots = {'SampleTray1': 'A5'} will measure samples A1, A2, A3, A4, A5
-        """
-        self._experiment_checklist(characterization_only=True)
-        self._set_up_experiment_folder(name)
-
-        if any([tray not in self.storage for tray in tray_maxslots]):
-            raise ValueError("Invalid tray specified!")
-
-        samples_to_characterize = []
-        for tray, maxslot in tray_maxslots.items():
-            if maxslot not in self.storage[tray]._coordinates:
-                raise ValueError(f"{maxslot} does not exist in tray {tray}!")
-            for slot in natsorted(self.storage[tray]._coordinates.keys()):
-                samples_to_characterize.append((tray, slot))
-                if slot == tray_maxslots[tray]:
-                    break  # last sample to measure in this tray
-
-        for (tray, slot) in tqdm(
-            samples_to_characterize, desc="Batch Characterization"
-        ):
-            self.transfer(self.storage[tray](slot), self.characterization.axis())
-            self.characterization.run(f"{tray}-{slot}")
-            self.transfer(self.characterization.axis(), self.storage[tray](slot))
-
     ### Batch Sample Execution
     def make_background_event_loop(self):
         def exception_handler(loop, context):
@@ -579,6 +548,8 @@ class Maestro:
         self._set_up_experiment_folder(experiment_name)
 
     def run(self, ot2_ip):
+        if len(self.samples) == 0:
+            raise Exception("No samples loaded, did you forget to run .load_netlist()?")
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
@@ -611,6 +582,10 @@ class Maestro:
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
+        metrics, _ = load_all(datadir=self.characterization.rootdir)
+        metrics.to_csv(
+            os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
+        )
 
         for w in self.workers.values():
             w.stop_workers()
@@ -618,6 +593,7 @@ class Maestro:
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
 
         self.logger.info("Finished experiment, stopping now.")
+
         for h in self.logger.handlers:
             self.logger.removeHandler(h)
 
