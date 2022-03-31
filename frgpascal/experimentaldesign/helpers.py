@@ -191,13 +191,19 @@ def apply_solution_mesh(spincoat: Spincoat, solution_mesh):
     drop_options = [
         apply_solution_mesh_to_drop(d, solution_mesh) for d in spincoat.drops
     ]
-    spincoats = [
-        Spincoat(
-            steps=spincoat.steps,
-            drops=ds,
-        )
-        for ds in itertools.product(*drop_options)
-    ]
+    spincoats = []
+    for ds in itertools.product(*drop_options):
+        sc = deepcopy(spincoat)
+        sc.drops = ds
+        spincoats.append(sc)
+    # spincoats = [
+    #     Spincoat(
+    #         steps=spincoat.steps,
+    #         drops=ds,
+    #         immediate=spincoat.immediate
+    #     )
+    #     for ds in itertools.product(*drop_options)
+    # ]
     return spincoats
 
 
@@ -591,7 +597,9 @@ class PASCALPlanner:
         )
         self.mixer.print()
 
-    def solve_schedule(self, shuffle=True, prioritize_first_spincoat=False, **kwargs):
+    def solve_schedule(
+        self, shuffle: bool = True, prioritize_first_spincoat: bool = False, **kwargs
+    ):
         self.system = build()
         if shuffle:
             sample_it = iter(random.sample(self.samples, len(self.samples)))
@@ -602,15 +610,15 @@ class PASCALPlanner:
             sample.protocol = self.system.generate_protocol(
                 worklist=sample.worklist, name=sample.name
             )
-        breakpoints = []
-        if prioritize_first_spincoat:
-            for sample in self.samples:
-                for task in sample.protocol.worklist:
-                    if isinstance(task, Spincoat):
-                        breakpoints.append(task)
-                        break
 
-        self.system.scheduler.solve(breakpoints=[breakpoints], **kwargs)
+        for sample in self.samples:
+            for task in sample.protocol.worklist:
+                if isinstance(task, Spincoat):
+                    task.breakpoint = prioritize_first_spincoat
+                    break
+        self.system.scheduler._collect_breakpoints()
+
+        self.system.scheduler.solve(**kwargs)
         self.system.scheduler.plot_solution()
         filename = f"schedule_{self.name}.jpeg"
         plt.savefig(filename, bbox_inches="tight")
