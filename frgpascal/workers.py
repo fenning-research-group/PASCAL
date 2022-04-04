@@ -78,7 +78,8 @@ class WorkerTemplate(Worker_roboflo):
                 if len(self.queue._queue) > 0:
                     time_until_next = (
                         self.queue._queue[0][0] - self.maestro.experiment_time
-                    )
+                    )  # seconds until task is due
+
                     if time_until_next <= 1:  # within 1 second of start time
                         break
                 await asyncio.sleep(0.2)

@@ -30,6 +30,15 @@ HOTPLATE_NAMES = [
 ]
 
 #### General
+class NumpyFloatValuesEncoder(json.JSONEncoder):
+    """Converts np.float32 to float to allow dumping to json file"""
+
+    def default(self, obj):
+        if isinstance(obj, np.float32):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 def generate_unique_id():
     return str(uuid.uuid4())
 
@@ -339,7 +348,10 @@ def samples_to_dataframe(samples):
             "storage_tray": sample.storage_slot["tray"],
             "storage_slot": sample.storage_slot["slot"],
             "substrate": sample.substrate,
-            "worklist": json.dumps([task.to_dict() for task in sample.worklist]),
+            "worklist": json.dumps(
+                [task.to_dict() for task in sample.worklist],
+                cls=NumpyFloatValuesEncoder,
+            ),
         }
         task_idx = {}
         for task in sample.worklist:
@@ -357,12 +369,14 @@ def samples_to_dataframe(samples):
                         this[key + "molarity"] = d["solution"]["molarity"]
                         this[key + "solutes"] = d["solution"]["solutes"]
                         this[key + "solutes_dict"] = json.dumps(
-                            task.drops[drop_idx].solution.solutes
+                            task.drops[drop_idx].solution.solutes,
+                            cls=NumpyFloatValuesEncoder,
                         )
 
                         this[key + "solvent"] = d["solution"]["solvent"]
                         this[key + "solvent_dict"] = json.dumps(
-                            task.drops[drop_idx].solution.solvent
+                            task.drops[drop_idx].solution.solvent,
+                            cls=NumpyFloatValuesEncoder,
                         )
 
                 else:
@@ -727,7 +741,7 @@ class PASCALPlanner:
 
         fname = f"maestronetlist_{self.name}.json"
         with open(fname, "w") as f:
-            json.dump(out, f, indent=4, sort_keys=True)
+            json.dump(out, f, indent=4, sort_keys=True, cls=NumpyFloatValuesEncoder)
         print(f'Maestro Netlist dumped to "{fname}"')
 
         df = samples_to_dataframe(samples=self.samples)

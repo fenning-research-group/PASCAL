@@ -560,15 +560,15 @@ class Maestro:
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
-        for t in self.tasks:
+        for task in self.tasks:
             assigned = False
             for workername, worker in self.workers.items():
-                if t["name"] in worker.functions:
-                    worker.add_task(t)
+                if task["name"] in worker.functions:
+                    worker.add_task(task)
                     assigned = True
                     continue
             if not assigned:
-                raise Exception(f"No worker assigned to task {t['name']}")
+                raise Exception(f"No worker assigned to task {task['name']}")
 
         for worker in self.workers.values():
             worker.start()
