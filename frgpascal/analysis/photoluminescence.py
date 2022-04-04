@@ -27,9 +27,7 @@ def load_spectrum(fid):
     for i in range(d.shape[1] - 1, 0, -1):
         if not any(np.isnan(d[:, i])):
             break
-    cps = (
-        1000 * d[:, i] / dwelltimes[i - 1]
-    )  # normalize by dwelltime (milliseconds), convert counts/ms to counts/s
+    cps = d[:, i] / dwelltimes[i - 1]
     return wl, cps
 
 
@@ -48,7 +46,7 @@ def load_photostability(fid):
 
     d = np.loadtxt(fid, delimiter=",", skiprows=4)
     wl = d[:, 0]
-    cps = 1000 * d[:, 1:].T / dwelltime  # dwelltime in ms, convert to cts/second
+    cps = d[:, 1:].T / dwelltime
     blcts = np.mean(cps[:, wl < 500], axis=1)
     cps -= blcts[:, np.newaxis]
 
