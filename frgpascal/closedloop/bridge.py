@@ -50,6 +50,9 @@ class PASCALAxQueue(Client):
     note that job_id is sample_name is sample.name
     """
 
+    metrics_to_watch = []
+    hotplate_temperatures = []
+
     def __init__(self):
         super().__init__()
         # self.websocket = Client()
@@ -95,10 +98,9 @@ class PASCALAxQueue(Client):
         self.get_experiment_directory()
 
     def assign_hotplates(self):
-        if not hasattr(self, "hotplate_temperatures"):
-            self.hotplate_temperatures = []
+        if len(self.hotplate_temperatures) == 0:
             print(
-                "Note: self.hotplate_temperatures was not defined in self.initialize_labware, currently there are no temperatures/hotplates allocated for this experiment!"
+                "Note: attribute `hotplate_temperatures` was not defined, currently there are no temperatures/hotplates allocated for this experiment!"
             )
 
         unique_temperatures = list(set(self.hotplate_temperatures))
@@ -240,32 +242,43 @@ class PASCALAxQueue(Client):
         )
         os.mkdir(self.sample_info_folder)
 
+    def _characterization_metrics_are_valid(self, metrics):
+        """Check that the characterization metrics are valid. Assumes invalid metrics will be set as np.nan"""
+        if len(self.metrics_to_watch) == 0:
+            self.metrics_to_watch == metrics.keys()
+        for metric in self.metrics_to_watch:
+            if np.isnan(metrics[metric]):
+                return False
+        return True
+
     def _mark_sample_completed(self, message):
         sample_name = message["sample"]
-
-        ## check if we have real data (did the sample make it onto the characterization train?)
-        # brightfield_filepath = os.path.join(
-        #     self.characterization_folder,
-        #     sample_name,
-        #     "characterization0",
-        #     f"{sample_name}_brightfield.tif",
-        # )  # TODO only checks failures/dropped samples in the first characterization!
-        # sample_present = self._samplechecker.sample_is_present_fromfile(
-        #     brightfield_filepath, return_probability=False
-        # )
-
-        sample_present = True
+        success = True  # whether to mark trial as COMPLETED or FAILED
+        sample_present = (
+            True  # nothing implemented to check for sample presence on char train yet
+        )
 
         if sample_present:
-            outcome, raw_data = load_sample(
-                sample=sample_name, datadir=self.characterization_folder
-            )
-            outcome["success"] = True
+            try:
+                metrics, raw_data = load_sample(
+                    sample=sample_name, datadir=self.characterization_folder
+                )  # load the data
+            except:
+                metrics = {}
+                success = False
+        else:
+            success = False
+
+        if success:
+            success = self._characterization_metrics_are_valid(metrics=metrics)
+
+        if success:
+            self.jobs[sample_name].status = TrialStatus.FAILED
+        else:
             self.jobs[sample_name].status = TrialStatus.COMPLETED
 
-        else:
-            outcome = {"success": False}
-            self.jobs[sample_name].status = TrialStatus.FAILED
+        outcome = {"success": success}
+        outcome.update(metrics)
         self.jobs[sample_name].outcome = outcome
 
         # save results to sample json file
