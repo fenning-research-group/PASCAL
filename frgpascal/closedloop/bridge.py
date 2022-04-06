@@ -275,9 +275,9 @@ class PASCALAxQueue(Client):
             success = self._characterization_metrics_are_valid(metrics=metrics)
 
         if success:
-            self.jobs[sample_name].status = TrialStatus.FAILED
-        else:
             self.jobs[sample_name].status = TrialStatus.COMPLETED
+        else:
+            self.jobs[sample_name].status = TrialStatus.FAILED
 
         outcome = {"success": success}
         outcome.update(metrics)
