@@ -68,7 +68,7 @@ def fit_spectrum(wl, cts, wlmin=675, wlmax=1100, wlguess=None, plot=False):
 
     ev_guess_min = max(ev_guess - 0.2, ev.min())
     ev_guess_max = min(ev_guess + 0.2, ev.max())
-    bounds = [[0, ev_guess_min, 0.02], [y_fit.max() * 1.2, ev_guess_max, 0.05]]
+    bounds = [[0, ev_guess_min, 0.02], [y_fit.max() * 1.2, ev_guess_max, 0.2]]
 
     p0 = [y_fit.max(), ev_guess, 0.025]
 

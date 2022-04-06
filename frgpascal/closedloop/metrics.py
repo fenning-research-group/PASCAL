@@ -1,299 +1,125 @@
+from lib2to3.pytree import Base
 from ax.core.metric import Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core import Trial
+from abc import ABC, abstractmethod
 
 import pandas as pd
 from frgpascal.closedloop.bridge import PASCALAxQueue
 
 import numpy as np
 
+
+class BasePASCALMetric(ABC, Metric):
+    @classmethod
+    @property
+    @abstractmethod
+    def name(self):
+        raise NotImplementedError
+
+    @classmethod
+    @property
+    @abstractmethod
+    def lower_is_better(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def retrieve_metric(self, sample_data):
+        pass
+
+    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
+        self.queue = queue
+        Metric.__init__(
+            self, name=self.name, lower_is_better=self.lower_is_better, *args, **kwargs
+        )
+
+    def fetch_trial_data(self, trial: BaseTrial) -> Data:
+        """Obtains data via fetching it from ` for a given trial."""
+        if not isinstance(trial, Trial):
+            raise ValueError("This metric only handles `Trial`.")
+
+        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
+        sample_data = self.queue.get_outcome_value_for_completed_job(
+            job_id=trial.run_metadata.get("job_id")
+        )
+        df_dict = {
+            "trial_index": trial.index,
+            "metric_name": self.name,
+            "arm_name": trial.arm.name,
+            "mean": self.retrieve_metric(sample_data=sample_data),
+            # Can be set to 0.0 if function is known to be noiseless
+            # or to an actual value when SEM is known. Setting SEM to
+            # `None` results in Ax assuming unknown noise and inferring
+            # noise level from data.
+            "sem": None,
+        }
+        return Data(df=pd.DataFrame.from_records([df_dict]))
+
+
 ### PL Metrics
-class PLIntensity(Metric):
-    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self.queue = queue
-        super().__init__(name="pl_intensity", lower_is_better=False, *args, **kwargs)
+class PLIntensity(BasePASCALMetric):
+    lower_is_better = False
+    name = "pl_intensity"
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "pl_intensity",
-            "arm_name": trial.arm.name,
-            "mean": sample_data.get("pl_intensity_0"),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        return sample_data.get("pl_intensity_0")
 
 
-class PLPeak(Metric):
+class PLTargetEnergy(BasePASCALMetric):
+    lower_is_better = True
+    name = None
+
     def __init__(self, queue: PASCALAxQueue, targetev: float, *args, **kwargs):
-        self.queue = queue
+        self.name = f"pl_peak_energy_delta_from_{targetev}"
+        super().__init__(queue=queue, *args, **kwargs)
         self.targetev = targetev
-        super().__init__(name="pl_peakev", lower_is_better=True, *args, **kwargs)
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "pl_peakev",
-            "arm_name": trial.arm.name,
-            "mean": np.abs(sample_data.get("pl_peakev_0") - self.targetev),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        peakev = sample_data.get("pl_peak_energy_0")
+        delta = np.abs(peakev - self.targetev)
+        return delta
 
 
-class PLFWHM(Metric):
-    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self.queue = queue
-        super().__init__(name="pl_fwhm", lower_is_better=True, *args, **kwargs)
+class PLFWHM(BasePASCALMetric):
+    lower_is_better = True
+    name = "pl_fwhm"
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "pl_fhwm",
-            "arm_name": trial.arm.name,
-            "mean": sample_data.get("pl_fwhm_0"),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
-
-
-### Photostability Metrics
-class PSIntensityScale(Metric):
-    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self.queue = queue
-        super().__init__(
-            name="ps_intensity_scale", lower_is_better=False, *args, **kwargs
-        )
-
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "ps_intensity_scale",
-            "arm_name": trial.arm.name,
-            "mean": sample_data.get("ps_intensity_scale_0"),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
-
-
-# class PSIntensityRate(Metric):
-#     def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-#         self.queue = queue
-#         super().__init__(name="ps_intensity_rate", *args, **kwargs)
-
-#     def fetch_trial_data(self, trial: BaseTrial) -> Data:
-#         """Obtains data via fetching it from ` for a given trial."""
-#         if not isinstance(trial, Trial):
-#             raise ValueError("This metric only handles `Trial`.")
-
-#         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self.queue.get_outcome_value_for_completed_job(
-#             job_id=trial.run_metadata.get("job_id")
-#         )
-#         df_dict = {
-#             "trial_index": trial.index,
-#             "metric_name": "ps_intensity_rate",
-#             "arm_name": trial.arm.name,
-#             "mean": sample_data.get("ps_intensity_rate_0"),
-#             # Can be set to 0.0 if function is known to be noiseless
-#             # or to an actual value when SEM is known. Setting SEM to
-#             # `None` results in Ax assuming unknown noise and inferring
-#             # noise level from data.
-#             "sem": None,
-#         }
-#         return Data(df=pd.DataFrame.from_records([df_dict]))
-
-
-# class PSPeakDelta(Metric):
-#     def __init__(self, queue: PASCALAxQueue):
-#         self.queue = queue
-#         super().__init__()
-
-#     def fetch_trial_data(self, trial: BaseTrial) -> Data:
-#         """Obtains data via fetching it from ` for a given trial."""
-#         if not isinstance(trial, Trial):
-#             raise ValueError("This metric only handles `Trial`.")
-
-#         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self.queue.get_outcome_value_for_completed_job(
-#             job_id=trial.run_metadata.get("job_id")
-#         )
-#         df_dict = {
-#             "trial_index": trial.index,
-#             "metric_name": "ps_peakev_delta",
-#             "arm_name": trial.arm.name,
-#             "mean": sample_data.get("ps_peakev_delta_0"),
-#             # Can be set to 0.0 if function is known to be noiseless
-#             # or to an actual value when SEM is known. Setting SEM to
-#             # `None` results in Ax assuming unknown noise and inferring
-#             # noise level from data.
-#             "sem": None,
-#         }
-#         return Data(df=pd.DataFrame.from_records([df_dict]))
-
-
-# class PSPeakRate(Metric):
-#     def __init__(self, queue: PASCALAxQueue):
-#         self.queue = queue
-#         super().__init__()
-
-#     def fetch_trial_data(self, trial: BaseTrial) -> Data:
-#         """Obtains data via fetching it from ` for a given trial."""
-#         if not isinstance(trial, Trial):
-#             raise ValueError("This metric only handles `Trial`.")
-
-#         # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-#         sample_data = self.queue.get_outcome_value_for_completed_job(
-#             job_id=trial.run_metadata.get("job_id")
-#         )
-#         df_dict = {
-#             "trial_index": trial.index,
-#             "metric_name": "ps_peakev_rate",
-#             "arm_name": trial.arm.name,
-#             "mean": sample_data.get("ps_peakev_rate_0"),
-#             # Can be set to 0.0 if function is known to be noiseless
-#             # or to an actual value when SEM is known. Setting SEM to
-#             # `None` results in Ax assuming unknown noise and inferring
-#             # noise level from data.
-#             "sem": None,
-#         }
-#         return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        return sample_data.get("pl_fwhm_0")
 
 
 ### Transmission Metrics
-class TBandgap(Metric):
-    def __init__(self, queue: PASCALAxQueue, targetbandgap: float, *args, **kwargs):
-        self.queue = queue
-        self.targetbandgap = targetbandgap
-        super().__init__(name="t_bandgap", lower_is_better=True, *args, **kwargs)
+class TransmittanceTargetBandgap(BasePASCALMetric):
+    lower_is_better = True
+    name = None
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
+    def __init__(self, queue: PASCALAxQueue, targetev: float, *args, **kwargs):
+        self.name = f"t_bandgap_delta_from_{targetev}"
+        super().__init__(queue=queue, *args, **kwargs)
+        self.targetev = targetev
 
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "t_bandgap",
-            "arm_name": trial.arm.name,
-            "mean": np.abs(sample_data.get("t_bandgap_0") - self.targetbandgap),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        bandgap = sample_data.get("t_bandgap_0")
+        delta = np.abs(bandgap - self.targetev)
+        return delta
 
 
 ### Darkfield Metrics
-class DFMedian(Metric):
-    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self.queue = queue
-        super().__init__(name="df_median", lower_is_better=True, *args, **kwargs)
+class DFMedian(BasePASCALMetric):
+    lower_is_better = True
+    name = "df_median"
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "df_median",
-            "arm_name": trial.arm.name,
-            "mean": sample_data.get("df_median_0"),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        return sample_data.get("df_median_0")
 
 
 ### Brightfield Metrics
 
 
-class BFInhomogeneity(Metric):
-    def __init__(self, queue: PASCALAxQueue, *args, **kwargs):
-        self.queue = queue
-        super().__init__(name="bf_inhomogeneity", lower_is_better=True, *args, **kwargs)
+class BFInhomogeneity(BasePASCALMetric):
+    lower_is_better = True
+    name = "bf_inhomogeneity"
 
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        # Here we leverage the "job_id" metadata created by `MockJobRunner.run`.
-        sample_data = self.queue.get_outcome_value_for_completed_job(
-            job_id=trial.run_metadata.get("job_id")
-        )
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": "bf_inhomogeneity",
-            "arm_name": trial.arm.name,
-            "mean": sample_data.get("bf_inhomogeneity_0"),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+    def retrieve_metric(self, sample_data):
+        return sample_data.get("bf_inhomogeneity_0")
