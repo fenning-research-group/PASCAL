@@ -51,6 +51,7 @@ class PASCALAxQueue(Client):
     """
 
     metrics_to_watch = []
+    metrics_to_ignore = []
     hotplate_temperatures = []
 
     def __init__(self):
@@ -247,8 +248,9 @@ class PASCALAxQueue(Client):
         if len(self.metrics_to_watch) == 0:
             self.metrics_to_watch == metrics.keys()
         for metric in self.metrics_to_watch:
-            if np.isnan(metrics[metric]):
-                return False
+            if metric not in self.metrics_to_ignore:
+                if np.isnan(metrics[metric]):
+                    return False
         return True
 
     def _mark_sample_completed(self, message):
