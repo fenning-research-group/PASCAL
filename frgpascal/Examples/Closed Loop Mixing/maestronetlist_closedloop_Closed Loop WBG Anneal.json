@@ -1,0 +1,36 @@
+{
+    "baselines_required": {
+        "Brightfield": [
+            0.05
+        ],
+        "Darkfield": [
+            0.05
+        ],
+        "PLImaging": [
+            0.05,
+            1,
+            5,
+            0.2
+        ],
+        "PL_635nm": [
+            1,
+            5,
+            10,
+            60,
+            30
+        ],
+        "Photostability_405nm": [
+            2
+        ],
+        "Transmission": [
+            0.2,
+            1,
+            0.05,
+            5,
+            15,
+            0.02
+        ]
+    },
+    "hotplate_setpoints": {},
+    "name": "Closed Loop WBG Anneal"
+}

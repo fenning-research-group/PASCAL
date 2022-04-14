@@ -17,7 +17,6 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
-from frgpascal.hardware.liquidlabware import LiquidLabware
 from frgpascal.experimentaldesign.characterizationtasks import CharacterizationTask
 
 
@@ -397,7 +396,7 @@ class Mix(Task):
         self,
         inputs: dict,
         inputs_labware: list,
-        destination_labware: LiquidLabware,
+        destination_labware,
         destination_well: str,
         immediate: bool = False,
     ):
@@ -438,6 +437,7 @@ class Mix(Task):
         return {
             inp_loc: {self.destination_location: inp_volume}
             for inp_loc, inp_volume in zip(self.input_locations, self.inputs.values())
+            if inp_volume > 0
         }
 
     def generate_details(self):
@@ -448,19 +448,27 @@ class Mix(Task):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return (
-                self.duration == other.duration
-                and self.temperature == other.temperature
-                and self.hotplate == other.hotplate
-            )
+            return self.destination_location == other.destination_location
         else:
             return False
 
     def __key(self):
-        return (self.duration, self.temperature)
+        return self.destination_location
 
     def __hash__(self):
         return hash(self.__key())
+
+    def __repr__(self):
+        duration = self.duration
+        units = "seconds"
+        if duration > 60:
+            duration /= 60
+            units = "minutes"
+        if duration > 60:
+            duration /= 60
+            units = "hours"
+
+        return f"<Mix> {len(self.inputs)} solutions into {self.destination_location}"
 
 
 class Spincoat(Task):
