@@ -30,13 +30,7 @@ mixing_netlist = []
 
 class ListenerWebsocket:
     def __init__(
-        self,
-        protocol_context,
-        tips,
-        labwares,
-        spincoater,
-        ip="0.0.0.0",
-        port=8764,
+        self, protocol_context, tips, labwares, spincoater, ip="0.0.0.0", port=8764,
     ):
         ## Server constants
         self.ip = ip
@@ -51,7 +45,7 @@ class ListenerWebsocket:
         self.status = STATUS_IDLE
         self.tips = tips
         tip_racks = list(self.tips.keys())
-        self._sources = labwares
+        self.labwares = labwares
         self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
         self.CHUCK = "A1"
@@ -83,6 +77,8 @@ class ListenerWebsocket:
             )
             for side in ["left", "right"]
         }
+        # for p in self.pipettes.values():
+        #     p.min_volume = 10  # vs 20 stock
         self.set_starting_tips()
 
         for p in self.pipettes.values():
@@ -209,23 +205,23 @@ class ListenerWebsocket:
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
         p = pipette
-        # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
+        # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
             p.mix(
                 repetitions=pre_mix[0],
                 volume=pre_mix[1],
-                location=self._sources[tray][well],
+                location=self.labwares[tray][well],
             )
-        p.aspirate(volume=volume, location=self._sources[tray][well])
+        p.aspirate(volume=volume, location=self.labwares[tray][well])
         if slow_retract:
-            p.move_to(self._sources[tray][well].top(2), speed=self.SLOW_Z_RATE)
+            p.move_to(self.labwares[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if touch_tip:
             p.touch_tip()
         if air_gap:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
                 volume=self.AIRGAP,
-                location=self._sources[tray][well].top(2),
+                location=self.labwares[tray][well].top(2),
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
@@ -369,7 +365,7 @@ class ListenerWebsocket:
             )
         )
 
-    def mix(self, mixing_netlist):
+    def mix(self, mixing_netlist, **kwargs):
         p = self._get_pipette(pipette="perovskite")
         for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
             source_labware, source_well = source_str.split("-")
@@ -384,10 +380,10 @@ class ListenerWebsocket:
                 )
                 volumes.append(volume)
 
-            if i == len(mixing_netlist):  # ie this is the last transfer
+            if i == len(mixing_netlist) - 1:  # ie this is the last transfer
                 mix_after = (5, 50)
             else:
-                mix_after = None
+                mix_after = (0, 0)
 
             p.transfer(
                 volume=volumes,

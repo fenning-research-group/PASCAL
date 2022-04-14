@@ -5,6 +5,7 @@ from typing import Tuple
 
 from frgpascal import analysis
 from tqdm import tqdm
+from natsort import natsorted
 
 
 def load_sample(
@@ -103,18 +104,11 @@ def load_sample(
                     "t": t,
                     "a": a,
                 }
-                t_kws = dict(
-                    bandgap_type="direct",
-                    wlmin=400,
-                    wlmax=1050,
-                    plot=False,
-                )
+                t_kws = dict(bandgap_type="direct", wlmin=400, wlmax=1050, plot=False,)
                 t_kws.update(t_kwargs)
                 try:
                     metrics[f"t_bandgap_{cidx}"] = analysis.transmittance.tauc(
-                        wl=wl,
-                        a=a,
-                        **t_kws,
+                        wl=wl, a=a, **t_kws,
                     )
                 except:
                     metrics[f"t_bandgap_{cidx}"] = np.nan
@@ -169,6 +163,7 @@ def load_all(
     all_samples = [
         s for s in os.listdir(datadir) if os.path.isdir(os.path.join(datadir, s))
     ]
+    all_samples = natsorted(all_samples)  # sort names
     all_metrics = {}
     all_raw = {}
     for s in tqdm(all_samples, desc="Loading data", unit="sample"):

@@ -29,13 +29,7 @@ mixing_netlist = {}
 
 class ListenerWebsocket:
     def __init__(
-        self,
-        protocol_context,
-        tips,
-        labwares,
-        spincoater,
-        ip="0.0.0.0",
-        port=8764,
+        self, protocol_context, tips, labwares, spincoater, ip="0.0.0.0", port=8764,
     ):
         ## Server constants
         self.ip = ip
@@ -50,7 +44,7 @@ class ListenerWebsocket:
         self.status = STATUS_IDLE
         self.tips = tips
         tip_racks = list(self.tips.keys())
-        self._sources = labwares
+        self.labwares = labwares
         self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
         self.CHUCK = "A1"
@@ -82,6 +76,8 @@ class ListenerWebsocket:
             )
             for side in ["left", "right"]
         }
+        # for p in self.pipettes.values():
+        #     p.min_volume = 10  # vs 20 stock
         self.set_starting_tips()
 
         for p in self.pipettes.values():
@@ -208,23 +204,23 @@ class ListenerWebsocket:
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
         p = pipette
-        # p.move_to(self._sources[tray][well].bottom(p.well_bottom_clearance.aspirate))
+        # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
             p.mix(
                 repetitions=pre_mix[0],
                 volume=pre_mix[1],
-                location=self._sources[tray][well],
+                location=self.labwares[tray][well],
             )
-        p.aspirate(volume=volume, location=self._sources[tray][well])
+        p.aspirate(volume=volume, location=self.labwares[tray][well])
         if slow_retract:
-            p.move_to(self._sources[tray][well].top(2), speed=self.SLOW_Z_RATE)
+            p.move_to(self.labwares[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if touch_tip:
             p.touch_tip()
         if air_gap:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
                 volume=self.AIRGAP,
-                location=self._sources[tray][well].top(2),
+                location=self.labwares[tray][well].top(2),
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
@@ -368,7 +364,7 @@ class ListenerWebsocket:
             )
         )
 
-    def mix(self, mixing_netlist):
+    def mix(self, mixing_netlist, **kwargs):
         p = self._get_pipette(pipette="perovskite")
         for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
             source_labware, source_well = source_str.split("-")
@@ -386,7 +382,7 @@ class ListenerWebsocket:
             if i == len(mixing_netlist):  # ie this is the last transfer
                 mix_after = (5, 50)
             else:
-                mix_after = None
+                mix_after = (0, 0)
 
             p.transfer(
                 volume=volumes,
@@ -435,14 +431,17 @@ def run(protocol_context):
     tips = {
         protocol_context.load_labware(
             "perkinelmer_p235_tiprack_235ul", location="8"
-        ):['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4', 'H4', 'A5', 'B5', 'C5', 'D5', 'E5', 'F5', 'G5', 'H5', 'A6', 'B6', 'C6', 'D6', 'E6', 'F6', 'G6', 'H6', 'A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'H7', 'A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'G8', 'H8', 'A9', 'B9', 'C9', 'D9', 'E9', 'F9', 'G9', 'H9', 'A10', 'B10', 'C10'],
+        ):['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4', 'H4', 'A5', 'B5', 'C5', 'D5', 'E5', 'F5', 'G5', 'H5', 'A6', 'B6', 'C6', 'D6', 'E6', 'F6', 'G6', 'H6', 'A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'H7', 'A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'G8', 'H8', 'A9', 'B9', 'C9', 'D9', 'E9', 'F9', 'G9', 'H9', 'A10', 'B10', 'C10', 'D10', 'E10', 'F10', 'G10', 'H10', 'A11'],
         protocol_context.load_labware(
             "perkinelmer_p235_tiprack_235ul", location="11"
-        ):['A1'],
+        ):['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2', 'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4', 'H4', 'A5'],
     }
     labwares = {
         "4mL_Tray1": protocol_context.load_labware(
             "frg_24_wellplate_4000ul", location="6"
+        ),
+        "96wellplate": protocol_context.load_labware(
+            "greiner_96_wellplate_360ul", location="5"
         ),
     }
     # spincoater

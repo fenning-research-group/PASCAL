@@ -138,10 +138,7 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool,
-                        function,
-                        sample,
-                        details,
+                        self.maestro.threadpool, function, sample, details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -540,11 +537,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (
-            aspirate_duration,
-            staging_duration,
-            dispense_duration,
-        ) = expected_timings(drop)
+        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
+            drop
+        )
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -884,7 +879,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             "headstart": headstart,
         }
 
-    def mix(self, mixing_netlist):
+    def mix(self, sample, details):
+        mixing_netlist = details["mixing_netlist"]
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
 
         taskid = self.liquidhandler.mix(mixing_netlist=mixing_netlist)
