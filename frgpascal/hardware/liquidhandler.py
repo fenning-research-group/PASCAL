@@ -162,6 +162,15 @@ class OT2:
         )
         return taskid
 
+    def mix(self, taskid=None, nist_time=None, mixing_netlist={}):
+        taskid = self.server.add_to_queue(
+            task="mix",
+            taskid=taskid,
+            nist_time=nist_time,
+            mixing_netlist=mixing_netlist,
+        )
+        return taskid
+
     def mark_completed(self):
         self.server._start_directly()
         self.server.mark_completed()

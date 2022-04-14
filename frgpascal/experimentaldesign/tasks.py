@@ -17,6 +17,7 @@ from frgpascal.workers import (
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
 )
+from frgpascal.hardware.liquidlabware import LiquidLabware
 from frgpascal.experimentaldesign.characterizationtasks import CharacterizationTask
 
 
@@ -389,6 +390,77 @@ class Task(roboflo.Task):
 
     def to_json(self):
         return json.dumps(self.to_dict())
+
+
+class Mix(Task):
+    def __init__(
+        self,
+        inputs: dict,
+        inputs_labware: list,
+        destination_labware: LiquidLabware,
+        destination_well: str,
+        immediate: bool = False,
+    ):
+        """Schedule solution mixing on the liquid handler
+
+        Args:
+            inputs (dict): dictionary of Solution: volume pairs to be mixed into destination. Solution objects should be present in inputs_labware. Volume should be given in microliters
+            inputs_labware (list): list of LiquidLabware objects from which the input Solutions should be sourced.
+            destination_labware (list): Destination LiquidLabware object to host the new Solution
+            well (str): If provided, will attempt to mix liquid in this specific well.
+        """
+
+        self.inputs = inputs
+        self.inputs_labware = inputs_labware
+        self.input_locations = [
+            self._get_solution_location(soln) for soln in self.inputs
+        ]
+
+        self.destination_labware = destination_labware
+        self.destination_well = destination_well
+        self.destination_location = (
+            f"{self.destination_labware.name}-{self.destination_well}"
+        )
+        super().__init__(task="mix", duration=self._get_duration(), immediate=immediate)
+
+    def _get_solution_location(self, soln: Solution):
+        """Get the location of a solution in the labware"""
+        for labware in self.inputs_labware:
+            for well, contents in labware.contents.items():
+                if contents == soln:
+                    return f"{labware.name}-{well}"
+        raise ValueError(f"Solution {soln} not found in any labware")
+
+    def _get_duration(self):
+        return 40 * len(self.inputs)  # for now assume 40 seconds per solution transfer
+
+    def _generate_mixing_netlist(self):
+        return {
+            inp_loc: {self.destination_location: inp_volume}
+            for inp_loc, inp_volume in zip(self.input_locations, self.inputs.values())
+        }
+
+    def generate_details(self):
+        return {
+            "mixing_netlist": self._generate_mixing_netlist(),
+            "duration": self.duration,
+        }
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (
+                self.duration == other.duration
+                and self.temperature == other.temperature
+                and self.hotplate == other.hotplate
+            )
+        else:
+            return False
+
+    def __key(self):
+        return (self.duration, self.temperature)
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 class Spincoat(Task):

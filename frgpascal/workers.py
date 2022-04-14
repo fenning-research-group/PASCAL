@@ -3,6 +3,7 @@ import logging
 from collections import namedtuple
 from roboflo import Worker as Worker_roboflo
 import json
+import time
 
 from frgpascal.hardware.liquidhandler import expected_timings
 
@@ -463,6 +464,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             "spincoat": task_tuple(
                 function=self.spincoat, estimated_duration=None, other_workers=[]
             ),
+            "mix": task_tuple(
+                function=self.mix, estimated_duration=None, other_workers=[]
+            ),
         }
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
@@ -879,6 +883,14 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             "spincoater_log": {**rpm_log},
             "headstart": headstart,
         }
+
+    def mix(self, mixing_netlist):
+        self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
+
+        taskid = self.liquidhandler.mix(mixing_netlist=mixing_netlist)
+        while taskid not in self.liquidhandler.server.completed_tasks:
+            time.sleep(0.1)
+        self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
 
 
 class Worker_Characterization(WorkerTemplate):

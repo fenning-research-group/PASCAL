@@ -259,6 +259,7 @@ class ListenerWebsocket:
             "stage_for_dispense": self.stage_for_dispense,
             "clear_chuck": self.clear_chuck,
             "cleanup": self.cleanup,
+            "mix": self.mix,
         }
 
     def aspirate_for_spincoating(
