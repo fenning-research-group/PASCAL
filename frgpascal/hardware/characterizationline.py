@@ -515,12 +515,13 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
         self.spectrometer = spectrometer
         self.shutter = shutter
         self.slider = slider
-        self.DEFAULT_EXPOSURE_TIMES = [15, 50, 200, 1000, 5000, 15000]  # ms
+        self.DEFAULT_EXPOSURE_TIMES = [0.015, 0.05, 0.2, 1, 5, 15]  # ms
         self.DEFAULT_NUM_SCANS = 3  # take 2 scans per to reduce noise
 
     def capture(self, **kwargs):
         # set scan parameters
         exposuretimes = kwargs.get("exposure_times", self.DEFAULT_EXPOSURE_TIMES)
+        exposuretimes.sort()
         numscans = kwargs.get("numscans", self.DEFAULT_NUM_SCANS)
         self.spectrometer.num_scans = numscans
 
