@@ -368,28 +368,38 @@ class ListenerWebsocket:
             )
         )
 
-    def mix(self, dispense_instructions):
+    def mix(self, mixing_netlist):
         p = self._get_pipette(pipette="perovskite")
-        for dispense in dispense_instructions:
-            tray = dispense["tray"]
-            well = dispense["well"]
-            source_well = self._sources[tray][well]
+        for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
+            source_labware, source_well = source_str.split("-")
+            source = self.labwares[source_labware][source_well]
 
-            destination_wells = []
+            destinations = []
             volumes = []
-            for d in dispense["destinations"]:
-                tray = d["tray"]
-                for well, volume in zip(d["wells"], d["volumes"]):
-                    destination_wells.append(self._sources[tray][well])
-                    volumes.append(volume)
+            for destination_str, volume in destination_strings.items():
+                destination_labware, destination_well = destination_str.split("-")
+                destinations.append(
+                    self.labwares[destination_labware][destination_well]
+                )
+                volumes.append(volume)
 
-            p.distribute(
-                volumes,
-                source_well,
-                destination_wells,
-                touch_tip=False,
-                blow_out=True,
+            if i == len(mixing_netlist):  # ie this is the last transfer
+                mix_after = (5, 50)
+            else:
+                mix_after = None
+
+            p.transfer(
+                volume=volumes,
+                source=source,
+                dest=destinations,
+                mix_after=mix_after,
                 disposal_volume=0,
+                carryover=True,
+                new_tip="always",
+                touch_tip=True,
+                blow_out=True,
+                blow_out_location="source well",
+                air_gap=20,
             )
 
     def cleanup(self):
