@@ -379,7 +379,7 @@ class ListenerWebsocket:
                 )
                 volumes.append(volume)
 
-            if i == len(mixing_netlist):  # ie this is the last transfer
+            if i == len(mixing_netlist) - 1:  # ie this is the last transfer
                 mix_after = (5, 50)
             else:
                 mix_after = (0, 0)

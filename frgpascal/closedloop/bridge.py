@@ -256,23 +256,20 @@ class PASCALAxQueue(Client):
     def _mark_sample_completed(self, message):
         sample_name = message["sample"]
         success = True  # whether to mark trial as COMPLETED or FAILED
-        sample_present = (
-            True  # nothing implemented to check for sample presence on char train yet
-        )
 
-        if sample_present:
-            try:
-                metrics, raw_data = load_sample(
-                    sample=sample_name, datadir=self.characterization_folder
-                )  # load the data
-            except:
-                metrics = {}
-                success = False
-        else:
+        try:
+            metrics, raw_data = load_sample(
+                sample=sample_name, datadir=self.characterization_folder
+            )  # load the data
+            sample_present = metrics.get("t_samplepresent_0", True)
+        except:
+            metrics = {}
             success = False
 
         if success:
-            success = self._characterization_metrics_are_valid(metrics=metrics)
+            success = sample_present and self._characterization_metrics_are_valid(
+                metrics=metrics
+            )
 
         if success:
             self.jobs[sample_name].status = TrialStatus.COMPLETED

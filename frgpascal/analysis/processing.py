@@ -104,14 +104,25 @@ def load_sample(
                     "t": t,
                     "a": a,
                 }
-                t_kws = dict(bandgap_type="direct", wlmin=400, wlmax=1050, plot=False,)
+                t_kws = dict(
+                    bandgap_type="direct",
+                    wlmin=400,
+                    wlmax=1050,
+                    plot=False,
+                )
                 t_kws.update(t_kwargs)
                 try:
                     metrics[f"t_bandgap_{cidx}"] = analysis.transmittance.tauc(
-                        wl=wl, a=a, **t_kws,
+                        wl=wl,
+                        a=a,
+                        **t_kws,
                     )
                 except:
                     metrics[f"t_bandgap_{cidx}"] = np.nan
+
+                metrics[
+                    f"t_samplepresent_{cidx}"
+                ] = analysis.transmittance.sample_present(wl=wl, t=t)
 
         if darkfield:
             dffid = os.path.join(chardir, f"{sample}_darkfield.tif")

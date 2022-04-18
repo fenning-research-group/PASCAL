@@ -5,12 +5,29 @@ from scipy.stats import linregress
 import matplotlib.pyplot as plt
 
 
-
 def load_spectrum(fid):
     d = np.loadtxt(fid, delimiter=",", skiprows=2)
     wl = d[:, 0]
     t = d[:, 1]
     return wl, t
+
+
+def sample_present(wl, t) -> bool:
+    """Given a transmittance spectrum, determines whether a sample was present or not
+
+    Args:
+        wl (list, np.ndarray): wavelengths (nm)
+        t (list, np.ndarray): transmittance values (0-1) per wavelength
+
+    Returns:
+        bool: If True, sample was present during measurement. if False, not present.
+    """
+    if (
+        np.nanmean(t) > 0.98
+    ):  # transmittance measurements without samples will average >0.99
+        return False
+    else:
+        return True
 
 
 def tauc(
@@ -96,7 +113,7 @@ def tauc(
             slope, intercept, rval, _, stderr = linregress(
                 ev[fit_window], taucvalue[fit_window]
             )
-            r2 = rval ** 2
+            r2 = rval**2
             if r2 > best_r2 and slope > 0:
                 best_r2 = r2
                 best_slope = slope
