@@ -388,7 +388,7 @@ class ListenerWebsocket:
             aspirate_rate0 = p.flow_rate.aspirate
 
             p.flow_rate.aspirate = 20
-            p.flow_rate.dispense = 20  # slow to handle viscous solutions
+            p.flow_rate.dispense = 50  # slow to handle viscous solutions
 
             p.transfer(
                 volume=volumes,
