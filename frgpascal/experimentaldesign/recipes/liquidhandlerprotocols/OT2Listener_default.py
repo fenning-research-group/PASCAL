@@ -384,6 +384,11 @@ class ListenerWebsocket:
                 mix_after = (5, 50)
             else:
                 mix_after = (0, 0)
+            dispense_rate0 = p.flow_rate.dispense
+            aspirate_rate0 = p.flow_rate.aspirate
+
+            p.flow_rate.aspirate = 20
+            p.flow_rate.dispense = 20  # slow to handle viscous solutions
 
             p.transfer(
                 volume=volumes,
@@ -395,9 +400,11 @@ class ListenerWebsocket:
                 new_tip="always",
                 touch_tip=True,
                 blow_out=True,
-                blow_out_location="source well",
+                blow_out_location="destination well",
                 air_gap=20,
             )
+            p.flow_rate.aspirate = aspirate_rate0
+            p.flow_rate.dispense = dispense_rate0
 
     def cleanup(self):
         """drops/returns tips of all pipettes to prepare pipettes for future commands
