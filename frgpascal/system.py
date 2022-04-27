@@ -53,6 +53,7 @@ TRANSITION_TASKS = {
     },
     Worker_Hotplate: {
         Worker_SpincoaterLiquidHandler: "hotplate_to_spincoater",
+        Worker_Hotplate: "hotplate_to_hotplate",
         Worker_Storage: "hotplate_to_storage",
         Worker_Characterization: "hotplate_to_characterization",
     },
@@ -71,17 +72,19 @@ TRANSITION_TASKS = {
 transitions = []
 for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
     t1, t2 = type(w1), type(w2)
-    if Worker_GantryGripper in [t1, t2]:
-        continue  # no transition tasks for this worker
-    if t1 == t2:
-        continue  # no transtion between same type (hotplate->hotplate, etc)
+    # if Worker_GantryGripper in [t1, t2]:
+    #     continue  # no transition tasks for this worker
+    # if t1 == t2:
+    #     continue  # no transtion between same type (hotplate->hotplate, etc)
     immediate = False
     if Worker_Hotplate in (t1, t2):
         immediate = True  # always get on/off the hotplate at exact time
     if t1 == Worker_SpincoaterLiquidHandler:
         immediate = True  # move off of spincoater ASAP
 
-    transition_name = TRANSITION_TASKS[t1][t2]
+    transition_name = TRANSITION_TASKS.get(t1, {}).get(t2, None)
+    if transition_name is None:
+        continue # no transition defined between these workers
     this_transition = rf.Transition(
         duration=ALL_TASKS[transition_name]["estimated_duration"],
         source=w1,

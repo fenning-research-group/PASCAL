@@ -138,7 +138,10 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool, function, sample, details,
+                        self.maestro.threadpool,
+                        function,
+                        sample,
+                        details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -226,6 +229,11 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
             "hotplate_to_storage": task_tuple(
                 function=self.hotplate_to_storage,
+                estimated_duration=18,
+                other_workers=[],
+            ),
+            "hotplate_to_hotplate": task_tuple(
+                function=self.hotplate_to_hotplate,
                 estimated_duration=18,
                 other_workers=[],
             ),
@@ -339,6 +347,30 @@ class Worker_GantryGripper(WorkerTemplate):
 
         self.maestro.transfer(p1, p2)
         self.hotplates[hotplate].unload(slot=hpslot)
+
+    @_to_hotplate
+    def hotplate_to_hotplate(self, sample, details):
+        source_hotplate_name, source_slot = (
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
+        )
+        source_hotplate = self.hotplates[source_hotplate_name]
+        p1 = source_hotplate(source_slot)
+
+        destination_hotplate_name = details["destination"]
+        destination_hotplate = self.hotplates[destination_hotplate_name]
+        destination_slot = destination_hotplate.get_open_slot()
+        p2 = destination_hotplate(destination_slot)
+
+        self.maestro.transfer(p1, p2)
+
+        destination_hotplate.load(destination_slot, sample)
+        source_hotplate.unload(slot=source_slot)
+
+        sample["hotplate_slot"] = {
+            "hotplate": destination_hotplate_name,
+            "slot": destination_slot,
+        }
 
     def storage_to_spincoater(self, sample, details):
         tray, slot = (
@@ -537,9 +569,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
-            drop
-        )
+        (
+            aspirate_duration,
+            staging_duration,
+            dispense_duration,
+        ) = expected_timings(drop)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
