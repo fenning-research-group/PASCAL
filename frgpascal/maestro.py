@@ -214,6 +214,9 @@ class Maestro:
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
+        self._working = False
+        self._paused = False
+        self.__pause_time_accumulated = 0
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -233,12 +236,19 @@ class Maestro:
     @property
     def experiment_time(self):
         if self.t0 is None:
-            raise Exception("Experiment has not started!")
-        return self.nist_time - self.t0
+            raise Exception("Experiment has not yet started!")
+        return self.nist_time - self.t0 + self._pause_time
 
     @property
     def nist_time(self):
         return time.time() + self.__local_nist_offset
+
+    @property
+    def _pause_time(self):
+        pt = self.__pause_time_accumulated
+        if self._paused:
+            pt += time.time() - self.__pause_time_start
+        return pt
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
@@ -405,6 +415,26 @@ class Maestro:
             )  # move gantry out of the liquid handler
             self.spincoater.idle()  # dont actively hold chuck in registered position
 
+    def pause(self):
+        if not self._working:
+            print("Maestro is not working, nothing to pause!")
+            return
+        if self._paused:
+            print("Maestro is already paused!")
+            return
+        self._paused = True
+        self.__pause_time_start = time.time()
+
+    def resume(self):
+        if not self._working:
+            print("Maestro is not working, nothing to resume!")
+            return
+        if not self._paused:
+            print("Maestro is not currently paused, nothing to resume!")
+            return
+        self._paused = False
+        self.__pause_time_accumulated += time.time() - self.__pause_time_start
+
     ### Batch Sample Execution
     def make_background_event_loop(self):
         def exception_handler(loop, context):
@@ -421,7 +451,7 @@ class Maestro:
         experiment_completed = False
         if self._under_external_control:
             # if under external control, the pending tasklist might be exhausted before experiment ends
-            while self.working:
+            while self._working:
                 await asyncio.sleep(1)
             # once we manually set `self.working = False`, wait for pending tasks to be exhausted
             while len(self.pending_tasks) > 0:
@@ -429,7 +459,7 @@ class Maestro:
             experiment_completed = True
         else:
             # if under maestro control, experiment is done when the tasklist is exhausted!
-            while self.working:
+            while self._working:
                 if (
                     not experiment_started
                 ):  # wait for the task list to start being populated
@@ -448,17 +478,16 @@ class Maestro:
             self.stop()
 
     def _start_loop(self):
-        self.working = True
+        self._working = True
+        self._paused = False
         self.thread = Thread(target=self.make_background_event_loop)
         self.thread.start()  # generates asyncio event loop in background thread (self.loop)
         time.sleep(0.5)
-        # self.loop = asyncio.new_event_loop()
-        # self.loop.set_debug(True)
 
     def _load_worklist(self, filepath):
         with open(filepath, "r") as f:
             worklist = json.load(f)
-        # self.tasks = worklist["tasks"]
+
         self.samples = worklist["samples"]
         self.tasks = []
         for details in self.samples.values():
@@ -469,7 +498,6 @@ class Maestro:
             self.hotplates[hp_name].controller.setpoint = temperature
             print(f"Hotplate {hp_name} set to {temperature:.1f}C")
         return worklist["name"]
-        # self._characterization_baselines_required = worklist["baselines_required"]
 
     def _set_up_experiment_folder(self, name):
         todays_date = datetime.datetime.now().strftime("%Y%m%d")
@@ -508,7 +536,7 @@ class Maestro:
 
         return folder
 
-    def _experiment_checklist(self, characterization_only=False):
+    def _experiment_checklist(self):
         """prompt user to go through checklist to ensure that
         all hardware is set properly for PASCAL to run
         """
@@ -522,22 +550,17 @@ class Maestro:
             raise Exception(
                 "Cannot start until characterization line has been calibrated!"
             )
-
-        prompt_for_yes("Is the transmission lamp on? (y/n)")
-        prompt_for_yes("Is the sample holder(s) loaded and in place? (y/n)")
-        if not characterization_only:
-            prompt_for_yes("Is the vacuum pump on? (y/n)")
-            prompt_for_yes(
-                "Are the vials loaded into the liquid handler with the caps off? (y/n)"
-            )
-            prompt_for_yes(
-                "Are there fresh pipette tips loaded into the liquid handler (starting with deck slot 7)? (y/n)"
-            )
-            prompt_for_yes(
-                "Has the liquid handler listener protocol been run up to the waiting point? (y/n)"
-            )
-
-        # if we make it this far, checklist has been passed
+        prompt_for_yes("Are the sample tray(s) loaded and in place? (y/n)")
+        prompt_for_yes("Is the vacuum pump on? (y/n)")
+        prompt_for_yes(
+            "Are the vials loaded into the liquid handler with the caps off? (y/n)"
+        )
+        prompt_for_yes(
+            "Are there enough fresh pipette tips loaded onto the liquid handler? (y/n)"
+        )
+        prompt_for_yes(
+            "Has the liquid handler listener protocol been run up to the waiting point? (y/n)"
+        )
 
     def turn_off_hotplates(self):
         for hp in self.hotplates.values():
@@ -557,6 +580,7 @@ class Maestro:
 
         self._start_loop()
         self.t0 = self.nist_time
+        self.__pause_time_accumulated = 0
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
@@ -574,7 +598,7 @@ class Maestro:
             worker.start()
 
     def stop(self):
-        self.working = False
+        self._working = False
         # clean up the experiment, save log of actual timings
         for hp in self.hotplates.values():
             hp.controller.setpoint = 0
@@ -587,28 +611,27 @@ class Maestro:
             os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
         )
 
+        self.logger.info("Finished experiment, stopping now.")
+        for h in self.logger.handlers:
+            self.logger.removeHandler(h)
+
         for w in self.workers.values():
             w.stop_workers()
         if self.liquidhandler.server.ip is not None:
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
-
-        self.logger.info("Finished experiment, stopping now.")
-
-        for h in self.logger.handlers:
-            self.logger.removeHandler(h)
+        self.gantry.movetoclear()
 
         print("Maestro stopped!")
-        self.gantry.movetoclear()
         # self.thread.join()
 
     def __del__(self):
-        if self.working:
+        if self._working:
             self.stop()
         self.liquidhandler.server.stop()
 
     ### External driver to interface with BO program
     async def _instruction_monitor(self, instruction_directory):
-        while self.working:
+        while self._working:
             new_tasks = []
             fids = [
                 os.path.join(instruction_directory, f)
@@ -637,7 +660,7 @@ class Maestro:
 
     def run_externalcontrol(self, name, ot2_ip):
         self._experiment_checklist()
-        self.working = True
+        self._working = True
         self._under_external_control = True
 
         self.liquidhandler.server.ip = ot2_ip
