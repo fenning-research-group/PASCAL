@@ -625,11 +625,13 @@ class PASCALPlanner:
                 worklist=sample.worklist, name=sample.name
             )
 
-        for sample in self.samples:
-            for task in sample.protocol.worklist:
-                if isinstance(task, Spincoat):
-                    task.breakpoint = prioritize_first_spincoat
-                    break
+        if prioritize_first_spincoat:
+            for sample in self.samples:
+                for task in sample.protocol.worklist:
+                    if isinstance(task, Spincoat):
+                        task.breakpoint = True
+                        break
+
         self.system.scheduler._collect_breakpoints()
 
         self.system.scheduler.solve(**kwargs)
