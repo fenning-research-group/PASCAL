@@ -84,7 +84,7 @@ class Sample:
             }  # tray, slot that sample is stored in. Initialized to None, will be filled when experiment starts
         else:
             self.storage_slot = storage_slot
-        self.worklist = deepcopy(worklist)
+        self.worklist = [deepcopy(task) for task in worklist]
         for t in self.worklist:
             t.sample = self
         self.status = "not_started"  # currently unused
