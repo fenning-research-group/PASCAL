@@ -73,7 +73,11 @@ AVAILABLE_TASKS = {
 
 class Sample:
     def __init__(
-        self, name: str, substrate: str, worklist: list, storage_slot=None,
+        self,
+        name: str,
+        substrate: str,
+        worklist: list,
+        storage_slot=None,
     ):
         self.name = name
         self.substrate = substrate
@@ -206,8 +210,8 @@ class Drop:
             raise ValueError("dispense rate must be 10<rate<=1000 uL/sec")
         self.rate = rate
 
-        if height < 0.5 or height > 10:
-            raise ValueError("dispense height must be 0.5<height<=10 mm")
+        if height < 0 or height > 10:
+            raise ValueError("dispense height must be 0<height<=10 mm")
         self.height = (
             height  # distance from pipette tip to substrate must be at least 0.5mm
         )
@@ -221,6 +225,10 @@ class Drop:
         if len(pre_mix) != 2:
             raise ValueError(
                 "pre_mix argument must be a tuple of (n_cycles, volume ul)"
+            )
+        if pre_mix[0] > pre_mix[1]:
+            print(
+                f"Possible error: you set pre_mix to {pre_mix[0]} cycles of {pre_mix[1]} ul. Note that the first entry is the number of cycles, and the second entry is the volume in ul to pipette up and down in each cycle."
             )
         self.pre_mix = pre_mix
         self.reuse_tip = reuse_tip
@@ -500,13 +508,10 @@ class Spincoat(Task):
                 f"RPM must be either 0 (fully stopped), or between {HARDWARECONSTANTS['spincoater']['rpm_min']} and {HARDWARECONSTANTS['spincoater']['rpm_max']} rpm."
             )
         if (
-            (
-                self.steps[:, 1] < HARDWARECONSTANTS["spincoater"]["acceleration_min"]
-            ).any()
-            or (
-                self.steps[:, 1] > HARDWARECONSTANTS["spincoater"]["acceleration_max"]
-            ).any()
-        ):
+            self.steps[:, 1] < HARDWARECONSTANTS["spincoater"]["acceleration_min"]
+        ).any() or (
+            self.steps[:, 1] > HARDWARECONSTANTS["spincoater"]["acceleration_max"]
+        ).any():
             raise ValueError(
                 f"Acceleration must be between {HARDWARECONSTANTS['spincoater']['acceleration_min']} and {HARDWARECONSTANTS['spincoater']['acceleration_max']} rpm/second."
             )
@@ -526,11 +531,17 @@ class Spincoat(Task):
         # add overhead time based on number of pipetting steps. These numbers are calibrated from experiments
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(asp + stage + disp - self.drops[0].time, 0,)
+            duration += max(
+                asp + stage + disp - self.drops[0].time,
+                0,
+            )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max((asp0 + stage0 + disp0) + asp1 - self.drops[0].time, 0,)
+            duration += max(
+                (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
+                0,
+            )
         super().__init__(task="spincoat", duration=duration, immediate=immediate)
 
     def generate_details(self):
@@ -581,7 +592,11 @@ class Spincoat(Task):
 
 class Anneal(Task):
     def __init__(
-        self, duration: float, temperature: float, hotplate: str = None, immediate=True,
+        self,
+        duration: float,
+        temperature: float,
+        hotplate: str = None,
+        immediate=True,
     ):
         """
 
@@ -598,7 +613,9 @@ class Anneal(Task):
             )
         self.hotplate = hotplate
         super().__init__(
-            task="anneal", duration=self.duration, immediate=immediate,
+            task="anneal",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def __repr__(self):
@@ -705,7 +722,9 @@ class Characterize(Task):
             self.duration += distance * m + b
 
         super().__init__(
-            task="characterize", duration=self.duration, immediate=immediate,
+            task="characterize",
+            duration=self.duration,
+            immediate=immediate,
         )
 
     def to_dict(self):
