@@ -133,9 +133,9 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
-        self.characterization = CharacterizationLine(
-            gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
-        )
+        # self.characterization = CharacterizationLine(
+        #     gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+        # )
         self.liquidhandler = OT2()
 
         # Labware
