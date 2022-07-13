@@ -106,8 +106,7 @@ class MaestroServer(Server):
 
 class Maestro:
     def __init__(
-        self,
-        samplewidth: float = 10,
+        self, samplewidth: float = 10,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -133,9 +132,9 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
-        # self.characterization = CharacterizationLine(
-        #     gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
-        # )
+        self.characterization = CharacterizationLine(
+            gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+        )
         self.liquidhandler = OT2()
 
         # Labware
@@ -494,13 +493,9 @@ class Maestro:
         self._sh = logging.StreamHandler(sys.stdout)
         self._sh.setLevel(logging.INFO)
         fh_formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s",
-            datefmt="%m/%d/%Y %I:%M:%S %p",
+            "%(asctime)s %(levelname)s: %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p",
         )
-        sh_formatter = logging.Formatter(
-            "%(asctime)s %(message)s",
-            datefmt="%I:%M:%S",
-        )
+        sh_formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%I:%M:%S",)
         self._fh.setFormatter(fh_formatter)
         self._sh.setFormatter(sh_formatter)
         self.logger.addHandler(self._fh)
