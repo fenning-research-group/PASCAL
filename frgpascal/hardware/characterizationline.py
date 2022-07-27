@@ -42,39 +42,39 @@ class CharacterizationLine:
         self.brightfieldcamera = self.camerahost.spawn_camera(
             camid=constants["stations"]["brightfield"]["cameraid"]
         )
-        # self.spectrometer = Spectrometer()
+        self.spectrometer = Spectrometer()
 
         # all characterization stations (in order of measurement!)
         self.stations = {
             s.name: s
             for s in [
-                # PLPhotostability(
-                #     position=constants["stations"]["pl_blue"]["position"],
-                #     rootdir=self.rootdir,
-                #     spectrometer=self.spectrometer,
-                #     slider=self.filterslider,
-                #     shutter=self.shutter,
-                #     lightswitch=self.switchbox.Switch(
-                #         constants["stations"]["pl_blue"]["switchindex"]
-                #     ),
-                # ),
-                # PLSpectroscopy(
-                #     position=constants["stations"]["pl_red"]["position"],
-                #     rootdir=self.rootdir,
-                #     spectrometer=self.spectrometer,
-                #     slider=self.filterslider,
-                #     shutter=self.shutter,
-                #     lightswitch=self.switchbox.Switch(
-                #         constants["stations"]["pl_red"]["switchindex"]
-                #     ),
-                # ),
-                # TransmissionSpectroscopy(
-                #     position=constants["stations"]["transmission"]["position"],
-                #     rootdir=self.rootdir,
-                #     spectrometer=self.spectrometer,
-                #     slider=self.filterslider,
-                #     shutter=self.shutter,
-                # ),
+                PLPhotostability(
+                    position=constants["stations"]["pl_blue"]["position"],
+                    rootdir=self.rootdir,
+                    spectrometer=self.spectrometer,
+                    slider=self.filterslider,
+                    shutter=self.shutter,
+                    lightswitch=self.switchbox.Switch(
+                        constants["stations"]["pl_blue"]["switchindex"]
+                    ),
+                ),
+                PLSpectroscopy(
+                    position=constants["stations"]["pl_red"]["position"],
+                    rootdir=self.rootdir,
+                    spectrometer=self.spectrometer,
+                    slider=self.filterslider,
+                    shutter=self.shutter,
+                    lightswitch=self.switchbox.Switch(
+                        constants["stations"]["pl_red"]["switchindex"]
+                    ),
+                ),
+                TransmissionSpectroscopy(
+                    position=constants["stations"]["transmission"]["position"],
+                    rootdir=self.rootdir,
+                    spectrometer=self.spectrometer,
+                    slider=self.filterslider,
+                    shutter=self.shutter,
+                ),
                 BrightfieldImaging(
                     position=constants["stations"]["brightfield"]["position"],
                     rootdir=self.rootdir,
