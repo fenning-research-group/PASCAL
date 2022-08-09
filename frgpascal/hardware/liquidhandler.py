@@ -17,11 +17,12 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 tc = constants["timings"]
 
 
-def expected_timings(drop):
+def expected_timings(drop, drop_previous_tip=False):
     """Estimate the duration (seconds) liquid aspiration will require for a given drop
 
     Args:
         drop (dict): dictionary of drop parameters
+        drop_previous_tip (dict): whether the previous tip must be dropped prior to aspiration
 
     Returns:
         float: duration, in seconds
@@ -37,7 +38,8 @@ def expected_timings(drop):
         aspirate_duration += ac["slowretract"]
     if drop["air_gap"]:
         aspirate_duration += ac["airgap"]
-
+    if drop_previous_tip:
+        aspirate_duration += tc["droptipintotrash"]
     if drop["slow_travel"]:
         staging_duration = tc["travel_slow"]
         dispense_duration = tc["dispensedelay_slow"]
