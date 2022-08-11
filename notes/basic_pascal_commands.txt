@@ -1,0 +1,60 @@
+
+
+for checking positions:
+m.transfer(st2("A1"), cl.axis())
+m.transfer(cl.axis(), st2("A1"))
+
+m.transfer(st2("A1"), sc())
+m.transfer(sc(), st2("A1"))
+
+m._load_calibrations()
+
+hp3.controller.setpoint = 65
+hp1.calibrate()
+
+to adjust, calibrations are located:
+C:\Users\Admin\Documents\GitHub\PASCAL\frgpascal\hardware\calibrations
+hp1.calibrate()
+
+hp1._load_calibrations()
+
+if you need to restart your run and youve already taken a cl.calibrate()
+then you can __save_bl()
+and then __load_bl() #make sure you load it into the working directory (in pascal runs)! must also be the exact same recipe
+
+to generate a pkl file and pass it over to the next run
+
+if for some reason some tool gets stuck: 
+cl.switchbox.all_off() #turns off everything arduino related
+cl.stations to see the dictionary, 
+
+then you can do cl.stations['something'].lightswitch.off()
+
+running spec only:
+
+cl.axis.moveto(288)
+or
+cl.axis.moveto(cl.stations['PL_635nm'].position)
+
+
+plt.plot(data['wls'], data[1])
+plt.show()
+
+
+
+
+m = Maestro()
+cl = m.characterization
+sp = cl.spectrometer
+# set the dwell times you want
+sp._exposure_times = [0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+# take a dark baseline at those dwell times
+sp.take_dark_baseline()
+# take the scan of the sample
+wls = np.concatenate(sp._Spectrometer__wl)
+data = pd.DataFrame({'wls':wls})
+for et in sp._exposure_times:
+    sp.exposure_time = et
+    _, data[et] = sp.capture()
+# export data 
+data.to_csv('data.csv', index = False)
