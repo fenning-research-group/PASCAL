@@ -17,7 +17,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 tc = constants["timings"]
 
 
-def expected_timings(drop, drop_previous_tip=False):
+def expected_timings(drop, drop_previous_tip=True):
     """Estimate the duration (seconds) liquid aspiration will require for a given drop
 
     Args:
@@ -34,10 +34,10 @@ def expected_timings(drop, drop_previous_tip=False):
     )  # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
     if drop["touch_tip"]:
         aspirate_duration += ac["touchtip"]
-    if drop["slow_retract"]:
-        aspirate_duration += ac["slowretract"]
-    if drop["air_gap"]:
-        aspirate_duration += ac["airgap"]
+    # if drop["slow_retract"]:
+    #     aspirate_duration += ac["slowretract"]
+    # if drop["air_gap"]:
+    #     aspirate_duration += ac["airgap"]
     if drop_previous_tip:
         aspirate_duration += tc["droptipintotrash"]
     if drop["slow_travel"]:
@@ -148,19 +148,13 @@ class OT2:
 
     def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="clear_chuck",
-            taskid=taskid,
-            nist_time=nist_time,
-            **kwargs,
+            task="clear_chuck", taskid=taskid, nist_time=nist_time, **kwargs,
         )
         return taskid
 
     def cleanup(self, taskid=None, nist_time=None, **kwargs):
         taskid = self.server.add_to_queue(
-            task="cleanup",
-            taskid=taskid,
-            nist_time=nist_time,
-            **kwargs,
+            task="cleanup", taskid=taskid, nist_time=nist_time, **kwargs,
         )
         return taskid
 
