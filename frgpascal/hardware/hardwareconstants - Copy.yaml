@@ -5,7 +5,7 @@ gantry:
   device_identifiers:
     vid: 7855 #vendor id, converted from hex to integer. WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
     pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
-    location: "1-10" #WINDOWS
+    location: "1-1.1.1.2" #WINDOWS
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
 
@@ -117,9 +117,9 @@ spincoater:
   # communication
   device_identifiers: #for the arduino controlling the vacuum solenoid
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-      vid: 2341 #WINDOWS ONLY
-      pid: 0043 #WINDOWS ONLY
-      serial_number: '95032303737351B01170'
+      vid: 9025 #WINDOWS ONLY
+      pid: 67 #WINDOWS ONLY
+      serial_number: '55838333932351108212'
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
@@ -136,7 +136,7 @@ characterizationline:
     device_identifiers:
       vid: 7855 #WINDOWS ONLY
       pid: 4 #WINDOWS ONLY
-      location: "1-1.3" #WINDOWS + GANTRY ONLY
+      location: "1-1.1.4" #WINDOWS + GANTRY ONLY
     pollingrate: 0.05
     timeout: 20 #max time (seconds) to allow movement before flagging an error
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
