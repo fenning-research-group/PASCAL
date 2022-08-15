@@ -102,6 +102,7 @@ liquidhandler:
     travel_slow: 4 #time to move if slow_travel active
     dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
     dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active
+    droptipintotrash: 26 #time to drop a tip into the trash and reset the pipette to be ready for further instructions
   # dispense_delay: 1 
   # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
   # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
