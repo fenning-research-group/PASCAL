@@ -191,12 +191,12 @@ characterizationline:
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     pl_red: #spectroscopy
-      position: 287 #position (mm) at which characterization axis centers sample in FOV
+      position: 286 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 4 #switchbox plug index for light source (red laser)
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     transmission: #spectroscopy
-      position: 287 #position (mm) at which characterization axis centers sample in FOV
+      position: 286 #position (mm) at which characterization axis centers sample in FOV
     #fourpointprobe:
     # position:397.5
   
