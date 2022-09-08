@@ -284,4 +284,12 @@ def get_worklist_times(fid):
             df['spincoat0'][n] = [df['spincoat'][n][0]]
             df['spincoat1'][n] = [df['spincoat'][n][1]]
             
+    df['name'] = ''
+    for n in range(len(df)):
+
+        df['name'][n] = df['sample'][n].split('e')[1]
+    df[''] = df['name'].astype(int)
+    df = df.set_index('')
+    df = df.sort_index()
+            
     return df
