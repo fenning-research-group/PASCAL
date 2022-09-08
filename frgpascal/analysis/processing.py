@@ -200,3 +200,88 @@ def load_all(
     raw_df = pd.DataFrame(all_raw).T
     raw_df["name"] = raw_df.index
     return metric_df, raw_df
+
+def get_worklist_times(fid):
+    with open(fid, "r", encoding='utf-8') as f:
+        log = json.loads(f.read())
+        
+        
+    log_extract ={}
+
+    for i in list(log.keys()):
+        temp_worklist =[]
+        log_extract[i] = []
+        for j in range(len(log[i]['worklist'])):
+            temp_worklist.append(log[i]['worklist'][j]['name'])
+            temp_dict = dict.fromkeys(temp_worklist, [])
+            log_extract[i] = temp_dict
+
+    # get finish_actual for each step
+    for sample in log_extract.keys():
+        for task in log_extract[sample].keys():
+            spin_coat_index = 0
+            for n in range(len(log[sample]['worklist'])):
+                
+                if log[sample]['worklist'][n]['name'] == task:
+                    # if type(log_extract[sample][task]) == list:
+                    if spin_coat_index == 0:
+                        log_extract[sample][task] = [np.round(log[sample]['worklist'][n]['finish_actual']/60,2)]
+                    if task == 'spincoat':
+                        spin_coat_index += 1
+                    if spin_coat_index > 1:
+                        log_extract[sample][task].append(np.round(log[sample]['worklist'][n]['finish_actual']/60,2))
+                        
+                        
+    data = {}
+    data['sample'] = []
+    data['spincoat'] = []
+    # data['spincoat0'] = []
+    # data['spincoat1'] = []
+    data['spincoater_to_hotplate'] = []
+    data['anneal'] = []
+    data['hotplate_to_storage'] = []
+    data['rest'] = []
+    data['storage_to_characterization'] = []
+    data['characterize'] = []
+    data['characterization_to_storage'] = []
+
+
+    for sample in log_extract.keys():
+        data['sample'].append(sample)
+        spin_coat_index = 0
+        for task in log_extract[sample].keys():
+            
+            if task == 'spincoat':
+                data['spincoat'].append(log_extract[sample][task])
+                # data['spincoat1'].append(log_extract[sample][task][1])
+
+            if task == 'spincoater_to_hotplate':
+                data['spincoater_to_hotplate'].append(log_extract[sample][task])
+            if task == 'anneal':
+                data['anneal'].append(log_extract[sample][task])
+            if task == 'hotplate_to_storage':
+                data['hotplate_to_storage'].append(log_extract[sample][task])
+            if task == 'rest':
+                data['rest'].append(log_extract[sample][task])
+            if task == 'storage_to_characterization':
+                data['storage_to_characterization'].append(log_extract[sample][task])
+            if task == 'characterize':
+                data['characterize'].append(log_extract[sample][task])
+            if task == 'characterization_to_storage':
+                data['characterization_to_storage'].append(log_extract[sample][task])
+
+
+    # del df
+    df = pd.DataFrame(data)
+
+    df['spincoat0'] = ''
+    df['spincoat1'] = ''
+
+    for n in range(df.shape[0]):
+        if len(df['spincoat'][n]) == 1:
+            df['spincoat0'][n] = [df['spincoat'][n][0]]
+        if len(df['spincoat'][n]) == 2:
+            df['spincoat0'][n] = [df['spincoat'][n][0]]
+            df['spincoat1'][n] = [df['spincoat'][n][1]]
+            
+    return df
