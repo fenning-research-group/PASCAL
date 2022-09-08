@@ -6,7 +6,7 @@ from typing import Tuple
 from frgpascal import analysis
 from tqdm import tqdm
 from natsort import natsorted
-
+import json
 
 def load_sample(
     sample: str,
