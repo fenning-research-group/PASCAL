@@ -201,13 +201,12 @@ def load_all(
     raw_df["name"] = raw_df.index
     return metric_df, raw_df
 
-def get_worklist_times(fid):
+def get_worklist_times(fid, exclude_list=None):
     with open(fid, "r", encoding='utf-8') as f:
         log = json.loads(f.read())
         
-        
     log_extract ={}
-
+    
     for i in list(log.keys()):
         temp_worklist =[]
         log_extract[i] = []
@@ -223,20 +222,26 @@ def get_worklist_times(fid):
             for n in range(len(log[sample]['worklist'])):
                 
                 if log[sample]['worklist'][n]['name'] == task:
-                    # if type(log_extract[sample][task]) == list:
                     if spin_coat_index == 0:
                         log_extract[sample][task] = [np.round(log[sample]['worklist'][n]['finish_actual']/60,2)]
                     if task == 'spincoat':
                         spin_coat_index += 1
                     if spin_coat_index > 1:
                         log_extract[sample][task].append(np.round(log[sample]['worklist'][n]['finish_actual']/60,2))
-                        
+   
+   
+    if exclude_list is not None:
+        exclude_list = list(exclude_list)
+        for n in range(len(exclude_list)):
+            exclude_list[n] = 'sample'+str(exclude_list[n])
+        for sample in exclude_list:
+            if sample in log_extract.keys():
+                log_extract.pop(sample)
+                      
                         
     data = {}
     data['sample'] = []
     data['spincoat'] = []
-    # data['spincoat0'] = []
-    # data['spincoat1'] = []
     data['spincoater_to_hotplate'] = []
     data['anneal'] = []
     data['hotplate_to_storage'] = []
@@ -245,16 +250,12 @@ def get_worklist_times(fid):
     data['characterize'] = []
     data['characterization_to_storage'] = []
 
-
     for sample in log_extract.keys():
         data['sample'].append(sample)
-        spin_coat_index = 0
         for task in log_extract[sample].keys():
             
             if task == 'spincoat':
                 data['spincoat'].append(log_extract[sample][task])
-                # data['spincoat1'].append(log_extract[sample][task][1])
-
             if task == 'spincoater_to_hotplate':
                 data['spincoater_to_hotplate'].append(log_extract[sample][task])
             if task == 'anneal':
@@ -271,7 +272,7 @@ def get_worklist_times(fid):
                 data['characterization_to_storage'].append(log_extract[sample][task])
 
 
-    # del df
+
     df = pd.DataFrame(data)
 
     df['spincoat0'] = ''
@@ -290,6 +291,56 @@ def get_worklist_times(fid):
         df['name'][n] = df['sample'][n].split('e')[1]
     df[''] = df['name'].astype(int)
     df = df.set_index('')
+
     df = df.sort_index()
             
     return df
+
+def compress_jv(jv_pkl_fid):
+    df_jv= pd.read_pickle(jv_pkl_fid)
+
+    df_jv = df_jv.rename(columns={'PASCAL_ID': 'name'})
+
+    df_jv['pce_f'] = None
+    df_jv['pce_r'] = None
+    df_jv['ff_f']  = None
+    df_jv['ff_r']  = None
+    df_jv['voc_f'] = None
+    df_jv['voc_r'] = None
+    df_jv['jsc_f'] = None
+    df_jv['jsc_r'] = None
+
+    for n in range(df_jv.shape[0]):
+        if df_jv['direction'][n] == 'fwd':
+            df_jv['pce_f'][n] = df_jv['pce'][n]
+            df_jv['ff_f'][n] = df_jv['ff'][n]
+            df_jv['voc_f'][n] = df_jv['voc'][n]
+            df_jv['jsc_f'][n] = df_jv['jsc'][n]
+            
+        if df_jv['direction'][n] == 'rev':
+            df_jv['pce_r'][n] = df_jv['pce'][n]
+            df_jv['ff_r'][n] = df_jv['ff'][n]
+            df_jv['voc_r'][n] = df_jv['voc'][n]
+            df_jv['jsc_r'][n] = df_jv['jsc'][n]
+            
+    test = pd.DataFrame(columns=['name','pce_f','pce_r','ff_f','ff_r','voc_f','voc_r','jsc_f','jsc_r'])
+    test['name'] = list(df_jv['name'].unique())
+    test[''] = test['name']
+    test = test.set_index('')
+
+
+    for n in range(df_jv.shape[0]):
+            if df_jv['direction'][n] == 'fwd':
+                test['pce_f'][df_jv['name'][n]] = df_jv['pce'][n]
+                test['ff_f'][df_jv['name'][n]] = df_jv['ff'][n]
+                test['voc_f'][df_jv['name'][n]] = df_jv['voc'][n]
+                test['jsc_f'][df_jv['name'][n]] = df_jv['jsc'][n]
+
+            if df_jv['direction'][n] == 'rev':
+                test['pce_r'][df_jv['name'][n]] = df_jv['pce'][n]
+                test['ff_r'][df_jv['name'][n]] = df_jv['ff'][n]
+                test['voc_r'][df_jv['name'][n]] = df_jv['voc'][n]
+                test['jsc_r'][df_jv['name'][n]] = df_jv['jsc'][n]
+                
+    test = test.sort_index()
+    return test
