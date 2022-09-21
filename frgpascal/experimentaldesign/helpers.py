@@ -23,6 +23,7 @@ import mixsol as mx
 from mixsol.mix import _solutions_to_matrix
 import random
 import warnings
+from roboflo import System
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
@@ -614,15 +615,17 @@ class PASCALPlanner:
     def solve_schedule(
         self, shuffle: bool = True, prioritize_first_spincoat: bool = False, **kwargs
     ):
-        self.system = build()
+        self.system: System = build()
         if shuffle:
             sample_it = iter(random.sample(self.samples, len(self.samples)))
         else:
             sample_it = iter(self.samples)
 
         for sample in sample_it:
+            sample: Sample
+            sample_tray = WORKERS[sample.storage_slot["tray"]]
             sample.protocol = self.system.generate_protocol(
-                worklist=sample.worklist, name=sample.name
+                worklist=sample.worklist, name=sample.name, starting_worker=sample_tray, ending_worker=sample_tray
             )
 
         if prioritize_first_spincoat:
