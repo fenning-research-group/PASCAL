@@ -21,18 +21,18 @@ gantry:
   opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
   overall_gantry_limits:
     x_max: 567.0 #max x position (mm)
-    x_min: 0     #min x position (mm)
+    x_min: 0 #min x position (mm)
     y_max: 282.0 #max y position (mm)
-    y_min: 0     #min y position (mm)
+    y_min: 0 #min y position (mm)
     z_max: 166.0 #max z position (mm)
-    z_min: 0     #min z position (mm)
+    z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
     x_max: 567.0 #max x position (mm)
     x_min: 192.25 #min x position (mm)
     y_max: 282.0 #max y position (mm)
-    y_min: 0     #min y position (mm)
+    y_min: 0 #min y position (mm)
     z_max: 166.0 #max z position (mm)
-    z_min: 0     #min z position (mm)
+    z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
     x_max: 192.25
     x_min: 0
@@ -46,17 +46,17 @@ gantry:
 gripper:
   #communication
   device_identifiers:
-      vid: 1027 #WINDOWS ONLY
-      pid: 24597 #WINDOWS ONLY
-      serial_number: "DN066QRWA" 
+    vid: 1027 #WINDOWS ONLY
+    pid: 24597 #WINDOWS ONLY
+    serial_number: "DN066QRWA"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 28.2  #maximum opening width (mm)
+  width_max: 28.2 #maximum opening width (mm)
   width_min: 5.6 #minimum opening width (mm)
-  pwm_max: 1400  #pulse width (us) corresponding to minimum width
-  pwm_min: 650   #pulse width (us) corresponding to maximum width
+  pwm_max: 1400 #pulse width (us) corresponding to minimum width
+  pwm_min: 650 #pulse width (us) corresponding to maximum width
   extra_opening_width_pick: 3.3 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 2.1 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  extra_opening_width_place: 2.3 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
@@ -69,24 +69,24 @@ hotplates:
     device_identifiers:
       vid: 1027
       pid: 24577
-      serial_number: 'AB0OYUYZA'
+      serial_number: "AB0OYUYZA"
     address: 1 #rs485 address
-    p0: [214.4,  73.3,  56.0]
+    p0: [214.4, 73.3, 56.0]
   hp2:
     device_identifiers:
       vid: 1027
       pid: 24577
-      serial_number: 'AB0OYQKDA'
+      serial_number: "AB0OYQKDA"
     address: 2
-    p0: [214.2, 216.3,  55.0 ]
+    p0: [214.2, 216.3, 55.0]
   hp3:
     device_identifiers:
       vid: 1027
       pid: 24577
-      serial_number: 'AB0OYQKPA'
+      serial_number: "AB0OYQKPA"
     address: 3
-    p0: [367.2, 217.3,  51.0]
-    
+    p0: [367.2, 217.3, 51.0]
+
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
   timings:
@@ -102,13 +102,12 @@ liquidhandler:
     travel_slow: 4 #time to move if slow_travel active
     dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
     dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active
-  # dispense_delay: 1 
+  # dispense_delay: 1
   # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
   # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
   server:
-    ip: '169.254.160.20' #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    ip: "169.254.160.20" #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
-  
 
 sampletray:
   p1: [494.0, 20.0, 67.3] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
@@ -117,9 +116,9 @@ spincoater:
   # communication
   device_identifiers: #for the arduino controlling the vacuum solenoid
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
-      vid: 2341 #WINDOWS ONLY
-      pid: 0043 #WINDOWS ONLY
-      serial_number: '95032303737351B01170'
+    vid: 2341 #WINDOWS ONLY
+    pid: 0043 #WINDOWS ONLY
+    serial_number: "95032303737351B01170"
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
@@ -141,7 +140,7 @@ characterizationline:
     timeout: 20 #max time (seconds) to allow movement before flagging an error
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     x_max: 400.0 #max x position (mm)
-    x_min: 0     #min x position (mm)
+    x_min: 0 #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
     p0: [563.5, 249.9, 63] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
     traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
@@ -174,7 +173,7 @@ characterizationline:
   #individual stations
   stations:
     darkfield:
-      cameraid: '12316' #serial number for Thorlabs Camera
+      cameraid: "12316" #serial number for Thorlabs Camera
       position: 74.2 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 9 #switchbox plug index for light source (ring light)
     pl_imaging:
@@ -182,7 +181,7 @@ characterizationline:
       position: 74.2 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 12 #switchbox plug index for light source (blue LED lamp)
     brightfield:
-      cameraid: '12519' #serial number for Thorlabs Camera
+      cameraid: "12519" #serial number for Thorlabs Camera
       position: 164.4 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 8 #switchbox plug index for light source (ring light)
     pl_blue: #spectroscopy
@@ -199,4 +198,3 @@ characterizationline:
       position: 286 #position (mm) at which characterization axis centers sample in FOV
     #fourpointprobe:
     # position:397.5
-  
