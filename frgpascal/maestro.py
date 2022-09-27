@@ -167,14 +167,14 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v3",
+                version="storage_17mm_v0",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
             ),
             "Tray2": SampleTray(
                 name="Tray2",
-                version="storage_v3",
+                version="storage_17mm_v0",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
