@@ -260,13 +260,13 @@ def get_worklist_times(fid, exclude_list=None):
     data = {}
     data["sample"] = []
     data["spincoat"] = []
-    data["spincoater_to_hotplate"] = []
-    data["anneal"] = []
-    data["hotplate_to_storage"] = []
-    data["rest"] = []
-    data["storage_to_characterization"] = []
-    data["characterize"] = []
-    data["characterization_to_storage"] = []
+    # data["spincoater_to_hotplate"] = []
+    # data["anneal"] = []
+    # data["hotplate_to_storage"] = []
+    # data["rest"] = []
+    # data["storage_to_characterization"] = []
+    # data["characterize"] = []
+    # data["characterization_to_storage"] = []
 
     for sample in log_extract.keys():
         data["sample"].append(sample)
@@ -274,20 +274,20 @@ def get_worklist_times(fid, exclude_list=None):
 
             if task == "spincoat":
                 data["spincoat"].append(log_extract[sample][task])
-            if task == "spincoater_to_hotplate":
-                data["spincoater_to_hotplate"].append(log_extract[sample][task])
-            if task == "anneal":
-                data["anneal"].append(log_extract[sample][task])
-            if task == "hotplate_to_storage":
-                data["hotplate_to_storage"].append(log_extract[sample][task])
-            if task == "rest":
-                data["rest"].append(log_extract[sample][task])
-            if task == "storage_to_characterization":
-                data["storage_to_characterization"].append(log_extract[sample][task])
-            if task == "characterize":
-                data["characterize"].append(log_extract[sample][task])
-            if task == "characterization_to_storage":
-                data["characterization_to_storage"].append(log_extract[sample][task])
+            # if task == "spincoater_to_hotplate":
+            #     data["spincoater_to_hotplate"].append(log_extract[sample][task])
+            # if task == "anneal":
+            #     data["anneal"].append(log_extract[sample][task])
+            # if task == "hotplate_to_storage":
+            #     data["hotplate_to_storage"].append(log_extract[sample][task])
+            # if task == "rest":
+            #     data["rest"].append(log_extract[sample][task])
+            # if task == "storage_to_characterization":
+            #     data["storage_to_characterization"].append(log_extract[sample][task])
+            # if task == "characterize":
+            #     data["characterize"].append(log_extract[sample][task])
+            # if task == "characterization_to_storage":
+            #     data["characterization_to_storage"].append(log_extract[sample][task])
 
     df = pd.DataFrame(data)
 
