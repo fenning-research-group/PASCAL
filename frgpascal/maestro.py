@@ -43,7 +43,7 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
-ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL Runs"
+ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL_Runs"
 
 
 class MaestroServer(Server):
