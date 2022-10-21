@@ -7,8 +7,8 @@ import os
 MODULE_DIR = os.path.dirname(__file__)
 
 ### brightfield image coordinates within the window of the characterization sample carrier
-CENTER_SLICE_Y = slice(300, 780)
-CENTER_SLICE_X = slice(400, 1040)
+CENTER_SLICE_Y = slice(0, 1080)
+CENTER_SLICE_X = slice(0, 1440)
 
 
 def load_image(fid):
