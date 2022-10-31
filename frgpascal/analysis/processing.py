@@ -152,7 +152,7 @@ def load_sample(
         if plimg:
             plimgfid = os.path.join(chardir, f"{sample}_plimage_5000ms.tif")
             plimg_kws = dict()
-            plimg_kws.update(bf_kwargs)
+            plimg_kws.update(pl_kwargs)
             if os.path.exists(plimgfid):
                 img = analysis.brightfield.load_image(plimgfid)
                 raw[f"plimg_{cidx}"] = img
@@ -167,11 +167,13 @@ def load_all(
     transmission=True,
     brightfield=True,
     darkfield=True,
+    plimg=True,
     pl_kwargs={},
     ps_kwargs={},
     t_kwargs={},
     bf_kwargs={},
     df_kwargs={},
+    plimg_kwargs={},
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Loads + processes all characterization data, returns as DataFrame's
 
@@ -198,11 +200,13 @@ def load_all(
                 transmission=transmission,
                 brightfield=brightfield,
                 darkfield=darkfield,
+                plimg=plimg,
                 pl_kwargs=pl_kwargs,
                 ps_kwargs=ps_kwargs,
                 t_kwargs=t_kwargs,
                 bf_kwargs=bf_kwargs,
                 df_kwargs=df_kwargs,
+                plimg_kwargs=plimg_kwargs,
             )
         except:
             tqdm.write(f"Could not load data for sample {s}")
