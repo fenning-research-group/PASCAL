@@ -330,6 +330,12 @@ def compress_jv(jv_pkl_fid):
     df_jv["voc_r"] = None
     df_jv["jsc_f"] = None
     df_jv["jsc_r"] = None
+    df_jv["rsh_f"] = None
+    df_jv["rsh_r"] = None
+    df_jv["rs_f"] = None
+    df_jv["rs_r"] = None
+    df_jv["rch_f"] = None
+    df_jv["rch_r"] = None
 
     for n in range(df_jv.shape[0]):
         if df_jv["direction"][n] == "fwd":
@@ -337,12 +343,18 @@ def compress_jv(jv_pkl_fid):
             df_jv["ff_f"][n] = df_jv["ff"][n]
             df_jv["voc_f"][n] = df_jv["voc"][n]
             df_jv["jsc_f"][n] = df_jv["jsc"][n]
+            df_jv["rsh_f"][n] = df_jv["rsh"][n]
+            df_jv["rs_f"][n] = df_jv["rs"][n]
+            df_jv["rch_f"][n] = df_jv["rch"][n]
 
         if df_jv["direction"][n] == "rev":
             df_jv["pce_r"][n] = df_jv["pce"][n]
             df_jv["ff_r"][n] = df_jv["ff"][n]
             df_jv["voc_r"][n] = df_jv["voc"][n]
             df_jv["jsc_r"][n] = df_jv["jsc"][n]
+            df_jv["rsh_r"][n] = df_jv["rsh"][n]
+            df_jv["rs_r"][n] = df_jv["rs"][n]
+            df_jv["rch_r"][n] = df_jv["rch"][n]
 
     test = pd.DataFrame(
         columns=[
@@ -355,6 +367,12 @@ def compress_jv(jv_pkl_fid):
             "voc_r",
             "jsc_f",
             "jsc_r",
+            "rsh_f",
+            "rsh_r",
+            "rs_f",
+            "rs_r",
+            "rch_f",
+            "rch_r",
         ]
     )
     test["name"] = list(df_jv["name"].unique())
@@ -367,12 +385,18 @@ def compress_jv(jv_pkl_fid):
             test["ff_f"][df_jv["name"][n]] = df_jv["ff"][n]
             test["voc_f"][df_jv["name"][n]] = df_jv["voc"][n]
             test["jsc_f"][df_jv["name"][n]] = df_jv["jsc"][n]
+            test["rsh_f"][df_jv["name"][n]] = df_jv["rsh"][n]
+            test["rs_f"][df_jv["name"][n]] = df_jv["rs"][n]
+            test["rch_f"][df_jv["name"][n]] = df_jv["rch"][n]
 
         if df_jv["direction"][n] == "rev":
             test["pce_r"][df_jv["name"][n]] = df_jv["pce"][n]
             test["ff_r"][df_jv["name"][n]] = df_jv["ff"][n]
             test["voc_r"][df_jv["name"][n]] = df_jv["voc"][n]
             test["jsc_r"][df_jv["name"][n]] = df_jv["jsc"][n]
+            test["rsh_r"][df_jv["name"][n]] = df_jv["rsh"][n]
+            test["rs_r"][df_jv["name"][n]] = df_jv["rs"][n]
+            test["rch_r"][df_jv["name"][n]] = df_jv["rch"][n]
 
     test = test.sort_index()
     return test
