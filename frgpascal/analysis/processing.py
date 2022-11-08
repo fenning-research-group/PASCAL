@@ -8,6 +8,7 @@ from tqdm import tqdm
 from natsort import natsorted
 import json
 
+
 def load_sample(
     sample: str,
     datadir: str,
@@ -16,11 +17,13 @@ def load_sample(
     transmission=True,
     brightfield=True,
     darkfield=True,
+    plimg=True,
     pl_kwargs={},
     ps_kwargs={},
     t_kwargs={},
     bf_kwargs={},
     df_kwargs={},
+    plimg_kwargs={},
 ) -> Tuple[dict, dict]:
     """Loads all available characterization data + extracts standard metrics for a given sample
 
@@ -146,6 +149,14 @@ def load_sample(
                     f"bf_inhomogeneity_{cidx}"
                 ] = analysis.brightfield.inhomogeneity(img=img)
 
+        if plimg:
+            plimgfid = os.path.join(chardir, f"{sample}_plimage_5000ms.tif")
+            plimg_kws = dict()
+            plimg_kws.update(pl_kwargs)
+            if os.path.exists(plimgfid):
+                img = analysis.brightfield.load_image(plimgfid)
+                raw[f"plimg_{cidx}"] = img
+
     return metrics, raw
 
 
@@ -156,11 +167,13 @@ def load_all(
     transmission=True,
     brightfield=True,
     darkfield=True,
+    plimg=True,
     pl_kwargs={},
     ps_kwargs={},
     t_kwargs={},
     bf_kwargs={},
     df_kwargs={},
+    plimg_kwargs={},
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Loads + processes all characterization data, returns as DataFrame's
 
@@ -187,11 +200,13 @@ def load_all(
                 transmission=transmission,
                 brightfield=brightfield,
                 darkfield=darkfield,
+                plimg=plimg,
                 pl_kwargs=pl_kwargs,
                 ps_kwargs=ps_kwargs,
                 t_kwargs=t_kwargs,
                 bf_kwargs=bf_kwargs,
                 df_kwargs=df_kwargs,
+                plimg_kwargs=plimg_kwargs,
             )
         except:
             tqdm.write(f"Could not load data for sample {s}")
@@ -201,17 +216,18 @@ def load_all(
     raw_df["name"] = raw_df.index
     return metric_df, raw_df
 
+
 def get_worklist_times(fid, exclude_list=None):
-    with open(fid, "r", encoding='utf-8') as f:
+    with open(fid, "r", encoding="utf-8") as f:
         log = json.loads(f.read())
-        
-    log_extract ={}
-    
+
+    log_extract = {}
+
     for i in list(log.keys()):
-        temp_worklist =[]
+        temp_worklist = []
         log_extract[i] = []
-        for j in range(len(log[i]['worklist'])):
-            temp_worklist.append(log[i]['worklist'][j]['name'])
+        for j in range(len(log[i]["worklist"])):
+            temp_worklist.append(log[i]["worklist"][j]["name"])
             temp_dict = dict.fromkeys(temp_worklist, [])
             log_extract[i] = temp_dict
 
@@ -219,128 +235,168 @@ def get_worklist_times(fid, exclude_list=None):
     for sample in log_extract.keys():
         for task in log_extract[sample].keys():
             spin_coat_index = 0
-            for n in range(len(log[sample]['worklist'])):
-                
-                if log[sample]['worklist'][n]['name'] == task:
+            for n in range(len(log[sample]["worklist"])):
+
+                if log[sample]["worklist"][n]["name"] == task:
                     if spin_coat_index == 0:
-                        log_extract[sample][task] = [np.round(log[sample]['worklist'][n]['finish_actual']/60,2)]
-                    if task == 'spincoat':
+                        log_extract[sample][task] = [
+                            np.round(
+                                log[sample]["worklist"][n]["finish_actual"] / 60, 2
+                            )
+                        ]
+                    if task == "spincoat":
                         spin_coat_index += 1
                     if spin_coat_index > 1:
-                        log_extract[sample][task].append(np.round(log[sample]['worklist'][n]['finish_actual']/60,2))
-   
-   
+                        log_extract[sample][task].append(
+                            np.round(
+                                log[sample]["worklist"][n]["finish_actual"] / 60, 2
+                            )
+                        )
+
     if exclude_list is not None:
         exclude_list = list(exclude_list)
         for n in range(len(exclude_list)):
-            exclude_list[n] = 'sample'+str(exclude_list[n])
+            exclude_list[n] = "sample" + str(exclude_list[n])
         for sample in exclude_list:
             if sample in log_extract.keys():
                 log_extract.pop(sample)
-                      
-                        
+
     data = {}
-    data['sample'] = []
-    data['spincoat'] = []
-    data['spincoater_to_hotplate'] = []
-    data['anneal'] = []
-    data['hotplate_to_storage'] = []
-    data['rest'] = []
-    data['storage_to_characterization'] = []
-    data['characterize'] = []
-    data['characterization_to_storage'] = []
+    data["sample"] = []
+    data["spincoat"] = []
+    # data["spincoater_to_hotplate"] = []
+    # data["anneal"] = []
+    # data["hotplate_to_storage"] = []
+    # data["rest"] = []
+    # data["storage_to_characterization"] = []
+    # data["characterize"] = []
+    # data["characterization_to_storage"] = []
 
     for sample in log_extract.keys():
-        data['sample'].append(sample)
+        data["sample"].append(sample)
         for task in log_extract[sample].keys():
-            
-            if task == 'spincoat':
-                data['spincoat'].append(log_extract[sample][task])
-            if task == 'spincoater_to_hotplate':
-                data['spincoater_to_hotplate'].append(log_extract[sample][task])
-            if task == 'anneal':
-                data['anneal'].append(log_extract[sample][task])
-            if task == 'hotplate_to_storage':
-                data['hotplate_to_storage'].append(log_extract[sample][task])
-            if task == 'rest':
-                data['rest'].append(log_extract[sample][task])
-            if task == 'storage_to_characterization':
-                data['storage_to_characterization'].append(log_extract[sample][task])
-            if task == 'characterize':
-                data['characterize'].append(log_extract[sample][task])
-            if task == 'characterization_to_storage':
-                data['characterization_to_storage'].append(log_extract[sample][task])
 
-
+            if task == "spincoat":
+                data["spincoat"].append(log_extract[sample][task])
+            # if task == "spincoater_to_hotplate":
+            #     data["spincoater_to_hotplate"].append(log_extract[sample][task])
+            # if task == "anneal":
+            #     data["anneal"].append(log_extract[sample][task])
+            # if task == "hotplate_to_storage":
+            #     data["hotplate_to_storage"].append(log_extract[sample][task])
+            # if task == "rest":
+            #     data["rest"].append(log_extract[sample][task])
+            # if task == "storage_to_characterization":
+            #     data["storage_to_characterization"].append(log_extract[sample][task])
+            # if task == "characterize":
+            #     data["characterize"].append(log_extract[sample][task])
+            # if task == "characterization_to_storage":
+            #     data["characterization_to_storage"].append(log_extract[sample][task])
 
     df = pd.DataFrame(data)
 
-    df['spincoat0'] = ''
-    df['spincoat1'] = ''
+    df["spincoat0"] = ""
+    df["spincoat1"] = ""
 
     for n in range(df.shape[0]):
-        if len(df['spincoat'][n]) == 1:
-            df['spincoat0'][n] = [df['spincoat'][n][0]]
-        if len(df['spincoat'][n]) == 2:
-            df['spincoat0'][n] = [df['spincoat'][n][0]]
-            df['spincoat1'][n] = [df['spincoat'][n][1]]
-            
-    df['name'] = ''
+        if len(df["spincoat"][n]) == 1:
+            df["spincoat0"][n] = [df["spincoat"][n][0]]
+        if len(df["spincoat"][n]) == 2:
+            df["spincoat0"][n] = [df["spincoat"][n][0]]
+            df["spincoat1"][n] = [df["spincoat"][n][1]]
+
+    df["name"] = ""
     for n in range(len(df)):
 
-        df['name'][n] = df['sample'][n].split('e')[1]
-    df[''] = df['name'].astype(int)
-    df = df.set_index('')
+        df["name"][n] = df["sample"][n].split("e")[1]
+    df[""] = df["name"].astype(int)
+    df = df.set_index("")
 
     df = df.sort_index()
-            
+
     return df
 
+
 def compress_jv(jv_pkl_fid):
-    df_jv= pd.read_pickle(jv_pkl_fid)
+    df_jv = pd.read_pickle(jv_pkl_fid)
 
-    df_jv = df_jv.rename(columns={'PASCAL_ID': 'name'})
+    df_jv = df_jv.rename(columns={"PASCAL_ID": "name"})
 
-    df_jv['pce_f'] = None
-    df_jv['pce_r'] = None
-    df_jv['ff_f']  = None
-    df_jv['ff_r']  = None
-    df_jv['voc_f'] = None
-    df_jv['voc_r'] = None
-    df_jv['jsc_f'] = None
-    df_jv['jsc_r'] = None
-
-    for n in range(df_jv.shape[0]):
-        if df_jv['direction'][n] == 'fwd':
-            df_jv['pce_f'][n] = df_jv['pce'][n]
-            df_jv['ff_f'][n] = df_jv['ff'][n]
-            df_jv['voc_f'][n] = df_jv['voc'][n]
-            df_jv['jsc_f'][n] = df_jv['jsc'][n]
-            
-        if df_jv['direction'][n] == 'rev':
-            df_jv['pce_r'][n] = df_jv['pce'][n]
-            df_jv['ff_r'][n] = df_jv['ff'][n]
-            df_jv['voc_r'][n] = df_jv['voc'][n]
-            df_jv['jsc_r'][n] = df_jv['jsc'][n]
-            
-    test = pd.DataFrame(columns=['name','pce_f','pce_r','ff_f','ff_r','voc_f','voc_r','jsc_f','jsc_r'])
-    test['name'] = list(df_jv['name'].unique())
-    test[''] = test['name']
-    test = test.set_index('')
-
+    df_jv["pce_f"] = None
+    df_jv["pce_r"] = None
+    df_jv["ff_f"] = None
+    df_jv["ff_r"] = None
+    df_jv["voc_f"] = None
+    df_jv["voc_r"] = None
+    df_jv["jsc_f"] = None
+    df_jv["jsc_r"] = None
+    df_jv["rsh_f"] = None
+    df_jv["rsh_r"] = None
+    df_jv["rs_f"] = None
+    df_jv["rs_r"] = None
+    df_jv["rch_f"] = None
+    df_jv["rch_r"] = None
 
     for n in range(df_jv.shape[0]):
-            if df_jv['direction'][n] == 'fwd':
-                test['pce_f'][df_jv['name'][n]] = df_jv['pce'][n]
-                test['ff_f'][df_jv['name'][n]] = df_jv['ff'][n]
-                test['voc_f'][df_jv['name'][n]] = df_jv['voc'][n]
-                test['jsc_f'][df_jv['name'][n]] = df_jv['jsc'][n]
+        if df_jv["direction"][n] == "fwd":
+            df_jv["pce_f"][n] = df_jv["pce"][n]
+            df_jv["ff_f"][n] = df_jv["ff"][n]
+            df_jv["voc_f"][n] = df_jv["voc"][n]
+            df_jv["jsc_f"][n] = df_jv["jsc"][n]
+            df_jv["rsh_f"][n] = df_jv["rsh"][n]
+            df_jv["rs_f"][n] = df_jv["rs"][n]
+            df_jv["rch_f"][n] = df_jv["rch"][n]
 
-            if df_jv['direction'][n] == 'rev':
-                test['pce_r'][df_jv['name'][n]] = df_jv['pce'][n]
-                test['ff_r'][df_jv['name'][n]] = df_jv['ff'][n]
-                test['voc_r'][df_jv['name'][n]] = df_jv['voc'][n]
-                test['jsc_r'][df_jv['name'][n]] = df_jv['jsc'][n]
-                
+        if df_jv["direction"][n] == "rev":
+            df_jv["pce_r"][n] = df_jv["pce"][n]
+            df_jv["ff_r"][n] = df_jv["ff"][n]
+            df_jv["voc_r"][n] = df_jv["voc"][n]
+            df_jv["jsc_r"][n] = df_jv["jsc"][n]
+            df_jv["rsh_r"][n] = df_jv["rsh"][n]
+            df_jv["rs_r"][n] = df_jv["rs"][n]
+            df_jv["rch_r"][n] = df_jv["rch"][n]
+
+    test = pd.DataFrame(
+        columns=[
+            "name",
+            "pce_f",
+            "pce_r",
+            "ff_f",
+            "ff_r",
+            "voc_f",
+            "voc_r",
+            "jsc_f",
+            "jsc_r",
+            "rsh_f",
+            "rsh_r",
+            "rs_f",
+            "rs_r",
+            "rch_f",
+            "rch_r",
+        ]
+    )
+    test["name"] = list(df_jv["name"].unique())
+    test[""] = test["name"]
+    test = test.set_index("")
+
+    for n in range(df_jv.shape[0]):
+        if df_jv["direction"][n] == "fwd":
+            test["pce_f"][df_jv["name"][n]] = df_jv["pce"][n]
+            test["ff_f"][df_jv["name"][n]] = df_jv["ff"][n]
+            test["voc_f"][df_jv["name"][n]] = df_jv["voc"][n]
+            test["jsc_f"][df_jv["name"][n]] = df_jv["jsc"][n]
+            test["rsh_f"][df_jv["name"][n]] = df_jv["rsh"][n]
+            test["rs_f"][df_jv["name"][n]] = df_jv["rs"][n]
+            test["rch_f"][df_jv["name"][n]] = df_jv["rch"][n]
+
+        if df_jv["direction"][n] == "rev":
+            test["pce_r"][df_jv["name"][n]] = df_jv["pce"][n]
+            test["ff_r"][df_jv["name"][n]] = df_jv["ff"][n]
+            test["voc_r"][df_jv["name"][n]] = df_jv["voc"][n]
+            test["jsc_r"][df_jv["name"][n]] = df_jv["jsc"][n]
+            test["rsh_r"][df_jv["name"][n]] = df_jv["rsh"][n]
+            test["rs_r"][df_jv["name"][n]] = df_jv["rs"][n]
+            test["rch_r"][df_jv["name"][n]] = df_jv["rch"][n]
+
     test = test.sort_index()
     return test

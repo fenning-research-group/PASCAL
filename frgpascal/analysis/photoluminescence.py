@@ -9,6 +9,17 @@ from frgpascal.analysis.curvehelpers import (
 )
 from scipy.optimize import curve_fit
 
+from tifffile import imread
+
+
+def load_image(fid):
+    """
+    loads the PL image
+    """
+
+    img = imread(fid) * 64
+    return img.astype(np.float32)
+
 
 def load_spectrum(fid):
     """
