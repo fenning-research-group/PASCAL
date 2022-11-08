@@ -30,7 +30,13 @@ mixing_netlist = []
 
 class ListenerWebsocket:
     def __init__(
-        self, protocol_context, tips, labwares, spincoater, ip="0.0.0.0", port=8764,
+        self,
+        protocol_context,
+        tips,
+        labwares,
+        spincoater,
+        ip="0.0.0.0",
+        port=8764,
     ):
         ## Server constants
         self.ip = ip
@@ -357,6 +363,9 @@ class ListenerWebsocket:
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         if blow_out:
             p.blow_out()
+        p.move_to(
+            self.spincoater[self.STANDBY].top(), force_direct=True
+        )  # Move off of chuck to prevent dripping onto substrate
 
     def clear_chuck(self):
         self.pipettes["right"].move_to(
