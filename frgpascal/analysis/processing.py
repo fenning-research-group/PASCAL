@@ -1,4 +1,6 @@
 import os
+import glob
+import re
 import numpy as np
 import pandas as pd
 from typing import Tuple
@@ -150,11 +152,14 @@ def load_sample(
                 ] = analysis.brightfield.inhomogeneity(img=img)
 
         if plimg:
-            plimgfid = os.path.join(chardir, f"{sample}_plimage_5000ms.tif")
+            plimgfid = glob.glob(os.path.join(chardir, f"{sample}_plimage_*ms.tif"))[0] # get pl image of any exposure, assuming 1 exposure per characterization
             plimg_kws = dict()
             plimg_kws.update(pl_kwargs)
             if os.path.exists(plimgfid):
                 img = analysis.brightfield.load_image(plimgfid)
+                exposure = re.search('_\\d+ms.tif', os.path.basename(plimgfid)) # get exposure time from filename
+                exposure = exposure.group()[1:-4] # isolate the exposure time
+                raw[f"plimg_exposure_{cidx}"] = exposure
                 raw[f"plimg_{cidx}"] = img
 
     return metrics, raw
