@@ -152,13 +152,17 @@ def load_sample(
                 ] = analysis.brightfield.inhomogeneity(img=img)
 
         if plimg:
-            plimgfid = glob.glob(os.path.join(chardir, f"{sample}_plimage_*ms.tif"))[0] # get pl image of any exposure, assuming 1 exposure per characterization
+            plimgfid = glob.glob(os.path.join(chardir, f"{sample}_plimage_*ms.tif"))[
+                0
+            ]  # get pl image of any exposure, assuming 1 exposure per characterization
             plimg_kws = dict()
             plimg_kws.update(pl_kwargs)
             if os.path.exists(plimgfid):
                 img = analysis.brightfield.load_image(plimgfid)
-                exposure = re.search('_\\d+ms.tif', os.path.basename(plimgfid)) # get exposure time from filename
-                exposure = exposure.group()[1:-4] # isolate the exposure time
+                exposure = re.search(
+                    "_\\d+ms.tif", os.path.basename(plimgfid)
+                )  # get exposure time from filename
+                exposure = exposure.group()[1:-4]  # isolate the exposure time
                 raw[f"plimg_exposure_{cidx}"] = exposure
                 raw[f"plimg_{cidx}"] = img
 
@@ -405,3 +409,72 @@ def compress_jv(jv_pkl_fid):
 
     test = test.sort_index()
     return test
+
+
+def undo_compress_jv(df_jv):
+    """
+    This function takes the compiled jv dataframe and splits reverse and foward into separate rows
+    """
+
+    # df_jv = df_jv.rename(columns={"PASCAL_ID": "name"})
+    # df_jv_new = pd.DataFrame(columns=['name','direction', 'pce','ff','voc','jsc', 'rsh', 'rs'])
+
+    data = {}
+    data["name"] = []
+    data["direction"] = []
+    data["pce"] = []
+    data["ff"] = []
+    data["voc"] = []
+    data["jsc"] = []
+    data["rsh"] = []
+    data["rs"] = []
+
+    # fowardward first
+    for n in range(df_jv.shape[0]):
+        try:
+            name_temp = df_jv["name"][n]
+            direction_temp = "fwd"
+            pce_temp = df_jv["pce_f"][n]
+            ff_temp = df_jv["ff_f"][n]
+            voc_temp = df_jv["voc_f"][n]
+            jsc_temp = df_jv["jsc_f"][n]
+            rsh_temp = df_jv["rsh_f"][n]
+            rs_temp = df_jv["rs_f"][n]
+
+            data["name"].append(name_temp)
+            data["direction"].append(direction_temp)
+            data["pce"].append(pce_temp)
+            data["ff"].append(ff_temp)
+            data["voc"].append(voc_temp)
+            data["jsc"].append(jsc_temp)
+            data["rsh"].append(rsh_temp)
+            data["rs"].append(rs_temp)
+
+        except:
+            pass
+
+    # reverse
+    for n in range(df_jv.shape[0]):
+        try:
+            name_temp = df_jv["name"][n]
+            direction_temp = "rev"
+            pce_temp = df_jv["pce_r"][n]
+            ff_temp = df_jv["ff_r"][n]
+            voc_temp = df_jv["voc_r"][n]
+            jsc_temp = df_jv["jsc_r"][n]
+            rsh_temp = df_jv["rsh_r"][n]
+            rs_temp = df_jv["rs_r"][n]
+
+            data["name"].append(name_temp)
+            data["direction"].append(direction_temp)
+            data["pce"].append(pce_temp)
+            data["ff"].append(ff_temp)
+            data["voc"].append(voc_temp)
+            data["jsc"].append(jsc_temp)
+            data["rsh"].append(rsh_temp)
+            data["rs"].append(rs_temp)
+        except:
+            pass
+
+    df_jv_new = pd.DataFrame(data)
+    return df_jv_new
