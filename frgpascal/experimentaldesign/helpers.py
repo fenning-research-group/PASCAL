@@ -626,7 +626,10 @@ class PASCALPlanner:
             sample: Sample
             sample_tray = WORKERS[sample.storage_slot["tray"]]
             sample.protocol = self.system.generate_protocol(
-                worklist=sample.worklist, name=sample.name, starting_worker=sample_tray, ending_worker=sample_tray
+                worklist=sample.worklist,
+                name=sample.name,
+                starting_worker=sample_tray,
+                ending_worker=sample_tray,
             )
 
         if prioritize_first_spincoat:
@@ -798,13 +801,25 @@ def export_closedloop(name, characterization_task, labware, tipracks):
 
 def get_next_tip(tip=str):
     pipette_letters = list(string.ascii_uppercase)[:9]
-    pipette_numbers = list(np.linspace(1,12,12).astype(int).astype(str))
-    
+    pipette_numbers = list(np.linspace(1, 12, 12).astype(int).astype(str))
+
     # split letter and number:
     tip_letter = tip[0]
     tip_number = tip[1:]
 
     # uses a modulus to get the next letter and number
-    next_tip = pipette_letters[(pipette_letters.index(tip_letter)+1) % len(pipette_letters)] + pipette_numbers[(pipette_numbers.index(tip_number)+1)  % len(pipette_numbers)]
-    
+    next_letter = pipette_letters[
+        (pipette_letters.index(tip_letter) + 1) % len(pipette_letters)
+    ]
+
+    # if next_letter == pipette_letters[0]:
+    next_number = pipette_numbers[
+        (pipette_numbers.index(tip_number) + 1) % len(pipette_numbers)
+    ]
+
+    if next_letter == pipette_letters[0]:
+        next_tip = next_letter + next_number
+    else:
+        next_tip = next_letter + tip_number
+
     return next_tip
