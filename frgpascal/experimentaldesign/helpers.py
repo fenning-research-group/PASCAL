@@ -812,7 +812,6 @@ def get_next_tip(tip=str):
         (pipette_letters.index(tip_letter) + 1) % len(pipette_letters)
     ]
 
-    # if next_letter == pipette_letters[0]:
     next_number = pipette_numbers[
         (pipette_numbers.index(tip_number) + 1) % len(pipette_numbers)
     ]
