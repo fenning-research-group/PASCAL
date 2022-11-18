@@ -345,6 +345,8 @@ def compress_jv(jv_pkl_fid):
     df_jv["rs_r"] = None
     df_jv["rch_f"] = None
     df_jv["rch_r"] = None
+    df_jv["i_factor_f"] = None
+    df_jv["i_factor_r"] = None
 
     df_jv["voltage_measured_f"] = None
     df_jv["voltage_measured_r"] = None
@@ -366,6 +368,11 @@ def compress_jv(jv_pkl_fid):
             except:
                 pass
 
+            try:
+                df_jv["i_factor_f"][n] = df_jv["i_factor"][n]
+            except:
+                pass
+
         if df_jv["direction"][n] == "rev":
             df_jv["pce_r"][n] = df_jv["pce"][n]
             df_jv["ff_r"][n] = df_jv["ff"][n]
@@ -378,6 +385,11 @@ def compress_jv(jv_pkl_fid):
             try:
                 df_jv["voltage_measured_r"][n] = df_jv["voltage_measured"][n]
                 df_jv["current_measured_r"][n] = df_jv["current_measured"][n]
+            except:
+                pass
+
+            try:
+                df_jv["i_factor_r"][n] = df_jv["i_factor"][n]
             except:
                 pass
 
@@ -402,6 +414,8 @@ def compress_jv(jv_pkl_fid):
             "voltage_measured_r",
             "current_measured_f",
             "current_measured_r",
+            "i_factor_f",
+            "i_factor_r",
         ]
     )
     test["name"] = list(df_jv["name"].unique())
@@ -426,6 +440,10 @@ def compress_jv(jv_pkl_fid):
                 ][n]
             except:
                 pass
+            try:
+                test["i_factor_f"][df_jv["name"][n]] = df_jv["i_factor"][n]
+            except:
+                pass
 
         if df_jv["direction"][n] == "rev":
             test["pce_r"][df_jv["name"][n]] = df_jv["pce"][n]
@@ -442,6 +460,10 @@ def compress_jv(jv_pkl_fid):
                 test["current_measured_r"][df_jv["name"][n]] = df_jv[
                     "current_measured"
                 ][n]
+            except:
+                pass
+            try:
+                test["i_factor_r"][df_jv["name"][n]] = df_jv["i_factor"][n]
             except:
                 pass
 
