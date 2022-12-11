@@ -161,7 +161,7 @@ def load_sample(
                     exposure = re.search(
                         "_\\d+ms.tif", os.path.basename(plimgfid)
                     )  # get exposure time from filename
-                    exposure = exposure.group()[1:-4]  # isolate the exposure time
+                    exposure = exposure.group()[1:-4]  # isolate the exposure time (ignore _ and .tif)
                     raw[f"plimg_{exposure}_{cidx}"] = img # make each exposure a separate column
 
     return metrics, raw
