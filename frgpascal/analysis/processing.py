@@ -152,19 +152,17 @@ def load_sample(
                 ] = analysis.brightfield.inhomogeneity(img=img)
 
         if plimg:
-            plimgfid = glob.glob(os.path.join(chardir, f"{sample}_plimage_*ms.tif"))[
-                0
-            ]  # get pl image of any exposure, assuming 1 exposure per characterization
+            plimgfids = glob.glob(os.path.join(chardir, f"{sample}_plimage_*ms.tif"))  # get pl images for all exposures (can be more than 1 exposure per characterization)
             plimg_kws = dict()
             plimg_kws.update(pl_kwargs)
-            if os.path.exists(plimgfid):
-                img = analysis.brightfield.load_image(plimgfid)
-                exposure = re.search(
-                    "_\\d+ms.tif", os.path.basename(plimgfid)
-                )  # get exposure time from filename
-                exposure = exposure.group()[1:-4]  # isolate the exposure time
-                raw[f"plimg_exposure_{cidx}"] = exposure
-                raw[f"plimg_{cidx}"] = img
+            for plimgfid in plimgfids:
+                if os.path.exists(plimgfid):
+                    img = analysis.brightfield.load_image(plimgfid)
+                    exposure = re.search(
+                        "_\\d+ms.tif", os.path.basename(plimgfid)
+                    )  # get exposure time from filename
+                    exposure = exposure.group()[1:-4]  # isolate the exposure time (ignore _ and .tif)
+                    raw[f"plimg_{exposure}_{cidx}"] = img # make each exposure a separate column
 
     return metrics, raw
 
