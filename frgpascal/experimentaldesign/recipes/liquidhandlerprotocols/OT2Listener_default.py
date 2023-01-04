@@ -20,7 +20,7 @@ STATUS_ALL_DONE = 9
 
 metadata = {
     "protocolName": "Maestro Listener - Default",
-    "author": "Rishi Kumar",
+    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer",
     "source": "FRG",
     "apiLevel": "2.10",
 }
@@ -77,12 +77,22 @@ class ListenerWebsocket:
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
 
+        # self.pipettes = {
+        #     side: protocol_context.load_instrument(
+        #         "p300_single_gen2", mount=side, tip_racks=tip_racks
+        #     )
+        #     for side in ["left", "right"]
+        # }
+
         self.pipettes = {
-            side: protocol_context.load_instrument(
-                "p300_single_gen2", mount=side, tip_racks=tip_racks
-            )
-            for side in ["left", "right"]
+            "right": protocol_context.load_instrument(
+                "p300_single_gen2", mount="right", tip_racks_300=tip_racks_300
+            ),
+            "left": protocol_context.load_instrument(
+                "p1000_single_gen2", mount="left", tip_racks_1000=tip_racks_1000
+            ),
         }
+
         # for p in self.pipettes.values():
         #     p.min_volume = 10  # vs 20 stock
         self.set_starting_tips()
