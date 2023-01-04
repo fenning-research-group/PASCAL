@@ -51,12 +51,12 @@ gripper:
     serial_number: "DN066QRWA"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 28.2 #maximum opening width (mm)
-  width_min: 5.6 #minimum opening width (mm)
-  pwm_max: 1400 #pulse width (us) corresponding to minimum width
-  pwm_min: 650 #pulse width (us) corresponding to maximum width
-  extra_opening_width_pick: 3.3 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 2.8 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  width_max: 26.2 #maximum opening width (mm)
+  width_min: 4.6 #minimum opening width (mm)
+  pwm_max: 1300 #pulse width (us) corresponding to maximum width
+  pwm_min: 740 #pulse width (us) corresponding to minimum width
+  extra_opening_width_pick: 2.3 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
@@ -173,15 +173,15 @@ characterizationline:
   #individual stations
   stations:
     darkfield:
-      cameraid: "12316" #serial number for Thorlabs Camera
-      position: 74.2 #position (mm) at which characterization axis centers sample in FOV
+      cameraid: "12519"  #serial number for Thorlabs Camera
+      position: 81.0 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 9 #switchbox plug index for light source (ring light)
     pl_imaging:
       # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-      position: 74.2 #position (mm) at which characterization axis centers sample in FOV
+      position: 81.0 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 12 #switchbox plug index for light source (blue LED lamp)
     brightfield:
-      cameraid: "12519" #serial number for Thorlabs Camera
+      cameraid: "12316" #serial number for Thorlabs Camera
       position: 164.4 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 8 #switchbox plug index for light source (ring light)
     pl_blue: #spectroscopy

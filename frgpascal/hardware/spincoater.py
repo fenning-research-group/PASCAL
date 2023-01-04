@@ -251,9 +251,10 @@ class SpinCoater:
         perovskite solution drips onto the o-ring.
         """
         if not self._locked:
-            raise Exception(
-                "Cannot twist off the sample, the chuck is not currently locked!"
-            )
+            self.lock()
+            # raise Exception(
+            #     "Cannot twist off the sample, the chuck is not currently locked!"
+            # )
 
         target_position = self.__HOMEPOSITION + self.__TWISTDELTA
         self.axis.controller.input_pos = target_position
