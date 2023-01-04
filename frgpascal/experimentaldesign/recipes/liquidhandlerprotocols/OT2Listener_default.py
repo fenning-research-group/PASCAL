@@ -30,13 +30,7 @@ mixing_netlist = []
 
 class ListenerWebsocket:
     def __init__(
-        self,
-        protocol_context,
-        tips,
-        labwares,
-        spincoater,
-        ip="0.0.0.0",
-        port=8764,
+        self, protocol_context, tips, labwares, spincoater, ip="0.0.0.0", port=8764,
     ):
         ## Server constants
         self.ip = ip
@@ -86,10 +80,10 @@ class ListenerWebsocket:
 
         self.pipettes = {
             "right": protocol_context.load_instrument(
-                "p300_single_gen2", mount="right", tip_racks_300=tip_racks_300
+                "p300_single_gen2", mount="right", tip_racks=tip_racks
             ),
             "left": protocol_context.load_instrument(
-                "p1000_single_gen2", mount="left", tip_racks_1000=tip_racks_1000
+                "p1000_single_gen2", mount="left", tip_racks=tip_racks
             ),
         }
 

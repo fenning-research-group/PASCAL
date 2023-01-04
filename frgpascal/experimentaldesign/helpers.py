@@ -56,9 +56,7 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name,
-    factor=1,
-    delimiter="_",
+    name, factor=1, delimiter="_",
 ):
     """
     given a chemical formula, returns dictionary with individual components/amounts
@@ -169,8 +167,7 @@ def plot_tray(tray, ax=None):
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
     plt.title(tray.name)
     plt.yticks(
-        yvals[::-1],
-        [chr(65 + i) for i in range(len(yvals))],
+        yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
     )
     plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
@@ -536,7 +533,8 @@ class PASCALPlanner:
         operator: str,
         samples: list,
         sample_trays: list,
-        tip_racks: list,
+        tip_racks_235: list,
+        tip_racks_1000: list,
         solution_storage: list,
         stock_solutions: list,
     ):
@@ -544,7 +542,8 @@ class PASCALPlanner:
         self.description = description
         self.operator = operator
         self.sample_trays = sample_trays
-        self.tip_racks = tip_racks
+        self.tip_racks_235 = tip_racks_235
+        self.tip_racks_1000 = tip_racks_1000
         self.solution_storage = solution_storage
         self.solution_storage.sort(key=lambda labware: labware.name)
         self.solution_storage.sort(key=lambda labware: labware.volume)
@@ -592,8 +591,7 @@ class PASCALPlanner:
                 "Cannot make any solutions because no stock solutions were provided during initalization of PASCALPlanner!"
             )
         self.mixer = mx.Mixer(
-            stock_solutions=self.stock_solutions,
-            targets=required_solutions,
+            stock_solutions=self.stock_solutions, targets=required_solutions,
         )
 
         default_mixsol_kwargs = dict(
@@ -710,7 +708,8 @@ class PASCALPlanner:
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,
                 labware=self.solution_storage,
-                tipracks=self.tip_racks,
+                tipracks_235=self.tipracks_235,
+                tipracks_1000=self.tipracks_1000,
             )
 
         ## export maestro netlist
@@ -759,7 +758,9 @@ class PASCALPlanner:
         print(f'Sample dataframe dumped to "{fname}"')
 
 
-def export_closedloop(name, characterization_task, labware, tipracks):
+def export_closedloop(
+    name, characterization_task, labware, tipracks_235, tipracks_1000
+):
 
     # empty labware will not make it into the opentrons protocol
     labware_ = deepcopy(labware)
@@ -771,7 +772,8 @@ def export_closedloop(name, characterization_task, labware, tipracks):
         title=name,
         mixing_netlist={},
         labware=labware_,
-        tipracks=tipracks,
+        tipracks_235=tipracks_235,
+        tipracks_1000=tipracks_1000,
     )
 
     baselines_required = {}
