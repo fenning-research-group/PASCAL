@@ -30,7 +30,14 @@ mixing_netlist = []
 
 class ListenerWebsocket:
     def __init__(
-        self, protocol_context, tips, labwares, spincoater, ip="0.0.0.0", port=8764,
+        self,
+        protocol_context,
+        tips_300,
+        tips_1000,
+        labwares,
+        spincoater,
+        ip="0.0.0.0",
+        port=8764,
     ):
         ## Server constants
         self.ip = ip
@@ -43,8 +50,10 @@ class ListenerWebsocket:
         self.recently_completed_tasks = {}
         self.all_completed_tasks = {}
         self.status = STATUS_IDLE
-        self.tips = tips
-        tip_racks = list(self.tips.keys())
+        self.tips_300 = tips_300
+        self.tips_1000 = tips_1000
+        tip_racks_300 = list(self.tips_300.keys())
+        tip_racks_1000 = list(self.tips_1000.keys())
         self.labwares = labwares
         self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
@@ -80,10 +89,10 @@ class ListenerWebsocket:
 
         self.pipettes = {
             "right": protocol_context.load_instrument(
-                "p300_single_gen2", mount="right", tip_racks=tip_racks
+                "p300_single_gen2", mount="right", tip_racks=tip_racks_300
             ),
             "left": protocol_context.load_instrument(
-                "p1000_single_gen2", mount="left", tip_racks=tip_racks
+                "p1000_single_gen2", mount="left", tip_racks=tip_racks_1000
             ),
         }
 
@@ -449,7 +458,8 @@ class ListenerWebsocket:
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
     # define your hardware
-    tips = {}
+    tips_300 = {}
+    tips_1000 = {}
     labwares = {}
 
     # spincoater
@@ -457,7 +467,8 @@ def run(protocol_context):
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
-        tips=tips,
+        tips_300=tips_300,
+        tips_1000=tips_1000,
         labwares=labwares,
         spincoater=spincoater,
     )
