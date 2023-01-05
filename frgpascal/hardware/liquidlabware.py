@@ -34,7 +34,6 @@ class TipRack:
         constants = self._load_version(version)  # generates self.num_tips!
         self.large_tips = self.volume > 301
 
-
     def _load_version(self, version):
         """Loads the version file for the labware.
         This should be the same json file used to define custom labware for opentrons.
@@ -55,7 +54,6 @@ class TipRack:
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
-        
 
 
 class LiquidLabware:
@@ -235,7 +233,6 @@ class LiquidLabware:
         plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         plt.title(self.name)
         plt.yticks(
-            yvals[::-1],
-            [chr(65 + i) for i in range(len(yvals))],
+            yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
         )
         plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
