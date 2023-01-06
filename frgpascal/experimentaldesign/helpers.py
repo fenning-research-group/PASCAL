@@ -554,11 +554,9 @@ class PASCALPlanner:
         self.samples = self._process_samples(samples=samples, sample_trays=sample_trays)
         self.hotplate_settings = assign_hotplates(self.samples)
 
-    
-    #check to see if you have 300uL or 1000uL tip racks
-    def _parse_tip_racks(self, tip_racks):
-        
-        
+    # check to see if you have 300uL or 1000uL tip racks
+    # def _parse_tip_racks(self, tip_racks):
+
     # use tip_racks_1000 for anytime self.volume >301uL and drops >1
     def _check_tip_racks(self, samples):
         tip_racks = []
