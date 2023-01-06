@@ -233,6 +233,7 @@ class LiquidLabware:
         plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         plt.title(self.name)
         plt.yticks(
-            yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
+            yvals[::-1],
+            [chr(65 + i) for i in range(len(yvals))],
         )
         plt.xticks(xvals, [i + 1 for i in range(len(xvals))])

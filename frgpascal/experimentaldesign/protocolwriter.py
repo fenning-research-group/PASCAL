@@ -11,7 +11,12 @@ for fid in os.listdir(PROTOCOL_DIR):
 
 
 def generate_ot2_protocol(
-    title, mixing_netlist, labware, tipracks, directory=".", base="default"
+    title,
+    mixing_netlist,
+    labware,
+    tipracks,
+    directory=".",
+    base="default",
 ):
     if base not in AVAILABLE_PROTOCOLS:
         raise ValueError(

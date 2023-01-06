@@ -458,8 +458,7 @@ class ListenerWebsocket:
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
     # define your hardware
-    tips_300 = {}
-    tips_1000 = {}
+    tips = {}
     labwares = {}
 
     # spincoater
@@ -467,8 +466,7 @@ def run(protocol_context):
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
-        tips_300=tips_300,
-        tips_1000=tips_1000,
+        tips=tips,
         labwares=labwares,
         spincoater=spincoater,
     )

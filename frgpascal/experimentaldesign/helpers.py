@@ -56,7 +56,9 @@ def components_to_name(components, delimiter="_"):
 
 
 def name_to_components(
-    name, factor=1, delimiter="_",
+    name,
+    factor=1,
+    delimiter="_",
 ):
     """
     given a chemical formula, returns dictionary with individual components/amounts
@@ -167,7 +169,8 @@ def plot_tray(tray, ax=None):
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
     plt.title(tray.name)
     plt.yticks(
-        yvals[::-1], [chr(65 + i) for i in range(len(yvals))],
+        yvals[::-1],
+        [chr(65 + i) for i in range(len(yvals))],
     )
     plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
@@ -533,7 +536,7 @@ class PASCALPlanner:
         operator: str,
         samples: list,
         sample_trays: list,
-        tip_racks_235: list,
+        tip_racks_300: list,
         tip_racks_1000: list,
         solution_storage: list,
         stock_solutions: list,
@@ -542,7 +545,7 @@ class PASCALPlanner:
         self.description = description
         self.operator = operator
         self.sample_trays = sample_trays
-        self.tip_racks_235 = tip_racks_235
+        self.tip_racks_300 = tip_racks_300
         self.tip_racks_1000 = tip_racks_1000
         self.solution_storage = solution_storage
         self.solution_storage.sort(key=lambda labware: labware.name)
@@ -550,6 +553,20 @@ class PASCALPlanner:
         self.stock_solutions = stock_solutions
         self.samples = self._process_samples(samples=samples, sample_trays=sample_trays)
         self.hotplate_settings = assign_hotplates(self.samples)
+
+    # use tip_racks_1000 for anytime self.volume >301uL and drops >1
+    def _get_tip_racks(self, samples):
+        tip_racks = []
+        for s in samples:
+            for task in s.worklist:
+                if isinstance(task, Spincoat):
+                    for drop in task.drops:
+                        if drop.volume > 301:
+                            tip_racks += self.tip_racks_1000
+                        else:
+                            tip_racks += self.tip_racks_300
+        return tip_racks
+
 
     def _process_samples(self, samples, sample_trays):
         """Make sure all samples have a unique name
@@ -591,7 +608,8 @@ class PASCALPlanner:
                 "Cannot make any solutions because no stock solutions were provided during initalization of PASCALPlanner!"
             )
         self.mixer = mx.Mixer(
-            stock_solutions=self.stock_solutions, targets=required_solutions,
+            stock_solutions=self.stock_solutions,
+            targets=required_solutions,
         )
 
         default_mixsol_kwargs = dict(
@@ -708,7 +726,7 @@ class PASCALPlanner:
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,
                 labware=self.solution_storage,
-                tipracks_235=self.tipracks_235,
+                tipracks_300=self.tipracks_300,
                 tipracks_1000=self.tipracks_1000,
             )
 
@@ -759,7 +777,7 @@ class PASCALPlanner:
 
 
 def export_closedloop(
-    name, characterization_task, labware, tipracks_235, tipracks_1000
+    name, characterization_task, labware, tipracks_300, tipracks_1000
 ):
 
     # empty labware will not make it into the opentrons protocol
@@ -772,7 +790,7 @@ def export_closedloop(
         title=name,
         mixing_netlist={},
         labware=labware_,
-        tipracks_235=tipracks_235,
+        tipracks_300=tipracks_300,
         tipracks_1000=tipracks_1000,
     )
 
