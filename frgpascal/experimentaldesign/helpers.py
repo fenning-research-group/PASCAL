@@ -554,8 +554,13 @@ class PASCALPlanner:
         self.samples = self._process_samples(samples=samples, sample_trays=sample_trays)
         self.hotplate_settings = assign_hotplates(self.samples)
 
+    
+    #check to see if you have 300uL or 1000uL tip racks
+    def _parse_tip_racks(self, tip_racks):
+        
+        
     # use tip_racks_1000 for anytime self.volume >301uL and drops >1
-    def _get_tip_racks(self, samples):
+    def _check_tip_racks(self, samples):
         tip_racks = []
         for s in samples:
             for task in s.worklist:
@@ -566,7 +571,6 @@ class PASCALPlanner:
                         else:
                             tip_racks += self.tip_racks_300
         return tip_racks
-
 
     def _process_samples(self, samples, sample_trays):
         """Make sure all samples have a unique name
