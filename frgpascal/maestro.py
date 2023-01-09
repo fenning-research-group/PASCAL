@@ -237,7 +237,11 @@ class Maestro:
     def experiment_time(self):
         if self.t0 is None:
             raise Exception("Experiment has not yet started!")
-        return self.nist_time - self.t0 + self._pause_time
+        # TODO decide which time behavior you want.
+        return (
+            self.nist_time - self.t0
+        )  # ignore pause time. after resuming, tasks will have piled up and be executed rapidly. Some tasks will be late or go longer.
+        # return self.nist_time - self.t0 - self._pause_time # remove paused time. this prevents task pileup, but will cause tasks to be delayed/longer. Like a sample on the hotplate will heat for longer than expected if paused in the middle.
 
     @property
     def nist_time(self):
@@ -249,6 +253,10 @@ class Maestro:
         if self._paused:
             pt += time.time() - self.__pause_time_start
         return pt
+
+    @property
+    def is_paused(self):
+        return self._paused
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""

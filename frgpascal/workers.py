@@ -76,12 +76,14 @@ class WorkerTemplate(Worker_roboflo):
 
         while self.working:
             while True:
-                if len(self.queue._queue) > 0:
+                if (not self.maestro.is_paused) and (len(self.queue._queue) > 0):
                     time_until_next = (
                         self.queue._queue[0][0] - self.maestro.experiment_time
                     )  # seconds until task is due
 
-                    if time_until_next <= 1:  # within 1 second of start time
+                    if (
+                        time_until_next <= 1
+                    ):  # within 1 second of start time. We dont just wait for the exact time because we want to be able to pause or insert tasks at any time.
                         break
                 await asyncio.sleep(0.2)
 
@@ -138,7 +140,10 @@ class WorkerTemplate(Worker_roboflo):
                 self.logger.info(f"executing {task_description} as thread")
                 future = asyncio.gather(
                     self.loop.run_in_executor(
-                        self.maestro.threadpool, function, sample, details,
+                        self.maestro.threadpool,
+                        function,
+                        sample,
+                        details,
                     )
                 )
                 future.add_done_callback(future_callback)
@@ -537,9 +542,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
     def _generatelhtasks_onedrop(self, t0, drop):
         liquidhandlertasks = {}
 
-        (aspirate_duration, staging_duration, dispense_duration,) = expected_timings(
-            drop
-        )
+        (
+            aspirate_duration,
+            staging_duration,
+            dispense_duration,
+        ) = expected_timings(drop)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
