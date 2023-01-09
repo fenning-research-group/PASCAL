@@ -53,6 +53,7 @@ class TipRack:
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
+        self.volume = constants["wells"]["A1"]["totalLiquidVolume"]
         self.large_tips = self.volume > 301
 
 

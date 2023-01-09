@@ -245,7 +245,12 @@ class ListenerWebsocket:
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
 
-    def _next_tip(self):
+    def _next_tip(self, large_tips):
+        large_tips = self.large_tips
+        if large_tips:
+            self.tips = self.tips_1000
+        if large_tips == False:
+            self.tips = self.tips_300
         for tiprack in self.tips.keys():
             next_tip = tiprack.next_tip(num_tips=1)
             if next_tip is not None:
@@ -458,7 +463,10 @@ class ListenerWebsocket:
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
     # define your hardware
-    tips = {}
+
+    tips_300 = {}
+    tips_1000 = {}
+
     labwares = {}
 
     # spincoater
@@ -466,7 +474,8 @@ def run(protocol_context):
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
-        tips=tips,
+        tips_300=tips_300,
+        tips_1000=tips_1000,
         labwares=labwares,
         spincoater=spincoater,
     )
