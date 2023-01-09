@@ -536,8 +536,7 @@ class PASCALPlanner:
         operator: str,
         samples: list,
         sample_trays: list,
-        tip_racks_300: list,
-        tip_racks_1000: list,
+        tip_racks: list,
         solution_storage: list,
         stock_solutions: list,
     ):
@@ -545,7 +544,7 @@ class PASCALPlanner:
         self.description = description
         self.operator = operator
         self.sample_trays = sample_trays
-        self.tip_racks_300, self.tip_racks_1000 = self._parse_tipracks(tip_racks_300)
+        self.tip_racks_300, self.tip_racks_1000 = self._parse_tipracks(tip_racks)
 
         self.solution_storage = solution_storage
         self.solution_storage.sort(key=lambda labware: labware.name)
@@ -555,9 +554,9 @@ class PASCALPlanner:
         self.hotplate_settings = assign_hotplates(self.samples)
 
     # check to see if you have 300uL or 1000uL tip racks
-    def _parse_tipracks(tipracks: list):
+    def _parse_tipracks(self, tip_racks: list):
         tips_300, tips_1000 = [], []
-        for tr in tipracks:
+        for tr in tip_racks:
             if tr.large_tips:
                 tips_1000.append(tr)
             else:
@@ -735,8 +734,7 @@ class PASCALPlanner:
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,
                 labware=self.solution_storage,
-                tipracks_300=self.tipracks_300,
-                tipracks_1000=self.tipracks_1000,
+                tipracks=self.tip_racks_300 + self.tip_racks_1000,
             )
 
         ## export maestro netlist
