@@ -32,7 +32,6 @@ class TipRack:
         self.deck_slot = deck_slot
         self.starting_tip = starting_tip
         constants = self._load_version(version)  # generates self.num_tips!
-        self.large_tips = self.volume > 301
 
     def _load_version(self, version):
         """Loads the version file for the labware.
@@ -54,6 +53,7 @@ class TipRack:
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
+        self.large_tips = self.volume > 301
 
 
 class LiquidLabware:

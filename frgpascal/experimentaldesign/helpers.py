@@ -545,8 +545,8 @@ class PASCALPlanner:
         self.description = description
         self.operator = operator
         self.sample_trays = sample_trays
-        self.tip_racks_300 = tip_racks_300
-        self.tip_racks_1000 = tip_racks_1000
+        self.tip_racks_300, self.tip_racks_1000 = self._parse_tipracks(tip_racks_300)
+
         self.solution_storage = solution_storage
         self.solution_storage.sort(key=lambda labware: labware.name)
         self.solution_storage.sort(key=lambda labware: labware.volume)
@@ -555,20 +555,27 @@ class PASCALPlanner:
         self.hotplate_settings = assign_hotplates(self.samples)
 
     # check to see if you have 300uL or 1000uL tip racks
-    # def _parse_tip_racks(self, tip_racks):
+    def _parse_tipracks(tipracks: list):
+        tips_300, tips_1000 = [], []
+        for tr in tipracks:
+            if tr.large_tips:
+                tips_1000.append(tr)
+            else:
+                tips_300.append(tr)
+        return tips_300, tips_1000
 
     # use tip_racks_1000 for anytime self.volume >301uL and drops >1
-    def _check_tip_racks(self, samples):
-        tip_racks = []
-        for s in samples:
-            for task in s.worklist:
-                if isinstance(task, Spincoat):
-                    for drop in task.drops:
-                        if drop.volume > 301:
-                            tip_racks += self.tip_racks_1000
-                        else:
-                            tip_racks += self.tip_racks_300
-        return tip_racks
+    # def _check_tip_racks(self, samples):
+    #     tip_racks = []
+    #     for s in samples:
+    #         for task in s.worklist:
+    #             if isinstance(task, Spincoat):
+    #                 for drop in task.drops:
+    #                     if drop.volume > 301:
+    #                         tip_racks += self.tip_racks_1000
+    #                     else:
+    #                         tip_racks += self.tip_racks_300
+    #     return tip_racks
 
     def _process_samples(self, samples, sample_trays):
         """Make sure all samples have a unique name
