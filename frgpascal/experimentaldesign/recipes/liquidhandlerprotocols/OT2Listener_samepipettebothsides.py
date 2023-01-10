@@ -19,8 +19,8 @@ STATUS_ALL_DONE = 9
 
 
 metadata = {
-    "protocolName": "Maestro Listener - Default",
-    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer",
+    "protocolName": "Maestro Listener - Same Pipette on Both Sides",
+    "author": "Rishi Kumar",
     "source": "FRG",
     "apiLevel": "2.10",
 }
@@ -32,8 +32,7 @@ class ListenerWebsocket:
     def __init__(
         self,
         protocol_context,
-        tips_300,
-        tips_1000,
+        tips,
         labwares,
         spincoater,
         ip="0.0.0.0",
@@ -50,10 +49,8 @@ class ListenerWebsocket:
         self.recently_completed_tasks = {}
         self.all_completed_tasks = {}
         self.status = STATUS_IDLE
-        self.tips_300 = tips_300
-        self.tips_1000 = tips_1000
-        tip_racks_300 = list(self.tips_300.keys())
-        tip_racks_1000 = list(self.tips_1000.keys())
+        self.tips = tips
+        tip_racks = list(self.tips.keys())
         self.labwares = labwares
         self.TRASH = protocol_context.fixed_trash["A1"]
         self.spincoater = spincoater
@@ -80,22 +77,12 @@ class ListenerWebsocket:
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
 
-        # self.pipettes = {
-        #     side: protocol_context.load_instrument(
-        #         "p300_single_gen2", mount=side, tip_racks=tip_racks
-        #     )
-        #     for side in ["left", "right"]
-        # }
-
         self.pipettes = {
-            "right": protocol_context.load_instrument(
-                "p300_single_gen2", mount="right", tip_racks=tip_racks_300
-            ),
-            "left": protocol_context.load_instrument(
-                "p1000_single_gen2", mount="left", tip_racks=tip_racks_1000
-            ),
+            side: protocol_context.load_instrument(
+                "p300_single_gen2", mount=side, tip_racks=tip_racks
+            )
+            for side in ["left", "right"]
         }
-
         # for p in self.pipettes.values():
         #     p.min_volume = 10  # vs 20 stock
         self.set_starting_tips()
@@ -245,12 +232,7 @@ class ListenerWebsocket:
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
 
-    def _next_tip(self, large_tips):
-        large_tips = self.large_tips
-        if large_tips:
-            self.tips = self.tips_1000
-        if large_tips == False:
-            self.tips = self.tips_300
+    def _next_tip(self):
         for tiprack in self.tips.keys():
             next_tip = tiprack.next_tip(num_tips=1)
             if next_tip is not None:
@@ -463,10 +445,7 @@ class ListenerWebsocket:
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
     # define your hardware
-
-    tips_300 = {}
-    tips_1000 = {}
-
+    tips = {}
     labwares = {}
 
     # spincoater
@@ -474,8 +453,7 @@ def run(protocol_context):
 
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
-        tips_300=tips_300,
-        tips_1000=tips_1000,
+        tips=tips,
         labwares=labwares,
         spincoater=spincoater,
     )
