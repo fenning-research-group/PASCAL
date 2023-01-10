@@ -1,6 +1,9 @@
 import os
 import json
-from typing import Literal
+
+# from typing import Literal #python 3.8
+from typing_extensions import Literal  # python <3.8
+
 
 MODULE_DIR = os.path.dirname(__file__)
 
