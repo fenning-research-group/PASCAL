@@ -78,10 +78,12 @@ class ListenerWebsocket:
         )
 
         self.pipettes = {
-            side: protocol_context.load_instrument(
-                "p300_single_gen2", mount=side, tip_racks=tip_racks
-            )
-            for side in ["left", "right"]
+            "right": protocol_context.load_instrument(
+                "p300_single_gen2", mount="right", tip_racks=tip_racks
+            ),
+            "left": protocol_context.load_instrument(
+                "p1000_single_gen2", mount="left", tip_racks=tip_racks
+            ),
         }
         # for p in self.pipettes.values():
         #     p.min_volume = 10  # vs 20 stock
