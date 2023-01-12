@@ -53,8 +53,16 @@ class TipRack:
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
+        self.volume = None
         for well in constants["wells"].values():
-            self.volume = well["totalLiquidVolume"] #assume all wells have the same volume
+            if self.volume is None:
+                self.volume = well[
+                    "totalLiquidVolume"
+                ]  # assume all wells have the same volume
+            elif self.volume != well["totalLiquidVolume"]:
+                raise Exception(
+                    f"All tips must have the same volume! This was not the case for TipRack version {self.version}, which had tips of volume {self.volume} and {well['totalLiquidVolume']}!"
+                )
         self.large_tips = self.volume > 301
 
 
@@ -105,11 +113,19 @@ class LiquidLabware:
                 self._unavailablewells.append(well)
             else:
                 self._openwells.append(well)
-                
+
         numx = len(constants["ordering"])
         numy = len(constants["ordering"][0])
         self.shape = (numy, numx)  # grid dimensions
         self.capacity = numy * numx  # number of slots
+        self.volume = None
+        for well in constants["wells"].values():
+            if self.volume is None:
+                self.volume = well["totalLiquidVolume"]
+            elif self.volume != well["totalLiquidVolume"]:
+                raise Exception(
+                    f"All wells must have the same volume! This was not the case for LiquidLabware version {self.version}, which had wells of volume {self.volume} and {well['totalLiquidVolume']}!"
+                )
         self.volume = constants["wells"][self._openwells[0]][
             "totalLiquidVolume"
         ]  # in uL. assumes all wells have same volume!
