@@ -53,7 +53,8 @@ class TipRack:
         self.unavailable_tips = tips_in_order[:starting_idx]
         self.available_tips = tips_in_order[starting_idx:]
         self.num_tips = len(self.available_tips)
-        self.volume = constants["wells"]["A1"]["totalLiquidVolume"]
+        for well in constants["wells"].values():
+            self.volume = well["totalLiquidVolume"] #assume all wells have the same volume
         self.large_tips = self.volume > 301
 
 
@@ -71,13 +72,6 @@ class LiquidLabware:
         self.__starting_well = starting_well
         constants = self._load_version(version)
         self.name = name
-        numx = len(constants["ordering"])
-        numy = len(constants["ordering"][0])
-        self.shape = (numy, numx)  # grid dimensions
-        self.capacity = numy * numx  # number of slots
-        self.volume = constants["wells"][self._openwells[0]][
-            "totalLiquidVolume"
-        ]  # in uL. assumes all wells have same volume!
         self.contents = {}
 
     def _load_version(self, version):
@@ -111,7 +105,14 @@ class LiquidLabware:
                 self._unavailablewells.append(well)
             else:
                 self._openwells.append(well)
-
+                
+        numx = len(constants["ordering"])
+        numy = len(constants["ordering"][0])
+        self.shape = (numy, numx)  # grid dimensions
+        self.capacity = numy * numx  # number of slots
+        self.volume = constants["wells"][self._openwells[0]][
+            "totalLiquidVolume"
+        ]  # in uL. assumes all wells have same volume!
         return constants
 
     def load(self, contents, well=None) -> str:
