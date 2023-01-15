@@ -19,7 +19,7 @@ STATUS_ALL_DONE = 9
 
 
 metadata = {
-    "protocolName": "Maestro Listener - Same Pipette on Both Sides",
+    "protocolName": "Maestro Listener - Default",
     "author": "Rishi Kumar",
     "source": "FRG",
     "apiLevel": "2.10",

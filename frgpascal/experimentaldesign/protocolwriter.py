@@ -1,10 +1,6 @@
 import os
 import json
 
-# from typing import Literal #python 3.8
-from typing_extensions import Literal  # python <3.8
-
-
 MODULE_DIR = os.path.dirname(__file__)
 
 PROTOCOL_DIR = os.path.join(MODULE_DIR, "recipes", "liquidhandlerprotocols")
@@ -15,62 +11,49 @@ for fid in os.listdir(PROTOCOL_DIR):
 
 
 def generate_ot2_protocol(
-    title,
-    mixing_netlist,
-    labware,
-    tipracks_300,
-    tipracks_1000,
-    directory=".",
-    template=Literal["samepipettebothsides", "1000left300right"],
+    title, mixing_netlist, labware, tipracks, directory=".", base="default"
 ):
-    if template not in AVAILABLE_PROTOCOLS:
+    if base not in AVAILABLE_PROTOCOLS:
         raise ValueError(
-            f"{template} is not a valid protocol template! Available: {AVAILABLE_PROTOCOLS}"
+            f"{base} is not a valid protocol base! Available: {AVAILABLE_PROTOCOLS}"
         )
     fpath = os.path.join(directory, f"OT2PASCALProtocol_{title}.py")
-
-    labware = [
-        l for l in labware if len(l.contents) > 0
-    ]  # no use loading an unused labware!
-    used_deck_slots = (
-        [l.deck_slot for l in labware]
-        + [t.deck_slot for t in tipracks_300]
-        + [t.deck_slot for t in tipracks_1000]
-    )
-    if len(used_deck_slots) != len(set(used_deck_slots)):
-        raise Exception("More than one labware/tiprack placed on the same deck slot!")
 
     with open(
         os.path.join(
             MODULE_DIR,
             "recipes",
             "liquidhandlerprotocols",
-            f"OT2listener_{template}.py",
+            f"OT2listener_{base}.py",
         ),
         "r",
     ) as f:
         template_lines = [line for line in f.readlines()]
 
+    used_deck_slots = []
     labware_str = "    labwares = {\n"
     for l in labware:
+        if len(l.contents) == 0:
+            continue  # no use loading an unused labware!
+        if l.deck_slot in used_deck_slots:
+            raise Exception(
+                f"More than one labware/tiprack placed on deck slot {l.deck_slot}!"
+            )
         labware_str += f'        "{l.name}": protocol_context.load_labware(\n'
         labware_str += f'            "{l.version}", location="{l.deck_slot}"\n'
         labware_str += f"        ),\n"
     labware_str += "    }"
 
-    tiprack_300_str = "    tips_300 = {\n"
-    for t in tipracks_300:
-        tiprack_300_str += f"        protocol_context.load_labware(\n"
-        tiprack_300_str += f'            "{t.version}", location="{t.deck_slot}"\n'
-        tiprack_300_str += f"        ):{t.unavailable_tips},\n"
-    tiprack_300_str += "    }\n"
-
-    tiprack_1000_str = "    tips_1000 = {\n"
-    for t in tipracks_1000:
-        tiprack_1000_str += f"        protocol_context.load_labware(\n"
-        tiprack_1000_str += f'            "{t.version}", location="{t.deck_slot}"\n'
-        tiprack_1000_str += f"        ):{t.unavailable_tips},\n"
-    tiprack_1000_str += "    }\n"
+    tiprack_str = "    tips = {\n"
+    for t in tipracks:
+        if t.deck_slot in used_deck_slots:
+            raise Exception(
+                f"More than one labware/tiprack placed on deck slot {t.deck_slot}!"
+            )
+        tiprack_str += f"        protocol_context.load_labware(\n"
+        tiprack_str += f'            "{t.version}", location="{t.deck_slot}"\n'
+        tiprack_str += f"        ):{t.unavailable_tips},\n"
+    tiprack_str += "    }\n"
 
     with open(fpath, "w") as f:
         for line in template_lines:
@@ -81,10 +64,8 @@ def generate_ot2_protocol(
 
             elif line.startswith("    labwares = {}"):
                 f.write(labware_str)
-            elif line.startswith("    tips_300 = {}"):
-                f.write(tiprack_300_str)
-            elif line.startswith("    tips_1000 = {}"):
-                f.write(tiprack_1000_str)
+            elif line.startswith("    tips = {}"):
+                f.write(tiprack_str)
             else:
                 f.write(line)
 

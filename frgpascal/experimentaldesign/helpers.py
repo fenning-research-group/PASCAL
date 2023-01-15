@@ -544,54 +544,27 @@ class PASCALPlanner:
         self.description = description
         self.operator = operator
         self.sample_trays = sample_trays
-        self.tip_racks_300, self.tip_racks_1000 = self._parse_tipracks(tip_racks)
-
+        self.tip_racks = tip_racks
         self.solution_storage = solution_storage
         self.solution_storage.sort(key=lambda labware: labware.name)
         self.solution_storage.sort(key=lambda labware: labware.volume)
         self.stock_solutions = stock_solutions
-        self.samples, self.requires_1000ul_tips = self._process_samples(
-            samples=samples, sample_trays=sample_trays
-        )
+        self.samples = self._process_samples(samples=samples, sample_trays=sample_trays)
         self.hotplate_settings = assign_hotplates(self.samples)
 
-    # check to see if you have 300uL or 1000uL tip racks
-    def _parse_tipracks(self, tip_racks: list):
-        tips_300, tips_1000 = [], []
-        for tr in tip_racks:
-            if tr.large_tips:
-                tips_1000.append(tr)
-            else:
-                tips_300.append(tr)
-        return tips_300, tips_1000
-
     def _process_samples(self, samples, sample_trays):
-        """Make sure all samples have a unique name. Also determine which opentrons protocol is required (do we need 1000 ul tips, etc).
+        """Make sure all samples have a unique name
 
         Args:
             samples (list): list of Sample objects
 
         Returns:
             list: list of Sample objects with unique names
-            requires_1000ul_tips (bool): True if any of the samples require 1000ul tips
         """
-        antisolvent_requires_1000ul_tips = False
-        perovskite_requires_1000ul_tips = False
         for i, sample in enumerate(samples):
             sample.name = f"sample{i}"
-            for task in sample.worklist:
-                if isinstance(task, Spincoat):
-                    if task.drops[0].volume > 300:
-                        perovskite_requires_1000ul_tips = True
-                    if len(task.drops) == 2:
-                        antisolvent_requires_1000ul_tips = True
-
         load_sample_trays(samples, sample_trays)
-
-        requires_1000ul_tips = (
-            antisolvent_requires_1000ul_tips or perovskite_requires_1000ul_tips
-        )
-        return samples, requires_1000ul_tips
+        return samples
 
     def process_solutions(
         self, min_volume: float = 50, min_transfer_volume: float = 20, **mixsol_kwargs
@@ -733,16 +706,11 @@ class PASCALPlanner:
 
         ## export opentrons protocol
         if any([isinstance(task, Spincoat) for task in self.system.scheduler.tasklist]):
-            # TODO selection logic in case you need to swap between pipette configurations
-
-            template = "1000left300right"
             generate_ot2_protocol(
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,
                 labware=self.solution_storage,
-                tipracks_1000=self.tip_racks_1000,
-                tipracks_300=self.tip_racks_300,
-                template=template,
+                tipracks=self.tip_racks,
             )
 
         ## export maestro netlist
@@ -791,9 +759,7 @@ class PASCALPlanner:
         print(f'Sample dataframe dumped to "{fname}"')
 
 
-def export_closedloop(
-    name, characterization_task, labware, tipracks_300, tipracks_1000
-):
+def export_closedloop(name, characterization_task, labware, tipracks):
 
     # empty labware will not make it into the opentrons protocol
     labware_ = deepcopy(labware)
@@ -805,9 +771,7 @@ def export_closedloop(
         title=name,
         mixing_netlist={},
         labware=labware_,
-        tipracks_300=tipracks_300,
-        tipracks_1000=tipracks_1000,
-        template="1000left300right",
+        tipracks=tipracks,
     )
 
     baselines_required = {}
