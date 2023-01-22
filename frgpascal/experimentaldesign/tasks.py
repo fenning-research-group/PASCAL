@@ -206,7 +206,7 @@ class Drop:
             raise ValueError("Volume (uL) must be >0!")
         self.volume = volume
         self.time = time
-        if rate < 10 or rate > 1000:
+        if rate < 10 or rate > 2000:
             raise ValueError("dispense rate must be 10<rate<=1000 uL/sec")
         self.rate = rate
 
