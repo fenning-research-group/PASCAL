@@ -303,7 +303,7 @@ class Maestro:
                 self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
                 self.spincoater.lock()
             self.gripper.open(self.SAMPLEWIDTH - 2)
-            self.gripper.open(self.SAMPLEWIDTH - 1)
+            # self.gripper.open(self.SAMPLEWIDTH - 1)
             time.sleep(0.1)
             if (
                 not self.gripper.is_under_load()
