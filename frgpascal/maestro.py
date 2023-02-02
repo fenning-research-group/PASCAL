@@ -107,7 +107,7 @@ class MaestroServer(Server):
 class Maestro:
     def __init__(
         self,
-        samplewidth: float = 10,
+        samplewidth: float = 17,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -168,7 +168,7 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v3",
+                version="storage_17mm_v0",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
