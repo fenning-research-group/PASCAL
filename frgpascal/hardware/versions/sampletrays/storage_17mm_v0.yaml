@@ -1,5 +1,5 @@
 ## 3D printed storage plate version 2
-# vertical gripping orientation
+# vertical gripping orientations
 
 samplewidth: 17 #intended sample width (mm)
 openwidth: 19 #max gripper opening width (mm) that can reach into tray slots
