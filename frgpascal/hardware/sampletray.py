@@ -59,7 +59,7 @@ class SampleTray(Workspace):
 class Tray1(SampleTray):
     """Wrapper class with default arguments for Tray1"""
 
-    def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+    def __init__(self, version="storage_17mm_v0", gantry=None, gripper=None, p0=[0, 0, 0]):
         super().__init__(
             name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0
         )
