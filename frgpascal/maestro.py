@@ -142,7 +142,7 @@ class Maestro:
         self.hotplates = {
             "Hotplate1": HotPlate(
                 name="Hotplate1",
-                version="hotplate_frg4inch",
+                version="hotplate_frg4inch_17mm",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=1,
@@ -150,7 +150,7 @@ class Maestro:
             ),
             "Hotplate2": HotPlate(
                 name="Hotplate2",
-                version="hotplate_frg4inch",
+                version="hotplate_frg4inch_17mm",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=2,
@@ -158,7 +158,7 @@ class Maestro:
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
-                version="hotplate_frg4inch",
+                version="hotplate_frg4inch_17mm",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=3,
