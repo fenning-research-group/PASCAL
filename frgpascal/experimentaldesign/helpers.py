@@ -16,10 +16,12 @@ from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
 import pandas as pd
+from frgpascal.hardware.hotplate import HotPlate
+from frgpascal.hardware.sampletray import SampleTray
 from frgpascal.system import generate_workers, build
-from frgpascal.workers import Worker_Hotplate
+from frgpascal.workers import Worker_Hotplate, Worker_Storage
 from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
-from typing import Tuple
+from typing import Literal, Tuple
 import mixsol as mx
 from mixsol.mix import _solutions_to_matrix
 import random
@@ -539,7 +541,12 @@ class PASCALPlanner:
         tip_racks: list,
         solution_storage: list,
         stock_solutions: list,
+        sample_width: Literal[10, 17] = 10,
     ):
+        self.sample_width = sample_width
+        self._set_hardware_capacities(
+            worker_list=[]
+        )  # run to confirm we support this sample width.
         self.name = name
         self.description = description
         self.operator = operator
@@ -553,7 +560,54 @@ class PASCALPlanner:
         self.samples, self.requires_1000ul_tips = self._process_samples(
             samples=samples, sample_trays=sample_trays
         )
+
         self.hotplate_settings = assign_hotplates(self.samples)
+
+    def _set_hardware_capacities(self, worker_list: list):
+        """The capacities of the hotplate and sample tray change depending on the sample size. This affects job scheduling. We set the capacities here.
+
+        Args:
+            sample_size (int): Width (mm) of the sample substrate
+
+        Raises:
+            ValueError: Unsupported sample size
+        """
+        hardware_versions_per_sample_size = {
+            10: {
+                "hotplate": "hotplate_frg4inch",
+                "tray": "storage_v3",
+            },
+            17: {
+                "hotplate": "hotplate_frg4inch_17mmsample",
+                "tray": "storage_17mm_v1",
+            },
+        }
+
+        if self.sample_width not in hardware_versions_per_sample_size:
+            raise ValueError(
+                f"Sample size ({self.sample_width} mm) not supported. Choose from {list(hardware_versions_per_sample_size.keys())}"
+            )
+
+        hotplate_capacity = HotPlate(
+            name="dummy",
+            version=hardware_versions_per_sample_size[self.sample_width]["hotplate"],
+            gantry=1,
+            gripper=1,
+            p0=[0, 0, 0],
+        ).capacity
+        tray_capacity = SampleTray(
+            name="dummy",
+            version=hardware_versions_per_sample_size[self.sample_width]["tray"],
+            gantry=1,
+            gripper=1,
+            p0=[0, 0, 0],
+        ).capacity
+
+        for worker in worker_list:
+            if isinstance(worker, Worker_Hotplate):
+                worker.capacity = hotplate_capacity
+            elif isinstance(worker, Worker_Storage):
+                worker.capacity = tray_capacity
 
     # check to see if you have 300uL or 1000uL tip racks
     def _parse_tipracks(self, tip_racks: list):
@@ -644,6 +698,8 @@ class PASCALPlanner:
         self, shuffle: bool = True, prioritize_first_spincoat: bool = False, **kwargs
     ):
         self.system: System = build()
+        self._set_hardware_capacities(self.system.workers)
+
         if shuffle:
             sample_it = iter(random.sample(self.samples, len(self.samples)))
         else:
