@@ -1,0 +1,3 @@
+Printing settings:
+	Print each half with the open slot facing down (flat side on bottom). 
+	Use tree style supports.

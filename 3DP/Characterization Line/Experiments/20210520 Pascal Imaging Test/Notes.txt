@@ -1,0 +1,6 @@
+sample = Moses old 5% Cl MACsPbI0.8Br0.15Cl0.05. Film. Outside glovebox, looked dark but hazy on front side.
+
+ 2x 500 nm Longpasses, 10x and 40x objectives on thorlabs camera
+ - note that with two adapters (SM1->Cmount->RMS), the working distance for the lens is too long. probably more zoomed than nominal
+
+10x has ~ 1.25 mm vertical FOV (from imaging grading on thorlabs SM1 spanner)

@@ -1,0 +1,367 @@
+{
+    "ordering": [
+        [
+            "A1",
+            "B1",
+            "C1",
+            "D1"
+        ],
+        [
+            "A2",
+            "B2",
+            "C2",
+            "D2"
+        ],
+        [
+            "A3",
+            "B3",
+            "C3",
+            "D3"
+        ],
+        [
+            "A4",
+            "B4",
+            "C4",
+            "D4"
+        ],
+        [
+            "A5",
+            "B5",
+            "C5",
+            "D5"
+        ],
+        [
+            "A6",
+            "B6",
+            "C6",
+            "D6"
+        ],
+        [
+            "A7",
+            "B7",
+            "C7",
+            "D7"
+        ]
+    ],
+    "brand": {
+        "brand": "FRG",
+        "brandId": []
+    },
+    "metadata": {
+        "displayName": "FRG 28 Well Plate 4000 µL",
+        "displayCategory": "wellPlate",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 128,
+        "yDimension": 86,
+        "zDimension": 51
+    },
+    "wells": {
+        "A1": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 11.5,
+            "y": 74.5,
+            "z": 9
+        },
+        "B1": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 11.5,
+            "y": 53.5,
+            "z": 9
+        },
+        "C1": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 11.5,
+            "y": 32.5,
+            "z": 9
+        },
+        "D1": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 11.5,
+            "y": 11.5,
+            "z": 9
+        },
+        "A2": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 29,
+            "y": 74.5,
+            "z": 9
+        },
+        "B2": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 29,
+            "y": 53.5,
+            "z": 9
+        },
+        "C2": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 29,
+            "y": 32.5,
+            "z": 9
+        },
+        "D2": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 29,
+            "y": 11.5,
+            "z": 9
+        },
+        "A3": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 46.5,
+            "y": 74.5,
+            "z": 9
+        },
+        "B3": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 46.5,
+            "y": 53.5,
+            "z": 9
+        },
+        "C3": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 46.5,
+            "y": 32.5,
+            "z": 9
+        },
+        "D3": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 46.5,
+            "y": 11.5,
+            "z": 9
+        },
+        "A4": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 64,
+            "y": 74.5,
+            "z": 9
+        },
+        "B4": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 64,
+            "y": 53.5,
+            "z": 9
+        },
+        "C4": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 64,
+            "y": 32.5,
+            "z": 9
+        },
+        "D4": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 64,
+            "y": 11.5,
+            "z": 9
+        },
+        "A5": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 81.5,
+            "y": 74.5,
+            "z": 9
+        },
+        "B5": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 81.5,
+            "y": 53.5,
+            "z": 9
+        },
+        "C5": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 81.5,
+            "y": 32.5,
+            "z": 9
+        },
+        "D5": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 81.5,
+            "y": 11.5,
+            "z": 9
+        },
+        "A6": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 99,
+            "y": 74.5,
+            "z": 9
+        },
+        "B6": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 99,
+            "y": 53.5,
+            "z": 9
+        },
+        "C6": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 99,
+            "y": 32.5,
+            "z": 9
+        },
+        "D6": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 99,
+            "y": 11.5,
+            "z": 9
+        },
+        "A7": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 116.5,
+            "y": 74.5,
+            "z": 9
+        },
+        "B7": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 116.5,
+            "y": 53.5,
+            "z": 9
+        },
+        "C7": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 116.5,
+            "y": 32.5,
+            "z": 9
+        },
+        "D7": {
+            "depth": 42,
+            "totalLiquidVolume": 4000,
+            "shape": "circular",
+            "diameter": 8,
+            "x": 116.5,
+            "y": 11.5,
+            "z": 9
+        }
+    },
+    "groups": [
+        {
+            "metadata": {
+                "wellBottomShape": "flat"
+            },
+            "wells": [
+                "A1",
+                "B1",
+                "C1",
+                "D1",
+                "A2",
+                "B2",
+                "C2",
+                "D2",
+                "A3",
+                "B3",
+                "C3",
+                "D3",
+                "A4",
+                "B4",
+                "C4",
+                "D4",
+                "A5",
+                "B5",
+                "C5",
+                "D5",
+                "A6",
+                "B6",
+                "C6",
+                "D6",
+                "A7",
+                "B7",
+                "C7",
+                "D7"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "frg_28_wellplate_4000ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
