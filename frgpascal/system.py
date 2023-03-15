@@ -16,11 +16,11 @@ def generate_workers(maestro=None):
         kws = dict(maestro=maestro, planning=False)
     gg = Worker_GantryGripper(**kws)
     sclh = Worker_SpincoaterLiquidHandler(**kws)
-    hp1 = Worker_Hotplate(capacity=9, **kws)
+    hp1 = Worker_Hotplate(capacity=8, **kws)
     hp1.name = "Hotplate1"
-    hp2 = Worker_Hotplate(capacity=9, **kws)
+    hp2 = Worker_Hotplate(capacity=8, **kws)
     hp2.name = "Hotplate2"
-    hp3 = Worker_Hotplate(capacity=9, **kws)
+    hp3 = Worker_Hotplate(capacity=8, **kws)
     hp3.name = "Hotplate3"
     st1 = Worker_Storage(capacity=18, initial_fill=18, **kws)
     st1.name = "Tray1"
