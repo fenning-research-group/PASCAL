@@ -178,7 +178,7 @@ characterizationline:
       switchindex: 9 #switchbox plug index for light source (ring light)
     pl_imaging:
       # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-      position: 81.0 #position (mm) at which characterization axis centers sample in FOV
+      position: 79.4 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 12 #switchbox plug index for light source (blue LED lamp)
     brightfield:
       cameraid: "12316" #serial number for Thorlabs Camera
