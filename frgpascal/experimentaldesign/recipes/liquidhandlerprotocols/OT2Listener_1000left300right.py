@@ -521,11 +521,12 @@ def run(protocol_context):
                 volumes.append(volume)
                 is_last_transfer.append(final_generation[destination_str] == gen_idx)
 
-            original_speed = listener.pipettes["right"].speed
-            listener.pipettes["right"].speed = self.SLOW_XY_RATE #this is the speed we use during slow transfers 
+            # original_speed = listener.pipettes["right"].speed
+            # listener.pipettes[
+            #     "right"
+            # ].speed = 100  # this is the speed we use during slow transfers
             if gen_idx == 0:
                 # first generation, we dont need to worry about cross contamination
-
 
                 listener.pipettes["right"].transfer(
                     volume=volumes,
@@ -561,7 +562,7 @@ def run(protocol_context):
                         touch_tip=True,
                         air_gap=20,
                     )
-            listener.pipettes["right"].speed = original_speed
+            # listener.pipettes["right"].speed = original_speed
 
     protocol_context.comment("Ready to receive commands from Maestro")
     if protocol_context.is_simulating():  # stop here during simulation
