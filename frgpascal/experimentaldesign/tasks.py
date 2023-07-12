@@ -8,6 +8,7 @@ import mixsol as mx
 from mixsol.helpers import components_to_name
 from frgpascal.system import generate_workers
 import roboflo
+from typing import Union, Boolean, Float
 
 from frgpascal.hardware import liquidhandler
 from frgpascal.workers import (
@@ -195,7 +196,7 @@ class Drop:
         height: float = 2,
         slow_retract: bool = True,
         touch_tip: bool = True,
-        air_gap: bool = True,
+        air_gap: Union[bool, float] = True,
         pre_mix: tuple = (3, 50),
         reuse_tip: bool = False,
         slow_travel: bool = False,
@@ -217,6 +218,10 @@ class Drop:
         )
         self.slow_retract = slow_retract
         self.touch_tip = touch_tip
+
+        if isinstance(air_gap, float) or isinstance(air_gap, int):
+            if air_gap < 0 or air_gap > 1000:
+                raise ValueError("air gap must be 0 < air_gap<=1000 uL!")
         self.air_gap = air_gap
         if type(pre_mix) not in [list, tuple, np.array]:
             raise ValueError(
@@ -563,7 +568,7 @@ class Spincoat(Task):
         currenttime = 0
         psk_dropped = False
         as_dropped = False
-        for (rpm, accel, duration) in self.steps:
+        for rpm, accel, duration in self.steps:
             output += f"\t{round(currenttime,2)}-{round(currenttime+duration,2)}s:\t{round(rpm,2)} rpm, {round(accel,2):.0f} rpm/s"
             currenttime += duration
             output += "\n"
@@ -677,7 +682,6 @@ class Rest(Task):
         return f"<Rest> {round(duration,1)} {units}"
 
     def generate_details(self):
-
         return {
             "duration": self.duration,
         }
@@ -697,7 +701,6 @@ class Rest(Task):
 
 class Characterize(Task):
     def __init__(self, tasks, reorder_by_position=False, immediate=False):
-
         if any([not isinstance(task, CharacterizationTask) for task in tasks]):
             raise Exception(
                 "Invalid tasks: `Characterize` method can only execute `CharacterizationMethod` tasks!"

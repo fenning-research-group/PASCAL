@@ -223,14 +223,22 @@ class ListenerWebsocket:
             p.move_to(self.labwares[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if touch_tip:
             p.touch_tip()
-        if air_gap:
+
+        if isinstance(air_gap, bool):
+            if air_gap:
+                air_gap_volume = self.AIRGAP
+            else:
+                air_gap_volume = 0
+        else:
+            air_gap_volume = air_gap
+
+        if air_gap_volume > 0:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
-                volume=self.AIRGAP,
+                volume=air_gap_volume,
                 location=self.labwares[tray][well].top(2),
                 rate=relative_rate,
             )  # force a slow airgap
-            # p.air_gap(self.AIRGAP)
 
     def _next_tip(self):
         for tiprack in self.tips.keys():
