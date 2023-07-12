@@ -8,7 +8,7 @@ import mixsol as mx
 from mixsol.helpers import components_to_name
 from frgpascal.system import generate_workers
 import roboflo
-from typing import Union, Boolean, Float
+import typing
 
 from frgpascal.hardware import liquidhandler
 from frgpascal.workers import (
@@ -196,7 +196,7 @@ class Drop:
         height: float = 2,
         slow_retract: bool = True,
         touch_tip: bool = True,
-        air_gap: Union[bool, float] = True,
+        air_gap: typing.Union[bool, float] = True,
         pre_mix: tuple = (3, 50),
         reuse_tip: bool = False,
         slow_travel: bool = False,
