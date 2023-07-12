@@ -521,8 +521,12 @@ def run(protocol_context):
                 volumes.append(volume)
                 is_last_transfer.append(final_generation[destination_str] == gen_idx)
 
+            original_speed = listener.pipettes["right"].speed
+            listener.pipettes["right"].speed = self.SLOW_XY_RATE #this is the speed we use during slow transfers 
             if gen_idx == 0:
                 # first generation, we dont need to worry about cross contamination
+
+
                 listener.pipettes["right"].transfer(
                     volume=volumes,
                     source=source,
@@ -532,6 +536,7 @@ def run(protocol_context):
                     new_tip="once",
                     blow_out=True,
                     blow_out_location="source well",
+                    air_gap=20,
                 )
             else:
                 for dest, vol, last_transfer in zip(
@@ -554,7 +559,9 @@ def run(protocol_context):
                         blow_out=True,
                         blow_out_location="destination well",
                         touch_tip=True,
+                        air_gap=20,
                     )
+            listener.pipettes["right"].speed = original_speed
 
     protocol_context.comment("Ready to receive commands from Maestro")
     if protocol_context.is_simulating():  # stop here during simulation
