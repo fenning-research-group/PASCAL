@@ -56,9 +56,9 @@ gripper:
   pwm_max: 1300 #pulse width (us) corresponding to maximum width
   pwm_min: 740 #pulse width (us) corresponding to minimum width
   extra_opening_width_pick: 2.3 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  extra_opening_width_place: 2.1 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
-  slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
+  slow_interval: 8 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
   idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
   springs_loaded_threshold: 2000 #(650 original value) if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)

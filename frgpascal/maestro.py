@@ -107,7 +107,7 @@ class MaestroServer(Server):
 class Maestro:
     def __init__(
         self,
-        samplewidth: float = 17,
+        samplewidth: float = 16.9,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
