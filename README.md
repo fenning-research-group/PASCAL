@@ -20,9 +20,9 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 ![spin coating one sample](images/spincoating.gif)
 
-### Full Sample Fabrication
+### Automated Full Sample Fabrication + Characterization Timelapse
 
-![gantry, spincoater, liquid handler, and hot plate working together](images/pascal_gif.gif)
+https://github.com/fenning-research-group/PASCAL/assets/49666626/01028334-c0f0-4b86-ad78-245d9399b324
 
 ## Experimental Planning
 
@@ -58,3 +58,11 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 - RGB Imaging for color determination
 ![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
+
+
+## Addons 
+
+See our [fenningresearchgroup.com/https://github.com/fenning-research-group/PASCAL_TrainView
+](https://github.com/fenning-research-group/PASCAL_TrainView)https://github.com/fenning-research-group/PASCAL_TrainView
+
+and https://github.com/dnzckn/BO-PV repo's for additional capabilities
