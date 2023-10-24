@@ -58,3 +58,11 @@ PASCAL is an automated platform for spin coating and annealing thin films onto s
 
 - RGB Imaging for color determination
 ![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
+
+
+## Addons 
+
+See our [fenningresearchgroup.com/https://github.com/fenning-research-group/PASCAL_TrainView
+](https://github.com/fenning-research-group/PASCAL_TrainView)https://github.com/fenning-research-group/PASCAL_TrainView
+
+and https://github.com/dnzckn/BO-PV repo's for additional capabilities
