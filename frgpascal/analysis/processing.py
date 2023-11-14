@@ -223,6 +223,61 @@ def load_all(
     raw_df["name"] = raw_df.index
     return metric_df, raw_df
 
+def load_all_generator(
+    datadir: str,
+    photoluminescence=True,
+    photostability=True,
+    transmission=True,
+    brightfield=True,
+    darkfield=True,
+    plimg=True,
+    pl_kwargs={},
+    ps_kwargs={},
+    t_kwargs={},
+    bf_kwargs={},
+    df_kwargs={},
+    plimg_kwargs={},
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """A generator to load + process all characterization data, yielding dictionaries.
+    An alternative to load_all. Using this function (ie in a loop) will lazily load each sample one at a time, enabling operations to be performed on each "on the fly" (ie downscaling images).
+    This saves memory and is useful for large batches.
+
+    Args:
+        datadir (str): directory in which characterization data is stored
+
+    Yields:
+        Tuple[dict, dict]]: dictionary with fitted metrics for 1 sample, dictionary with raw data for 1 sample
+    """
+
+    all_samples = [
+        s for s in os.listdir(datadir) if os.path.isdir(os.path.join(datadir, s))
+    ]
+    all_samples = natsorted(all_samples)  # sort names
+    for s in tqdm(all_samples, desc="Loading data", unit="sample"):
+        try:
+            metrics, raw = load_sample(
+                sample=s,
+                datadir=datadir,
+                photoluminescence=photoluminescence,
+                photostability=photostability,
+                transmission=transmission,
+                brightfield=brightfield,
+                darkfield=darkfield,
+                plimg=plimg,
+                pl_kwargs=pl_kwargs,
+                ps_kwargs=ps_kwargs,
+                t_kwargs=t_kwargs,
+                bf_kwargs=bf_kwargs,
+                df_kwargs=df_kwargs,
+                plimg_kwargs=plimg_kwargs,
+            )
+            
+            # append name key
+            metrics["name"] = s
+            raw["name"] = s
+            yield metrics, raw
+        except Exception as e:
+            tqdm.write(f"Could not load data for sample {s}")
 
 def get_worklist_times(fid, exclude_list=None):
     with open(fid, "r", encoding="utf-8") as f:
