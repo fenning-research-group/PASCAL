@@ -1,3 +1,7 @@
+# Overview
+This is a beakout of PASCAL's custom spincoater hardware and software. 
+
+
 # Custom Spin Coater Parts List
 
 
