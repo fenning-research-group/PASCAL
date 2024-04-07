@@ -22,4 +22,14 @@ This is a beakout of PASCAL's custom spincoater hardware and software.
 ## Installation
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
 
+In order for the ODive board to control the motor and encoder, a few settings need to be inputted:
+1. CPR of the encoder
+2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
+3. Motor calibration current
+4. Motor calibration voltage
+5. ODrive break resistance
+6. PID gains
+
+The software provided in this repository will automatically set these values for you, assuming you have the same hardware as listed above.
+
 More to come.. 
