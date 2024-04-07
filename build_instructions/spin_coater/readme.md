@@ -35,11 +35,17 @@ In order for the ODive board to control the motor and encoder, a few settings ne
 5. ODrive break resistance 
 6. PID gains
 
+The software provided in this repository will automatically set these values for you, assuming you have the same hardware as listed above.
+
 ### Vacuum and Solenoid Control
+1. 
+2.
+3. 
 
 ### Peripherals 
+1.
+2. 
+3. 
 
-
-The software provided in this repository will automatically set these values for you, assuming you have the same hardware as listed above.
 
 More to come.. 
