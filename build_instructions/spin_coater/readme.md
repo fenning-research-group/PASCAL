@@ -3,6 +3,7 @@ This is a beakout of PASCAL's custom spincoater hardware and software.
 
 We opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
 
+We use a drone motor since they have a hollow shaft, which allows for the vacuum to be applied to the substrate through the motor.
 
 # Custom Spin Coater Parts List
 
