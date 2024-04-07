@@ -8,7 +8,6 @@ To control the motor, we opted to use a rotary encoder over an ESC to enable the
 <img src="demo_figure/spin_coater.gif" width="25%" height="auto" />
 
 
-
 # Custom Spin Coater Parts List
 | Part                     | Price | Link                                                                                                           |
 |--------------------------|-------|----------------------------------------------------------------------------------------------------------------|
