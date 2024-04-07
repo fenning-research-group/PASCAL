@@ -1,7 +1,7 @@
 # Overview
 This is a beakout of PASCAL's custom spin coater. 
 
-We use a drone motor since they have a hollow shaft, which allows for the vacuum to be applied to the substrate through the motor. They're also quite cheap. 
+We use a drone motor since they have a hollow shaft, which allows vacuum to be pulled through the motor to hold the substrate in place. They're also quite cheap. 
 
 To control the motor, we opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
 
