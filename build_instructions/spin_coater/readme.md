@@ -8,7 +8,7 @@ To control the motor, we opted to use a rotary encoder over an ESC to enable the
 <img src="demo_figure/spin_coater.gif" width="25%" height="auto" />
 
 
-# Custom Spin Coater Parts List
+# Parts List
 | Part                     | Price | Link                                                                                                           |
 |--------------------------|-------|----------------------------------------------------------------------------------------------------------------|
 | ODRIVE V3.6              | $260  | [https://odriverobotics.com/shop/odrive-v36](https://odriverobotics.com/shop/odrive-v36)                       |
@@ -23,7 +23,7 @@ To control the motor, we opted to use a rotary encoder over an ESC to enable the
 | USB Relay                   | $X   | [X](Y) |
 
 
-## Installation
+# Installation
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
  - Motor wire configuration to ODrive does not matter, but encoder wires do
  - Ensure break resistor is connected, polarity does not matter
