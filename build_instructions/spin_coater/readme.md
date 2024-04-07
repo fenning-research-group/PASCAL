@@ -1,5 +1,5 @@
 # Overview
-This is a beakout of PASCAL's custom spincoater hardware and software. 
+This is a beakout of PASCAL's custom spin coater. 
 
 We use a drone motor since they have a hollow shaft, which allows for the vacuum to be applied to the substrate through the motor. They're also quite cheap. 
 
