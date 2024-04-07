@@ -1,9 +1,10 @@
 # Overview
 This is a beakout of PASCAL's custom spincoater hardware and software. 
 
-We opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
+We use a drone motor since they have a hollow shaft, which allows for the vacuum to be applied to the substrate through the motor. They're also quite cheap. 
 
-We use a drone motor since they have a hollow shaft, which allows for the vacuum to be applied to the substrate through the motor.
+To control the motor, we opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
+
 
 # Custom Spin Coater Parts List
 
@@ -25,6 +26,7 @@ We use a drone motor since they have a hollow shaft, which allows for the vacuum
 ## Installation
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
 
+### Motor Control 
 In order for the ODive board to control the motor and encoder, a few settings need to be inputted:
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
 2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
@@ -32,6 +34,11 @@ In order for the ODive board to control the motor and encoder, a few settings ne
 4. Motor calibration voltage 
 5. ODrive break resistance 
 6. PID gains
+
+### Vacuum and Solenoid Control
+
+### Peripherals 
+
 
 The software provided in this repository will automatically set these values for you, assuming you have the same hardware as listed above.
 
