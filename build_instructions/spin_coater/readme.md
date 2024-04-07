@@ -36,7 +36,7 @@ In order for the ODive board to control the motor and encoder, a few settings ne
 5. ODrive break resistance 
 6. PID gains
 
-standalone_spincoater.py sets these values for you, but if there are issues, these are the key settings to enable control. 
+In standalone_spincoater.py, these values are set during initilization, but if there are issues, these are the key settings to enable control. 
 
 
 ### Vacuum and Solenoid Control
