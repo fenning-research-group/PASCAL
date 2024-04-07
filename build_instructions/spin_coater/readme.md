@@ -5,7 +5,8 @@ We use a drone motor since they have a hollow shaft, which allows vacuum to be p
 
 To control the motor, we opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
 
-![overview](demo_figure/spin_coater.gif)
+<img src="demo_figure/spin_coater.gif" width="30%" height="auto" />
+
 
 
 # Custom Spin Coater Parts List
