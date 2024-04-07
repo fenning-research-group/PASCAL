@@ -25,6 +25,7 @@ To control the motor, we opted to use a rotary encoder over an ESC to enable the
 
 ## Installation
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
+(motor wires to ODrive does not matter, but encoder wires do)
 
 ### Motor Control 
 In order for the ODive board to control the motor and encoder, a few settings need to be inputted:
