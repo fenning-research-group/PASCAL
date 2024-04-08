@@ -11,7 +11,7 @@ This build assumes that you have a windows machine with a python environment to 
 
 
 # Parts List
-| Part                     | Price | Link                                                                                                           |
+| Part                     | Price | Link|
 |--------------------------|-------|----------------------------------------------------------------------------------------------------------------|
 | ODRIVE V3.6              | $260  | [https://odriverobotics.com/shop/odrive-v36](https://odriverobotics.com/shop/odrive-v36)                       |
 | 8192 CPR ENCODER         | $40   | [https://odriverobotics.com/shop/cui-amt-102](https://odriverobotics.com/shop/cui-amt-102)                     |
