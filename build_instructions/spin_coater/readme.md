@@ -32,7 +32,7 @@ Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-s
 
 
 ### Motor Control 
-In order for the ODive board to control the motor and encoder, a few settings need to be inputted:
+To enable Odrive to properly control the motor, the following parameters need to be set:
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
 2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
 3. Motor calibration current 
