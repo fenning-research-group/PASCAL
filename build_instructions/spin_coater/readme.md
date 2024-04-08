@@ -53,5 +53,21 @@ In standalone_spincoater.py, these values are set during initilization, but if t
 2. 
 3. 
 
+# Usage
+
+With the SpinCoater class you can send commands such as:
+
+SpinCoater.set_rpm(rpm = 2000, acceleration = 1000)
+
+This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
+
+
+
+Combining these two commonds a typical spin coating sequence would look like:
+
+SpinCoater.set_rpm(rpm = 2000, acceleration = 1000)
+time.sleep(10)
+SpinCoater.stop()
+
 
 More to come.. 
