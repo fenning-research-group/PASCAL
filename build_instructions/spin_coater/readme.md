@@ -66,7 +66,9 @@ This can be combined with our SpinCoater.stop() command which will decelerate th
 Combining these two commonds a typical spin coating sequence would look like:
 
 SpinCoater.set_rpm(rpm = 2000, acceleration = 1000)
+
 time.sleep(10)
+
 SpinCoater.stop()
 
 
