@@ -22,7 +22,7 @@ This build assumes that you have a windows machine with a python environment to 
 | O-rings                 | $X   | [X](Y) |
 | Encoder Mount           | $X   | [X](Y) |
 | Solenoid Valve          | $X   | [X](Y) |
-| USB Relay                   | $X   | [X](Y) |
+| 16 Channel USB Relay Module                   | $100   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
 
 
 # Installation
