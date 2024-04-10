@@ -1,0 +1,200 @@
+# Constants for the hardware modules that compose PASCAL
+gantry:
+  # communcation
+  # serialid: "55838333932351108212" #LINUX ONLY hardware ID of gantry control board. Used to find correct COM port
+  device_identifiers:
+    vid: 7855 #vendor id, converted from hex to integer. WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
+    pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
+    location: "1-10" #WINDOWS
+  pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
+  timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
+
+  # movement
+  positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
+  speed_max: 10000 #max gantry speed, mm/min
+  speed_min: 500 #min gantry speed, mm/min
+  zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+  idle_coordinates: [192.25, 27.4, 82] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+  clear_coordinates: [564.2, 254.3, 136.1] #coordinates to move the gantry out of the way for of glovebox operator
+  opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
+  opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
+  opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
+  overall_gantry_limits:
+    x_max: 567.0 #max x position (mm)
+    x_min: 0 #min x position (mm)
+    y_max: 282.0 #max y position (mm)
+    y_min: 0 #min y position (mm)
+    z_max: 166.0 #max z position (mm)
+    z_min: 0 #min z position (mm)
+  workspace_limits: #gantry limits in workspace frame
+    x_max: 567.0 #max x position (mm)
+    x_min: 192.25 #min x position (mm)
+    y_max: 282.0 #max y position (mm)
+    y_min: 0 #min y position (mm)
+    z_max: 166.0 #max z position (mm)
+    z_min: 0 #min z position (mm)
+  opentrons_limits: #gantry limits in opentrons frame
+    x_max: 192.25
+    x_min: 0
+    y_max: 200.7
+    y_min: 8
+    z_max: 82
+    z_min: 0
+  # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+  transition_coordinates: [192.25, 27.4, 82] #spincoater in deck slot 3
+
+gripper:
+  #communication
+  device_identifiers:
+    vid: 1027 #WINDOWS ONLY
+    pid: 24597 #WINDOWS ONLY
+    serial_number: "DN066QRWA"
+  pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
+  timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
+  width_max: 28.5 #maximum opening width (mm)
+  width_min: 4.6 #minimum opening width (mm)
+  pwm_max: 1300 #pulse width (us) corresponding to maximum width
+  pwm_min: 740 #pulse width (us) corresponding to minimum width
+  extra_opening_width_pick: 2.3 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
+  slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
+  fast_interval: 50 #rate to open at during "fast" setting
+  idle_timeout: 30 #gripper idle time (seconds) after which automatically closes. To prevent servo burnout (fighting the spring to stay open)
+  springs_loaded_threshold: 2000 #(650 original value) if the gripper load reading is below this value, we assume the springs are not applying load onto the gripper fingers (ie sample is clasped)
+  catch_attempts: 3 #number of times to try picking up a sample before erroring out
+
+hotplates:
+  hp1:
+    device_identifiers:
+      vid: 1027
+      pid: 24577
+      serial_number: "AB0OYUYZA"
+    address: 1 #rs485 address
+    p0: [214.4, 73.3, 56.0]
+  hp2:
+    device_identifiers:
+      vid: 1027
+      pid: 24577
+      serial_number: "AB0OYQKDA"
+    address: 2
+    p0: [214.2, 216.3, 55.0]
+  hp3:
+    device_identifiers:
+      vid: 1027
+      pid: 24577
+      serial_number: "AB0OYQKPA"
+    address: 3
+    p0: [367.2, 217.3, 51.0]
+
+liquidhandler:
+  pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
+  timings:
+    aspirate:
+      preparetip: 10 #time (seconds) to pick up a fresh tip
+      premix: # time (seconds) = (a*volume + b) * num_cycles
+        a: 0.0209
+        b: 0.5132
+      slowretract: 3 #extra time to slowly retract pipette from well
+      touchtip: 1.5 #time to touch tip/knock off droplets on side of well
+      airgap: 2.5 #time to add an airgap
+    travel: 2 #time to move from tiprack to aspiration well
+    travel_slow: 4 #time to move if slow_travel active
+    dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
+    dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active
+  # dispense_delay: 1
+  # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
+  # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
+  server:
+    ip: "169.254.160.20" #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    port: 8764
+
+sampletray:
+  p1: [494.0, 20.0, 67.3] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p2: [404.7, 20.0, 67.3] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+spincoater:
+  # communication
+  device_identifiers: #for the arduino controlling the vacuum solenoid
+    # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
+    vid: 2341 #WINDOWS ONLY
+    pid: 0043 #WINDOWS ONLY
+    serial_number: "95032303737351B01170"
+  switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
+  communication_interval: 0.1 #delay (seconds) between communication to the odrive
+  # movement
+  p0: [4.6, 16.0, 62.1] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
+  rpm_min: 200 #minimum angular velocity (rpm) the spincoater can hit
+  acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
+  acceleration_min: 50 #maximum angular acceleration (rpm/s) the spincoater can hit
+  logging_interval: 0.2 #interval (seconds) at which to log spincoating rpm
+  vacuum_disengagement_time: 10 #delay (seconds) after closing vacuum solenoid -> vacuum releasing at the chuck
+characterizationline:
+  #movement
+  axis:
+    device_identifiers:
+      vid: 7855 #WINDOWS ONLY
+      pid: 4 #WINDOWS ONLY
+      location: "1-1.3" #WINDOWS + GANTRY ONLY
+    pollingrate: 0.05
+    timeout: 20 #max time (seconds) to allow movement before flagging an error
+    positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
+    x_max: 400.0 #max x position (mm)
+    x_min: 0 #min x position (mm)
+    transfer_position: 0 #x coordinate to transfer samples to/from gantry
+    p0: [563.5, 249.9, 63] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
+      m: 0.0461
+      b: 1.161
+  #hardware shared across stations
+  switchbox:
+    device_identifiers:
+      vid: 10777
+      pid: 3075
+    pollingrate: 0.2
+    relayresponsetime: 0.01 #seconds between telling relay to do something -> relay doing it
+  shutter:
+    device_identifiers:
+      vid: 9025
+      pid: 67
+      serial_number: "95033313031351611262"
+    pollingrate: 0.2
+    max_change_time: 2 #max time to open/close transmission lamp shutter
+  filterslider:
+    device_identifiers:
+      vid: 1027
+      pid: 24597
+      serial_number: "DK0AJS9DA"
+    top: "2" #address/index for top shutter. This should be a string!
+    bottom: "0" #address/index for bottom shutter. This should be a string!
+    pollingrate: 0.2
+    shutterresponsetime: 2 #seconds between telling the shutter to move -> shutter completing the move
+  laser_settling_time: 0.5 #seconds for laser power to stabilize
+  #individual stations
+  stations:
+    darkfield:
+      cameraid: "12519"  #serial number for Thorlabs Camera
+      position: 77.3 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 9 #switchbox plug index for light source (ring light)
+    pl_imaging:
+      # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
+      position: 77.3 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 12 #switchbox plug index for light source (blue LED lamp)
+    brightfield:
+      cameraid: "12316" #serial number for Thorlabs Camera
+      position: 161.6 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 8 #switchbox plug index for light source (ring light)
+    pl_blue: #spectroscopy
+      position: 285.6
+      switchindex: 5
+      laser_settling_time: 0.2 #seconds for laser power to stabilize
+
+    pl_red: #spectroscopy
+      position: 285.6 #position (mm) at which characterization axis centers sample in FOV
+      switchindex: 4 #switchbox plug index for light source (red laser)
+      laser_settling_time: 0.2 #seconds for laser power to stabilize
+
+    transmission: #spectroscopy
+      position: 285.6 #position (mm) at which characterization axis centers sample in FOV
+    #fourpointprobe:
+    # position:397.5

@@ -4,9 +4,26 @@ from odrive.enums import *
 import numpy as np
 from datetime import datetime
 import os
+import serial
+import yaml
+from frgpascal.hardware.switchbox import Switchbox
+from frgpascal.hardware.switchbox import SingleSwitch
+from frgpascal.hardware.helpers import get_port
+
+
+MODULE_DIR = os.path.dirname(__file__)
+CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
+
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    constants = yaml.load(f, Loader=yaml.Loader)
+
+
+        # self.switchbox = Switchbox()
 
 class SpinCoater:
     def __init__(self):
+        self.sb = Switchbox()
+        self.switch = SingleSwitch(switchid="vacuumsolenoid", switchbox=self.sb)
         #, switch: SingleSwitch):
         """Initialize the spincoater control object
 
@@ -15,7 +32,9 @@ class SpinCoater:
         serial_number (str, optional): Serial number for spincoater arduino, used to find and connect to correct COM port. Defaults to "558383339323513140D1":str.
         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
+        # COM4: Numato Lab 16 Channel USB Relay Module (COM4) [USB VID:PID=2A19:0C03 SER=NLRL240501R0145 LOCATION=1-1]
         # constants
+        # self.switch = 
         # if port is None:
         #     self.port = get_port(
         #         constants["spincoater"]["device_identifiers"]
@@ -24,6 +43,8 @@ class SpinCoater:
         #     self.port = port
         # self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
         ## self.switch = switch
+        # self.port = 
+
         print('FRG Custom Spin Coater\nPlease Cite Our Paper!')
         self.COMMUNICATION_INTERVAL = 0.1
         self.TIMEOUT = 30
@@ -112,9 +133,9 @@ class SpinCoater:
         )
         self.sc.trap_traj.config.accel_limit = 0.5
         self.sc.trap_traj.config.decel_limit = 0.5
-        self.lock()
-        time.sleep(1)
-        self.idle()
+        # self.lock()
+        # time.sleep(1)
+        # self.idle()
 
 
     def idle(self):
@@ -164,7 +185,7 @@ class SpinCoater:
         """
         routine to lock rotor in registered position for sample transfer
         """
-        if _locked:
+        if self._locked:
             return
         if self.sc.current_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.sc.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
@@ -183,7 +204,7 @@ class SpinCoater:
                 print("resetting")
                 self.reset()
                 t0 = time.time()
-        _locked = True
+        self._locked = True
         time.sleep(.1)
         self.idle()
 
@@ -212,6 +233,16 @@ class SpinCoater:
         except:
             pass
         self.connect()
+
+
+    def vacuum_on(self):
+        """Turn on vacuum solenoid, pull vacuum"""
+        self.switch.on()
+
+    def vacuum_off(self):
+        """Turn off vacuum solenoid, do not pull vacuum"""
+        self.switch.off()
+
 
     def disconnect(self):
         self.__connected = False
