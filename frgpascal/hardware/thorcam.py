@@ -174,7 +174,7 @@ class Thorcam:
         else:
             averaged_image = frames[0]
 
-        averaged_image = averaged_image / (2 ** 16)  # normalize 16 bit depth to 0-1
+        averaged_image = averaged_image / (2**16)  # normalize 16 bit depth to 0-1
         return averaged_image
 
     def preview(self):
