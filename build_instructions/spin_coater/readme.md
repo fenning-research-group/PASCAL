@@ -28,7 +28,7 @@ This build assumes that you have a windows machine with a python environment to 
 # Installation
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
  - Motor wire configuration to ODrive does not matter, but encoder wires do
- - Ensure break resistor is connected, polarity does not matter
+ - Ensure break resistor is connected&enabled, polarity does not matter
 
 
 ### Motor Control 
