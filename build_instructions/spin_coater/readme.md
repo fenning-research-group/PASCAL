@@ -42,7 +42,6 @@ To enable Odrive to properly control the motor, the following parameters need to
 
 In standalone_spincoater.py, these values are set during initilization, but if there are issues, these are the key settings to enable control. 
 
-
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
 2. Connect the relay modules's slot 7 - terminal to the power supplys - terminal.
