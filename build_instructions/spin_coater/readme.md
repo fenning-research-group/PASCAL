@@ -46,14 +46,25 @@ In standalone_spincoater.py, these values are set during initilization, but if t
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
 2. Connect the relay modules's slot 7 - terminal to the power supplys - terminal.
-3. Connect hte relay modules's usb to the computer. 
-4. Ensure that your PC has the driver for the module, if not, download it from (https://numato.com/product/16-channel-usb-relay-module/) 
+3. Connect the relay modules's usb to the computer. 
+4. Ensure that your PC has the driver for the module, if not, download it from https://numato.com/product/16-channel-usb-relay-module/ 
+5. Connect vacuum tubing form the pump to the solenoid valve, then from the solenoid valve to the motor chuck.
 
 
 ### Peripherals 
-1.
-2. 
-3. 
+1. Get the aluminum spin coater chuck machined, ensure that the NPT is tapped for the vacuum valve and that M5 screws are tapped to fasten the encoder to the chuck.
+2. Remove the screw underneath the motor shaft to allow for vacuum to be pulled through the motor.
+3. Place an o-ring on the chuck to ensure a tight seal with the motor. 
+4. Screw the motor down to the chuck. 
+5. Place encoder onto the chuck. 
+6. Screw on the M5 hex shaft to the remaining threads of the motor shaft.
+7. Place the spincoater plate (3D printed part) onto the hex shaft (pressure fit)
+8. Glue on an o-ring to the top of the hex shaft to ensure a tight seal with the substrate (plate should be flush with top of the o-ring so that substrate is level with the plate)
+9. 3D print the encoder mount and screw it down to the chuck. Glue magnets into place.
+10. 3D print the spin coater bowl. Glue magnets into place.
+11. Using the magnets attach the bowl to the encoder mount. 
+
+
 
 # Usage
 
