@@ -98,6 +98,12 @@ class SpinCoater:
         print("\tFound motor, now calibrating. This takes 10-20 seconds.")
         # input("\tPress enter once shroud is out of the way: ")
         self.sc = self.odrv0.axis0
+        # self.sc.config.motor.pole_pairs = 7
+        # time.sleep(.1)
+        # self.sc.config.motor.torque_constant = 8.27 / 17000 # 8.27/motor kV
+        # time.sleep(.1)
+
+
         self.sc.requested_state = (
             AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
         )
@@ -115,11 +121,11 @@ class SpinCoater:
         print("\tDone calibrating odrive!")
         
         # Ensure PID Control is set up: https://docs.odriverobotics.com/v/0.5.5/control.html
-        self.sc.controller.config.pos_gain = 5
+        # self.sc.controller.config.pos_gain = 5
         time.sleep(.1)
-        self.sc.controller.config.vel_gain = 0.005
+        # self.sc.controller.config.vel_gain =0 
         time.sleep(.1)
-        self.sc.controller.config.vel_integrator_gain = 0.5 * 10 * 0.005 #vel_integrator_gain = 0.5 * 10 * <vel_gain>
+        # self.sc.controller.config.vel_integrator_gain =0# 0.5 * 10 * 0.003 #vel_integrator_gain = 0.5 * 10 * <vel_gain>
         time.sleep(.1)
 
         self.sc.requested_state = (

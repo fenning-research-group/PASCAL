@@ -65,11 +65,13 @@ In standalone_spincoater.py, these values are set during initilization, but if t
 
 
 
-# Usage
+# Example Usage
+ipython #if not in it
+cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"
+from standalone_spincoater import SpinCoater
+sc = SpinCoater()
 
-With the SpinCoater class you can send commands such as:
-
-SpinCoater.set_rpm(rpm = 2000, acceleration = 1000)
+sc.set_rpm(rpm = 2000, acceleration = 1000)
 
 This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
 
@@ -77,11 +79,11 @@ This can be combined with our SpinCoater.stop() command which will decelerate th
 
 Combining these two commonds a typical spin coating sequence would look like:
 
-SpinCoater.set_rpm(rpm = 2000, acceleration = 1000)
+sc.set_rpm(rpm = 2000, acceleration = 1000)
 
 time.sleep(10)
 
-SpinCoater.stop()
+sc.stop()
 
 
 More to come.. 
