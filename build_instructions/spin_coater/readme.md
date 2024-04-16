@@ -57,7 +57,7 @@ In standalone_spincoater.py, these values are set during initilization, but if t
 ### Peripherals 
 1. Get the aluminum spin coater chuck machined, ensure that the NPT is tapped for the vacuum valve and that M5 screws are tapped to fasten the encoder to the chuck.
 2. Remove the screw underneath the motor shaft to allow for vacuum to be pulled through the motor.
-3. Place an o-ring on the chuck to ensure a tight seal with the motor. 
+3. Place an gasket or o-ring on the chuck to ensure a tight seal with the motor. We've found a gasket (sheet of soft rubber like material) works better (~3cm square).
 4. Screw the motor down to the chuck. Ensure that the screw underneath the motor shaft is removed. 
 5. Place encoder onto the chuck. 
 6. Screw on the M5 hex shaft to the remaining threads of the motor shaft.
