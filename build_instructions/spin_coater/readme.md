@@ -42,6 +42,10 @@ To enable Odrive to properly control the motor, the following parameters need to
 
 In standalone_spincoater.py, these values are set during initilization, but if there are issues, these are the key settings to enable control. 
 
+* If your motor starts vibrating or moving on its own after calibration, then likely the PID gains or motor constant is incorrect (odrv0.axis0.motor.config.torque_constant =  8.27 / (motor KV)
+* These settings can also be set running odrivetool in your terminal, sending the appropriate settings, and saving the settings. See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
+
+
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
 2. Connect the relay modules's slot 7 - terminal to the power supplys - terminal.
