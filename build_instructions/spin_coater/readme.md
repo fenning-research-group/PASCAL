@@ -33,18 +33,34 @@ Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-s
 
 ### Motor Control 
 To enable Odrive to properly control the motor, the following parameters need to be set:
+0. Start odrivetool in your terminal
+
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
+odrv0.axis0.encoder.config.cpr = 8192
+
 2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
-3. Motor calibration current 
-4. Motor calibration voltage 
+odrv0.axis0.motor.config.pole_pairs = 7
+
+3. Motor current limit and calibration current
+odrv0.axis0.motor.config.current_lim = 40
+odrv0.axis0.motor.config.calibration_current = 10
+
+4. Motor Torque Constant
+odrv0.axis0.motor.config.torque_constant = 8.27 / 1800
+
 5. ODrive break resistance 
-6. PID gains
+odrv0.config.enable_brake_resistor = True
+odrv0.config.brake_resistance = 2
 
-In standalone_spincoater.py, these values are set during initilization, but if there are issues, these are the key settings to enable control. 
+6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
+odrv0.axis0.controller.config.pos_gain = 5
+odrv0.axis0.controller.config.vel_gain = 0
+odrv0.axis0.controller.config.vel_integrator_gain = 0
 
-* If your motor starts vibrating or moving on its own after calibration, then likely the PID gains or motor constant is incorrect (odrv0.axis0.motor.config.torque_constant =  8.27 / (motor KV)
-* These settings can also be set running odrivetool in your terminal, sending the appropriate settings, and saving the settings. See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
+7. Save the settings
+odrv0.save_configuration()
 
+* See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
 
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
