@@ -6,8 +6,8 @@ from datetime import datetime
 import os
 import serial
 import yaml
-from frgpascal.hardware.switchbox import Switchbox
-from frgpascal.hardware.switchbox import SingleSwitch
+# from frgpascal.hardware.switchbox import Switchbox
+# from frgpascal.hardware.switchbox import SingleSwitch
 from frgpascal.hardware.helpers import get_port
 
 
@@ -22,8 +22,8 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 class SpinCoater:
     def __init__(self):
-        self.sb = Switchbox()
-        self.switch = SingleSwitch(switchid="vacuumsolenoid", switchbox=self.sb)
+        # self.sb = Switchbox()
+        # self.switch = SingleSwitch(switchid="vacuumsolenoid", switchbox=self.sb)
         #, switch: SingleSwitch):
         """Initialize the spincoater control object
 
@@ -241,13 +241,13 @@ class SpinCoater:
         self.connect()
 
 
-    def vacuum_on(self):
-        """Turn on vacuum solenoid, pull vacuum"""
-        self.switch.on()
+    # def vacuum_on(self):
+    #     """Turn on vacuum solenoid, pull vacuum"""
+    #     self.switch.on()
 
-    def vacuum_off(self):
-        """Turn off vacuum solenoid, do not pull vacuum"""
-        self.switch.off()
+    # def vacuum_off(self):
+    #     """Turn off vacuum solenoid, do not pull vacuum"""
+    #     self.switch.off()
 
 
     def disconnect(self):

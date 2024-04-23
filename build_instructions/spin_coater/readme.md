@@ -55,12 +55,21 @@ odrv0.config.brake_resistance = 2
 6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
 odrv0.axis0.controller.config.pos_gain = 5
 odrv0.axis0.controller.config.vel_gain = 0
-odrv0.axis0.controller.config.vel_integrator_gain = 0
+odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
 
 7. Save the settings
 odrv0.save_configuration()
 
+8. Test Calibration
+odrv0.axis0.requested_state = AXIS_STATE_ENCODER_OFFSET_CALIBRATION #Should rotate CW and CCW
+
+9. Test Control Mode
+odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+
 * See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
+
+10. Proceed to Python Code if no issues
+Go to Example Usage at bottom
 
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
