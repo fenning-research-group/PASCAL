@@ -36,35 +36,35 @@ To enable Odrive to properly control the motor, the following parameters need to
 0. Start odrivetool in your terminal
 
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
-odrv0.axis0.encoder.config.cpr = 8192
+- odrv0.axis0.encoder.config.cpr = 8192
 
 2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
-odrv0.axis0.motor.config.pole_pairs = 7
+- odrv0.axis0.motor.config.pole_pairs = 7
 
 3. Motor current limit and calibration current
-odrv0.axis0.motor.config.current_lim = 40
-odrv0.axis0.motor.config.calibration_current = 10
+- odrv0.axis0.motor.config.current_lim = 40
+- odrv0.axis0.motor.config.calibration_current = 10
 
 4. Motor Torque Constant
-odrv0.axis0.motor.config.torque_constant = 8.27 / 1800
+- odrv0.axis0.motor.config.torque_constant = 8.27 / 1800
 
 5. ODrive break resistance 
-odrv0.config.enable_brake_resistor = True
-odrv0.config.brake_resistance = 2
+- odrv0.config.enable_brake_resistor = True
+- odrv0.config.brake_resistance = 2
 
 6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
-odrv0.axis0.controller.config.pos_gain = 5
-odrv0.axis0.controller.config.vel_gain = 0
-odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
+- odrv0.axis0.controller.config.pos_gain = 5
+- odrv0.axis0.controller.config.vel_gain = 0
+- odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
 
 7. Save the settings
-odrv0.save_configuration()
+- odrv0.save_configuration()
 
 8. Test Calibration
-odrv0.axis0.requested_state = AXIS_STATE_ENCODER_OFFSET_CALIBRATION #Should rotate CW and CCW
+- odrv0.axis0.requested_state = AXIS_STATE_ENCODER_OFFSET_CALIBRATION #Should rotate CW and CCW
 
 9. Test Control Mode
-odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+- odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
 * See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
 
