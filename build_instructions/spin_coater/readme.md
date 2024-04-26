@@ -100,9 +100,13 @@ Go to Example Usage at bottom
 
 # Example Usage
 `ipython #if not in it`
+
 `cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"`
+
 `from standalone_spincoater import SpinCoater`
+
 `sc = SpinCoater()`
+
 `sc.set_rpm(rpm = 2000, acceleration = 1000)`
 
 This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
@@ -110,5 +114,7 @@ This can be combined with our SpinCoater.stop() command which will decelerate th
 Combining these two commonds a typical spin coating sequence would look like:
 
 `sc.set_rpm(rpm = 2000, acceleration = 1000)`
+
 `time.sleep(10)`
+
 `sc.stop()`
