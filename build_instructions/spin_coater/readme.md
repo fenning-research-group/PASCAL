@@ -58,8 +58,8 @@ To enable Odrive to properly control the motor, the following parameters need to
 
 | Motor                    | Position | Velocity  | Integrator
 |--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
-| 1800kV | odrv0.axis0.controller.config.pos_gain = 5 | odrv0.axis0.controller.config.vel_gain = 0.05 | odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
-| 1700kV | odrv0.axis0.controller.config.pos_gain = 100 | odrv0.axis0.controller.config.vel_gain = 0.05 | odrv0.axis0.controller.config.vel_integrator_gain =  0
+| 1800kV | `odrv0.axis0.controller.config.pos_gain = 5` | `odrv0.axis0.controller.config.vel_gain = 0.05` | `odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain`
+| 1700kV | `odrv0.axis0.controller.config.pos_gain = 100` | `odrv0.axis0.controller.config.vel_gain = 0.05` | `odrv0.axis0.controller.config.vel_integrator_gain =  0`
 
 7. Save the settings
 - `odrv0.save_configuration()`
@@ -99,19 +99,16 @@ Go to Example Usage at bottom
 
 
 # Example Usage
-ipython #if not in it
-cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"
-from standalone_spincoater import SpinCoater
-sc = SpinCoater()
-
-sc.set_rpm(rpm = 2000, acceleration = 1000)
+`ipython #if not in it`
+`cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"`
+`from standalone_spincoater import SpinCoater`
+`sc = SpinCoater()`
+`sc.set_rpm(rpm = 2000, acceleration = 1000)`
 
 This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
 
 Combining these two commonds a typical spin coating sequence would look like:
 
-sc.set_rpm(rpm = 2000, acceleration = 1000)
-
-time.sleep(10)
-
-sc.stop()
+`sc.set_rpm(rpm = 2000, acceleration = 1000)`
+`time.sleep(10)`
+`sc.stop()`
