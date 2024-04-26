@@ -55,9 +55,11 @@ To enable Odrive to properly control the motor, the following parameters need to
 - odrv0.config.brake_resistance = 2
 
 6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
-- odrv0.axis0.controller.config.pos_gain = 5
-- odrv0.axis0.controller.config.vel_gain = 0
-- odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
+
+| Motor                    | Position | Velocity  | Integrator
+|--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
+| 1800kV | odrv0.axis0.controller.config.pos_gain = 5 | odrv0.axis0.controller.config.vel_gain = 0 | odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
+| 1700kV | odrv0.axis0.controller.config.pos_gain = 100 | odrv0.axis0.controller.config.vel_gain = 0.05 | odrv0.axis0.controller.config.vel_integrator_gain =  0
 
 7. Save the settings
 - odrv0.save_configuration()
