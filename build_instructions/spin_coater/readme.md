@@ -54,7 +54,7 @@ To enable Odrive to properly control the motor, the following parameters need to
 - odrv0.config.enable_brake_resistor = True
 - odrv0.config.brake_resistance = 2
 
-6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
+6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration, but start by raising P and V value from 0 if rpm control fails after calibration)
 
 | Motor                    | Position | Velocity  | Integrator
 |--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
@@ -108,8 +108,6 @@ sc.set_rpm(rpm = 2000, acceleration = 1000)
 
 This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
 
-
-
 Combining these two commonds a typical spin coating sequence would look like:
 
 sc.set_rpm(rpm = 2000, acceleration = 1000)
@@ -117,6 +115,3 @@ sc.set_rpm(rpm = 2000, acceleration = 1000)
 time.sleep(10)
 
 sc.stop()
-
-
-More to come.. 
