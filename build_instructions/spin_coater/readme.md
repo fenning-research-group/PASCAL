@@ -58,7 +58,7 @@ To enable Odrive to properly control the motor, the following parameters need to
 
 | Motor                    | Position | Velocity  | Integrator
 |--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
-| 1800kV | odrv0.axis0.controller.config.pos_gain = 5 | odrv0.axis0.controller.config.vel_gain = 0 | odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
+| 1800kV | odrv0.axis0.controller.config.pos_gain = 5 | odrv0.axis0.controller.config.vel_gain = 0.05 | odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain
 | 1700kV | odrv0.axis0.controller.config.pos_gain = 100 | odrv0.axis0.controller.config.vel_gain = 0.05 | odrv0.axis0.controller.config.vel_integrator_gain =  0
 
 7. Save the settings
