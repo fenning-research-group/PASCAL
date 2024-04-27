@@ -51,6 +51,8 @@ To enable Odrive to properly control the motor, the following parameters need to
 
 6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration, but start by raising P and V value from 0 if rpm control fails after calibration)
 
+The table below contains settings that worked well for us, but we recommend fine tuning using odrivetool's live plot functions
+
 | Motor                    | Position | Velocity  | Integrator
 |--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
 | 1800kV | `odrv0.axis0.controller.config.pos_gain = 5` | `odrv0.axis0.controller.config.vel_gain = 0.05` | `odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain`
