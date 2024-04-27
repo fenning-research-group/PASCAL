@@ -1,11 +1,5 @@
 # Overview
-This is a breakout of PASCAL's custom spin coater. 
-
-We use a drone motor since they have a hollow shaft, which allows vacuum to be pulled through the motor to hold the substrate in place. They're also quite cheap. 
-
-To control the motor, we opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
-
-This build assumes that you have a windows machine with a python environment to send commands from. A Raspberry Pi could also be used to control the ODrive, but we have not tested this.
+This document details PASCAL's custom-designed spin coater, utilizing a drone motor for its hollow shaft which facilitates vacuum suction to secure the substrate. The motor is controlled via a rotary encoder, allowing precise substrate positioning essential for automated processing. The setup requires a Windows machine with Python to send commands; alternatively, a Raspberry Pi may be used to operate the ODrive, though this configuration remains untested.
 
 <img src="demo_figure/spin_coater.gif" width="25%" height="auto" />
 
