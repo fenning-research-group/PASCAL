@@ -29,7 +29,8 @@ Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-s
 
 ### Motor Control 
 To enable Odrive to properly control the motor, the following parameters need to be set:
-0. Start odrivetool in your terminal
+
+0. Start odrivetool in your terminal to set encoder settings
 
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
 - `odrv0.axis0.encoder.config.cpr = 8192`
