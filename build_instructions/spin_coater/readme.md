@@ -86,7 +86,7 @@ Go to Example Usage at bottom
 3. Place an gasket or o-ring on the chuck to ensure a tight seal with the motor. We've found a gasket (sheet of soft rubber like material) works better (~3cm square).
 4. Screw the motor down to the chuck. Ensure that the screw underneath the motor shaft is removed. 
 5. Place encoder onto the chuck. 
-6. Screw on the [M5 hex shaft] (https://www.mcmaster.com/catalog/130/3659/90111A331) to the remaining threads of the motor shaft.
+6. Screw on the [M5 hex shaft](https://www.mcmaster.com/catalog/130/3659/90111A331) to the remaining threads of the motor shaft.
 7. Place the spincoater plate (3D printed part) onto the hex shaft (pressure fit)
 8. Glue on an o-ring to the top of the hex shaft to ensure a tight seal with the substrate (plate should be flush with top of the o-ring so that substrate is level with the plate)
 9. 3D print the encoder mount and screw it down to the chuck. Glue magnets into place.
