@@ -1,11 +1,5 @@
 # Overview
-This is a beakout of PASCAL's custom spin coater. 
-
-We use a drone motor since they have a hollow shaft, which allows vacuum to be pulled through the motor to hold the substrate in place. They're also quite cheap. 
-
-To control the motor, we opted to use a rotary encoder over an ESC to enable the final position of the substrate on the coater to be controlled, this is crucial for automated movement of the substrate to the next processing step. 
-
-This build assumes that you have a windows machine with a python environment to send commands from. A Raspberry Pi could also be used to control the ODrive, but we have not tested this.
+This document details PASCAL's custom-designed spin coater, utilizing a drone motor for its hollow shaft which facilitates vacuum suction to secure the substrate. The motor is controlled via a rotary encoder, allowing precise substrate positioning essential for automated processing. The setup requires a Windows machine with Python to send commands; alternatively, a Raspberry Pi may be used to operate the ODrive, though this configuration remains untested.
 
 <img src="demo_figure/spin_coater.gif" width="25%" height="auto" />
 
@@ -29,38 +23,54 @@ This build assumes that you have a windows machine with a python environment to 
 Connect the hardware following https://docs.odriverobotics.com/v/0.5.5/getting-started.html
  - Motor wire configuration to ODrive does not matter, but encoder wires do
  - Ensure break resistor is connected&enabled, polarity does not matter
+ - Ensure that the encoder is supported (use our 3D printed part)
+ - Ensure that the motor can rotate with minimal friction when completely assemeled 
 
 
 ### Motor Control 
 To enable Odrive to properly control the motor, the following parameters need to be set:
-0. Start odrivetool in your terminal
+
+0. Start odrivetool in your terminal to set encoder settings
 
 1. CPR of the encoder (this is the number of indexed "positions" the encoder has, for the encoder linked above, it is 8192)
-odrv0.axis0.encoder.config.cpr = 8192
+- `odrv0.axis0.encoder.config.cpr = 8192`
 
 2. Motor pole pairs (Pole pairs = number of permanent magnets in the motor/2, for the motor linked above, it is 7)
-odrv0.axis0.motor.config.pole_pairs = 7
+- `odrv0.axis0.motor.config.pole_pairs = 7`
 
 3. Motor current limit and calibration current
-odrv0.axis0.motor.config.current_lim = 40
-odrv0.axis0.motor.config.calibration_current = 10
+- `odrv0.axis0.motor.config.current_lim = 40`
+- `odrv0.axis0.motor.config.calibration_current = 10`
 
-4. Motor Torque Constant
-odrv0.axis0.motor.config.torque_constant = 8.27 / 1800
+4. Motor Torque Constant (8.27/motorkV
+- `odrv0.axis0.motor.config.torque_constant = 8.27 / 1800`
 
 5. ODrive break resistance 
-odrv0.config.enable_brake_resistor = True
-odrv0.config.brake_resistance = 2
+- `odrv0.config.enable_brake_resistor = True`
+- `odrv0.config.brake_resistance = 2`
 
-6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration)
-odrv0.axis0.controller.config.pos_gain = 5
-odrv0.axis0.controller.config.vel_gain = 0
-odrv0.axis0.controller.config.vel_integrator_gain = 0
+6. Motor PID Gains (adjust to 0 if the motor vibrates or spins after calibration, but start by raising P and V value from 0 if rpm control fails after calibration)
+
+The table below contains settings that worked well for us, but we recommend fine tuning using odrivetool's live plot functions
+
+| Motor                    | Position | Velocity  | Integrator
+|--------------------------|-------|---------------|-------------------------------------------------------------------------------------------------|
+| 1800kV | `odrv0.axis0.controller.config.pos_gain = 5` | `odrv0.axis0.controller.config.vel_gain = 0.05` | `odrv0.axis0.controller.config.vel_integrator_gain =  5 * vel_gain`
+| 1700kV | `odrv0.axis0.controller.config.pos_gain = 100` | `odrv0.axis0.controller.config.vel_gain = 0.05` | `odrv0.axis0.controller.config.vel_integrator_gain =  0`
 
 7. Save the settings
-odrv0.save_configuration()
+- `odrv0.save_configuration()`
+
+8. Test Calibration
+- `odrv0.axis0.requested_state = AXIS_STATE_ENCODER_OFFSET_CALIBRATION` #Should rotate CW and CCW
+
+9. Test Control Mode
+- `odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL`
 
 * See https://docs.odriverobotics.com/v/0.5.5/getting-started.html for more details.
+
+10. Proceed to Python Code if no issues
+Go to Example Usage at bottom
 
 ### Vacuum and Solenoid Control
 1. Connect a 12v 1A power supply to the solenoid valve by connecting its + terminal to the solenoid + terminal then connect the solenoid's - terminal to the relay module slot 7. 
@@ -76,7 +86,7 @@ odrv0.save_configuration()
 3. Place an gasket or o-ring on the chuck to ensure a tight seal with the motor. We've found a gasket (sheet of soft rubber like material) works better (~3cm square).
 4. Screw the motor down to the chuck. Ensure that the screw underneath the motor shaft is removed. 
 5. Place encoder onto the chuck. 
-6. Screw on the M5 hex shaft to the remaining threads of the motor shaft.
+6. Screw on the [M5 hex shaft](https://www.mcmaster.com/catalog/130/3659/90111A331) to the remaining threads of the motor shaft.
 7. Place the spincoater plate (3D printed part) onto the hex shaft (pressure fit)
 8. Glue on an o-ring to the top of the hex shaft to ensure a tight seal with the substrate (plate should be flush with top of the o-ring so that substrate is level with the plate)
 9. 3D print the encoder mount and screw it down to the chuck. Glue magnets into place.
@@ -86,24 +96,22 @@ odrv0.save_configuration()
 
 
 # Example Usage
-ipython #if not in it
-cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"
-from standalone_spincoater import SpinCoater
-sc = SpinCoater()
+`ipython #if not in it`
 
-sc.set_rpm(rpm = 2000, acceleration = 1000)
+`cd "C:\Users\Fenning lab\Documents\GitHub\PASCAL\build_instructions\spin_coater"`
+
+`from standalone_spincoater import SpinCoater`
+
+`sc = SpinCoater()`
+
+`sc.set_rpm(rpm = 2000, acceleration = 1000)`
 
 This can be combined with our SpinCoater.stop() command which will decelerate the motor to a stop and then lock the motor to a predefined position. 
 
-
-
 Combining these two commonds a typical spin coating sequence would look like:
 
-sc.set_rpm(rpm = 2000, acceleration = 1000)
+`sc.set_rpm(rpm = 2000, acceleration = 1000)`
 
-time.sleep(10)
+`time.sleep(10)`
 
-sc.stop()
-
-
-More to come.. 
+`sc.stop()`
