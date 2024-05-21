@@ -1,4 +1,4 @@
-# Perovskite Automated Spin-Coating Assembly Line (PASCAL)
+# Perovskite Automated Spin Coat Assembly Line (PASCAL)
 
 ## Motivation
 
