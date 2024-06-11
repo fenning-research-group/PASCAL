@@ -59,6 +59,8 @@ https://github.com/fenning-research-group/PASCAL/assets/49666626/01028334-c0f0-4
 - RGB Imaging for color determination
 ![PL wavelength determination with RGB cameras](images/WavelengthDeterminationwithNoise.png)
 
+## Dependency
+  - python=3.7.9=h26836e1_0
 
 ## Addons 
 
