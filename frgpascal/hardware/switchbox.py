@@ -45,8 +45,8 @@ class Switchbox:
             12: "9",
             13: "A",
             14: "B",
-            "vacuumsolenoid": "7",  # relay 8 and 9 are not being used for switchboard
-            "unused": "8",
+            "vacuumsolenoid": "8",  # relay 8 and 9 are not being used for switchboard
+            "unused": "9",
         }
         self._lock = (
             Lock()
