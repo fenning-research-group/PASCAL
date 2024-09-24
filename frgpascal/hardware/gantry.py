@@ -183,7 +183,7 @@ class Gantry:
             if z < lims["z_min"] or z > lims["z_max"]:
                 continue
             return frame
-        return "invalid"
+        return f"xlims:{lims['x_min']}-{lims['x_max']}\nylims:{lims['y_min']}-{lims['y_max']}\nzlims:{lims['z_min']}-{lims['z_max']}\nx,y,z:{x},{y},{z}"
 
     def _transition_to_frame(self, target_frame):
         self._movecommand(
@@ -218,7 +218,9 @@ class Gantry:
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
-        if target_frame == "invalid":
+        cur_frames = list(self.__FRAMES.keys())
+        if target_frame not in cur_frames:
+            print(target_frame)
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
         if self.__currentframe != target_frame:
             self._transition_to_frame(target_frame)

@@ -384,7 +384,7 @@ class Maestro:
         ):  # moving onto the spincoater
             lock_spincoater_thread = Thread(target=self.spincoater.lock)
             lock_spincoater_thread.start()  # move the spincoater to registered position
-            self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2] + 5, zhop=True)
+            self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2], zhop=True)
             lock_spincoater_thread.join()
             self.spincoater.vacuum_on()
             self.gantry.moveto(
