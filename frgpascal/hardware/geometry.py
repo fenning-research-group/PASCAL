@@ -3,9 +3,9 @@ import os
 import matplotlib.pyplot as plt
 
 ### https://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
-os.environ[
-    "FOR_DISABLE_CONSOLE_CTRL_HANDLER"
-] = "1"  # to preserve ctrl-c with scipy loaded
+os.environ["FOR_DISABLE_CONSOLE_CTRL_HANDLER"] = (
+    "1"  # to preserve ctrl-c with scipy loaded
+)
 
 from scipy.interpolate import LinearNDInterpolator
 from frgpascal.hardware.gantry import Gantry
@@ -14,6 +14,8 @@ import yaml
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
 class CoordinateMapper:
@@ -203,6 +205,9 @@ class Workspace:
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
+        self.gripper.GRIPPERTIMEOUT = (
+            69420  # prevents the gripper from closing during calibration of sampletray
+        )
         self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
             self.name,
@@ -212,6 +217,9 @@ class Workspace:
             self.z_clearance,
         )
         self.__calibrated = True
+        self.GRIPPERTIMEOUT = constants["gripper"][
+            "idle_timeout"
+        ]  # reset to the hardware constants value
 
     # def _save_calibration(self):
     #     if not self.__calibrated:

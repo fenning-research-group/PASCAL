@@ -28,9 +28,7 @@ class Spectrometer:
             2.5,
             15.0,
         ]  # duration times (ms) for high dynamic range measurements
-        self.CTS_THRESHOLD = (
-            2 ** 16 * 0.98
-        )  # counts above this are considered saturated
+        self.CTS_THRESHOLD = 2**16 * 0.98  # counts above this are considered saturated
         self.SETTING_DELAY = (
             0.2  # seconds between changing a setting and having it take effect
         )
@@ -99,6 +97,7 @@ class Spectrometer:
         numscans0 = self.num_scans
         self.num_scans = 3
         for t in self._exposure_times:
+            print(f"exposure_time: {t}")
             if skip_repeats and t in self.__baseline_dark:
                 continue  # already taken
             self.exposure_time = t
@@ -163,7 +162,7 @@ class Spectrometer:
         """
         if self.__is_dark_baseline_taken():
             wl, cts = self._capture_raw()
-            cts[cts >= (2 ** 16 - 1)] = np.nan  # detector saturated here
+            cts[cts >= (2**16 - 1)] = np.nan  # detector saturated here
             cts -= self.__baseline_dark[self.exposure_time]
             return wl, cts
 
