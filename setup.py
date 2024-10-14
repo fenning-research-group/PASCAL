@@ -53,6 +53,7 @@ setup(
         "scikit-image",
         "ax-platform",
         "ntplib",
+        "doepy",
     ],
     # extras_require={
     #     'model_saving': ['h5py'],
