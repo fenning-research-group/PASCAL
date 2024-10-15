@@ -115,7 +115,7 @@ class Gantry:
         self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
-        self.set_speed_percentage(80)  # set speed to 80% of max
+        self.set_speed_percentage(100)  # set speed to 80% of max
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -157,6 +157,7 @@ class Gantry:
         if p < 0 or p > 100:
             raise Exception("Speed must be set by a percentage value between 0-100!")
         self.speed = (p / 100) * (self.MAXSPEED - self.MINSPEED) + self.MINSPEED
+
         self.write(f"G0 F{self.speed}")
 
     def gohome(self):
@@ -183,7 +184,7 @@ class Gantry:
             if z < lims["z_min"] or z > lims["z_max"]:
                 continue
             return frame
-        return f"xlims:{lims['x_min']}-{lims['x_max']}\nylims:{lims['y_min']}-{lims['y_max']}\nzlims:{lims['z_min']}-{lims['z_max']}\nx,y,z:{x},{y},{z}"
+        return "invalid"
 
     def _transition_to_frame(self, target_frame):
         self._movecommand(
@@ -218,16 +219,14 @@ class Gantry:
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
-        cur_frames = list(self.__FRAMES.keys())
-        if target_frame not in cur_frames:
-            print(target_frame)
+        if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
         if self.__currentframe != target_frame:
             self._transition_to_frame(target_frame)
 
         return x, y, z
 
-    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None):
+    def moveto(self, x=None, y=None, z=None, zhop=True, speed=None, m400=False):
         """
         moves to target position in x,y,z (mm)
         """
@@ -237,20 +236,23 @@ class Gantry:
         except:
             pass
         x, y, z = self.premove(x, y, z)  # will error out if invalid move
+
         if speed is None:
             speed = self.speed
         if (x == self.position[0]) and (y == self.position[1]):
             zhop = False  # no use zhopping for no lateral movement
+
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(
                 z_ceiling, self.__ZLIM
             )  # cant z-hop above build volume. mostly here for first move after homing.
-            self.moveto(z=z_ceiling, zhop=False, speed=speed)
-            self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
-            self.moveto(z=z, zhop=False, speed=speed)
+            self.moveto(z=z_ceiling, zhop=False, speed=speed, m400=m400)
+            self.moveto(x, y, z_ceiling, zhop=False, speed=speed, m400=m400)
+            self.moveto(z=z, zhop=False, speed=speed, m400=True)
+
         else:
-            self._movecommand(x, y, z, speed)
+            self._movecommand(x, y, z, speed, m400)
 
     def movetoclear(self):
         self.moveto(self.CLEAR_COORDINATES)
@@ -258,14 +260,15 @@ class Gantry:
     def movetoidle(self):
         self.moveto(self.IDLE_COORDINATES)
 
-    def _movecommand(self, x: float, y: float, z: float, speed: float):
+    def _movecommand(self, x: float, y: float, z: float, speed: float, m400=False):
         """internal command to execute a direct move from current location to new location"""
         if self.position == [x, y, z]:
             return True  # already at target position
         else:
             self.__targetposition = [x, y, z]
             self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
-            return self._waitformovement()
+
+            return self._waitformovement(m400)
 
     def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
         """
@@ -281,7 +284,7 @@ class Gantry:
         z += self.position[2]
         self.moveto(x, y, z, zhop, speed)
 
-    def _waitformovement(self):
+    def _waitformovement(self, m400=False):
         """
         confirm that gantry has reached target position. returns False if
         target position is not reached in time allotted by self.GANTRYTIMEOUT
@@ -289,8 +292,10 @@ class Gantry:
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        self._handle.write(f"M400\n".encode())
+        if m400:
+            self._handle.write(f"M400\n".encode())
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
+
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
             time.sleep(self.POLLINGDELAY)
@@ -308,11 +313,12 @@ class Gantry:
                         < self.POSITIONTOLERANCE
                     ):
                         reached_destination = True
+
                 time.sleep(self.POLLINGDELAY)
-            time_elapsed = time.time() - start_time
 
         self.inmotion = ~reached_destination
         self.update()
+
         return reached_destination
 
     # GUI

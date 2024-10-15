@@ -9,6 +9,7 @@ import ntplib
 import asyncio
 import datetime
 import logging
+import numpy as np
 from natsort import natsorted
 from tqdm import tqdm
 from warnings import warn
@@ -296,8 +297,10 @@ class Maestro:
         """
         caught_successfully = False
         catch_attempts = self.CATCHATTEMPTS
+
         while not caught_successfully and catch_attempts > 0:
-            self.gripper.close(slow=True)
+            if from_spincoater or catch_attempts != self.CATCHATTEMPTS:
+                self.gripper.close(slow=True)
             if from_spincoater and self.TWISTOFF:
                 self.spincoater.twist_off()
                 self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
@@ -353,6 +356,8 @@ class Maestro:
         self.open_to_catch()  # open the grippers
         if all(
             [a == b for a, b in zip(p1, self.spincoater())]
+        if np.array_equal(
+            np.array(p1), np.array(self.spincoater())
         ):  # moving off of the spincoater
             wait_for_vacuum_thread = Thread(
                 target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
@@ -367,10 +372,17 @@ class Maestro:
             from_spincoater = True
         else:
             self.gantry.moveto(p1, zhop=zhop)
+
+
             from_spincoater = False
+        start_time = time.time()
+
+
         self.catch(
             from_spincoater=from_spincoater
         )  # pick up the sample. this function checks to see if gripper picks successfully
+
+
 
         ### Code for drop check, currently not being used
         # self.gantry.moveto(
@@ -394,10 +406,15 @@ class Maestro:
             self.gantry.moveto(
                 p2, zhop=zhop
             )  # if not dropped, move to the final position
+
+
+        # time.sleep(2)
         self.release()  # drop the sample
+
         self.gantry.moverel(
             z=self.gantry.ZHOP_HEIGHT
         )  # move up a bit, mostly to avoid resting gripper on hotplate
+
         # self.gripper.close()  # fully close gripper to reduce servo strain
         if all([a == b for a, b in zip(p2, self.spincoater())]):
             self.gantry._transition_to_frame(
