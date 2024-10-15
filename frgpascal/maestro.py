@@ -356,8 +356,6 @@ class Maestro:
         self.open_to_catch()  # open the grippers
         if all(
             [a == b for a, b in zip(p1, self.spincoater())]
-        if np.array_equal(
-            np.array(p1), np.array(self.spincoater())
         ):  # moving off of the spincoater
             wait_for_vacuum_thread = Thread(
                 target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
@@ -373,16 +371,12 @@ class Maestro:
         else:
             self.gantry.moveto(p1, zhop=zhop)
 
-
             from_spincoater = False
         start_time = time.time()
-
 
         self.catch(
             from_spincoater=from_spincoater
         )  # pick up the sample. this function checks to see if gripper picks successfully
-
-
 
         ### Code for drop check, currently not being used
         # self.gantry.moveto(
@@ -406,7 +400,6 @@ class Maestro:
             self.gantry.moveto(
                 p2, zhop=zhop
             )  # if not dropped, move to the final position
-
 
         # time.sleep(2)
         self.release()  # drop the sample
