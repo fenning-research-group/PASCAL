@@ -96,6 +96,8 @@ class Workspace:
     def __init__(
         self,
         name: str,
+        shortname: str,
+        device_type: str,
         pitch: tuple,
         gridsize: tuple,
         gantry: Gantry = None,
@@ -122,6 +124,8 @@ class Workspace:
 
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
+        self.shortname = shortname
+        self.device_type = device_type
         if gantry is None and gripper is None:
             self.__is_simulation = True
             self.p0 = np.array([0, 0, 0])
@@ -234,6 +238,11 @@ class Workspace:
             pts = yaml.load(f, Loader=yaml.FullLoader)
         self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
         self.__calibrated = True
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+            constants = yaml.load(f, Loader=yaml.FullLoader)
+        constants[self.device_type][self.shortname]["p0"] = list(pts["p0"][0][:3])
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "w") as f:
+            yaml.dump(constants, f)
 
     def load(self, contents) -> str:
         """Load new contents into the labware. Returns the next empty slot, or error if none exists.

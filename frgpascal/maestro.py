@@ -143,6 +143,8 @@ class Maestro:
         self.hotplates = {
             "Hotplate1": HotPlate(
                 name="Hotplate1",
+                shortname="hp1",
+                device_type="hotplates",
                 version="hotplate_frg4inch",
                 gantry=self.gantry,
                 gripper=self.gripper,
@@ -151,6 +153,8 @@ class Maestro:
             ),
             "Hotplate2": HotPlate(
                 name="Hotplate2",
+                shortname="hp2",
+                device_type="hotplates",
                 version="hotplate_frg4inch",
                 gantry=self.gantry,
                 gripper=self.gripper,
@@ -159,6 +163,8 @@ class Maestro:
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
+                shortname="hp3",
+                device_type="hotplates",
                 version="hotplate_frg4inch",
                 gantry=self.gantry,
                 gripper=self.gripper,
@@ -169,17 +175,21 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
+                shortname="st1",
+                device_type="sampletray",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["sampletray"]["p1"],
+                p0=constants["sampletray"]["st1"]["p0"],
             ),
             "Tray2": SampleTray(
                 name="Tray2",
+                shortname="st2",
+                device_type="sampletray",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["sampletray"]["p2"],
+                p0=constants["sampletray"]["st2"]["p0"],
             ),
         }
 
@@ -243,6 +253,7 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
+        self._load_calibrations()
         components = [self.spincoater, self.characterization.axis]
         components += list(self.hotplates.values())
         components += list(self.storage.values())
@@ -372,7 +383,6 @@ class Maestro:
             self.gantry.moveto(p1, zhop=zhop)
 
             from_spincoater = False
-        start_time = time.time()
 
         self.catch(
             from_spincoater=from_spincoater

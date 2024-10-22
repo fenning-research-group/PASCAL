@@ -21,6 +21,8 @@ class SampleTray(Workspace):
     def __init__(
         self,
         name,
+        shortname,
+        device_type,
         version,
         gantry: Gantry,
         gripper: Gripper,
@@ -28,7 +30,13 @@ class SampleTray(Workspace):
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
-            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs
+            name=name,
+            shortname=shortname,
+            device_type=device_type,
+            gantry=gantry,
+            gripper=gripper,
+            p0=p0,
+            **workspace_kwargs,
         )
 
         # only consider slots with blanks loaded
@@ -59,16 +67,28 @@ class SampleTray(Workspace):
 class Tray1(SampleTray):
     """Wrapper class with default arguments for Tray1"""
 
-    def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+    def __init__(self, version="storage_v3", gantry=None, gripper=None, p0=[0, 0, 0]):
         super().__init__(
-            name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0
+            name="Tray1",
+            shortname="st1",
+            device_type="sampletray",
+            version=version,
+            gantry=gantry,
+            gripper=gripper,
+            p0=p0,
         )
 
 
 class Tray2(SampleTray):
     """Wrapper class with default arguments for Tray2"""
 
-    def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+    def __init__(self, version="storage_v3", gantry=None, gripper=None, p0=[0, 0, 0]):
         super().__init__(
-            name="Tray2", version=version, gantry=gantry, gripper=gripper, p0=p0
+            name="Tray2",
+            shortname="st2",
+            device_type="sampletray",
+            version=version,
+            gantry=gantry,
+            gripper=gripper,
+            p0=p0,
         )

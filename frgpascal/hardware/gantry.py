@@ -147,7 +147,9 @@ class Gantry:
                     break
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
-        self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
+        self.__ZLIM = (
+            self.__FRAMES["opentrons"]["z_max"] - 5
+        )  # never really needs to go above the height of the opentrons height limit, -5 for buffer
 
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
@@ -161,7 +163,7 @@ class Gantry:
         self.write(f"G0 F{self.speed}")
 
     def gohome(self):
-        self.movetoclear()
+        # self.movetoclear()
         self.write("G28 X Y Z")
         self.update()
 
@@ -202,7 +204,10 @@ class Gantry:
             x += 0.2
         self._movecommand(x, y, z, speed=self.speed)
 
-    def premove(self, x, y, z):
+    def _move_below_opentrons_limits(self, x, y, z):
+        self._movecommand(x, y, z, speed=self.speed)
+
+    def premove(self, x, y, z, zhop=True):
         """
         checks to confirm that all target positions are valid
         """
@@ -215,14 +220,36 @@ class Gantry:
         if y is None:
             y = self.position[1]
         if z is None:
-            y = self.position[2]
+            z = self.position[2]
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
         if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
-        if self.__currentframe != target_frame:
-            self._transition_to_frame(target_frame)
+
+        # checks to see if current z is more than 5mm below opentrons limits
+        # and same for y
+        opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 5
+        opentrons_y_min_limit = 35
+        if self.__currentframe != target_frame and not zhop:
+            # if z > opentrons_z_max_limit:
+            #     z = opentrons_z_max_limit
+            # if y < opentrons_y_min_limit:
+            #     y = opentrons_y_min_limit
+            self._movecommand(
+                self.position[0],
+                self.position[1],
+                opentrons_z_max_limit,
+                speed=self.speed,
+                m400=True,
+            )
+            self._movecommand(
+                self.position[0],
+                opentrons_y_min_limit,
+                self.position[2],
+                speed=self.speed,
+                m400=True,
+            )
 
         return x, y, z
 
@@ -235,20 +262,24 @@ class Gantry:
                 x, y, z = x  # split 3 coordinates into appropriate variables
         except:
             pass
-        x, y, z = self.premove(x, y, z)  # will error out if invalid move
+        x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
 
         if speed is None:
             speed = self.speed
         if (x == self.position[0]) and (y == self.position[1]):
             zhop = False  # no use zhopping for no lateral movement
 
+        # if self.position[2] > self.__ZLIM:
+        #     m400 = True
+
         if zhop:
             z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
             z_ceiling = min(
                 z_ceiling, self.__ZLIM
             )  # cant z-hop above build volume. mostly here for first move after homing.
-            self.moveto(z=z_ceiling, zhop=False, speed=speed, m400=m400)
-            self.moveto(x, y, z_ceiling, zhop=False, speed=speed, m400=m400)
+
+            self.moveto(z=self.__ZLIM, zhop=False, speed=speed, m400=m400)
+            self.moveto(x, y, self.__ZLIM, zhop=False, speed=speed, m400=m400)
             self.moveto(z=z, zhop=False, speed=speed, m400=True)
 
         else:
@@ -292,8 +323,9 @@ class Gantry:
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        if m400:
+        if m400 is True:
             self._handle.write(f"M400\n".encode())
+
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
 
         reached_destination = False

@@ -8,6 +8,7 @@ from frgpascal.workers import (
     Worker_Storage,
 )
 
+
 # define workers
 def generate_workers(maestro=None):
     if maestro is None:

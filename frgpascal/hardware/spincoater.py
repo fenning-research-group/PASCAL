@@ -147,8 +147,14 @@ class SpinCoater:
         with open(
             os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
         ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+            coords = yaml.load(f, Loader=yaml.FullLoader)
+            self.coordinates = np.array(coords)
         self.__calibrated = True
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+            constants = yaml.load(f, Loader=yaml.FullLoader)
+        constants["spincoater"]["p0"] = list(coords)
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "w") as f:
+            yaml.dump(constants, f)
 
     def __call__(self):
         """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)

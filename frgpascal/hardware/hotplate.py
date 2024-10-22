@@ -227,15 +227,19 @@ class HotPlate(Workspace):
     def __init__(
         self,
         name,
+        shortname,
+        device_type,
         version,
         gantry: Gantry = None,
         gripper: Gripper = None,
         id: int = None,
-        p0=[None, None, None],
+        p0=[0, 0, 0],
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
             name=name,
+            shortname=shortname,
+            device_type=device_type,
             gantry=gantry,
             gripper=gripper,
             p0=p0,

@@ -158,7 +158,9 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self, gantry, port=None,
+        self,
+        gantry,
+        port=None,
     ):
         # communication variables
         if port is None:
@@ -244,8 +246,14 @@ class CharacterizationAxis:
         with open(
             os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
         ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+            coords = yaml.load(f, Loader=yaml.FullLoader)
+            self.coordinates = np.array(coords)
         self.__calibrated = True
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+            constants = yaml.load(f, Loader=yaml.FullLoader)
+        constants["characterizationline"]["axis"]["p0"] = list(coords)
+        with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "w") as f:
+            yaml.dump(constants, f)
 
     def set_defaults(self):
         self.write("M501")  # load settings from EEPROM
