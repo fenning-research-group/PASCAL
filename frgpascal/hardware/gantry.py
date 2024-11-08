@@ -192,12 +192,13 @@ class Gantry:
         self._movecommand(
             x=self.position[0],
             y=self.position[1],
-            z=self.TRANSITION_COORDINATES[2],
+            z=self.__ZLIM,
             speed=self.speed,
         )  # move just in z
 
         # nudge the gantry into the target frame
         x, y, z = self.TRANSITION_COORDINATES
+        z = self.__ZLIM
         if target_frame == "opentrons":
             x -= 0.2
         else:
