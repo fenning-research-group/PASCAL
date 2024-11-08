@@ -36,6 +36,7 @@ from frgpascal.workers import (
 )
 
 from frgpascal.closedloop.websocket import Server
+from frgpascal.hardware.helpers import get_ot2_ip
 
 # from frgpascal.hardware.characterizationline import CharacterizationLine
 
@@ -557,13 +558,13 @@ class Maestro:
         experiment_name = self._load_worklist(filepath)
         self._set_up_experiment_folder(experiment_name)
 
-    def run(self, ot2_ip):
+    def run(self):
         if len(self.samples) == 0:
             raise Exception("No samples loaded, did you forget to run .load_netlist()?")
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
-        self.liquidhandler.server.ip = ot2_ip
+        self.liquidhandler.server.ip = get_ot2_ip()
 
         self._start_loop()
         self.t0 = self.nist_time

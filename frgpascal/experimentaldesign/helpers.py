@@ -25,11 +25,14 @@ from mixsol.mix import _solutions_to_matrix
 import random
 import warnings
 from roboflo import System
+import subprocess
+import re
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
     name for name, worker in WORKERS.items() if isinstance(worker, Worker_Hotplate)
 ]
+
 
 #### General
 class NumpyFloatValuesEncoder(json.JSONEncoder):
@@ -298,7 +301,7 @@ def build_sample_list(
                         name=name,
                         substrate=sub,
                         worklist=deepcopy(wl),
-                        storage_slot=None
+                        storage_slot=None,
                         # sampleid=sampleid
                     )
                     sample_list.append(this_sample)

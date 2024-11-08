@@ -1,5 +1,7 @@
 import serial.tools.list_ports as lp
 import sys
+import subprocess
+import re
 
 
 def which_os():
@@ -45,3 +47,41 @@ def get_port(device_identifiers):
     if port is None:
         raise ValueError(f"Device not found!")
     return port
+
+
+def get_ot2_ip():
+    try:
+        # Run `arp -a` and decode the output
+        result = subprocess.check_output("arp -a", shell=True).decode()
+
+        # Define regex patterns to identify an interface and dynamic IPs within `169.254.x.x` - always 169.354 because of USB-ethernet protocol
+        interface_pattern = re.compile(r"Interface: (169\.254\.\d{1,3}\.\d{1,3})")
+        ip_pattern = re.compile(
+            r"(169\.254\.\d{1,3}\.\d{1,3})\s+\S+\s+dynamic", re.IGNORECASE
+        )
+
+        current_interface = None
+        dynamic_ip = None
+
+        for line in result.splitlines():
+            # Check if the line defines a new interface in the `169.254.x.x` range
+            interface_match = interface_pattern.search(line)
+            if interface_match:
+                current_interface = interface_match.group(1)
+                continue
+
+            # Check for dynamic IPs under the current interface
+            if current_interface and current_interface.startswith("169.254"):
+                ip_match = ip_pattern.search(line)
+                if ip_match:
+                    dynamic_ip = ip_match.group(1)
+                    break  # Found the dynamic IP, exit the loop
+
+        if dynamic_ip:
+            return dynamic_ip
+        else:
+            print("No dynamic IP addresses found in the 169.254.x.x range.")
+            return None
+    except Exception as e:
+        print(f"Error retrieving IP address: {e}")
+        return None

@@ -1,5 +1,6 @@
 import requests  # you can install this with pip
 import time
+from frgpascal.hardware.helpers import get_ot2_ip
 
 # status enumerations
 STATUS_IDLE = 0
@@ -262,6 +263,53 @@ metadata = {
 }
 
 
+def attempt_reset(countdown_time=10):
+    try:
+        print(
+            f"Resetting Opentrons in {countdown_time} seconds. Press Ctrl+C to cancel."
+        )
+        for remaining in range(countdown_time, 0, -1):
+            print(f"Resetting in {remaining} seconds...", end="\r")
+            time.sleep(1)
+        print("\nCountdown complete. Proceeding with reset.")
+        reset_settings_and_restart()
+    except KeyboardInterrupt:
+        print("\nReset canceled by user.")
+
+
+def reset_settings_and_restart():
+    ip = get_ot2_ip()
+    port = 31950
+    url_reset = f"http://{ip}:{port}/settings/reset"
+    url_restart = f"http://{ip}:{port}/server/restart"
+
+    # Set the required API version in the headers
+    headers = {"Opentrons-Version": "2"}
+
+    # Define the data payload for clearing boot scripts and runs history
+    data = {"bootScripts": True, "runsHistory": True}
+
+    # Step 1: Clear boot scripts and runs history
+    response_reset = requests.post(url_reset, headers=headers, json=data)
+
+    if response_reset.status_code == 200:
+        print("Successfully cleared boot scripts and runs history.")
+
+        # Step 2: Restart the OT-2
+        response_restart = requests.post(url_restart, headers=headers)
+
+        if response_restart.status_code == 200:
+            print("Successfully sent restart command to the OT-2.")
+        else:
+            print(
+                f"Failed to restart OT-2. Status code: {response_restart.status_code}"
+            )
+            print("Response content:", response_restart.content.decode())
+    else:
+        print(f"Failed to reset settings. Status code: {response_reset.status_code}")
+        print("Response content:", response_reset.content.decode())
+
+
 def run(protocol_context):
     # define your hardware
     tips = [
@@ -316,9 +364,11 @@ def run(protocol_context):
         try:
             experiment_in_progress = listener.check_for_instructions()
             time_of_last_response = time.time()
+            print("experiment still running")
         except:
             if time.time() - time_of_last_response > timeout:
                 print("Timeout")
                 experiment_in_progress = False
 
         time.sleep(0.1)
+    attempt_reset()
