@@ -343,6 +343,13 @@ class Maestro:
         self.gantry.movetoidle()
         self.gripper.close()
 
+    def get_gripper_load(self):
+        time.sleep(0.5)  # wait for gripper to complete motion
+        self.gripper.write("l")
+        with self.gripper._lock:
+            load = float(self.gripper._handle.readline())
+        return load
+
     def transfer(self, p1, p2, zhop=True):
         """Move a sample from one location (source) to another (destination)
 
@@ -373,7 +380,6 @@ class Maestro:
             self.gantry.moveto(p1, zhop=zhop)
 
             from_spincoater = False
-        start_time = time.time()
 
         self.catch(
             from_spincoater=from_spincoater
