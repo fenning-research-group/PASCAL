@@ -109,7 +109,7 @@ class MaestroServer(Server):
 class Maestro:
     def __init__(
         self,
-        samplewidth: float = 10,
+        samplewidth: float = 25.2,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -144,7 +144,7 @@ class Maestro:
         self.hotplates = {
             "Hotplate1": HotPlate(
                 name="Hotplate1",
-                version="hotplate_frg4inch",
+                version="hotplate_25.3mm_v1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=1,
@@ -152,7 +152,7 @@ class Maestro:
             ),
             "Hotplate2": HotPlate(
                 name="Hotplate2",
-                version="hotplate_frg4inch",
+                version="hotplate_25.3mm_v1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=2,
@@ -160,7 +160,7 @@ class Maestro:
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
-                version="hotplate_frg4inch",
+                version="hotplate_25.3mm_v1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=3,
@@ -170,14 +170,14 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v3",
+                version="storage_25.3mm_v1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
             ),
             "Tray2": SampleTray(
                 name="Tray2",
-                version="storage_v3",
+                version="storage_25.3mm_v1",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
