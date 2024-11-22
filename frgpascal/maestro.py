@@ -109,7 +109,7 @@ class MaestroServer(Server):
 class Maestro:
     def __init__(
         self,
-        samplewidth: float = 25.2,
+        samplewidth: float = 25.3,
     ):
         """Initialize Maestro, which coordinates all the PASCAL hardware
 
@@ -289,8 +289,19 @@ class Maestro:
         Open gripper quickly before picking up a sample
         """
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
+            0, slow=False
         )  # slow to prevent sample position shifting upon release
+        # self.gripper.open(
+        #     self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
+        # )  # slow to prevent sample position shifting upon release
+
+    def open_to_width(self, width):
+        self.gripper.open(
+            width, slow=False
+        )  # slow to prevent sample position shifting upon release
+
+    def open_to_pwm(self, pwm):
+        self.gripper.open_pwm(pwm)
 
     def catch(self, from_spincoater=False):
         """
@@ -335,8 +346,11 @@ class Maestro:
         Open gripper slowly to release a sample without jogging position too much
         """
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
+            0, slow=True
         )  # slow to prevent sample position shifting upon release
+        # self.gripper.open(
+        #     self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
+        # )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""

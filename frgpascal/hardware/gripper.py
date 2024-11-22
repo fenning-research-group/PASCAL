@@ -109,6 +109,14 @@ class Gripper:
         self.currentwidth = width
         self.currentpwm = pwm
 
+    def open_pwm(self, pwm):
+        self.write(f"S{pwm} {self.FASTGRIPPERINTERVAL}")
+        self._waitformovement()
+        self.__gripper_last_opened = time.time()
+        self.currentwidth = self.__pwm_to_width(pwm)
+        self.currentpwm = pwm
+        print(self.currentwidth)
+
     # def pwm_calibration(self, pwm_MAX, pwm_MIN, interval):
     def pwm_calibration(self, value):
         # find max and min pwm
