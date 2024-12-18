@@ -38,7 +38,7 @@ from frgpascal.workers import (
 from frgpascal.closedloop.websocket import Server
 from frgpascal.hardware.helpers import get_ot2_ip
 
-# from frgpascal.hardware.characterizationline import CharacterizationLine
+from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
 MODULE_DIR = os.path.dirname(__file__)
