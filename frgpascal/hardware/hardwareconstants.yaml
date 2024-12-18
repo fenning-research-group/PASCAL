@@ -37,11 +37,11 @@ gantry:
     x_max: 192.25
     x_min: 0
     y_max: 200.7
-    y_min: 7
+    y_min: 0
     z_max: 82
     z_min: 0
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-  transition_coordinates: [192.25, 27.4, 82] #spincoater in deck slot 3
+  transition_coordinates: [192.25, 35, 82] #spincoater in deck slot 3
 
 gripper:
   #communication
@@ -51,12 +51,12 @@ gripper:
     serial_number: "DN066QRWA"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 28.7 #maximum opening width (mm)
-  width_min: 4.6 #minimum opening width (mm)
-  pwm_max: 740 ##1300 #pulse width (us) corresponding to maximum width
-  pwm_min: 1300  ##740 #pulse width (us) corresponding to minimum width
-  extra_opening_width_pick: 2.0 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 1.5 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  width_max: 13 #maximum opening width (mm)
+  width_min: 0 #minimum opening width (mm)
+  pwm_max: 900 ##1300 #pulse width (us) corresponding to maximum width
+  pwm_min: 0  ##740 #pulse width (us) corresponding to minimum width
+  extra_opening_width_pick: 2.8 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width_place: 2.8 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting

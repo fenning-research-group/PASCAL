@@ -2,7 +2,8 @@ import asyncio
 import websockets
 import json
 import time
-import ntplib
+import socket
+import struct
 from threading import Thread
 from opentrons import types
 
@@ -101,14 +102,24 @@ class ListenerWebsocket:
     ### Time Synchronization with NIST
 
     def __calibrate_time_to_nist(self):
-        client = ntplib.NTPClient()
-        response = None
-        while response is None:
+        def get_ntp_time(ntp_server="europe.pool.ntp.org"):
+            ntp_packet = b'\x1b' + 47 * b'\0'  # NTP request packet
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(5)
+                s.sendto(ntp_packet, (ntp_server, 123))
+                data, _ = s.recvfrom(1024)
+            unpacked_data = struct.unpack("!12I", data)
+            time_since_1900 = unpacked_data[10]
+            return time_since_1900 - 2208988800  # Convert to Unix epoch (1970)
+
+        response_time = None
+        while response_time is None:
             try:
-                response = client.request("europe.pool.ntp.org", version=3)
-            except:
-                pass
-        self.__local_nist_offset = response.tx_time - time.time()
+                response_time = get_ntp_time()
+            except Exception:
+                pass  # Retry if there's an issue connecting to the NTP server
+
+        self.__local_nist_offset = response_time - time.time()
 
     def nist_time(self):
         return time.time() + self.__local_nist_offset
