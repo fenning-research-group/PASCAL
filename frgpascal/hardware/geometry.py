@@ -227,7 +227,7 @@ class Workspace:
     #             "Need to calibrate before you can save a calibration, dingus!"
     #         )
 
-    def _load_calibration(self):
+    def load_calibration(self):
         with open(
             os.path.join(CALIBRATION_DIR, f"{self.name}_calibration.yaml"), "r"
         ) as f:

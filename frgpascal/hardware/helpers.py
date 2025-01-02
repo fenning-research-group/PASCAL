@@ -2,6 +2,8 @@ import serial.tools.list_ports as lp
 import sys
 import subprocess
 import re
+import numpy as np
+import yaml
 
 
 def which_os():
@@ -36,6 +38,7 @@ def _get_port_linux(serial_number):
             return p.device
     return None
 
+
 def _calibrate(self, calibration_file):
     self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
     self.gantry.gui()
@@ -45,7 +48,8 @@ def _calibrate(self, calibration_file):
     with open(calibration_file, "w") as f:
         yaml.dump(self.coordinates.tolist(), f)
 
-def __load_calibration(self, calibration_file):
+
+def _load_calibration(self, calibration_file):
     with open(calibration_file, "r") as f:
         self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
     self.__calibrated = True

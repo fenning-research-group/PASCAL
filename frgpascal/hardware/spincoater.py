@@ -6,7 +6,7 @@ import numpy as np
 import os
 import yaml
 import threading
-from frgpascal.hardware.helpers import get_port, _calibrate, __load_calibration
+from frgpascal.hardware.helpers import get_port, _calibrate, _load_calibration
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.switchbox import SingleSwitch
 from datetime import datetime
@@ -67,8 +67,13 @@ class SpinCoater:
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         # self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
+        self.p0 = (self.get_spincoater_p0("spincoater_calibration.yaml"),)
         self.connect()
         self._current_rps = 0
+
+    def get_spincoater_p0(self, calibration_file):
+        with open(os.path.join(CALIBRATION_DIR, str(calibration_file)), "r") as f:
+            return yaml.safe_load(f)
 
     def connect(self, **kwargs):
         # connect to odrive BLDC controller
@@ -134,7 +139,7 @@ class SpinCoater:
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
         _calibrate(self, os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"))
-        # self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5])) # 
+        # self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5])) #
         # self.gantry.gui()
         # self.coordinates = self.gantry.position
         # # self.gantry.moverel(z=10, zhop=False)
@@ -144,8 +149,10 @@ class SpinCoater:
         # ) as f:
         #     yaml.dump(self.coordinates, f)
 
-    def _load_calibration(self):
-        __load_calibration(self, os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"))
+    def load_calibration(self):
+        _load_calibration(
+            self, os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml")
+        )
         # with open(
         #     os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
         # ) as f:

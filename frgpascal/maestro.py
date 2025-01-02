@@ -42,6 +42,7 @@ from frgpascal.hardware.helpers import get_ot2_ip
 
 
 MODULE_DIR = os.path.dirname(__file__)
+CALIBRATION_DIR = os.path.join(MODULE_DIR, "hardware", "calibrations")
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -156,7 +157,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=2,
-                p0=self.get_p0("Hotplate1_calibration.yaml"),
+                p0=self.get_p0("Hotplate2_calibration.yaml"),
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
@@ -164,7 +165,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=3,
-                p0=self.get_p0("Hotplate1_calibration.yaml"),
+                p0=self.get_p0("Hotplate3_calibration.yaml"),
             ),
         }
         self.storage = {
@@ -173,21 +174,19 @@ class Maestro:
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=self.get_p0("Hotplate1_calibration.yaml"),
+                p0=self.get_p0("Tray1_calibration.yaml"),
             ),
             "Tray2": SampleTray(
                 name="Tray2",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=self.get_p0("Hotplate1_calibration.yaml"),
+                p0=self.get_p0("Tray2_calibration.yaml"),
             ),
         }
-
         self.spincoater = SpinCoater(
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-            p0=self.get_p0("Hotplate1_calibration.yaml"),
         )
 
         ### Workers to run tasks in parallel
@@ -205,7 +204,7 @@ class Maestro:
             ),
         }
 
-        self._load_calibrations()  # load coordinate calibrations for labware
+        self.load_calibrations()  # load coordinate calibrations for labware
         self.__calibrate_time_to_nist()  # for sync with other hardware
         # Status
         self.samples = {}
@@ -219,8 +218,8 @@ class Maestro:
         self.threadpool = ThreadPoolExecutor(max_workers=40)
 
     def get_p0(self, calibration_file):
-        with open(calibration_file, 'r') as f:
-            return yaml.safe_load(f)['p0'][0]
+        with open(os.path.join(CALIBRATION_DIR, str(calibration_file)), "r") as f:
+            return yaml.safe_load(f)["p0"][0]
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
@@ -274,7 +273,7 @@ class Maestro:
         for thread in threads:
             thread.join()
 
-    def _load_calibrations(self):
+    def load_calibrations(self):
         """Load previous gantry positions, assume that hardware hasn't moved since last time."""
         print(
             "Loading labware coordinate calibrations - if any labware has moved, be sure to .calibrate() it!"
@@ -285,7 +284,7 @@ class Maestro:
             self.spincoater,
             self.characterization.axis,
         ]:  # , self.spincoater]:
-            component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
+            component.load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 
     ### Compound Movements
 
