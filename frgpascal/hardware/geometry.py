@@ -57,7 +57,7 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     :param z_clearance: verstical offset (mm) from points to start at to prevent collision by initial misalignment, defaults to 5
     :type z_clearance: int, optional
     """
-
+    print(f"points: {points}")
     points = np.asarray(points).astype(float).round(2)  # destination coordinates
     p_prev = points[0]
 
@@ -202,6 +202,9 @@ class Workspace:
         return self.slot_coordinates(name)
 
     def calibrate(self):
+        print(self)
+        print(self.p0)
+        self.testpoints = self.p0
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))

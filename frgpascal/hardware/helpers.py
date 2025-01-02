@@ -40,6 +40,7 @@ def _get_port_linux(serial_number):
 
 
 def _calibrate(self, calibration_file):
+    print(self)
     self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
     self.gantry.gui()
     self.coordinates = self.gantry.position

@@ -168,6 +168,8 @@ class Maestro:
                 p0=self.get_p0("Hotplate3_calibration.yaml"),
             ),
         }
+        for name, hotplate in self.hotplates.items():
+            print(f"{name} p0:", hotplate.p0)
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
@@ -184,10 +186,13 @@ class Maestro:
                 p0=self.get_p0("Tray2_calibration.yaml"),
             ),
         }
+        for name, storage in self.storage.items():
+            print(f"{name} p0:", storage.p0)
         self.spincoater = SpinCoater(
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
         )
+        print(f"sc p0:", self.spincoater.p0)
 
         ### Workers to run tasks in parallel
         self.workers = {
