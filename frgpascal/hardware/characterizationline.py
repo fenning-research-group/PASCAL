@@ -10,7 +10,7 @@ from tifffile import imwrite
 import csv
 import json
 
-from frgpascal.hardware.helpers import get_port
+from frgpascal.hardware.helpers import get_port, _calibrate, __load_calibration
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
 from frgpascal.hardware.switchbox import SingleSwitch, Switchbox
@@ -229,23 +229,25 @@ class CharacterizationAxis:
         # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.moveto(self.TRANSFERPOSITION)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = np.array(self.gantry.position)
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates.tolist(), f)
+        # self.moveto(self.TRANSFERPOSITION)
+        _calibrate(self, os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"))
+        # self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
+        # self.gantry.gui()
+        # self.coordinates = self.gantry.position
+        # # self.gantry.moverel(z=10, zhop=False)
+        # self.__calibrated = True
+        # with open(
+        #     os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
+        # ) as f:
+        #     yaml.dump(self.coordinates.tolist(), f)
 
     def _load_calibration(self):
-        with open(
-            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
-        ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
-        self.__calibrated = True
+        __load_calibration(self, os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"))
+        # with open(
+        #     os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
+        # ) as f:
+        #     self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+        # self.__calibrated = True
 
     def set_defaults(self):
         self.write("M501")  # load settings from EEPROM

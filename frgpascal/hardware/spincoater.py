@@ -6,7 +6,7 @@ import numpy as np
 import os
 import yaml
 import threading
-from frgpascal.hardware.helpers import get_port
+from frgpascal.hardware.helpers import get_port, _calibrate, __load_calibration
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.switchbox import SingleSwitch
 from datetime import datetime
@@ -66,7 +66,7 @@ class SpinCoater:
             "vacuum_disengagement_time"
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
-        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
+        # self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
         self.connect()
         self._current_rps = 0
 
@@ -133,22 +133,24 @@ class SpinCoater:
         # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = self.gantry.position
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates, f)
+        _calibrate(self, os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"))
+        # self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5])) # 
+        # self.gantry.gui()
+        # self.coordinates = self.gantry.position
+        # # self.gantry.moverel(z=10, zhop=False)
+        # self.__calibrated = True
+        # with open(
+        #     os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
+        # ) as f:
+        #     yaml.dump(self.coordinates, f)
 
     def _load_calibration(self):
-        with open(
-            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
-        ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
-        self.__calibrated = True
+        __load_calibration(self, os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"))
+        # with open(
+        #     os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
+        # ) as f:
+        #     self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+        # self.__calibrated = True
 
     def __call__(self):
         """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)

@@ -204,7 +204,7 @@ class Workspace:
     def calibrate(self):
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
-        self.gantry.moveto(*self.p0)
+        self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
         self.gripper.GRIPPERTIMEOUT = (
             69420  # prevents the gripper from closing during calibration of sampletray
         )

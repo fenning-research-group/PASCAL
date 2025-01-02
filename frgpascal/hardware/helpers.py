@@ -36,6 +36,20 @@ def _get_port_linux(serial_number):
             return p.device
     return None
 
+def _calibrate(self, calibration_file):
+    self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
+    self.gantry.gui()
+    self.coordinates = self.gantry.position
+    # self.gantry.moverel(z=10, zhop=False)
+    self.__calibrated = True
+    with open(calibration_file, "w") as f:
+        yaml.dump(self.coordinates.tolist(), f)
+
+def __load_calibration(self, calibration_file):
+    with open(calibration_file, "r") as f:
+        self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+    self.__calibrated = True
+
 
 def get_port(device_identifiers):
     operatingsystem = which_os()

@@ -148,7 +148,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=1,
-                p0=constants["hotplates"]["hp1"]["p0"],
+                p0=self.get_p0("Hotplate1_calibration.yaml"),
             ),
             "Hotplate2": HotPlate(
                 name="Hotplate2",
@@ -156,7 +156,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=2,
-                p0=constants["hotplates"]["hp2"]["p0"],
+                p0=self.get_p0("Hotplate1_calibration.yaml"),
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
@@ -164,7 +164,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=3,
-                p0=constants["hotplates"]["hp3"]["p0"],
+                p0=self.get_p0("Hotplate1_calibration.yaml"),
             ),
         }
         self.storage = {
@@ -173,20 +173,21 @@ class Maestro:
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["sampletray"]["p1"],
+                p0=self.get_p0("Hotplate1_calibration.yaml"),
             ),
             "Tray2": SampleTray(
                 name="Tray2",
                 version="storage_v3",
                 gantry=self.gantry,
                 gripper=self.gripper,
-                p0=constants["sampletray"]["p2"],
+                p0=self.get_p0("Hotplate1_calibration.yaml"),
             ),
         }
 
         self.spincoater = SpinCoater(
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+            p0=self.get_p0("Hotplate1_calibration.yaml"),
         )
 
         ### Workers to run tasks in parallel
@@ -216,6 +217,10 @@ class Maestro:
 
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
+
+    def get_p0(calibration_file):
+        with open(calibration_file, 'r') as f:
+            return yaml.safe_load(f)['p0'][0]
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
