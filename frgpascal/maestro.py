@@ -218,7 +218,7 @@ class Maestro:
         # worker thread coordination
         self.threadpool = ThreadPoolExecutor(max_workers=40)
 
-    def get_p0(calibration_file):
+    def get_p0(self, calibration_file):
         with open(calibration_file, 'r') as f:
             return yaml.safe_load(f)['p0'][0]
 
