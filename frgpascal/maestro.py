@@ -292,6 +292,14 @@ class Maestro:
             self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
         )  # slow to prevent sample position shifting upon release
 
+    def open_to_width(self, width):
+        self.gripper.open(
+            width, slow=False
+        )  # slow to prevent sample position shifting upon release
+
+    def open_to_pwm(self, pwm):
+        self.gripper.open_pwm(pwm)
+
     def catch(self, from_spincoater=False):
         """
         Close gripper barely enough to pick up sample

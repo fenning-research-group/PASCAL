@@ -109,6 +109,14 @@ class Gripper:
         self.currentwidth = width
         self.currentpwm = pwm
 
+    def open_pwm(self, pwm):
+        self.write(f"S{pwm} {self.FASTGRIPPERINTERVAL}")
+        self._waitformovement()
+        self.__gripper_last_opened = time.time()
+        self.currentwidth = self.__pwm_to_width(pwm)
+        self.currentpwm = pwm
+        print(self.currentwidth)
+
     # def pwm_calibration(self, pwm_MAX, pwm_MIN, interval):
     def pwm_calibration(self, value):
         # find max and min pwm
@@ -152,11 +160,12 @@ class Gripper:
             raise Exception(
                 f"Angle {angle} outside acceptable range ({self.MINPWM}-{self.MAXPWM})"
             )
+        m = (self.MAXWIDTH - self.MINWIDTH) / (self.MAXPWM - self.MINPWM)
+        b = self.MINWIDTH - m * self.MINPWM
+        # fractional_angle = (angle - self.MINPWM) / (self.MAXPWM - self.MINPWM)
+        # width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
 
-        fractional_angle = (angle - self.MINPWM) / (self.MAXPWM - self.MINPWM)
-        width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
-
-        return np.round(width, 1)
+        return np.round(m * angle + b, 1)
 
     def __width_to_pwm(self, width):
         """
