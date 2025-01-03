@@ -43,7 +43,7 @@ class CoordinateMapper:
         return pmap
 
 
-def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
+def map_coordinates(name, slots, points, offsets, gantry: Gantry, z_clearance=5):
     """prompts user to move gripper to target points on labware for
     calibration purposes
 
@@ -60,31 +60,44 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     print(f"points: {points}")
     points = np.asarray(points).astype(float).round(2)  # destination coordinates
     p_prev = points[0]
+    first_point = points[0]
 
     points_source_guess = points
 
-    points_source_meas = []  # source coordinates
-    for slotname, p in zip(slots, points_source_guess):
-        movedelta = p - p_prev  # offset between current and next point
-        gantry.moverel(*movedelta, zhop=False)  # move to next point
+    for i in range(len(slots)):
+        slotname = slots[i]
+        p = points[i]
+        gantry.moveto(p)
         print(f"Move to {slotname}")
         gantry.gui()  # prompt user to align gantry to exact target location
-        points_source_meas.append(gantry.position)
+        points[i] = gantry.position
+        if i < len(slots) - 1:
+            guess_delta = gantry.position - p
+            for j in range(i + 1, len(slots)):
+                points[j] += guess_delta
         gantry.moverel(z=z_clearance, zhop=False)
-        p_prev = p
+
+    # points_source_meas = []  # source coordinates
+    # for slotname, p in zip(slots, points_source_guess):
+    #     movedelta = p - p_prev  # offset between current and next point
+    #     print(f"movedelta: {movedelta}")
+    #     gantry.moverel(*movedelta, zhop=False)  # move to next point
+    #     print(f"Move to {slotname}")
+    #     gantry.gui()  # prompt user to align gantry to exact target location
+    #     points_source_meas.append(gantry.position)
+    #     gantry.moverel(z=z_clearance, zhop=False)
+    #     p_prev = p
 
     # save calibration
     with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
         out = {
-            "p0": points_source_meas,
-            "p1": np.asarray(points)
-            .astype(float)
-            .round(2)
-            .tolist(),  # rounding error bs
+            # Convert both arrays to float + round(2) + tolist()
+            "p0": np.asarray(points).astype(float).round(2).tolist(),
+            "p1": np.asarray(offsets).astype(float).round(2).tolist(),
         }
         yaml.dump(out, f)
 
-    return CoordinateMapper(p0=points_source_meas, p1=points)
+    return CoordinateMapper(p0=points, p1=offsets)
 
 
 class Workspace:
@@ -103,7 +116,7 @@ class Workspace:
         p0=[0, 0, 0],
         testslots=None,
         z_clearance: float = 5,
-        openwidth: float = 14,
+        openwidth: float = 13,
     ):
         """
         Args:
@@ -204,17 +217,25 @@ class Workspace:
     def calibrate(self):
         print(self)
         print(self.p0)
-        self.testpoints = self.p0
+        guesspoints = [0.0, 0.0, 0.0, 0.0]
+        print(f"testpoints: {self.testpoints}")
+        print(f"guesspoints: {guesspoints}")
+        for i in range(len(self.testpoints)):
+            guesspoints[i] = self.testpoints[i] + self.p0
+
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*(self.p0[:2] + [self.p0[2] + 5]))
         self.gripper.GRIPPERTIMEOUT = (
             69420  # prevents the gripper from closing during calibration of sampletray
         )
+        print(f"testpoints: {self.testpoints}")
+        print(f"guesspoints: {guesspoints}")
         self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
             self.name,
             self.testslots,
+            guesspoints,
             self.testpoints,
             self.gantry,
             self.z_clearance,
