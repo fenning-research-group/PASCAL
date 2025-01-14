@@ -53,7 +53,7 @@ gripper:
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)
   width_min: 0 #minimum opening width (mm)
-  pwm_max: 900 ##1300 #pulse width (us) corresponding to maximum width
+  pwm_max: 950 ##1300 #pulse width (us) corresponding to maximum width
   pwm_min: 0  ##740 #pulse width (us) corresponding to minimum width
   extra_opening_width_pick: 2.8 #extra width (mm) to open gripper when moving to pick up a sample
   extra_opening_width_place: 2.8 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
