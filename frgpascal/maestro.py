@@ -184,16 +184,16 @@ class Maestro:
             ),
         }
 
-        self.spincoater = SpinCoater(
-            gantry=self.gantry,
-            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-        )
+        # self.spincoater = SpinCoater(
+        #     gantry=self.gantry,
+        #     switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+        # )
 
         ### Workers to run tasks in parallel
         self.workers = {
             "gantry_gripper": Worker_GantryGripper(maestro=self),
             "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            "characterization": Worker_Characterization(maestro=self),
+            # "characterization": Worker_Characterization(maestro=self),
             "hotplates": Worker_Hotplate(
                 maestro=self,
                 capacity=sum([hp.capacity for hp in self.hotplates.values()]),
