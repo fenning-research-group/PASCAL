@@ -24,7 +24,7 @@ class WorkerTemplate(Worker_roboflo):
             self.gantry = maestro.gantry
             self.gripper = maestro.gripper
             self.spincoater = maestro.spincoater
-            self.characterization = maestro.characterization
+            # self.characterization = maestro.characterization
             self.liquidhandler = maestro.liquidhandler
             self.hotplates = maestro.hotplates
             self.storage = maestro.storage
