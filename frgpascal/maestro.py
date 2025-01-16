@@ -572,13 +572,19 @@ class Maestro:
         experiment_name = self._load_worklist(filepath)
         self._set_up_experiment_folder(experiment_name)
 
-    def run(self):
+    def get_ot2_ip_maestro(self):
+        print(get_ot2_ip())
+
+    def run(self, ip=None):
         if len(self.samples) == 0:
             raise Exception("No samples loaded, did you forget to run .load_netlist()?")
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
-        self.liquidhandler.server.ip = get_ot2_ip()
+        if ip is None:
+            self.liquidhandler.server.ip = get_ot2_ip()
+        else:
+            self.liquidhandler.server.ip = ip
 
         self._start_loop()
         self.t0 = self.nist_time

@@ -111,7 +111,8 @@ liquidhandler:
 
 sampletray:
   p1: [494.0, 20.0, 67.3] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
-  p2: [412.4, 19.5, 65.8] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p2: [409.1, 10.9, 65.5] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+
 spincoater:
   # communication
   device_identifiers: #for the arduino controlling the vacuum solenoid

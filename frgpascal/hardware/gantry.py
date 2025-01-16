@@ -231,7 +231,7 @@ class Gantry:
         # checks to see if current z is more than 5mm below opentrons limits
         # and same for y
         opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 5
-        opentrons_y_min_limit = 35
+        opentrons_y_min_limit = 50
         if self.__currentframe != target_frame and not zhop:
             # if z > opentrons_z_max_limit:
             #     z = opentrons_z_max_limit
