@@ -135,9 +135,9 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
-        self.characterization = CharacterizationLine(
-            gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
-        )
+        # self.characterization = CharacterizationLine(
+        #     gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+        # )
         self.liquidhandler = OT2()
 
         # Labware
@@ -244,14 +244,14 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
-        components = [self.spincoater, self.characterization.axis]
+        # components = [self.spincoater, self.characterization.axis]
         components += list(self.hotplates.values())
         components += list(self.storage.values())
         for component in [
             *self.hotplates.values(),
             *self.storage.values(),
             self.spincoater,
-            self.characterization.axis,
+            # self.characterization.axis,
         ]:
             # self.release()  # open gripper to open width
             component.calibrate()
@@ -260,7 +260,7 @@ class Maestro:
         threads = []
         for task in [
             self.gantry.gohome,
-            self.characterization.axis.gohome,
+            # self.characterization.axis.gohome,
             # self.spincoater.connect,
         ]:
             thread = Thread(target=task)
@@ -278,7 +278,7 @@ class Maestro:
             *self.hotplates.values(),
             *self.storage.values(),
             self.spincoater,
-            self.characterization.axis,
+            # self.characterization.axis,
         ]:  # , self.spincoater]:
             component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 
@@ -510,7 +510,7 @@ class Maestro:
                 break
         os.mkdir(folder)
         print(f"Experiment folder created at {folder}")
-        self.characterization.set_directory(os.path.join(folder, "Characterization"))
+        # self.characterization.set_directory(os.path.join(folder, "Characterization"))star
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
         self._fh = logging.FileHandler(
@@ -543,10 +543,10 @@ class Maestro:
             if response not in ["y", "Y"]:
                 raise Exception("Checklist failed!")
 
-        if not self.characterization._calibrated:
-            raise Exception(
-                "Cannot start until characterization line has been calibrated!"
-            )
+        # if not self.characterization._calibrated:
+        #     raise Exception(
+        #         "Cannot start until characterization line has been calibrated!"
+        #     )
 
         prompt_for_yes("Is the transmission lamp on? (y/n)")
         prompt_for_yes("Is the sample holder(s) loaded and in place? (y/n)")
@@ -607,10 +607,10 @@ class Maestro:
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
-        metrics, _ = load_all(datadir=self.characterization.rootdir)
-        metrics.to_csv(
-            os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
-        )
+        # metrics, _ = load_all(datadir=self.characterization.rootdir)
+        # metrics.to_csv(
+        #     os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
+        # )
 
         for w in self.workers.values():
             w.stop_workers()
