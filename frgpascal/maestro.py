@@ -118,8 +118,6 @@ class Maestro:
             samplewidth (float, optional): width of the substrates (mm). Defaults to 10 (ie 1 cm).
         """
 
-
-
         # Constants
         self.logger = logging.getLogger("PASCAL")
         self.SAMPLEWIDTH = samplewidth  # mm
@@ -138,8 +136,7 @@ class Maestro:
         self.gripper = Gripper()
         self.switchbox = Switchbox()
 
-
-        #tries to connect to characterization line
+        # tries to connect to characterization line
         self._handle_characterization_connection()
 
         self.liquidhandler = OT2()
@@ -207,9 +204,9 @@ class Maestro:
                 capacity=sum([hp.capacity for hp in self.storage.values()]),
             ),
         }
-        if self.char is not None:
+        if self.characterization is not None:
             self.workers["characterization"] = Worker_Characterization(maestro=self)
-        
+
         self._load_calibrations()  # load coordinate calibrations for labware
         self.__calibrate_time_to_nist()  # for sync with other hardware
         # Status
@@ -250,7 +247,7 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
-        
+
         components = []
         if self.characterization is not None:
             components.append(self.characterization.axis)
@@ -260,7 +257,6 @@ class Maestro:
         components.append(self.spincoater)
         for component in components:
             component.calibrate()
-
 
     def gohome(self):
         threads = []
@@ -520,7 +516,9 @@ class Maestro:
         print(f"Experiment folder created at {folder}")
 
         if self.characterization is not None:
-            self.characterization.set_directory(os.path.join(folder, "Characterization"))
+            self.characterization.set_directory(
+                os.path.join(folder, "Characterization")
+            )
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
         self._fh = logging.FileHandler(
@@ -618,11 +616,13 @@ class Maestro:
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
-        
+
         if self.characterization is not None:
             metrics, _ = load_all(datadir=self.characterization.rootdir)
             metrics.to_csv(
-                os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
+                os.path.join(
+                    self.experiment_folder, "fitted_characterization_metrics.csv"
+                )
             )
 
         for w in self.workers.values():
@@ -691,7 +691,6 @@ class Maestro:
 
         self.server = MaestroServer(maestro=self)  # open for external commands
 
-
     def _handle_characterization_connection(self):
         """
         Prompts user if they want characterization and tries to connect to
@@ -700,12 +699,13 @@ class Maestro:
         """
         self.characterization = None
         response = input("Do you need characterization? (y/n)")
-        needs_char = response in ["y", "Y"] 
+        needs_char = response in ["y", "Y"]
         if needs_char:
             try:
                 self.characterization = CharacterizationLine(
                     gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
                 )
             except:
-                print("Failed to connect to characterization line, continuing without it.")
-
+                print(
+                    "Failed to connect to characterization line, continuing without it."
+                )
