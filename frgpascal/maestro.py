@@ -584,7 +584,6 @@ class Maestro:
         if len(self.samples) == 0:
             raise Exception("No samples loaded, did you forget to run .load_netlist()?")
         self._experiment_checklist()
-        self.n
         self.pending_tasks = []
         self.completed_tasks = {}
         self.liquidhandler.server.ip = get_ot2_ip()
