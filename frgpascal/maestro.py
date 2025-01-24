@@ -106,6 +106,8 @@ class MaestroServer(Server):
         print(f"Maestro Client remotely set {d['hotplate_name']} to {d['setpoint']} C")
 
 
+# example notebook for other process using spectrometer while pascal running (Gb2)
+# StaffFolders\Danrui Hu\GB2_PL\20241108_A2X2_sol_test\PLSetup_A2X2_20241108.ipynb
 class Maestro:
     def __init__(
         self,
