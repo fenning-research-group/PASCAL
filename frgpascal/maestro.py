@@ -135,9 +135,10 @@ class Maestro:
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
-        self.characterization = CharacterizationLine(
-            gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
-        )
+
+        # tries to connect to characterization line
+        self._handle_characterization_connection()
+
         self.liquidhandler = OT2()
 
         # Labware
@@ -193,7 +194,7 @@ class Maestro:
         self.workers = {
             "gantry_gripper": Worker_GantryGripper(maestro=self),
             "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            "characterization": Worker_Characterization(maestro=self),
+            # "characterization": Worker_Characterization(maestro=self),
             "hotplates": Worker_Hotplate(
                 maestro=self,
                 capacity=sum([hp.capacity for hp in self.hotplates.values()]),
@@ -203,6 +204,8 @@ class Maestro:
                 capacity=sum([hp.capacity for hp in self.storage.values()]),
             ),
         }
+        if self.characterization is not None:
+            self.workers["characterization"] = Worker_Characterization(maestro=self)
 
         self._load_calibrations()  # load coordinate calibrations for labware
         self.__calibrate_time_to_nist()  # for sync with other hardware
@@ -244,25 +247,24 @@ class Maestro:
 
     def calibrate(self):
         """Prompt user to fine tune the gantry positions for all hardware components"""
-        components = [self.spincoater, self.characterization.axis]
+
+        components = []
+        if self.characterization is not None:
+            components.append(self.characterization.axis)
+
         components += list(self.hotplates.values())
         components += list(self.storage.values())
-        for component in [
-            *self.hotplates.values(),
-            *self.storage.values(),
-            self.spincoater,
-            self.characterization.axis,
-        ]:
-            # self.release()  # open gripper to open width
+        components.append(self.spincoater)
+        for component in components:
             component.calibrate()
 
     def gohome(self):
         threads = []
-        for task in [
-            self.gantry.gohome,
-            self.characterization.axis.gohome,
-            # self.spincoater.connect,
-        ]:
+        tasks = [self.gantry.gohome, self.spincoater.connect]
+        if self.characterization is not None:
+            tasks.append(self.characterization.axis.gohome)
+
+        for task in tasks:
             thread = Thread(target=task)
             threads.append(thread)
             thread.start()
@@ -274,12 +276,14 @@ class Maestro:
         print(
             "Loading labware coordinate calibrations - if any labware has moved, be sure to .calibrate() it!"
         )
-        for component in [
-            *self.hotplates.values(),
-            *self.storage.values(),
-            self.spincoater,
-            self.characterization.axis,
-        ]:  # , self.spincoater]:
+        components = []
+        if self.characterization is not None:
+            components.append(self.characterization.axis)
+
+        components += list(self.hotplates.values())
+        components += list(self.storage.values())
+        components.append(self.spincoater)
+        for component in components:
             component._load_calibration()  # REFACTOR #4 make the hardware calibrations save to a yaml instead of pickle file
 
     ### Compound Movements
@@ -512,7 +516,11 @@ class Maestro:
                 break
         os.mkdir(folder)
         print(f"Experiment folder created at {folder}")
-        self.characterization.set_directory(os.path.join(folder, "Characterization"))
+
+        if self.characterization is not None:
+            self.characterization.set_directory(
+                os.path.join(folder, "Characterization")
+            )
         self.experiment_folder = folder
         self.logger.setLevel(logging.DEBUG)
         self._fh = logging.FileHandler(
@@ -545,7 +553,7 @@ class Maestro:
             if response not in ["y", "Y"]:
                 raise Exception("Checklist failed!")
 
-        if not self.characterization._calibrated:
+        if self.characterization is not None and not self.characterization._calibrated:
             raise Exception(
                 "Cannot start until characterization line has been calibrated!"
             )
@@ -615,10 +623,14 @@ class Maestro:
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
             json.dump(self.samples, f)
-        metrics, _ = load_all(datadir=self.characterization.rootdir)
-        metrics.to_csv(
-            os.path.join(self.experiment_folder, "fitted_characterization_metrics.csv")
-        )
+
+        if self.characterization is not None:
+            metrics, _ = load_all(datadir=self.characterization.rootdir)
+            metrics.to_csv(
+                os.path.join(
+                    self.experiment_folder, "fitted_characterization_metrics.csv"
+                )
+            )
 
         for w in self.workers.values():
             w.stop_workers()
@@ -685,3 +697,22 @@ class Maestro:
             worker.start()
 
         self.server = MaestroServer(maestro=self)  # open for external commands
+
+    def _handle_characterization_connection(self):
+        """
+        Prompts user if they want characterization and tries to connect to
+        characterization line if so. If connection fails, continues without
+        characterization.
+        """
+        self.characterization = None
+        response = input("Do you need characterization? (y/n)")
+        needs_char = response in ["y", "Y"]
+        if needs_char:
+            try:
+                self.characterization = CharacterizationLine(
+                    gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+                )
+            except:
+                print(
+                    "Failed to connect to characterization line, continuing without it."
+                )
