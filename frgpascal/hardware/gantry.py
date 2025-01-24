@@ -148,8 +148,8 @@ class Gantry:
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
         self.__ZLIM = (
-            self.__FRAMES["opentrons"]["z_max"] - 5
-        )  # never really needs to go above the height of the opentrons height limit, -5 for buffer
+            self.__FRAMES["opentrons"]["z_max"] - 3
+        )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
 
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
@@ -230,8 +230,8 @@ class Gantry:
 
         # checks to see if current z is more than 5mm below opentrons limits
         # and same for y
-        opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 5
-        opentrons_y_min_limit = 50
+        opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 3
+        opentrons_y_min_limit = 60
         if self.__currentframe != target_frame and not zhop:
             # if z > opentrons_z_max_limit:
             #     z = opentrons_z_max_limit

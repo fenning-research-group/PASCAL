@@ -99,6 +99,7 @@ class Gripper:
             width = self.MAXWIDTH
 
         pwm = self.__width_to_pwm(width)
+        print(pwm)
         if slow:
             rate = self.SLOWGRIPPERINTERVAL
         else:

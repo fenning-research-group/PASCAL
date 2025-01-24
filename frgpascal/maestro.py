@@ -288,8 +288,10 @@ class Maestro:
         """
         Open gripper quickly before picking up a sample
         """
+        val = self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK
+        # print(val)
         self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False
+            val, slow=False
         )  # slow to prevent sample position shifting upon release
 
     def open_to_width(self, width):
