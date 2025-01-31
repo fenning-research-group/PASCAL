@@ -718,3 +718,9 @@ class Maestro:
                 print(
                     "Failed to connect to characterization line, continuing without it."
                 )
+                self.characterization = CharacterizationLine(
+                    gantry=self.gantry,
+                    rootdir=ROOTDIR,
+                    switchbox=self.switchbox,
+                    spectrometer=False,
+                )

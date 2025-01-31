@@ -27,7 +27,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir, gantry, switchbox: Switchbox):
+    def __init__(self, rootdir, gantry, switchbox: Switchbox, spectrometer=True):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
         if not os.path.exists(self.rootdir):
@@ -42,7 +42,10 @@ class CharacterizationLine:
         self.brightfieldcamera = self.camerahost.spawn_camera(
             camid=constants["stations"]["brightfield"]["cameraid"]
         )
-        self.spectrometer = Spectrometer()
+        if spectrometer:
+            self.spectrometer = Spectrometer()
+        else:
+            self.spectrometer = None
 
         # all characterization stations (in order of measurement!)
         self.stations = {
@@ -158,7 +161,9 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self, gantry, port=None,
+        self,
+        gantry,
+        port=None,
     ):
         # communication variables
         if port is None:
