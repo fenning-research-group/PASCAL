@@ -181,9 +181,9 @@ def connect_device_by_identifier(vid, pid, identifier):
         )
         return None
 
-    print(
-        f"Connecting to device: {device['name']} (COM: {device.get('com_port')}, Serial: {device.get('serial_number')})"
-    )
+    # print(
+    #     f"Connecting to device: {device['name']} (COM: {device.get('com_port')}, Serial: {device.get('serial_number')})"
+    # )
 
     # Record the connection in our global dictionary.
     key = (vid_int, pid_int)
@@ -197,14 +197,14 @@ def connect_device_by_identifier(vid, pid, identifier):
             and device.get("com_port")
             and dev["com_port"].upper() == device["com_port"].upper()
         ):
-            print("Device is already connected (COM port match).")
+            print(f"Device is already connected ({identifier} port match).")
             return device
         if (
             dev.get("serial_number")
             and device.get("serial_number")
             and dev["serial_number"].upper() == device["serial_number"].upper()
         ):
-            print("Device is already connected (serial number match).")
+            print(f"Device is already connected ({identifier} serial number match).")
             return device
 
     connected_devices[key].append(device)
@@ -225,9 +225,9 @@ def connect_device_by_vid_pid(vid, pid):
     vid_int = int(vid)
     pid_int = int(pid)
     available = query_available_devices(vid_int, pid_int)
-    print(
-        f"Found {len(available)} available device(s) for VID {vid_int} and PID {pid_int}."
-    )
+    # print(
+    #     f"Found {len(available)} available device(s) for VID {vid_int} and PID {pid_int}."
+    # )
 
     key = (vid_int, pid_int)
     already_connected_ids = set()
@@ -253,14 +253,17 @@ def connect_device_by_vid_pid(vid, pid):
         remaining_devices.append(dev)
 
     if not remaining_devices:
-        print("All available devices for this VID/PID are already connected.")
+        print(
+            f"All available devices for vid={vid} and pid={pid} are already connected."
+        )
+        raise ValueError("Cannot find a matching port!")
         return None
 
     # Connect to the first device that has not yet been connected.
     device = remaining_devices[0]
-    print(
-        f"Connecting to device: {device['name']} (COM: {device.get('com_port')}, Serial: {device.get('serial_number')})"
-    )
+    # print(
+    #     f"Connecting to device: {device['name']} (COM: {device.get('com_port')}, Serial: {device.get('serial_number')})"
+    # )
 
     if key not in connected_devices:
         connected_devices[key] = []
@@ -283,12 +286,15 @@ def connect_device(vid, pid, identifier=None):
     else:
         device = connect_device_by_vid_pid(vid, pid)
     if device is not None:
-        print("Connected device details:")
-        print(device)
+        # print("Connected device details:")
+        # print(device)
         # Return the COM port string from the device record.
         return device.get("com_port")
     else:
-        print("No available device found to connect.")
+        print(
+            f"No available device found to connect for\nvid={vid}\npid={pid}\nidentifier={identifier}"
+        )
+        raise ValueError("Cannot find a matching port!")
         return None
 
 
@@ -310,7 +316,7 @@ def _get_port_windows_old(device_identifiers):
             if getattr(p, attr) != value:
                 match = False
         if match:
-            print(p.device)
+            # print(p.device)
             return p.device
     raise ValueError("Cannot find a matching port!")
 
