@@ -624,6 +624,8 @@ class Maestro:
         with open(
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
+            uid = datetime.now()
+            self.samples["uid"] = uid
             json.dump(self.samples, f)
 
         if self.characterization is not None:
