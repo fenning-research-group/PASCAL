@@ -103,7 +103,7 @@ class Workspace:
         p0=[0, 0, 0],
         testslots=None,
         z_clearance: float = 5,
-        openwidth: float = 13,
+        openwidth: float = 12,
     ):
         """
         Args:
