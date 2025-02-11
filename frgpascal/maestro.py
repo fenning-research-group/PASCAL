@@ -624,6 +624,7 @@ class Maestro:
         with open(
             os.path.join(self.experiment_folder, "maestro_sample_log.json"), "w"
         ) as f:
+            #TODO: currently using datetime.now() as uid, will switch to centralized system
             uid = datetime.now()
             self.samples["uid"] = uid
             json.dump(self.samples, f)
