@@ -122,6 +122,7 @@ class SpinCoater:
     def disconnect(self):
         self.__connected = False
         self._libfibre_watchdog.join()
+        # this always throws an "object lost" error...which is what we want
         try:
             self.odrv0._destroy()
         except:
@@ -196,6 +197,11 @@ class SpinCoater:
         rps = int(rpm / 60)  # convert rpm to rps for odrive
         acceleration = int(acceleration / 60)  # convert rpm/s to rps/s for odrive
         self.axis.controller.config.vel_ramp_rate = acceleration
+        if rps == 0:
+            self.axis.controller.config.vel_ramp_rate = int(
+                500 / 60
+            )  # using 500 as a safe slowdown speed
+
         time.sleep(self.COMMUNICATION_INTERVAL)
         self.axis.controller.input_vel = rps
         time.sleep(self.COMMUNICATION_INTERVAL)
@@ -242,6 +248,7 @@ class SpinCoater:
         except:
             pass
         self.connect()
+        self.lock()
 
     def twist_off(self):
         """
@@ -272,7 +279,7 @@ class SpinCoater:
         """
         if self._locked:
             return
-        self.set_rpm(0, 1000)
+        self.set_rpm(0, 500)  # using 500 as a safe decceleration speed
         t0 = time.time()
         min_stopped_time = 2
         while True:
