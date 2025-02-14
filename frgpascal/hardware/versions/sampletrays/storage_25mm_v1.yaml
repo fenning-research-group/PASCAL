@@ -1,0 +1,10 @@
+## 3D printed storage plate version 2
+# vertical gripping orientation
+
+samplewidth: 25.0 #intended sample width (mm)
+openwidth: 27.3 #max gripper opening width (mm) that can reach into tray slots
+xpitch: 27.5 #horizontal center-center distance (mm) between adjacent slots
+ypitch: 30.3 #vertical center-center distance (mm) between adjacent slots
+numx: 3 #number of slot columns
+numy: 5 #number of slot rows
+z_clearance: 5 #extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
