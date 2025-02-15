@@ -53,9 +53,9 @@ gripper:
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 27 #maximum opening width (mm)
-  width_min: 0 #minimum opening width (mm)
+  width_min: 6 #minimum opening width (mm)
   pwm_max: 900 ##1300 #pulse width (us) corresponding to maximum width
-  pwm_min: 0  ##740 #pulse width (us) corresponding to minimum width
+  pwm_min: 650  ##740 #pulse width (us) corresponding to minimum width
   extra_opening_width_pick: 2.0 #extra width (mm) to open gripper when moving to pick up a sample
   extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
