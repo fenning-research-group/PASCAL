@@ -248,7 +248,7 @@ class SpinCoater:
         except:
             pass
         self.connect()
-        self.lock()
+        # self.lock()
 
     def twist_off(self):
         """
