@@ -172,9 +172,15 @@ class OT2:
         return taskid
 
     def mark_completed(self):
+        print("Running self.server._start_directly() now")
         self.server._start_directly()
+        print("\tSuccess!")
+        print("Running self.server._mark_completed() now")
         self.server.mark_completed()
+        print("\tSuccess!")
+        print("Running self.server._stop() now")
         self.server.stop()
+        print("\tSuccess!")
 
     def wait_for_task_complete(self, taskid):
         while taskid not in self.server.completed_tasks:
@@ -289,27 +295,60 @@ class OT2Server:
         def run_loop(loop):
             asyncio.set_event_loop(loop)
             loop.run_forever()
-
+        print("\tstarting daemon thread")
         self.thread = threading.Thread(target=run_loop, args=(self.loop,))
         self.thread.daemon = True
         self.thread.start()
+        print("\tstarting to connect to websocket")
         asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
         # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
+        print("\twaiting to connect")
         while not hasattr(self, "websocket"):
             time.sleep(0.1)  # wait to connect
+
+        if hasattr(self, 'websocket'):
+            print("\t\tWebsocket connection seems to have worked.")
+        else:
+            print("\t\tWebsocket connection silently failed!")
+        # print("\twebsocket connected!")
         self.connected = True
+        print("\tstarting OT2Server coroutine thread")
         self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
 
     def stop(self):
         # self.mark_completed()
+        self._timeout_duration = 10
         self.connected = False
         time.sleep(1)
+        print("\tStopping OT2Server worker")
         self._worker.cancel()
         self.loop.call_soon_threadsafe(self.loop.stop)
         # asyncio.gather(self._worker, self._checker)
         # self.loop.close()
-        self.thread.join()
-        del self.websocket
+        print("\twaiting for OT2Server thread to stop.")
+        # self.thread.join()
+        print(f"\t{self.thread}")
+        print(f"Thread we are waiting to stop: \n\t{self.thread.name}")
+        # print(f"Thread we are waiting to stop: \n\t{self.thread.name}\n\t\t{self.thread._target}")
+        if self.thread.isDaemon:
+            try: 
+                self.thread.join(timeout = self._timeout_duration)
+                if self.thread.is_alive():
+                    print(f"\t{self.thread} did not end before the timeout of {self._timeout_duration} s, so thread is still alive")
+                else:
+                    print(f"\t{self.thread} ended, so it is dead.")
+            except Exception as e:
+                print(f"\tWe tried to stop this Daemon thread, but this exception arose:\n\t\t{e}")
+        else:
+            try:
+                self.thread.join()
+            except Exception as e:
+                print(f"Something went wrong?\n{e}")
+        print("\tthread stopped, now deleting the OT2 connection.")
+        if hasattr(self, "websocket"):
+            del self.websocket
+        else:
+            print(f"\t{self} does not have a websocket?? \n\t\tSkipping this `del self.websocket` command for now.")
 
     def _update_completed_tasklist(self, tasklist):
         for taskid, nisttime in tasklist.items():

@@ -37,7 +37,7 @@ class Switchbox:
             4: "C",
             5: "D",
             6: "E",
-            7: "F",
+            7: "F", #F originally
             8: "0",
             9: "4",
             10: "5",

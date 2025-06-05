@@ -472,9 +472,13 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
         completed_tasks = {}
+        print(f"lh tasks:{liquidhandlertasks}")
+        gamma = 0
         while len(liquidhandlertasks) > len(completed_tasks):
+            print(f"iteration: {gamma}, tasks_done: {len(completed_tasks)}")
             for task, taskid in liquidhandlertasks.items():
                 if task in completed_tasks:
+                    print(f"\t\ttask {taskid} already done!")
                     continue  # already got this one, skip
                 if taskid in self.liquidhandler.server.completed_tasks:
                     completed_tasks[task] = (
@@ -484,12 +488,14 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {taskid}"
                     )
                 await asyncio.sleep(0.1)
+            gamma +=1
         print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
         return completed_tasks
 
     async def _set_spinspeeds(self, steps, t0, headstart):
         await asyncio.sleep(headstart)
         tnext = headstart
+        print(f"\t\t{t0-self.maestro.nist_time:.2f} it's spinnin' time.")
         for step in steps:
             self.spincoater.set_rpm(rpm=step["rpm"], acceleration=step["acceleration"])
             tnext += step["duration"]
@@ -872,7 +878,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
         tasks_future.add_done_callback(future_callback)
-
+        print(f"these are the tasks we need to do:\n{tasks_future}")
+        print(f"{t0-self.maestro.nist_time:.2f} starting the deposition tasks")
         drop_times, _ = loop.run_until_complete(tasks_future)
         print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
         rpm_log = self.spincoater.finish_logging()

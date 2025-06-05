@@ -256,6 +256,7 @@ def connect_device_by_vid_pid(vid, pid):
         print(
             f"All available devices for vid={vid} and pid={pid} are already connected."
         )
+        print(f"Available Devices: {available}") # ????
         raise ValueError("Cannot find a matching port!")
         return None
 

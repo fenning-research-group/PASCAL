@@ -30,9 +30,12 @@ class CharacterizationLine:
     def __init__(self, rootdir, gantry, switchbox: Switchbox):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
+        #print(self.rootdir) ##added comment
         if not os.path.exists(self.rootdir):
             os.mkdir(self.rootdir)
+            # print("made a new directory") ##added comment
         self.switchbox = switchbox
+        print("switchbox connected") ##added comment
         self.shutter = Shutter()
         self.filterslider = FilterSlider()
         self.camerahost = ThorcamHost()
@@ -193,7 +196,11 @@ class CharacterizationAxis:
 
     # communication methods
     def connect(self):
+        print("Attempting to connect to cl.axis")
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        if self._handle is None:
+            print(self._handle)
+            print("there is an issue with the port/serial connection")
         self.update()
         # self.update_gripper()
         if self.position == max(

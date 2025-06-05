@@ -617,6 +617,7 @@ class Maestro:
             worker.start()
 
     def stop(self):
+        print('Beginning to stop PASCAL')
         self.working = False
         # clean up the experiment, save log of actual timings
         for hp in self.hotplates.values():
@@ -635,14 +636,20 @@ class Maestro:
             )
 
         for w in self.workers.values():
+            print(f"Stopping {w} now")
             w.stop_workers()
+            print(f"\tStop Successful!")
         if self.liquidhandler.server.ip is not None:
+            print("Stopping the liquidhandler Server Now.")
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+            print("\tStop Successful!")
 
         self.logger.info("Finished experiment, stopping now.")
 
         for h in self.logger.handlers:
+            print(f"Removing logger.handler {h}")
             self.logger.removeHandler(h)
+            print("\tRemoval Successful!")
 
         print("Maestro stopped!")
         self.gantry.movetoclear()
@@ -712,7 +719,9 @@ class Maestro:
         if needs_char:
             try:
                 self.characterization = CharacterizationLine(
-                    gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+                    gantry=self.gantry,
+                    rootdir=ROOTDIR,
+                    switchbox=self.switchbox,
                 )
             except:
                 print(

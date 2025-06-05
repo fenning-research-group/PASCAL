@@ -23,8 +23,10 @@ class Gantry:
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
+            print(self.port, "if") ## added comment
         else:
             self.port = port
+            print(port, "else") ## added comment
         self.POLLINGDELAY = constants["gantry"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
@@ -73,6 +75,7 @@ class Gantry:
         ]  # mm above endpoints to move to in between points
 
         self.connect()  # connect by default
+        print("gantry connected")
 
     # communication methods
     def connect(self):
@@ -144,6 +147,7 @@ class Gantry:
                     y = float(re.findall(r"Y:(\S*)", line)[0])
                     z = float(re.findall(r"Z:(\S*)", line)[0])
                     found_coordinates = True
+                    # print(f'Home is @ [{x}, {y}, {z}]')
                     break
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)

@@ -14,6 +14,7 @@ from datetime import datetime
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    print(f)
     constants = yaml.load(f, Loader=yaml.Loader)
 
 # spincoater_serial_number = constants["spincoater"]["serialid"]
@@ -119,13 +120,23 @@ class SpinCoater:
         self._libfibre_watchdog.start()
         self._error_log = []
 
-    def disconnect(self):
+    def disconnect(self, reboot = False):
         self.__connected = False
         self._libfibre_watchdog.join()
         # this always throws an "object lost" error...which is what we want
         try:
-            self.odrv0._destroy()
-        except:
+            # print(self.odrv0.__dict__)
+            if reboot:            
+                print('rebooting instead')
+                self.odrv0.reboot()
+            else:
+                print('destroying')
+                self.odrv0._destroy()
+            # print(self.odrv0.__dict__)
+
+        except Exception as e:
+            print('Oh no the odrive is gone')
+            print(f"Error: {e}")
             pass  # this always throws an "object lost" error...which is what we want
 
     # position calibration methods
@@ -222,16 +233,25 @@ class SpinCoater:
         routine to lock rotor in registered position for sample transfer
         """
         if self._locked:
+            print('spincoater is already locked')
             return
+        print('starting sc.lock()')
+        print(f"\tcurrent position: {self.axis.encoder.pos_circular}")
+        print(f"\tHome Position: {self.__HOMEPOSITION}")
         if self.axis.current_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         time.sleep(self.COMMUNICATION_INTERVAL)
+        if (self.axis.encoder.pos_circular - self.__HOMEPOSITION) < 0.05:
+            self.axis.controller.input_pos = self.axis.encoder.pos_circular + 0.2
+        time.sleep(self.COMMUNICATION_INTERVAL)
+        time.sleep(self.COMMUNICATION_INTERVAL)
         self.axis.controller.input_pos = self.__HOMEPOSITION
         time.sleep(self.COMMUNICATION_INTERVAL)
         t0 = time.time()
+        print(f"\tStarting to find home: {t0}")
         while (
             np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.05
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
@@ -240,12 +260,16 @@ class SpinCoater:
                 print("resetting")
                 self.reset()
                 t0 = time.time()
+        tf = time.time()
+        print(f"\tWe Found Home: {tf}")
         self._locked = True
 
     def reset(self):
         try:
+            print('Disconnecting from odrive')
             self.disconnect()
         except:
+            print('There was an error during sc.disconnect()')
             pass
         self.connect()
         # self.lock()
@@ -304,13 +328,17 @@ class SpinCoater:
     # logging code
     def __logging_worker(self):
         t0 = time.time()
-        self.__logdata = {"time": [], "rpm": []}
+        self.__logdata = {"time": [], "rpm": [], "pos": []}
         while self.__logging_active:
             if self.__connected:
                 self.__logdata["time"].append(time.time() - t0)
                 self.__logdata["rpm"].append(
                     self.axis.encoder.vel_estimate * 60
                 )  # rps from odrive -> rpm
+                self.__logdata["pos"].append(
+                    # self.axis.encoder.pos_estimate
+                    self.axis.encoder.pos_circular
+                ) # radial position from odrive
             time.sleep(self.LOGGINGINTERVAL)
 
     def start_logging(self):
