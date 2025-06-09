@@ -377,6 +377,7 @@ class Maestro:
         Raises:
             ValueError: Sample has been dropped during transit
         """
+        print(f'\ttransfering from {p1} to {p2}')
         self.open_to_catch()  # open the grippers
         if all(
             [a == b for a, b in zip(p1, self.spincoater())]
