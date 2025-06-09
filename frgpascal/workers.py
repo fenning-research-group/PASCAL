@@ -481,9 +481,12 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         self.liquidhandler.server.completed_tasks[taskid] - t0
                     )  # save the completion time of the liquidhandler task
                     print(
-                        f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {taskid}"
+                        f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {task}, {taskid}"
                     )
                 await asyncio.sleep(0.1)
+            if abs(self.maestro.nist_time - t0) > 140:
+                print('taking toooooooooo long, ending the lh while loop')
+                break
         print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
         return completed_tasks
 
