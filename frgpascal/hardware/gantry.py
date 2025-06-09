@@ -118,7 +118,7 @@ class Gantry:
         self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
-        self.set_speed_percentage(100)  # set speed to 80% of max
+        self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -268,7 +268,7 @@ class Gantry:
         except:
             pass
         x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
-
+        print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
         if speed is None:
             speed = self.speed
         if (x == self.position[0]) and (y == self.position[1]):

@@ -12,7 +12,7 @@ gantry:
 
   # movement
   positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
-  speed_max: 20000 #max gantry speed, mm/min
+  speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
   idle_coordinates: [192.25, 60, 95] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras

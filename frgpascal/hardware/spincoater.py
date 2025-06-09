@@ -302,18 +302,26 @@ class SpinCoater:
         stop rotation and locks the rotor in position
         """
         if self._locked:
+            print("SpinCoater is already locked!")
             return
+        print("let's slow it down now")
         self.set_rpm(0, 500)  # using 500 as a safe decceleration speed
         t0 = time.time()
+        t_0 = time.time()
         min_stopped_time = 2
         while True:
             if self.axis.encoder.vel_estimate > 0:
                 t0 = time.time()
             if time.time() - t0 > min_stopped_time:
                 break
+            if abs(time.time() - t_0) > 20: # using 20 seconds as reasonable stop time for 8k rpm
+                break
             time.sleep(0.1)
+        print(f"\tSpinCoater says it is stopped now")
         self.lock()
+        print(f"\tSpinCoater says it is locked now")
         self.idle()
+        print(f"\tSpinCoater says it is idle now")
 
     def idle(self):
         if self.axis.current_state != AXIS_STATE_IDLE:
