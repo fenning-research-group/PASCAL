@@ -472,13 +472,12 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
         completed_tasks = {}
-        print(f"lh tasks:{liquidhandlertasks}")
-        gamma = 0
+        # print(f"lh tasks: {liquidhandlertasks}")
         while len(liquidhandlertasks) > len(completed_tasks):
-            print(f"iteration: {gamma}, tasks_done: {len(completed_tasks)}")
+            # print(f"iteration: {gamma}, tasks_done: {len(completed_tasks)}")
             for task, taskid in liquidhandlertasks.items():
                 if task in completed_tasks:
-                    print(f"\t\ttask {taskid} already done!")
+                    # print(f"\t\ttask {taskid} already done!")
                     continue  # already got this one, skip
                 if taskid in self.liquidhandler.server.completed_tasks:
                     completed_tasks[task] = (
@@ -488,7 +487,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {task}, {taskid}"
                     )
                 await asyncio.sleep(0.1)
-            gamma +=1
+            if abs(self.maestro.nist_time - t0) > 140:
+                print(f'\ttaking toooooo long, ending the lh while loop')
+                break
         print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
         return completed_tasks
 
