@@ -31,7 +31,7 @@ class Gantry:
 		self.MAXANGLE = 127
 		self.MINANGLE = 57
 		self.MINWIDTH = 8
-		self.MAXWIDTH = 33 #max gripper width, in mm
+		self.MAXWIDTH = 13 #max gripper width, in mm
 		self.GRIPRATE = 10 #default gripper open/close rate, mm/s
 		self.GRIPINTERVAL = 0.05 #gripper open/close motions interpolated onto this time interval, s
 		self.GRIPSTEP = self.GRIPRATE * self.GRIPINTERVAL
