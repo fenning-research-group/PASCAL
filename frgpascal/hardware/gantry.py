@@ -268,7 +268,7 @@ class Gantry:
         except:
             pass
         x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
-        print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
+        # print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
         if speed is None:
             speed = self.speed
         if (x == self.position[0]) and (y == self.position[1]):
