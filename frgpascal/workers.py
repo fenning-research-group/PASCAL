@@ -210,62 +210,62 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
             "spincoater_to_hotplate": task_tuple(
                 function=self.spincoater_to_hotplate,
-                estimated_duration=22,
+                estimated_duration=27, #if speeding up, then 22
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_storage": task_tuple(
                 function=self.spincoater_to_storage,
-                estimated_duration=19,
+                estimated_duration=30, #if speeding up, then 19
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_characterization": task_tuple(
                 function=self.spincoater_to_characterization,
-                estimated_duration=23,
+                estimated_duration=33, #if speeding up, then 23
                 other_workers=[Worker_SpincoaterLiquidHandler, Worker_Characterization],
             ),
             "hotplate_to_spincoater": task_tuple(
                 function=self.hotplate_to_spincoater,
-                estimated_duration=16,
+                estimated_duration=33, #if speeding up, then 16
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "hotplate_to_storage": task_tuple(
                 function=self.hotplate_to_storage,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[],
             ),
             "hotplate_to_characterization": task_tuple(
                 function=self.hotplate_to_characterization,
-                estimated_duration=9,
+                estimated_duration=18, #if speeding up, then 9
                 other_workers=[Worker_Characterization],
             ),
             "storage_to_spincoater": task_tuple(
                 function=self.storage_to_spincoater,
-                estimated_duration=16,
+                estimated_duration=33, #if speeding up, then 16
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "storage_to_hotplate": task_tuple(
                 function=self.storage_to_hotplate,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[],
             ),
             "storage_to_characterization": task_tuple(
                 function=self.storage_to_characterization,
-                estimated_duration=8,
+                estimated_duration=15, #if speeding up, then 8
                 other_workers=[Worker_Characterization],
             ),
             "characterization_to_spincoater": task_tuple(
                 function=self.characterization_to_spincoater,
-                estimated_duration=18,
+                estimated_duration=33, #if speeding up, then 18
                 other_workers=[Worker_Characterization, Worker_SpincoaterLiquidHandler],
             ),
             "characterization_to_hotplate": task_tuple(
                 function=self.characterization_to_hotplate,
-                estimated_duration=9,
+                estimated_duration=18, #if speeding up, then 9
                 other_workers=[Worker_Characterization],
             ),
             "characterization_to_storage": task_tuple(
                 function=self.characterization_to_storage,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[Worker_Characterization],
             ),
         }

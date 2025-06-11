@@ -170,6 +170,7 @@ class Gantry:
         # self.movetoclear()
         self.write("G28 X Y Z")
         self.update()
+        self.movetoclear()
 
     def _target_frame(self, x, y, z):
         """Checks whether a target coordinate is within the liquid handler (OT2), workspace (over the breadboard), or invalid coordinate frames
@@ -212,7 +213,7 @@ class Gantry:
     def _move_below_opentrons_limits(self, x, y, z):
         self._movecommand(x, y, z, speed=self.speed)
 
-    def premove(self, x, y, z, zhop=True):
+    def premove(self, x, y, z, zhop=True, original_pascal = True):
         """
         checks to confirm that all target positions are valid
         """
@@ -229,32 +230,41 @@ class Gantry:
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
+        print(target_frame)
+        cur_frames = list(self.__FRAMES.keys())
+        if target_frame not in cur_frames:
+            print(f"frame {target_frame} is not in the defined frames!")
         if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
-
-        # checks to see if current z is more than 5mm below opentrons limits
-        # and same for y
-        opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 3
-        opentrons_y_min_limit = 60
-        if self.__currentframe != target_frame and not zhop:
-            # if z > opentrons_z_max_limit:
-            #     z = opentrons_z_max_limit
-            # if y < opentrons_y_min_limit:
-            #     y = opentrons_y_min_limit
-            self._movecommand(
-                self.position[0],
-                self.position[1],
-                opentrons_z_max_limit,
-                speed=self.speed,
-                m400=True,
-            )
-            self._movecommand(
-                self.position[0],
-                opentrons_y_min_limit,
-                self.position[2],
-                speed=self.speed,
-                m400=True,
-            )
+        if original_pascal:
+            if self.__currentframe != target_frame:
+                self._transition_to_frame(target_frame)
+        else:
+            # checks to see if current z is more than 5mm below opentrons limits
+            # and same for y
+            opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 3
+            opentrons_y_min_limit = 60
+            if self.__currentframe != target_frame and not zhop:
+                # if z > opentrons_z_max_limit:
+                #     z = opentrons_z_max_limit
+                # if y < opentrons_y_min_limit:
+                #     y = opentrons_y_min_limit
+                self._movecommand(
+                    self.position[0],
+                    self.position[1],
+                    opentrons_z_max_limit,
+                    speed=self.speed,
+                    m400=True,
+                )
+                self._movecommand(
+                    self.position[0],
+                    opentrons_y_min_limit,
+                    self.position[2],
+                    speed=self.speed,
+                    m400=True,
+                )
+            elif self.__currentframe != target_frame and zhop:
+                print("This motion wants to zhop while doing a frame transition!")
 
         return x, y, z
 
