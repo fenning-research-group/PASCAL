@@ -437,6 +437,11 @@ class Maestro:
             self.gantry._transition_to_frame(
                 "workspace"
             )  # move gantry out of the liquid handler
+            try:
+                print(self.gantry.__currentframe)
+            except:
+                print('uh-oh, trying to reach gantry.__currentframe failed')
+                pass
             self.spincoater.idle()  # dont actively hold chuck in registered position
 
     ### Batch Sample Execution

@@ -55,7 +55,7 @@ class Gantry:
         self.__currentframe = None
         self.__ZLIM = None  # ceiling for current frame
 
-        self._original_pascal = True # False to revert to May 2025 gantry behavior.
+        self._original_pascal = False # False to revert to May 2025 gantry behavior.
 
         self.position = [
             None,
@@ -159,7 +159,9 @@ class Gantry:
             self.__ZLIM = (
                 self.__FRAMES["opentrons"]["z_max"] - 3
             )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
-
+        # self.__ZLIM = (
+        #         self.__FRAMES["opentrons"]["z_max"] - 3
+        #     )  
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
 
@@ -190,10 +192,13 @@ class Gantry:
         """
         for frame, lims in self.__FRAMES.items():
             if x < lims["x_min"] or x > lims["x_max"]:
+                print(f"\t{x} is outside bounds")
                 continue
             if y < lims["y_min"] or y > lims["y_max"]:
+                print(f"\t{y} is outside bounds")
                 continue
             if z < lims["z_min"] or z > lims["z_max"]:
+                print(f"\t{z} is outside bounds")
                 continue
             return frame
         return "invalid"
@@ -203,14 +208,16 @@ class Gantry:
             self._movecommand(
                 self.position[0],
                 y = self.position[1],
-                z = self.TRANSITION_COORDINATES[2],
+                z = self.TRANSITION_COORDINATES[2] - 1, #to be within bounds of opentrons
+                speed = self.speed,
             )
-        self._movecommand(
-            x=self.position[0],
-            y=self.position[1],
-            z=self.__ZLIM,
-            speed=self.speed,
-        )  # move just in z
+        else:
+            self._movecommand(
+                x=self.position[0],
+                y=self.position[1],
+                z=self.__ZLIM,
+                speed=self.speed,
+            )  # move just in z
 
         # nudge the gantry into the target frame
         x, y, z = self.TRANSITION_COORDINATES
@@ -249,6 +256,7 @@ class Gantry:
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
         if self._original_pascal:
             if self.__currentframe != target_frame:
+                print(f"\ttime to transition to a new frame")
                 self._transition_to_frame(target_frame)
         else:
             # checks to see if current z is more than 5mm below opentrons limits
