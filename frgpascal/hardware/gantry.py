@@ -55,6 +55,8 @@ class Gantry:
         self.__currentframe = None
         self.__ZLIM = None  # ceiling for current frame
 
+        self._original_pascal = True # False to revert to May 2025 gantry behavior.
+
         self.position = [
             None,
             None,
@@ -151,9 +153,12 @@ class Gantry:
                     break
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
-        self.__ZLIM = (
-            self.__FRAMES["opentrons"]["z_max"] - 3
-        )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
+        if self._original_pascal:
+            self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
+        else:
+            self.__ZLIM = (
+                self.__FRAMES["opentrons"]["z_max"] - 3
+            )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
 
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
@@ -194,6 +199,12 @@ class Gantry:
         return "invalid"
 
     def _transition_to_frame(self, target_frame):
+        if self._original_pascal:
+            self._movecommand(
+                self.position[0],
+                y = self.position[1],
+                z = self.TRANSITION_COORDINATES[2],
+            )
         self._movecommand(
             x=self.position[0],
             y=self.position[1],
@@ -213,7 +224,7 @@ class Gantry:
     def _move_below_opentrons_limits(self, x, y, z):
         self._movecommand(x, y, z, speed=self.speed)
 
-    def premove(self, x, y, z, zhop=True, original_pascal = True):
+    def premove(self, x, y, z, zhop=True):
         """
         checks to confirm that all target positions are valid
         """
@@ -236,7 +247,7 @@ class Gantry:
             print(f"frame {target_frame} is not in the defined frames!")
         if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
-        if original_pascal:
+        if self._original_pascal:
             if self.__currentframe != target_frame:
                 self._transition_to_frame(target_frame)
         else:
@@ -277,7 +288,10 @@ class Gantry:
                 x, y, z = x  # split 3 coordinates into appropriate variables
         except:
             pass
-        x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
+        if self._original_pascal:
+            x, y, z = self.premove(x, y, z) # will error out if invalid move
+        else:
+            x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
         # print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
         if speed is None:
             speed = self.speed
@@ -292,10 +306,14 @@ class Gantry:
             z_ceiling = min(
                 z_ceiling, self.__ZLIM
             )  # cant z-hop above build volume. mostly here for first move after homing.
-
-            self.moveto(z=self.__ZLIM, zhop=False, speed=speed, m400=m400)
-            self.moveto(x, y, self.__ZLIM, zhop=False, speed=speed, m400=m400)
-            self.moveto(z=z, zhop=False, speed=speed, m400=True)
+            if self._original_pascal:
+                self.moveto(z=z_ceiling, zhop = False, speed = speed)
+                self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
+                self.moveto(z=z, zhop=False, speed=speed)
+            else:
+                self.moveto(z=self.__ZLIM, zhop=False, speed=speed, m400=m400)
+                self.moveto(x, y, self.__ZLIM, zhop=False, speed=speed, m400=m400)
+                self.moveto(z=z, zhop=False, speed=speed, m400=True)
 
         else:
             self._movecommand(x, y, z, speed, m400)
@@ -313,8 +331,10 @@ class Gantry:
         else:
             self.__targetposition = [x, y, z]
             self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
-
-            return self._waitformovement(m400)
+            if self._original_pascal:
+                return self._waitformovement()
+            else:
+                return self._waitformovement(m400)
 
     def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
         """
@@ -338,8 +358,11 @@ class Gantry:
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        if m400 is True:
-            self._handle.write(f"M400\n".encode())
+        if self._original_pascal:
+            self._handle.write(f"M444\n".encode())
+        else:
+            if m400 is True:
+                self._handle.write(f"M400\n".encode())
 
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
 
