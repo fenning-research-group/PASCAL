@@ -422,7 +422,7 @@ class Maestro:
             )  # overshoot z to press sample onto o-ring on spincoater chuck
         else:
             self.gantry.moveto(
-                p2, zhop=zhop
+                p2, zhop=True
             )  # if not dropped, move to the final position
 
         # time.sleep(2)
@@ -438,9 +438,9 @@ class Maestro:
                 "workspace"
             )  # move gantry out of the liquid handler
             try:
-                print(self.gantry.__currentframe)
+                print(self.gantry._target_frame(*self.position))
             except:
-                print('uh-oh, trying to reach gantry.__currentframe failed')
+                print("uh-oh, trying to determine gantry's frame failed")
                 pass
             self.spincoater.idle()  # dont actively hold chuck in registered position
 
