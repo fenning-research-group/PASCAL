@@ -153,6 +153,7 @@ class Gantry:
                     break
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
+        print(f"\t\t{self.__currentframe}")
         if self._original_pascal:
             self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
         else:
