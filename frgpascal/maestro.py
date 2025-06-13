@@ -438,9 +438,10 @@ class Maestro:
                 "workspace"
             )  # move gantry out of the liquid handler
             try:
-                print(self.gantry._target_frame(*self.position))
+                print(self.gantry._target_frame(*self.gantry.position))
             except:
                 print("uh-oh, trying to determine gantry's frame failed")
+                print(f"\tfailed for position {self.gantry.position}")
                 pass
             self.spincoater.idle()  # dont actively hold chuck in registered position
 
