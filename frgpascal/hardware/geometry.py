@@ -15,6 +15,9 @@ import yaml
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    constants = yaml.load(f, Loader=yaml.FullLoader)
+
 
 class CoordinateMapper:
     """Transforms from one coordinate system (source) to another (destination)
@@ -198,11 +201,15 @@ class Workspace:
 
     def __call__(self, name):
         return self.slot_coordinates(name)
-
+    
+    
     def calibrate(self):
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
+        self.gripper.GRIPPERTIMEOUT = (
+            69420  # prevents the gripper from closing during calibration of sampletray
+        )
         self.gripper.open(self.OPENWIDTH)
         self.transform = map_coordinates(
             self.name,
@@ -212,6 +219,24 @@ class Workspace:
             self.z_clearance,
         )
         self.__calibrated = True
+        self.GRIPPERTIMEOUT = constants["gripper"][
+            "idle_timeout"
+        ]  # reset to the hardware constants value
+
+    # def calibrate(self):
+    #     if self.__is_simulation:
+    #         raise Exception("Cannot calibrate a simulated workspace")
+    #     self.gantry.moveto(*self.p0)
+    #     self.gripper.open(self.OPENWIDTH)
+
+    #     self.transform = map_coordinates(
+    #         self.name,
+    #         self.testslots,
+    #         self.testpoints,
+    #         self.gantry,
+    #         self.z_clearance,
+    #     )
+    #     self.__calibrated = True
 
     # def _save_calibration(self):
     #     if not self.__calibrated:
