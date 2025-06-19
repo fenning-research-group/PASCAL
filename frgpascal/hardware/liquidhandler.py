@@ -226,12 +226,17 @@ class OT2Server:
     ### Server Methods
     async def __connect_to_websocket(self):
         try:
+            print(f"\t\ttrying to delete self.websocket attribute")
             del self.websocket
+            print(f'\t\tsuccessfully deleted self.websocket attribute')
         except:
+            print(f"\t\tfailed to delete self.websocket attribute.\n\t\t\to.k. if first sample, weird otherwise")
             pass  # if this is the first time, we wont have a websocket. thats fine
+        print(f"\t\tattempting to connect to websocket with uri address: {self.uri}")
         self.websocket = await websockets.connect(
             self.uri, ping_interval=20, ping_timeout=300
         )
+        print(f"\t\tseems to have connected?")
 
     def start(self, ip=None, port=None):
         if ip is not None:

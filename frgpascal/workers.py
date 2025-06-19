@@ -849,8 +849,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         Returns:
             record: dictionary of recorded spincoating process.
         """
+        print(f"\tstarting Spincoat of {sample}")
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
-
+        print(f"\tliquidhandler.server._start_directly() finished compiling")
         t0 = self.maestro.nist_time
         self.spincoater.start_logging()
         ### set up liquid handler tasks

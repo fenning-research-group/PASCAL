@@ -38,8 +38,8 @@ gantry:
     x_max: 192.25
     x_min: 0
     y_max: 200.7
-    y_min: 0
-    z_max: 80
+    y_min: 2
+    z_max: 75
     z_min: 0
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
   transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
@@ -52,11 +52,11 @@ gripper:
     serial_number: "DN066QRWA"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
-  width_max: 12 #maximum opening width (mm)
+  width_max: 13 #maximum opening width (mm)
   width_min: 0 #minimum opening width (mm)
-  pwm_max: 720 ##1300 #pulse width (us) corresponding to maximum width
+  pwm_max: 780 ##1300 #pulse width (us) corresponding to maximum width
   pwm_min: 0  ##740 #pulse width (us) corresponding to minimum width
-  extra_opening_width_pick: 2.0 #extra width (mm) to open gripper when moving to pick up a sample
+  extra_opening_width_pick: 2.3 #extra width (mm) to open gripper when moving to pick up a sample
   extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
@@ -124,7 +124,7 @@ spincoater:
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
-  p0: [4.6, 16.0, 74.1] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  p0: [4.6, 16.0, 64] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
   rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 200 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
