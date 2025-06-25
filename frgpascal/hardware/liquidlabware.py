@@ -3,6 +3,7 @@ import json
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 from frgpascal.experimentaldesign.tasks import Solution
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -200,7 +201,7 @@ class LiquidLabware:
         self._openwells = natsorted(self._openwells)
         self.contents = newcontents
 
-    def plot(self, solution_details=None, ax=None):
+    def plot(self, solution_details=None, ax=None, updated_colorscheme=True):
         """
         plot labware w/ solution occupants
         """
@@ -217,6 +218,41 @@ class LiquidLabware:
         yvals = np.unique([y for _, y, _ in self._coordinates.values()])
         markersize = 15
 
+        if updated_colorscheme:
+            cmap_x = plt.get_cmap('brg', len(xvals))  # force exactly 12 discrete colors
+            cmap_y = plt.get_cmap('tab10', len(yvals))
+            
+            norm_x = Normalize(vmin = min(xvals), vmax = max(xvals))
+            norm_y = Normalize(vmin = min(yvals), vmax = max(yvals))
+            marker_dict = {}
+            markers = ['o', 'H', 'D', 'p', 'h', 's']
+            markers_dict = {}
+            for j, y in enumerate(yvals):
+                if j >= len(markers):
+                    # print(j)
+                    j = j - len(markers)
+                    # print(j)
+                # print(j)
+                markers_dict[y] = markers[j]
+            line_options = ['solid', 'dotted', '--', '-.']
+            lines_dict = {}
+            for j, x in enumerate(np.unique(xvals)):
+                if j >= len(line_options):
+                    if j >= 2*len(line_options):
+                        j = j - 2*len(line_options)
+                        # print(j)
+                    elif j >= 3*len(line_options):
+                        j = j - 3*len(line_options)
+
+                    elif j >= 4*len(line_options):
+                        j = j - 4*len(line_options)
+                    else:
+                        j = j - len(line_options)
+                    print(j)
+                # print(j)
+                lines_dict[x] = line_options[j]
+
+
         for k, (x, y, z) in self._coordinates.items():
             if k in self.contents:
                 solution = self.contents[k]
@@ -231,16 +267,30 @@ class LiquidLabware:
                         fillstyle = "none"
                     else:
                         label = f"{volume} uL " + label
-
-                ax.plot(
+                if updated_colorscheme:
+                    ax.plot(
                     x,
                     y,
                     label=label,
-                    marker="o",
-                    linestyle="none",
+                    marker = marker_dict[y],
+                    linestyle = lines_dict[x],
+                    # marker="o",
+                    # linestyle="none",
                     markersize=markersize,
                     fillstyle=fillstyle,
+                    color = cmap_x(norm_x(x)),
+                    edgecolor = cmap_y(norm_y(y)),
                 )
+                else:
+                    ax.plot(
+                        x,
+                        y,
+                        label=label,
+                        marker="o",
+                        linestyle="none",
+                        markersize=markersize,
+                        fillstyle=fillstyle,
+                    )
             elif k in self._unavailablewells:
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
