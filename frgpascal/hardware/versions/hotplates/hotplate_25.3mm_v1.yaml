@@ -1,0 +1,11 @@
+## Big hotplate from CV Setup
+
+samplewidth: 25.3 #intended sample width (mm)
+xpitch: 27.5 #horizontal center-center distance (mm) between adjacent slots
+ypitch: 30.3 #vertical center-center distance (mm) between adjacent slots
+numx: 3 #number of slot columns
+numy: 3 #number of slot rows
+z_clearance: 5 #extra z clearance for gantry to use when calibrating positions
+temperature_max: 200 #max temperature (Celsius)
+temperature_min: 30 #min temperature (Celsius)
+testslots: ["C1", "C3", "A3", "A1"] #slots to touch during calibration
