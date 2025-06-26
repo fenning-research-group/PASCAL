@@ -219,12 +219,12 @@ class LiquidLabware:
         markersize = 15
 
         if updated_colorscheme:
-            cmap_x = plt.get_cmap('brg', len(xvals))  # force exactly 12 discrete colors
+            cmap_x = plt.get_cmap('plasma', len(xvals)) 
             cmap_y = plt.get_cmap('tab10', len(yvals))
             
             norm_x = Normalize(vmin = min(xvals), vmax = max(xvals))
             norm_y = Normalize(vmin = min(yvals), vmax = max(yvals))
-            marker_dict = {}
+            
             markers = ['o', 'H', 'D', 'p', 'h', 's']
             markers_dict = {}
             for j, y in enumerate(yvals):
@@ -272,14 +272,16 @@ class LiquidLabware:
                     x,
                     y,
                     label=label,
-                    marker = marker_dict[y],
+                    marker = markers_dict[y],
                     linestyle = lines_dict[x],
+                    # linewidth = 7,
                     # marker="o",
                     # linestyle="none",
                     markersize=markersize,
                     fillstyle=fillstyle,
-                    color = cmap_x(norm_x(x)),
-                    edgecolor = cmap_y(norm_y(y)),
+                    markerfacecolor = cmap_x(norm_x(x)),
+                    markeredgecolor = cmap_y(norm_y(y)),
+                    markeredgewidth=3
                 )
                 else:
                     ax.plot(
@@ -298,7 +300,18 @@ class LiquidLabware:
 
         plt.sca(ax)
         ax.set_aspect("equal")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+        if updated_colorscheme:
+            plt.legend(
+                bbox_to_anchor=(1.05, 1),
+                loc=2,
+                handleheight=2,
+                labelspacing=1.5,
+                handletextpad=1.0,
+                borderpad=1.0,
+                borderaxespad=0.0,
+            )
+        else:
+            plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         plt.title(self.name)
         plt.yticks(
             yvals[::-1],
