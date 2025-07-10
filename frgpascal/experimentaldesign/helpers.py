@@ -677,7 +677,7 @@ class PASCALPlanner:
         plt.savefig(filename, bbox_inches="tight")
         print(f'schedule image saved to "{filename}"')
 
-    def export(self):
+    def export(self, new_ll_export = True):
         ## plot solution destinations
         ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
 
@@ -691,6 +691,7 @@ class PASCALPlanner:
                 ax = [ax]
             for ll, ax_ in zip(ll_with_solutions, ax):
                 ll.plot(solution_details=self.solution_details, ax=ax_)
+            # plt.tight_layout()
             plt.savefig(f"solutionmap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
 
             ## write solution details to csv
