@@ -202,7 +202,7 @@ class LiquidLabware:
         self._openwells = natsorted(self._openwells)
         self.contents = newcontents
 
-    def plot(self, solution_details=None, ax=None, updated_colorscheme=True):
+    def plot(self, solution_details=None, ax=None, directory = None, updated_colorscheme=True):
         """
         plot labware w/ solution occupants
         """
@@ -319,3 +319,7 @@ class LiquidLabware:
             [chr(65 + i) for i in range(len(yvals))],
         )
         plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
+
+        if directory is not None:
+            fp = os.path.join(directory, f'solutionmap_{self.name}.jpeg')
+            plt.savefig(fp, dpi = 150, bbox_inches="tight")
