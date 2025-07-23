@@ -125,7 +125,7 @@ class PLImaging(CharacterizationTask):
 
 class TransmissionSpectroscopy(CharacterizationTask):
     def __init__(
-        self, exposure_times=[0.02, 0.05, 0.2, 1, 5, 15], num_scans=2, jitter=0
+        self, exposure_times=[1, 2], num_scans=2, jitter=0
     ):
         for et in exposure_times:
             if et < 0.02 or et > 60:

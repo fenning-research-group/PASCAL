@@ -366,7 +366,7 @@ class Maestro:
             load = float(self.gripper._handle.readline())
         return load
 
-    def transfer(self, p1, p2, zhop=True):
+    def transfer(self, p1, p2, zhop=True, brute_force=False):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -377,6 +377,27 @@ class Maestro:
         Raises:
             ValueError: Sample has been dropped during transit
         """
+        if brute_force:
+            if self.characterization is not None:
+                # moving between sample trays and cl.axis(0)
+                print('Time to manually move the next sample onto the cl.axis() diving board!')
+                response =input(
+                    "Did you place the correct sample onto the characterization line? (y/n)"
+                )
+                if response in ["y", "Y"]:
+                    pass
+                else:
+                    response = input(
+                        "Double-check that you placed the proper sample in the cl.axis() position! (y/n)"
+                    )
+                    if response in ["y", "Y"]:
+                        pass
+                    else:
+                        raise ValueError("The user input to the prompted question was not a valid option.")
+            # else:
+            #     # moving between sample trays, hotplates, spincoater
+            #     raise ValueError(f"This setting should not be used when the hotplate/spincoater are in use, it will mess up the timing of spincoat + anneal delays!\n\treset self._brute_force to be False, then try again.")
+
         print(f'\ttransfering from {p1} to {p2}')
         self.open_to_catch()  # open the grippers
         if all(

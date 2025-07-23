@@ -303,6 +303,7 @@ class CharacterizationAxis:
 
         self.__targetposition = x
         if self.__targetposition == self.position:
+            # print('pascal evil')
             return False  # already at target position
         return True
 
@@ -324,22 +325,53 @@ class CharacterizationAxis:
         confirm that characterizationline has reached target position. returns False if
         target position is not reached in time allotted by self.characterizationlineTIMEOUT
         """
+        print(f"\ttarget position: {self.__targetposition}")
+        print(f"\tcurrent position: {self.position}")
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
+        time_elapsed_2 = time.time() - start_time
         self._handle.write(f"M400\n".encode())
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
         reached_destination = False
         while not reached_destination and time_elapsed < self.TIMEOUT:
             time.sleep(self.POLLINGDELAY)
+            print(f"{self._handle.in_waiting} nawwww")
+            while not self._handle.in_waiting and time_elapsed_2 < self.TIMEOUT:
+                time.sleep(2*self.POLLINGDELAY)
+                print('waiting for serial.Serial to have nonzero bytes available to read')
+                time_elapsed_2 = time.time() - start_time
             while self._handle.in_waiting:
                 line = self._handle.readline().decode("utf-8").strip()
                 if line == "echo:FinishedMoving":
+                    print(f"\t\tEncoder thinks we have finished moving, time to update our self.position")
                     self.update()
+                    print(f"\t\tOur updated position has been saved as {self.position}")
                     if self.position - self.__targetposition < self.POSITIONTOLERANCE:
+                        print(f"\tSUCCESS!")
                         reached_destination = True
+                    else:
+                        print("pascal evil yet again")
+                else:
+                    print(f"\tOutput message from the self._handle:\n\t\t{line}")
                 time.sleep(self.POLLINGDELAY)
             time_elapsed = time.time() - start_time
+
+        if (time_elapsed >= self.TIMEOUT) or (time_elapsed_2 >= self.TIMEOUT):
+            print("cl.axis._waitformovement timed-out, so the final position of the motor was not updated from the initial position.")
+            print("time for the backup position definition while-loop")
+            reached_destination = False
+            while not reached_destination:
+                time.sleep(self.POLLINGDELAY)
+                position0 = self._getposition()
+                time.sleep(self.POLLINGDELAY*5)
+                position1 = self._getposition()
+                if position0 == position1:
+                    if position0 is not None:
+                        self.position = position0
+                        print(f"\tposition has been brute-forced to update to the current location of {self.position}")
+                    elif position0 is None:
+                        raise ValueError("cl.axis._getposition failed to return a valid position!")
 
         self.inmotion = False
         return reached_destination
@@ -353,10 +385,23 @@ class CharacterizationAxis:
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     found_coordinates = True
                     break
+        print(f"\tWithin self.update, the found_coordinates conditional has been defined to be {found_coordinates}")
         self.position = x
 
     def movetotransfer(self):
         self.moveto(self.TRANSFERPOSITION)
+
+    def _getposition(self):
+        x = None
+        found_coordinates = False
+        while not found_coordinates:
+            output = self.write("M114") # get current position
+            for line in output:
+                if line.startwith("X:"):
+                    x = float(re.findall(r"X:(\S*)", line)[0])
+                    found_coordinates = True
+                    break
+        return x
 
 
 ### Station Methods

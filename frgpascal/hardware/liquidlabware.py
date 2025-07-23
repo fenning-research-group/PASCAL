@@ -182,7 +182,8 @@ class LiquidLabware:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
         self._openwells.append(well)
         self._openwells = natsorted(self._openwells)
-        return self.contents.pop(well)[0]
+        # return self.contents.pop(well)[0]
+        return self.contents.pop(well)
 
     def __repr__(self):
         out = f"<LiquidLabware> {self.name}, {self.volume/1e3} mL volume, {self.capacity} wells"
