@@ -397,7 +397,7 @@ class CharacterizationAxis:
         while not found_coordinates:
             output = self.write("M114") # get current position
             for line in output:
-                if line.startwith("X:"):
+                if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     found_coordinates = True
                     break
