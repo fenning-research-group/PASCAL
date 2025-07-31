@@ -77,6 +77,7 @@ class Gantry:
         ]  # mm above endpoints to move to in between points
 
         self.connect()  # connect by default
+        self.in_use = True
         print("gantry connected")
 
     # communication methods

@@ -236,16 +236,19 @@ class CharacterizationAxis:
         # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.moveto(self.TRANSFERPOSITION)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = np.array(self.gantry.position)
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates.tolist(), f)
+        if self.gantry.in_use:
+            self.moveto(self.TRANSFERPOSITION)
+            self.gantry.moveto(*self.p0)
+            self.gantry.gui()
+            self.coordinates = np.array(self.gantry.position)
+            # self.gantry.moverel(z=10, zhop=False)
+            self.__calibrated = True
+            with open(
+                os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
+            ) as f:
+                yaml.dump(self.coordinates.tolist(), f)
+        else:
+            print("The Gantry is not being used in this PASCAL instance.")
 
     def _load_calibration(self):
         with open(

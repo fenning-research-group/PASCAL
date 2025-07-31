@@ -142,18 +142,19 @@ class SpinCoater:
     # position calibration methods
     def calibrate(self):
         """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
-        # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
-        # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
-        # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = self.gantry.position
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates, f)
+        if self.gantry.in_use:
+            # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
+            # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
+            # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
+            self.gantry.moveto(*self.p0)
+            self.gantry.gui()
+            self.coordinates = self.gantry.position
+            # self.gantry.moverel(z=10, zhop=False)
+            self.__calibrated = True
+            with open(
+                os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
+            ) as f:
+                yaml.dump(self.coordinates, f)
 
     def _load_calibration(self):
         with open(
