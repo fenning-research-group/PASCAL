@@ -6,6 +6,7 @@ from frgpascal.workers import (
     Worker_Hotplate,
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
+    Worker_HumanOperator
 )
 
 # define workers
@@ -27,8 +28,9 @@ def generate_workers(maestro=None):
     st2 = Worker_Storage(capacity=45, initial_fill=45, **kws)
     st2.name = "Tray2"
     cl = Worker_Characterization(**kws)
+    ho = Worker_HumanOperator(**kws)
 
-    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl]}
+    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl, ho]}
 
 
 ALL_WORKERS = generate_workers()
@@ -86,7 +88,8 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
         duration=ALL_TASKS[transition_name]["estimated_duration"],
         source=w1,
         destination=w2,
-        workers=[ALL_WORKERS["GantryGripper"]],
+        # workers=[ALL_WORKERS["GantryGripper"]],
+        workers=[ALL_WORKERS["HumanOperator"]],
         immediate=immediate,
     )
     this_transition.name = transition_name
