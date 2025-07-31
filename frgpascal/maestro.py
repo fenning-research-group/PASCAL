@@ -510,12 +510,35 @@ class Maestro:
                 self.spincoater.idle()
 
             # Human Operator indicates when they're done moving the sample
-            wait_for_sample_transfer_thread = Thread(
-                target = input,
-                args = (
-                    "Hit Enter Key when done moving the sample",
+            if self.characterization is not None:
+                if self.characterization.axis() in [p1, p2]:
+                    wait_for_sample_transfer_thread = Thread(
+                        target = time.sleep,
+                        args = (
+                            constants['humanoperator']['sample_transfer']['duration']['cl.axis'],
+                        )
+                    )
+                else:
+                    wait_for_sample_transfer_thread = Thread(
+                        target = time.sleep,
+                        args = (
+                            constants['humanoperator']['sample_transfer']['duration']['no_cl.axis'],
+                        )
+                    )
+            else:
+                wait_for_sample_transfer_thread = Thread(
+                    target = time.sleep,
+                    args = (
+                        constants['human_operator']['sample_transfer']['duration']['no_cl.axis'],
+                    )
                 )
-            )
+            # TODO: Replace with a user-defined end to sample_transfer waiting.
+            # wait_for_sample_transfer_thread = Thread(
+            #     target = input,
+            #     args = (
+            #         "Hit Enter Key when done moving the sample",
+            #     )
+            # )
             wait_for_sample_transfer_thread.start()
             wait_for_sample_transfer_thread.join()
 
@@ -674,6 +697,7 @@ class Maestro:
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
+        self.given_run_ip = ip
         if ip is None:
             self.liquidhandler.server.ip = get_ot2_ip()
         else:
@@ -720,7 +744,8 @@ class Maestro:
             print(f"Stopping {w} now")
             w.stop_workers()
             print(f"\tStop Successful!")
-        if self.liquidhandler.server.ip is not None:
+        # if self.liquidhandler.server.ip is not None:
+        if self.given_run_ip is not None:
             print("Stopping the liquidhandler Server Now.")
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
             print("\tStop Successful!")
@@ -733,7 +758,8 @@ class Maestro:
             print("\tRemoval Successful!")
 
         print("Maestro stopped!")
-        self.gantry.movetoclear()
+        if self.gantry.in_use and self.gripper.in_use:
+            self.gantry.movetoclear()
         # self.thread.join()
 
     def __del__(self):

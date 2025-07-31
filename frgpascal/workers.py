@@ -936,7 +936,7 @@ class Worker_HumanOperator(WorkerTemplate):
             capacity = 1
         )
         self.functions = {
-            "idle_human": task_tuple(
+            "idle_gantry": task_tuple(
                 function = self.idle_human,
                 estimated_duration = 1,
                 other_workers = []

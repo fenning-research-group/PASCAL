@@ -75,6 +75,8 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
     t1, t2 = type(w1), type(w2)
     if Worker_GantryGripper in [t1, t2]:
         continue  # no transition tasks for this worker
+    if Worker_HumanOperator in [t1, t2]:
+        continue # no transition tasks for this worker
     if t1 == t2:
         continue  # no transtion between same type (hotplate->hotplate, etc)
     immediate = False
