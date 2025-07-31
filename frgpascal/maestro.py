@@ -621,6 +621,7 @@ class Maestro:
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
+        self.given_run_ip = ip
         if ip is None:
             self.liquidhandler.server.ip = get_ot2_ip()
         else:
@@ -667,7 +668,8 @@ class Maestro:
             print(f"Stopping {w} now")
             w.stop_workers()
             print(f"\tStop Successful!")
-        if self.liquidhandler.server.ip is not None:
+        # if self.liquidhandler.server.ip is not None:
+        if self.given_run_ip is not None:
             print("Stopping the liquidhandler Server Now.")
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
             print("\tStop Successful!")
