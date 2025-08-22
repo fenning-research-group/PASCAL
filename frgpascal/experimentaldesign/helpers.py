@@ -644,9 +644,10 @@ class PASCALPlanner:
         self.mixer.print()
 
     def solve_schedule(
-        self, shuffle: bool = True, prioritize_first_spincoat: bool = False, **kwargs
+        self, shuffle: bool = True, prioritize_first_spincoat: bool = False,
+         use_gantry: bool = False, **kwargs
     ):
-        self.system: System = build()
+        self.system: System = build(use_gantry)
         if shuffle:
             sample_it = iter(random.sample(self.samples, len(self.samples)))
         else:

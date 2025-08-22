@@ -70,7 +70,10 @@ TRANSITION_TASKS = {
     },
 }
 
-transitions = []
+transitions = {
+    True: [], # use GantryGripper
+    False: [], # use HumanOperator for transitions
+}
 for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
     t1, t2 = type(w1), type(w2)
     if Worker_GantryGripper in [t1, t2]:
@@ -86,7 +89,7 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
         immediate = True  # move off of spincoater ASAP
 
     transition_name = TRANSITION_TASKS[t1][t2]
-    this_transition = rf.Transition(
+    this_transition_ho = rf.Transition(
         duration=ALL_TASKS[transition_name]["estimated_duration"],
         source=w1,
         destination=w2,
@@ -94,15 +97,26 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
         workers=[ALL_WORKERS["HumanOperator"]],
         immediate=immediate,
     )
-    this_transition.name = transition_name
-    transitions.append(this_transition)
+    this_transition_ho.name = transition_name
+    transitions[False].append(this_transition_ho)
+    this_transition_gg = rf.Transition(
+        duration = ALL_TASKS[transition_name]["estimated_duration"],
+        source = w1,
+        destination = w2,
+        workers = [ALL_WORKERS["GantryGripper"]],
+        immediate = immediate,
+    )
+    this_transition_gg.name = transition_name
+    transitions[True].append(this_transition_gg)
+    # this_transition.name = transition_name
+    # transitions.append(this_transition)
 
 
 # default system
-def build():
+def build(use_gantry):
     return rf.System(
         workers=list(ALL_WORKERS.values()),
-        transitions=transitions,
+        transitions=transitions[use_gantry],
         starting_worker=ALL_WORKERS["Tray1"],
         ending_worker=ALL_WORKERS["Tray1"],
     )

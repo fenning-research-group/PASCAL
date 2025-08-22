@@ -21,7 +21,7 @@ STATUS_ALL_DONE = 9
 
 metadata = {
     "protocolName": "Maestro Listener - Large Volume Pipette on Left, Small Volume Pipette on Right",
-    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer",
+    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer, Eric Oberholtz",
     "source": "FRG",
     "apiLevel": "2.10",
 }
@@ -112,6 +112,11 @@ class ListenerWebsocket:
 
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
+
+        # #TODO: uncomment this for eliminating opentrons shaking
+        # ## must also account for new <spincoat> spin_start delay time as speeds decrease
+        # protocol_context.max_speeds["X"] = self.SLOWEST_XY_RATE
+        # protocol_context.max_speeds["Y"] = self.SLOWEST_XY_RATE
 
     ### Time Synchronization with NIST
 
@@ -533,6 +538,10 @@ def run(protocol_context):
             is_last_transfer = []
             for destination_str, volume in destination_strings.items():
                 destination_labware, destination_well = destination_str.split("-")
+                if "96" in destination_labware:
+                    touching = False
+                else:
+                    touching = True
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
                 is_last_transfer.append(final_generation[destination_str] == gen_idx)
@@ -550,10 +559,12 @@ def run(protocol_context):
                     dest=destinations,
                     disposal_volume=0,
                     carryover=True,
+                    mix_before=(3, 50),
                     new_tip="once",
                     blow_out=True,
                     blow_out_location="source well",
                     air_gap=20,
+                    touch_tip = touching,
                 )
             else:
                 for dest, vol, last_transfer in zip(
@@ -575,8 +586,9 @@ def run(protocol_context):
                         mix_after=mix_after,
                         blow_out=True,
                         blow_out_location="destination well",
-                        touch_tip=True,
+                        touch_tip=touching,
                         air_gap=20,
+                        # touch_tip = True,
                     )
             # listener.pipettes["right"].speed = original_speed
 
