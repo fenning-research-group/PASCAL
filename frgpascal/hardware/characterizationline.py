@@ -372,6 +372,7 @@ class CharacterizationAxis:
                 if position0 == position1:
                     if position0 is not None:
                         self.position = position0
+                        reached_destination = True
                         print(f"\tposition has been brute-forced to update to the current location of {self.position}")
                     elif position0 is None:
                         raise ValueError("cl.axis._getposition failed to return a valid position!")

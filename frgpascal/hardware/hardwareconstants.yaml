@@ -205,4 +205,5 @@ humanoperator:
   sample_transfer:
     duration: 
       cl.axis: 30 # delay for manual sample transfer timing, in seconds.
-      no_cl.axis: 10 # delay for manual sample transfer timing, in seconds.
+      # no_cl.axis: 10 # delay for manual sample transfer timing, in seconds.
+      no_cl.axis: 0 # if speedy, no pauses, we ball.

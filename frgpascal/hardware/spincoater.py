@@ -252,7 +252,7 @@ class SpinCoater:
         self.axis.controller.input_pos = self.__HOMEPOSITION
         time.sleep(self.COMMUNICATION_INTERVAL)
         t0 = time.time()
-        print(f"\tStarting to find home: {t0}")
+        print(f"\tStarting to find home: \n\t\tinitial time is {t0}")
         while (
             np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.05
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
@@ -262,7 +262,7 @@ class SpinCoater:
                 self.reset()
                 t0 = time.time()
         tf = time.time()
-        print(f"\tWe Found Home: {tf}")
+        print(f"\tWe Found Home: \n\t\tfinal time is {tf}\n\t\tduration is {tf-t0}")
         self._locked = True
 
     def reset(self):

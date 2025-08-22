@@ -496,6 +496,7 @@ class Maestro:
                 lock_spincoater_thread.start() # move the spincoater to registered position
                 wait_for_vacuum_thread.join()
                 lock_spincoater_thread.join()
+                self.spincoater.idle()
                 from_spincoater = True
             else:
                 from_spincoater = False
@@ -511,25 +512,17 @@ class Maestro:
 
             # Human Operator indicates when they're done moving the sample
             if self.characterization is not None:
-                if self.characterization.axis() in [p1, p2]:
-                    wait_for_sample_transfer_thread = Thread(
-                        target = time.sleep,
-                        args = (
-                            constants['humanoperator']['sample_transfer']['duration']['cl.axis'],
-                        )
+                wait_for_sample_transfer_thread = Thread(
+                    target = time.sleep,
+                    args = (
+                        constants['humanoperator']['sample_transfer']['duration']['cl.axis'],
                     )
-                else:
-                    wait_for_sample_transfer_thread = Thread(
-                        target = time.sleep,
-                        args = (
-                            constants['humanoperator']['sample_transfer']['duration']['no_cl.axis'],
-                        )
-                    )
+                )
             else:
                 wait_for_sample_transfer_thread = Thread(
                     target = time.sleep,
                     args = (
-                        constants['human_operator']['sample_transfer']['duration']['no_cl.axis'],
+                        constants['humanoperator']['sample_transfer']['duration']['no_cl.axis'],
                     )
                 )
             # TODO: Replace with a user-defined end to sample_transfer waiting.
