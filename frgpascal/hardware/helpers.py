@@ -2,7 +2,7 @@ import serial.tools.list_ports as lp
 import sys
 import subprocess
 import re
-import wmi
+# import wmi
 
 # from test_usb_id import get_lds
 
@@ -93,6 +93,8 @@ def query_available_devices(vid, pid):
       - 'name': the device name from WMI
       - 'device_id': the full DeviceID string from WMI
     """
+    # Import wmi only if absolutely necessary:
+    import wmi
     # Convert to uppercase four-digit hex strings.
     vid_hex = format(vid, "04X")
     pid_hex = format(pid, "04X")

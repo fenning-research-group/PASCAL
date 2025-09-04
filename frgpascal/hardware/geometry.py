@@ -66,7 +66,8 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     points_source_meas = []  # source coordinates
     for slotname, p in zip(slots, points_source_guess):
         movedelta = p - p_prev  # offset between current and next point
-        gantry.moverel(*movedelta, zhop=False)  # move to next point
+        gantry.moverel(*movedelta, zhop=True) # move to next point but don't crash into samples.
+        # gantry.moverel(*movedelta, zhop=False)  # move to next point
         print(f"Move to {slotname}")
         gantry.gui()  # prompt user to align gantry to exact target location
         points_source_meas.append(gantry.position)
