@@ -226,7 +226,7 @@ class LiquidLabware:
             norm_x = Normalize(vmin = min(xvals), vmax = max(xvals))
             norm_y = Normalize(vmin = min(yvals), vmax = max(yvals))
             
-            markers = ['o', 'H', 'D', 'p', 'h', 's']
+            markers = ['o', 's', 'D', 'p', 'h', 'H']
             markers_dict = {}
             for j, y in enumerate(yvals):
                 if j >= len(markers):

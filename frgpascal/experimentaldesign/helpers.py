@@ -15,6 +15,7 @@ from frgpascal.experimentaldesign.tasks import (
 from copy import deepcopy
 import uuid
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import pandas as pd
 from frgpascal.system import generate_workers, build
 from frgpascal.workers import Worker_Hotplate
@@ -139,7 +140,7 @@ def interpolate_solutions(solutions: list, steps: int) -> list:
 #### Plot contents of sample tray for loading guidance
 
 
-def plot_tray(tray, ax=None):
+def plot_tray(tray, ax=None, updated_colorscheme = False):
     """
     plot tray w/ substrates to load prior to experiment start
     """
@@ -164,8 +165,27 @@ def plot_tray(tray, ax=None):
             empty_slots["x"].append(x)
             empty_slots["y"].append(y)
 
-    for label, c in unique_substrates.items():
-        plt.scatter(c["x"], c["y"], label=label, marker="s")
+    
+    if updated_colorscheme:
+        cmap_x = plt.get_cmap('tab10', len(xvals))
+        cmap_y = plt.get_cmap('plasma', len(yvals))
+
+        norm_x = Normalize(vmin = min(xvals), vmax = max(xvals))
+        norm_y = Normalize(vmin = min(yvals), vmax = max(yvals))
+
+        markers = ['o', 's', 'p', 'D', 'h', 'H']
+        markers_dict = {}
+        for j, x in enumerate(xvals):
+            if j >= len(markers):
+                j = j - len(markers)
+            markers_dict[x] = markers[j]
+        
+    if not updated_colorscheme:
+        for label, c in unique_substrates.items():
+            plt.scatter(c["x"], c["y"], label=label, marker="s")
+    if updated_colorscheme:
+        for label, c in unique_substrates.items():
+            plt.scatter(c["x"], c["y"], label = label, marker = markers_dict["x"], facecolors = cmap_y(norm_y(c["y"])))
     plt.scatter(empty_slots["x"], empty_slots["y"], c="gray", marker="x", alpha=0.2)
 
     plt.sca(ax)
@@ -733,7 +753,8 @@ class PASCALPlanner:
             except:
                 ax = [ax]
             for ll, ax_ in zip(st_with_samples, ax):
-                ll.plot(ax=ax_)
+                # ll.plot(ax=ax_, is_samples = True, updated_colorscheme = True)
+                ll.plot_new(ax=ax_, is_samples = True)
             plt.savefig(f"traymap_{self.name}.jpeg", dpi=150, bbox_inches="tight")
 
         ## export opentrons protocol
