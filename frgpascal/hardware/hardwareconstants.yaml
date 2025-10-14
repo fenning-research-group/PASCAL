@@ -141,7 +141,8 @@ characterizationline:
     pollingrate: 0.05
     timeout: 20 #max time (seconds) to allow movement before flagging an error
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
-    x_max: 1300.0 #max x position (mm)
+    # x_max: 1300.0 #max x position (mm)
+    x_max: 1500.0 #max x positon (mm)
     x_min: 0 #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
     p0: [563.5, 249.9, 76] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
@@ -176,28 +177,34 @@ characterizationline:
   stations:
     darkfield:
       cameraid: "12519"  #serial number for Thorlabs Camera
-      position: 326.5 #position (mm) at which characterization axis centers sample in FOV
+      # position: 326.5 #position (mm) at which characterization axis centers sample in FOV
+      position: 544.0 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 9 #switchbox plug index for light source (ring light)
     pl_imaging:
       # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
-      position: 326.5 #position (mm) at which characterization axis centers sample in FOV
+      # position: 326.5 #position (mm) at which characterization axis centers sample in FOV
+      position: 544.0 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 11 #switchbox plug index for light source (blue LED lamp)
     brightfield:
       cameraid: "12316" #serial number for Thorlabs Camera
-      position: 630.0 #position (mm) at which characterization axis centers sample in FOV
+      # position: 630.0 #position (mm) at which characterization axis centers sample in FOV
+      position: 847.5 #position (mm) at which characterization axis centers sample in FOV
       switchindex: 8 #switchbox plug index for light source (ring light)
     pl_blue: #spectroscopy
-      position: 1145.0
+      # position: 1145.0
+      postion: 1340.0
       switchindex: 5
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     pl_red: #spectroscopy
-      position: 1145.0 #position (mm) at which characterization axis centers sample in FOV
+      # position: 1145.0 #position (mm) at which characterization axis centers sample in FOV
+      position: 1340.0
       switchindex: 4 #switchbox plug index for light source (red laser)
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     transmission: #spectroscopy
-      position: 1165.0 #position (mm) at which characterization axis centers sample in FOV
+      # position: 1165.0 #position (mm) at which characterization axis centers sample in FOV
+      position: 1360.0
     #fourpointprobe:
     # position:397.5
 

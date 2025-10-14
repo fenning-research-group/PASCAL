@@ -613,7 +613,8 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
                 writer.writerow([wl_, t_])
 
     def calibrate(self, exposure_times: list):
-        self.slider.top_left()  # moves longpass filter out of the transmitted path
+        # self.slider.top_left()  # moves longpass filter out of the transmitted path
+        self.slider.bottom_right()
         self.shutter.close()  # close the shutter
         self.spectrometer._exposure_times = exposure_times
         self.spectrometer.take_dark_baseline(skip_repeats=True)
@@ -649,7 +650,8 @@ class PLSpectroscopy(CharacterizationStationTemplate):
         """
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -693,7 +695,8 @@ class PLSpectroscopy(CharacterizationStationTemplate):
         self.spectrometer._exposure_times = exposure_times
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -736,7 +739,8 @@ class PLPhotostability(CharacterizationStationTemplate):
         """
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -779,7 +783,8 @@ class PLPhotostability(CharacterizationStationTemplate):
     def calibrate(self, exposure_times: list):
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
