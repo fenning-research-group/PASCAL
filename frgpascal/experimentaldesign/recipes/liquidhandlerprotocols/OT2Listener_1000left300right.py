@@ -115,8 +115,9 @@ class ListenerWebsocket:
 
         # #TODO: uncomment this for eliminating opentrons shaking
         # ## must also account for new <spincoat> spin_start delay time as speeds decrease
-        # protocol_context.max_speeds["X"] = self.SLOWEST_XY_RATE
-        # protocol_context.max_speeds["Y"] = self.SLOWEST_XY_RATE
+        # new_speed = self.SLOWEST_XY_RATE
+        # protocol_context.max_speeds["X"] = new_speed
+        # protocol_context.max_speeds["Y"] = new_speed
 
     ### Time Synchronization with NIST
 
@@ -344,13 +345,37 @@ class ListenerWebsocket:
         air_gap=True,
         touch_tip=True,
         pre_mix=0,
+        legacy = False,
+        reuse_as = True,
+        reuse_psk = False
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
-        for p in self.pipettes.values():
-            if p.has_tip:
-                p.drop_tip
-        for p in self.pipettes.values():
-            p.pick_up_tip()
+        if legacy:
+            for p in self.pipettes.values():
+                if p.has_tip:
+                    p.drop_tip
+            for p in self.pipettes.values():
+                p.pick_up_tip() # empty arg messes up opentrons process ordering
+        else:
+            for side, p in self.pipettes.items():
+                if p.has_tip:
+                    p.drop_tip()
+                if side == 'right':
+                    if reuse_as:
+                        try:
+                            tip = self._get_reusable_tip(p, as_tray, as_well)
+                            p.pick_up_tip(tip)
+                        except:
+                            p.pick_up_tip()
+                    else:
+                        p.pick_up_tip()
+                if side == 'left':
+                    if reuse_psk:
+                        tip = self._get_reusable_tip(p, psk_tray, psk_well)
+                        p.pick_up_tip(tip)
+                    else:
+                        p.pick_up_tip()
+                # p.pick_up_tip()
 
         self._aspirate_from_well(
             tray=psk_tray,
