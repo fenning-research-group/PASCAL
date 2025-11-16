@@ -22,7 +22,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class SpinCoater:
-    def __init__(self, gantry: Gantry, switch: SingleSwitch):
+    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
         """Initialize the spincoater control object
 
         Args:
@@ -68,52 +68,55 @@ class SpinCoater:
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
-        self.connect()
+        self.connect(sc_axis = sc_axis, regular_bootup = regular_bootup)
         self._current_rps = 0
 
     def connect(self, **kwargs):
-        # connect to odrive BLDC controller
-        print("Connecting to odrive")
-        # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
-        self.odrv0 = odrive.find_any()
-        # try:
-        #     self.odrv0 = odrive.find_any(timeout=3)
-        # except:
-        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
-        # try:
-        #     self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
-        #     self.odrv0._destroy()
-        # except:
-        #     pass  # this always throws an "object lost" error...which is what we want
-        # try:
-        #     self.odrv0 = odrive.find_any(timeout=3)
-        # except:
-        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+        regular_bootup = kwargs.get('regular_bootup', True)
+        if regular_bootup:
+            # connect to odrive BLDC controller
+            print("Connecting to odrive")
+            # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
+            self.odrv0 = odrive.find_any()
+            # try:
+            #     self.odrv0 = odrive.find_any(timeout=3)
+            # except:
+            #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+            # try:
+            #     self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
+            #     self.odrv0._destroy()
+            # except:
+            #     pass  # this always throws an "object lost" error...which is what we want
+            # try:
+            #     self.odrv0 = odrive.find_any(timeout=3)
+            # except:
+            #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
 
-        print("\tFound motor, now calibrating. This takes 10-20 seconds.")
-        # input("\tPress enter once shroud is out of the way: ")
-        self.axis = self.odrv0.axis0
-        self.axis.requested_state = (
-            AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
-        )
-        time.sleep(5)  # wait for calibration to initiate
-        while self.axis.current_state != 1:
-            time.sleep(1)  # wait for calibration to complete
-        print("\tDone calibrating odrive!")
-        self.axis.requested_state = (
-            AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
-        )
-        # odrive defaults
-        self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
-        self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
-        self.axis.trap_traj.config.vel_limit = (
-            0.5  # for position moves to lock position
-        )
-        self.axis.trap_traj.config.accel_limit = 0.5
-        self.axis.trap_traj.config.decel_limit = 0.5
-        self.lock()
-        self.idle()
-
+            print("\tFound motor, now calibrating. This takes 10-20 seconds.")
+            # input("\tPress enter once shroud is out of the way: ")
+            self.axis = self.odrv0.axis0
+            self.axis.requested_state = (
+                AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
+            )
+            time.sleep(5)  # wait for calibration to initiate
+            while self.axis.current_state != 1:
+                time.sleep(1)  # wait for calibration to complete
+            print("\tDone calibrating odrive!")
+            self.axis.requested_state = (
+                AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
+            )
+            # odrive defaults
+            self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
+            self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
+            self.axis.trap_traj.config.vel_limit = (
+                0.5  # for position moves to lock position
+            )
+            self.axis.trap_traj.config.accel_limit = 0.5
+            self.axis.trap_traj.config.decel_limit = 0.5
+            self.lock()
+            self.idle()
+        else:
+            print("\tSkipping spincoater calibration, will throw silent errors if you try to use any spincoater-inclusive tasks.")
         # start libfibre timer watchdog
         self.__connected = True
         self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)

@@ -585,7 +585,8 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
         # open shutter + move filter slider
         threads = [
             Thread(
-                target=self.slider.top_left
+                # target=self.slider.top_left
+                target = self.slider.bottom_right
             ),  # move longpass filter out of the detector path
             Thread(target=self.shutter.open),  # open the shutter to transmission lamp
         ]

@@ -288,7 +288,7 @@ class ListenerWebsocket:
             next_tip = self._next_tip(pipette)
             self.reusable_tips[key] = next_tip
         return next_tip
-
+    
     def _load_pipettes(self, psk_tray, psk_well, as_tray, as_well, reuse_psk = False, reuse_as = True):
         p_psk = self.pipettes['right']
         p_as = self.pipettes['left']
@@ -517,7 +517,7 @@ class ListenerWebsocket:
 
 
 def run(protocol_context):
-    protocol_context.set_rail_lights(on=False)
+    protocol_context.set_rail_lights(on=True)
     # define your hardware
 
     tips_300 = {}

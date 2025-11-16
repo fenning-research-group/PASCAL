@@ -191,10 +191,22 @@ class Maestro:
                 p0=constants["sampletray"]["p2"],
             ),
         }
-
+        sc_choice = input('Are you using the spincoater/Opentrons for this run? (y/n)')
+        if sc_choice in ['y', 'Y']:
+            regular_bootup = True
+            sc_axis_choice = input("Is the spincoater using ODrive axis0? (y/n)")
+            if sc_axis_choice in ['y', 'Y']:
+                sc_axis = 'axis0'
+            else:
+                sc_axis = 'axis1'
+        else:
+            regular_bootup = False
+            sc_axis = 'axis0'
         self.spincoater = SpinCoater(
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+            sc_axis = sc_axis,
+            regular_bootup = regular_bootup
         )
 
         ### Workers to run tasks in parallel

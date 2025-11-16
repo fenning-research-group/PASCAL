@@ -35,7 +35,7 @@ class CharacterizationTask(ABC):
             or self.position > constants["axis"]["x_max"]
         ):
             raise Exception(
-                f"Invalid position: {self.position}. Must be between 0 and 400. Check your jitter value!"
+                f"Invalid position: {self.position}. Must be between {constants['axis']['x_min']} and {constants['axis']['x_max']}. Check your jitter value!"
             )
 
     @abstractmethod

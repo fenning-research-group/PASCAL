@@ -28,6 +28,7 @@ import warnings
 from roboflo import System
 import subprocess
 import re
+from typing_extensions import Literal
 
 WORKERS = generate_workers()
 HOTPLATE_NAMES = [
@@ -562,6 +563,7 @@ class PASCALPlanner:
         tip_racks: list,
         solution_storage: list,
         stock_solutions: list,
+        # ot2_template: str = None,
     ):
         self.name = name
         self.description = description
@@ -698,7 +700,9 @@ class PASCALPlanner:
         plt.savefig(filename, bbox_inches="tight")
         print(f'schedule image saved to "{filename}"')
 
-    def export(self, new_ll_export = True):
+    def export(self, new_ll_export = True,
+               ot2_template = Literal["samepipettebothsides", "1000left300right", "1000left300right-lightsON"]
+               ):
         ## plot solution destinations
         ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
 
@@ -761,7 +765,8 @@ class PASCALPlanner:
         if any([isinstance(task, Spincoat) for task in self.system.scheduler.tasklist]):
             # TODO selection logic in case you need to swap between pipette configurations
 
-            template = "1000left300right"
+            # template = "1000left300right"
+            template = ot2_template
             generate_ot2_protocol(
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,

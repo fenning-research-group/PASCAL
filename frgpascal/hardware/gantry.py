@@ -113,6 +113,12 @@ class Gantry:
         #     "M92 X53.333 Y53.333 Z200.0"
         # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
+            "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
+        )
+        self.write(
+            "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
+        )
+        self.write(
             "M906 X800 Y800 Z800 E1"
         )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
         self.write(
