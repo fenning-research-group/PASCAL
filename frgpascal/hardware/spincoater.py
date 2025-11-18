@@ -115,13 +115,14 @@ class SpinCoater:
             self.axis.trap_traj.config.decel_limit = 0.5
             self.lock()
             self.idle()
+            self.__connected = True
+            # start libfibre timer watchdog
+            self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
+            self._libfibre_watchdog.start()
+            self._error_log = []
+
         else:
             print("\tSkipping spincoater calibration, will throw silent errors if you try to use any spincoater-inclusive tasks.")
-        # start libfibre timer watchdog
-        self.__connected = True
-        self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
-        self._libfibre_watchdog.start()
-        self._error_log = []
 
     def disconnect(self, reboot = False):
         self.__connected = False
