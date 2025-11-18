@@ -1,1 +1,26 @@
-**Overview**
+# Overview
+This document details the Degredation Box/Hot Plate Setup. It utilizes
+
+
+# Parts List
+| Part                     | Price | Link|
+|--------------------------|-------|----------------------------------------------------------------------------------------------------------------|
+| DB-37 Board              | $*  | [)                       |
+| 37 Pin Connecting Cable       | $*   | [)                     |
+| SSR Relay  | $*   | [https://www.amazon.com/iFlight-1800KV-Brushless-Quadcopter-unibell/dp/B07XYYRWGP](https://www.amazon.com/iFlight-1800KV-Brushless-Quadcopter-unibell/dp/B07XYYRWGP) |
+| PID Controller  | $*  | [https://www.mouser.com/ProductDetail/Cosel/PJMA600F-24?qs=DRkmTr78QARizXWjL2NKqg%3D%3D&countryCode=US&currencyCode=USD](https://www.mouser.com/ProductDetail/Cosel/PJMA600F-24?qs=DRkmTr78QARizXWjL2NKqg%3D%3D&countryCode=US&currencyCode=USD) |
+| Power Cable             | $*   | [https://www.rocker.com.tw/en/product/lab-pumps/ptfe-coated-chemical-resistant-vacuum-pump/rocker-400c-ptfe-coated-vacuum-pump/](https://www.rocker.com.tw/en/product/lab-pumps/ptfe-coated-chemical-resistant-vacuum-pump/rocker-400c-ptfe-coated-vacuum-pump/) |
+| Deg Box w/ Lid  | $*   | [https://www.hubs.com/manufacture/?technology=cnc-machining](https://www.hubs.com/manufacture/?technology=cnc-machining) |
+| Quartz                 | $*   | [https://www.amazon.com/Assortment-Plusmart-Pressure-Plumbing-Connections/dp/B0BRN1H471/ref=sr_1_3?crid=2V931C3RGIA20&dib=eyJ2IjoiMSJ9.rMalqnjJK4ptQgIJLXaeol0CN2hMWmSikj0mL1o6aGlH5g0-8UIIJyiXwOtEuSjqxBKzqwW-IMcVi-_6pHMGr_V17O1k9zyMj5X0CCneCI-Jw45dT5PRA3iP8sXJPMMB65hSxLmY9sEAnRvApKuByc5BMIBpTVl4fiq46vQLhJXs_yEAJ9ZE8y7I4x47jYTukhg214csptJHL4ErhJntWRZFgNtJlqjsY_1cCjp2F6k.j1-vT5KaGQSVuHFfXLnOroh-s68B_fjaRGQ5Qn03ITc&dib_tag=se&keywords=o+rings&qid=1712552969&sprefix=o+ring%2Caps%2C179&sr=8-3](https://www.amazon.com/Assortment-Plusmart-Pressure-Plumbing-Connections/dp/B0BRN1H471/ref=sr_1_3?crid=2V931C3RGIA20&dib=eyJ2IjoiMSJ9.rMalqnjJK4ptQgIJLXaeol0CN2hMWmSikj0mL1o6aGlH5g0-8UIIJyiXwOtEuSjqxBKzqwW-IMcVi-_6pHMGr_V17O1k9zyMj5X0CCneCI-Jw45dT5PRA3iP8sXJPMMB65hSxLmY9sEAnRvApKuByc5BMIBpTVl4fiq46vQLhJXs_yEAJ9ZE8y7I4x47jYTukhg214csptJHL4ErhJntWRZFgNtJlqjsY_1cCjp2F6k.j1-vT5KaGQSVuHFfXLnOroh-s68B_fjaRGQ5Qn03ITc&dib_tag=se&keywords=o+rings&qid=1712552969&sprefix=o+ring%2Caps%2C179&sr=8-3) |
+| Hot Plate *INSTERT*          | $*   | [https://www.amazon.com/OVERTURE-Filament-Consumables-Dimensional-Accuracy/dp/B07PGY2JP1/ref=sr_1_3_pp?dib=eyJ2IjoiMSJ9.SPz8Xg0t9pBHW5vzHC0hcqYxYtXwfa-Yil5LIAxK-nDf3JL1GTkKLyJrApjVsETM4KNQFX0PTiyEjpSvCEeJO5QKM6cQ-r08OafjWC4lTNDPu67BWv0pnhG3ZZ_HfrawVwvNJynrEMEsomfeJCVhNsTjr1BFBFbQpH87o5VaQDwiJH4rlViSL9sBvPO-Piux_RiqL3OfRC7emvw6rOVGAw8aUow_buCBNpMFJfJO4-Q.SG9CzlajxzBXdi_JxmHuRgmdlpNjiI1lcAEBselnEtU&dib_tag=se&keywords=-%2BPLA&qid=1712552942&sr=8-3&th=1](https://www.amazon.com/OVERTURE-Filament-Consumables-Dimensional-Accuracy/dp/B07PGY2JP1/ref=sr_1_3_pp?dib=eyJ2IjoiMSJ9.SPz8Xg0t9pBHW5vzHC0hcqYxYtXwfa-Yil5LIAxK-nDf3JL1GTkKLyJrApjVsETM4KNQFX0PTiyEjpSvCEeJO5QKM6cQ-r08OafjWC4lTNDPu67BWv0pnhG3ZZ_HfrawVwvNJynrEMEsomfeJCVhNsTjr1BFBFbQpH87o5VaQDwiJH4rlViSL9sBvPO-Piux_RiqL3OfRC7emvw6rOVGAw8aUow_buCBNpMFJfJO4-Q.SG9CzlajxzBXdi_JxmHuRgmdlpNjiI1lcAEBselnEtU&dib_tag=se&keywords=-%2BPLA&qid=1712552942&sr=8-3&th=1) |
+| 110V Heating Pad         | $*   | [https://www.amazon.com/4inch-Normally-Closed-Electric-Solenoid/dp/B074Z5SDG3/ref=sr_1_3?crid=5POYNORA9EZL&dib=eyJ2IjoiMSJ9.JLsx3y_np7SG8hfKIUtJtWj8VtkfgF_CTbaxIyYoZ5OHgnqSQ8kOew68nTNhAhrPIDTpnumhJRObFIyRSCQiZCXshF3rObQj-HOZV87RKFJ6do-l0fcqZO3ZMh0pw_jtH8uBoLCpnQS4xYqQm-zO0h_RK_vBkP_qY5F-44N056ZKnEJHcm_twtE9Qvi0YZVwB6c-gy3uV4SWPL2bweUyBgrk076l_5p9qJ5PWumZ4mg.hs0sm7t366FhuDrl8LP-5qxEI9jizQlWJ90Q60t1cAI&dib_tag=se&keywords=12v+solenoid+valve&qid=1712552992&sprefix=12v+solenoid+valv%2Caps%2C130&sr=8-3](https://www.amazon.com/4inch-Normally-Closed-Electric-Solenoid/dp/B074Z5SDG3/ref=sr_1_3?crid=5POYNORA9EZL&dib=eyJ2IjoiMSJ9.JLsx3y_np7SG8hfKIUtJtWj8VtkfgF_CTbaxIyYoZ5OHgnqSQ8kOew68nTNhAhrPIDTpnumhJRObFIyRSCQiZCXshF3rObQj-HOZV87RKFJ6do-l0fcqZO3ZMh0pw_jtH8uBoLCpnQS4xYqQm-zO0h_RK_vBkP_qY5F-44N056ZKnEJHcm_twtE9Qvi0YZVwB6c-gy3uV4SWPL2bweUyBgrk076l_5p9qJ5PWumZ4mg.hs0sm7t366FhuDrl8LP-5qxEI9jizQlWJ90Q60t1cAI&dib_tag=se&keywords=12v+solenoid+valve&qid=1712552992&sprefix=12v+solenoid+valv%2Caps%2C130&sr=8-3) |
+| RTD                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| Fiberglass Insulation                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| Screws                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| One Way Valve                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| Gas Flow Valve                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| Silver Tubes                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+| Gas Flow attatchment (?)                  | $*   | [https://numato.com/product/16-channel-usb-relay-module/](https://numato.com/product/16-channel-usb-relay-module/) |
+
+# Installation
+
