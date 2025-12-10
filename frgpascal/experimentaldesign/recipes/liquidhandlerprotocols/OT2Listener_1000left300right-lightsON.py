@@ -78,7 +78,7 @@ class ListenerWebsocket:
         self.SLOW_Z_RATE = 20  # mm/s
         self.SLOW_XY_RATE = 100  # mm/s
         # TODO: Fix slow motion when gantry is updated
-        self.SLOWEST_XY_Rate = 100 # mm/s
+        self.SLOWEST_XY_RATE = 100 # mm/s
         # self.SLOWEST_XY_RATE = 20 # mm/s
         self.MIX_VOLUME = (
             50  # uL to repeatedly aspirate/dispense when mixing well contents

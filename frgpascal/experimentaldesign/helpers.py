@@ -701,7 +701,7 @@ class PASCALPlanner:
         print(f'schedule image saved to "{filename}"')
 
     def export(self, new_ll_export = True,
-               ot2_template = Literal["samepipettebothsides", "1000left300right", "1000left300right-lightsON"]
+               ot2_template = "1000left300right"
                ):
         ## plot solution destinations
         ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
