@@ -8,10 +8,12 @@ from typing_extensions import Literal  # python <3.8
 MODULE_DIR = os.path.dirname(__file__)
 
 PROTOCOL_DIR = os.path.join(MODULE_DIR, "recipes", "liquidhandlerprotocols")
-AVAILABLE_PROTOCOLS = []
+PROTOCOL_TEMPLATE_FILES = {}
 for fid in os.listdir(PROTOCOL_DIR):
-    if fid.startswith("OT2Listener_"):
-        AVAILABLE_PROTOCOLS.append(fid.split("_")[1][:-3])
+    if fid.startswith("OT2Listener_") and fid.endswith(".py"):
+        template_name = fid[len("OT2Listener_") : -len(".py")]
+        PROTOCOL_TEMPLATE_FILES[template_name] = fid
+AVAILABLE_PROTOCOLS = sorted(PROTOCOL_TEMPLATE_FILES.keys())
 
 
 def generate_ot2_protocol(
@@ -27,6 +29,7 @@ def generate_ot2_protocol(
         raise ValueError(
             f"{template} is not a valid protocol template! Available: {AVAILABLE_PROTOCOLS}"
         )
+    template_filename = PROTOCOL_TEMPLATE_FILES[template]
     fpath = os.path.join(directory, f"OT2PASCALProtocol_{title}.py")
 
     labware = [
@@ -45,7 +48,7 @@ def generate_ot2_protocol(
             MODULE_DIR,
             "recipes",
             "liquidhandlerprotocols",
-            f"OT2listener_{template}.py",
+            template_filename,
         ),
         "r",
     ) as f:

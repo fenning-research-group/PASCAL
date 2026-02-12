@@ -2,8 +2,6 @@ import asyncio
 import websockets
 import json
 import time
-import socket
-import struct
 from threading import Thread
 from opentrons import types
 
@@ -112,7 +110,7 @@ class ListenerWebsocket:
         self.reusable_tips = {}
         self.return_current_tip = {p: False for p in self.pipettes.values()}
 
-        self.__calibrate_time_to_nist()
+        self.__local_nist_offset = 0.0
         self.__initialize_tasks()  # populate task list
 
         # #TODO: uncomment this for eliminating opentrons shaking
@@ -120,28 +118,6 @@ class ListenerWebsocket:
         # new_speed = self.SLOWEST_XY_RATE
         # protocol_context.max_speeds["X"] = new_speed
         # protocol_context.max_speeds["Y"] = new_speed
-
-    ### Time Synchronization with NIST
-
-    def __calibrate_time_to_nist(self):
-        def get_ntp_time(ntp_server="europe.pool.ntp.org"):
-            ntp_packet = b'\x1b' + 47 * b'\0'  # NTP request packet
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.settimeout(5)
-                s.sendto(ntp_packet, (ntp_server, 123))
-                data, _ = s.recvfrom(1024)
-            unpacked_data = struct.unpack("!12I", data)
-            time_since_1900 = unpacked_data[10]
-            return time_since_1900 - 2208988800  # Convert to Unix epoch (1970)
-
-        response_time = None
-        while response_time is None:
-            try:
-                response_time = get_ntp_time()
-            except Exception:
-                pass  # Retry if there's an issue connecting to the NTP server
-
-        self.__local_nist_offset = response_time - time.time()
 
     def nist_time(self):
         return time.time() + self.__local_nist_offset
@@ -161,6 +137,10 @@ class ListenerWebsocket:
         finished = False
         while not finished:
             maestro = json.loads(await websocket.recv())
+            if "time_sync" in maestro:
+                await self.__handle_time_sync(maestro["time_sync"], websocket)
+            if "set_time_offset" in maestro:
+                await self.__set_time_offset(maestro["set_time_offset"], websocket)
             if "task" in maestro:
                 await self.__process_task(maestro["task"], websocket)
             if "status" in maestro or len(self.recently_completed_tasks) > 0:
@@ -169,6 +149,26 @@ class ListenerWebsocket:
                 finished = True
                 self.__stop.set()  # flag the websocket to close
                 self.status = STATUS_ALL_DONE
+
+    async def __handle_time_sync(self, time_sync_request, websocket):
+        ot2 = {
+            "time_sync": {
+                "id": time_sync_request.get("id"),
+                "host_time": time_sync_request.get("host_time"),
+                "ot2_time": self.nist_time(),
+            }
+        }
+        await websocket.send(json.dumps(ot2))
+
+    async def __set_time_offset(self, offset_request, websocket):
+        try:
+            offset = float(offset_request["offset"])
+        except (KeyError, TypeError, ValueError):
+            return
+        self.__local_nist_offset = offset
+        await websocket.send(
+            json.dumps({"set_time_offset": {"offset": self.__local_nist_offset}})
+        )
 
     # Processing tasks
     async def __worker(self):

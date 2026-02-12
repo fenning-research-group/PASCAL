@@ -1,7 +1,6 @@
 import numpy as np
 import asyncio
 import time
-import ntplib
 import json
 import os
 import yaml
@@ -9,6 +8,12 @@ import websockets
 import threading
 import uuid
 import logging
+import concurrent.futures
+
+try:
+    import ntplib
+except ImportError:
+    ntplib = None
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -206,22 +211,148 @@ class OT2Server:
         self.completed_tasks = {}
         self.POLLINGRATE = 1  # seconds between status checks to OT2
         self.loop = asyncio.new_event_loop()
+        self._time_sync_probe_count = 5
+        self._time_sync_timeout = 2.0
+        # Backward compatibility: permit startup against legacy listener protocols.
+        self.require_offline_time_sync = False
 
     ### Time Synchronization with NIST
-    def __calibrate_time_to_nist(self):
+    def __calibrate_time_to_nist(self, max_attempts=3, timeout_seconds=2.0):
+        self.__local_nist_offset = 0.0
+        if ntplib is None:
+            logging.warning(
+                "ntplib is not installed; defaulting to local clock offset 0.0 s."
+            )
+            return
         client = ntplib.NTPClient()
-        response = None
-        while response is None:
+        for attempt in range(1, max_attempts + 1):
             try:
-                response = client.request("europe.pool.ntp.org", version=3)
-            except:
-                pass
-        t_local = time.time()
-        self.__local_nist_offset = response.tx_time - t_local
+                response = client.request(
+                    "europe.pool.ntp.org", version=3, timeout=timeout_seconds
+                )
+                t_local = time.time()
+                self.__local_nist_offset = response.tx_time - t_local
+                return
+            except Exception as exc:
+                logging.warning(
+                    "NTP calibration attempt %s/%s failed: %s",
+                    attempt,
+                    max_attempts,
+                    exc,
+                )
+        logging.warning(
+            "NTP calibration unavailable; defaulting to local clock offset 0.0 s."
+        )
 
     @property
     def nist_time(self):
         return time.time() + self.__local_nist_offset
+
+    async def __sync_clock_with_ot2(self):
+        probe_samples = []
+        for probe_id in range(self._time_sync_probe_count):
+            host_send = self.nist_time
+            maestro = {"time_sync": {"id": probe_id, "host_time": host_send}}
+            await self.websocket.send(json.dumps(maestro))
+
+            deadline = time.monotonic() + self._time_sync_timeout
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                try:
+                    response = await asyncio.wait_for(
+                        self.websocket.recv(), timeout=remaining
+                    )
+                    ot2 = json.loads(response)
+                except asyncio.TimeoutError:
+                    break
+                except json.JSONDecodeError:
+                    continue
+
+                if "acknowledged" in ot2:
+                    self.pending_tasks.append(ot2["acknowledged"])
+                if "completed" in ot2:
+                    self._update_completed_tasklist(ot2["completed"])
+
+                if "time_sync" not in ot2:
+                    continue
+                sync_data = ot2["time_sync"]
+                if sync_data.get("id") != probe_id:
+                    continue
+                try:
+                    ot2_time = float(sync_data["ot2_time"])
+                except (TypeError, ValueError, KeyError):
+                    continue
+
+                host_recv = self.nist_time
+                midpoint = (host_send + host_recv) / 2.0
+                probe_samples.append(
+                    {
+                        "offset": midpoint - ot2_time,
+                        "rtt": host_recv - host_send,
+                    }
+                )
+                break
+
+        if not probe_samples:
+            raise RuntimeError(
+                "Listener protocol missing offline time_sync support; regenerate protocol from updated template."
+            )
+
+        best_probe = min(probe_samples, key=lambda sample: sample["rtt"])
+        maestro = {"set_time_offset": {"offset": best_probe["offset"]}}
+        await self.websocket.send(json.dumps(maestro))
+
+        # Ack is optional for diagnostics; timeout here is non-fatal.
+        try:
+            response = await asyncio.wait_for(
+                self.websocket.recv(), timeout=self._time_sync_timeout
+            )
+            ot2 = json.loads(response)
+            if "acknowledged" in ot2:
+                self.pending_tasks.append(ot2["acknowledged"])
+            if "completed" in ot2:
+                self._update_completed_tasklist(ot2["completed"])
+        except (asyncio.TimeoutError, json.JSONDecodeError):
+            pass
+
+        return best_probe["offset"]
+
+    def __run_clock_sync_or_raise(self):
+        future = asyncio.run_coroutine_threadsafe(self.__sync_clock_with_ot2(), self.loop)
+        try:
+            return future.result(
+                timeout=self._time_sync_probe_count * self._time_sync_timeout + 5
+            )
+        except RuntimeError as exc:
+            if self.require_offline_time_sync:
+                raise
+            logging.warning(
+                "Offline time_sync is unavailable (%s); falling back to legacy listener mode.",
+                exc,
+            )
+            return None
+        except concurrent.futures.TimeoutError as exc:
+            future.cancel()
+            if not self.require_offline_time_sync:
+                logging.warning(
+                    "Offline time_sync timed out; falling back to legacy listener mode."
+                )
+                return None
+            raise RuntimeError(
+                "Listener protocol missing offline time_sync support; regenerate protocol from updated template."
+            ) from exc
+        except Exception as exc:
+            if not self.require_offline_time_sync:
+                logging.warning(
+                    "Offline time_sync failed (%s); falling back to legacy listener mode.",
+                    exc,
+                )
+                return None
+            raise RuntimeError(
+                "Listener protocol missing offline time_sync support; regenerate protocol from updated template."
+            ) from exc
 
     ### Server Methods
     async def __connect_to_websocket(self):
@@ -256,9 +387,23 @@ class OT2Server:
             self.thread = threading.Thread(target=run_loop, args=(self.loop,))
             self.thread.daemon = True
             self.thread.start()
-            asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
-            while not hasattr(self, "websocket"):
-                time.sleep(0.2)  # wait to connect
+            connect_future = asyncio.run_coroutine_threadsafe(
+                self.__connect_to_websocket(), self.loop
+            )
+            connect_future.result(timeout=10)
+            try:
+                self.__run_clock_sync_or_raise()
+            except Exception:
+                if hasattr(self, "websocket"):
+                    try:
+                        close_future = asyncio.run_coroutine_threadsafe(
+                            self.websocket.close(), self.loop
+                        )
+                        close_future.result(timeout=5)
+                    except Exception:
+                        pass
+                self.loop.call_soon_threadsafe(self.loop.stop)
+                raise
             self.connected = True
             self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
             # self._checker = asyncio.run_coroutine_threadsafe(self.checker(), self.loop)
@@ -305,11 +450,25 @@ class OT2Server:
         self.thread.daemon = True
         self.thread.start()
         print("\tstarting to connect to websocket")
-        asyncio.run_coroutine_threadsafe(self.__connect_to_websocket(), self.loop)
+        connect_future = asyncio.run_coroutine_threadsafe(
+            self.__connect_to_websocket(), self.loop
+        )
         # self.loop.call_soon_threadsafe(self.__connect_to_websocket)
         print("\twaiting to connect")
-        while not hasattr(self, "websocket"):
-            time.sleep(0.1)  # wait to connect
+        connect_future.result(timeout=10)
+        try:
+            self.__run_clock_sync_or_raise()
+        except Exception:
+            if hasattr(self, "websocket"):
+                try:
+                    close_future = asyncio.run_coroutine_threadsafe(
+                        self.websocket.close(), self.loop
+                    )
+                    close_future.result(timeout=5)
+                except Exception:
+                    pass
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            raise
 
         if hasattr(self, 'websocket'):
             print("\t\tWebsocket connection seems to have worked.")
@@ -325,6 +484,14 @@ class OT2Server:
         self._timeout_duration = 10
         self.connected = False
         time.sleep(1)
+        if hasattr(self, "websocket"):
+            try:
+                close_future = asyncio.run_coroutine_threadsafe(
+                    self.websocket.close(), self.loop
+                )
+                close_future.result(timeout=5)
+            except Exception as exc:
+                print(f"\tFailed to close websocket cleanly before stopping: {exc}")
         print("\tStopping OT2Server worker")
         self._worker.cancel()
         self.loop.call_soon_threadsafe(self.loop.stop)
