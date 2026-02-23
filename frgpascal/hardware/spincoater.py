@@ -22,7 +22,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class SpinCoater:
-    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
+    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True, port = None):
         """Initialize the spincoater control object
 
         Args:
@@ -31,12 +31,12 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
-        # if port is None:
-        #     self.port = get_port(
-        #         constants["spincoater"]["device_identifiers"]
-        #     )  # find port to connect to this device.
-        # else:
-        #     self.port = port
+        if port is None:
+            self.port = get_port(
+                constants["spincoater"]["device_identifiers"]
+            )  # find port to connect to this device.
+        else:
+            self.port = port
         # self.ARDUINOTIMEOUT = constants["spincoater"]["pollingrate"]
         self.switch = switch
         self.COMMUNICATION_INTERVAL = constants["spincoater"]["communication_interval"]
@@ -77,7 +77,8 @@ class SpinCoater:
             # connect to odrive BLDC controller
             print("Connecting to odrive")
             # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
-            self.odrv0 = odrive.find_any()
+            # self.odrv0 = odrive.find_any(path = f"serial:{self.port}")
+            self.odrv0 = odrive.find_any(serial_number = "345335523033")
             # try:
             #     self.odrv0 = odrive.find_any(timeout=3)
             # except:

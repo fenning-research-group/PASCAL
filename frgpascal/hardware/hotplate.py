@@ -47,7 +47,6 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 def available_versions(self):
     return AVAILABLE_VERSIONS
 
-
 class Omega:
     def __init__(self, id: int, port: str = None):
         if id not in [1, 2, 3]:
@@ -55,7 +54,8 @@ class Omega:
         self.address = 1  # this is 1 despite the hotplate ID!
         constants = hotplateconstants[f"hp{id}"]
         if port is None:
-            self.port = get_port(constants["device_identifiers"])
+            port = get_port(constants["device_identifiers"])
+        self.port = port
         self.connect()
         self.lock = Lock()  # for multithreaded access control
 
@@ -223,6 +223,72 @@ class Omega:
         return payload
 
 
+class EmptyOmega:
+    def __init__(self, id: int, port: str = None):
+        # if id not in [1, 2, 3]:
+            # raise ValueError("Hotplate ID must be 1 (green), 2 (pink), or 3 (blue)!")
+        # self.address = 1  # this is 1 despite the hotplate ID!
+        # constants = hotplateconstants[f"hp{id}"]
+        # if port is None:
+            # port = get_port(constants["device_identifiers"])
+        self.port = None
+        self.connect()
+        self.lock = Lock()  # for multithreaded access control
+
+    @property
+    def setpoint(self):
+        self.__setpoint = self.get_setpoint()
+        return self.__setpoint
+
+    @setpoint.setter
+    def setpoint(self, x):
+        if self.set_setpoint(setpoint=x):
+            self.__setpoint = x
+        else:
+            self.__setpoint = self.get_setpoint()
+            print(
+                "Error changing set point - set point is still {0} C".format(
+                    self.__setpoint
+                )
+            )
+
+    @property
+    def temperature(self):
+        return self.get_temperature()
+
+    def query(self, payload):
+        pass
+        # with self.lock:
+            # self.__handle.write(payload)
+            # response = self.__handle.readline()
+        # return response
+
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+    def get_temperature(self):
+        pass
+    def get_setpoint(self):
+        pass
+    def set_setpoint(self, setpoint):
+        pass
+    def autotune(self, setpoint: float, pid_channel: int):
+        pass
+    def _autotune_in_progress(self):
+        pass
+    def _set_PIDchannel(self, pid_channel: int):
+        pass
+    ### helper methods
+    def __numtohex(self, num):
+        pass
+    def __build_payload(self, address, command, dataAddress, content):
+        pass
+
+
+
+
 class HotPlate(Workspace):
     def __init__(
         self,
@@ -232,6 +298,8 @@ class HotPlate(Workspace):
         gripper: Gripper = None,
         id: int = None,
         p0=[None, None, None],
+        port = None,
+        fake_it = False,
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
@@ -241,12 +309,14 @@ class HotPlate(Workspace):
             p0=p0,
             **workspace_kwargs,
         )
-        if id is not None:
-            self.controller = Omega(id=id)
-            self.controller._set_PIDchannel(
-                4
-            )  # auto select PID settings based on setpoint
-
+        if fake_it:
+            self.controller = EmptyOmega(id = id)
+        else:
+            if id is not None:
+                self.controller = Omega(id=id, port = port)
+                self.controller._set_PIDchannel(
+                    4
+                )  # auto select PID settings based on setpoint
         xmean = np.mean([p[0] for p in self._coordinates.values()])
         ymean = np.mean([p[1] for p in self._coordinates.values()])
         self._centerproximity = {

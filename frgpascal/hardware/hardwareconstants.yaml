@@ -7,6 +7,7 @@ gantry:
     pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
     location: "1-10" #WINDOWS
     # com_port: "COM72"
+    COM_Port: "COM10"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
 
@@ -50,6 +51,8 @@ gripper:
     vid: 1027 #WINDOWS ONLY
     pid: 24597 #WINDOWS ONLY
     serial_number: "DN066QRWA"
+    COM_Port: "COM11"
+    # COM_Port: "COM12"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)
@@ -71,6 +74,7 @@ hotplates:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYUYZA"
+      COM_Port: "COM7"
     address: 1 #rs485 address
     p0: [214.4, 73.3, 69.0]
   hp2:
@@ -78,6 +82,7 @@ hotplates:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKDA"
+      COM_Port: "COM4"
     address: 2
     p0: [214.2, 216.3, 68.0]
   hp3:
@@ -85,6 +90,7 @@ hotplates:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKPA"
+      COM_Port: "COM5"
     address: 3
     p0: [367.2, 217.3, 65.0]
 
@@ -107,7 +113,8 @@ liquidhandler:
   # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
   # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
   server:
-    ip: "169.254.160.20" #this is the external IP of the OT2 robot, can be found in the OT2 app!
+    ip: "169.254.193.225" #this is the wired IP of the OT2 robot, can be found in the OT2 app!
+    # ip: "169.254.160.20" #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
 
 sampletray:
@@ -120,6 +127,7 @@ spincoater:
     # serialid: #LINUX ONLY "558383339323513140D1" #hardware ID of spincoater arduino. Used to find correct COM port
     vid: 2341 #WINDOWS ONLY
     pid: 0043 #WINDOWS ONLY
+    COM_Port: "COM8"
     serial_number: "95032303737351B01170"
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
@@ -155,6 +163,7 @@ characterizationline:
     device_identifiers:
       vid: 10777
       pid: 3075
+      COM_Port: "COM9"
     pollingrate: 0.2
     relayresponsetime: 0.01 #seconds between telling relay to do something -> relay doing it
   shutter:

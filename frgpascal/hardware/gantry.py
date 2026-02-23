@@ -158,6 +158,7 @@ class Gantry:
                     found_coordinates = True
                     # print(f'Home is @ [{x}, {y}, {z}]')
                     break
+        print([x, y, z])
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
         print(f"\t\t{self.__currentframe}")
@@ -204,8 +205,9 @@ class Gantry:
                 print(f"\t\t{x} is outside bounds")
                 continue
             if y < lims["y_min"] or y > lims["y_max"]:
-                print(f"\t\t{y} is outside bounds")
-                continue
+                if y + 2 < lims["y_min"]:
+                    print(f"\t\t{y} is outside bounds")
+                    continue
             if z < lims["z_min"] or z > lims["z_max"]:
                 print(f"\t\t{z} is outside bounds")
                 continue

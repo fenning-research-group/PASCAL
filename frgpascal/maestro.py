@@ -46,7 +46,8 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardware", "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
-ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL_Runs"
+# ROOTDIR = "C:\\Users\\Admin\\Desktop\\PASCAL_Runs"
+ROOTDIR = "C:\\Users\\Fenning lab\\Desktop\\PASCAL\\PASCAL_RUNS"
 
 
 class MaestroServer(Server):
@@ -124,6 +125,7 @@ class Maestro:
         # Constants
         self.logger = logging.getLogger("PASCAL")
         self.SAMPLEWIDTH = samplewidth  # mm
+        self._CONSTANTS = constants
         self.SAMPLETOLERANCE_PICK = constants["gripper"][
             "extra_opening_width_pick"
         ]  # mm extra opening width
@@ -136,18 +138,25 @@ class Maestro:
         self.TWISTOFF = True
 
         # Workers
-        self.gantry = Gantry()
-        self.gripper = Gripper()
-        self.switchbox = Switchbox()
+        self.gantry = Gantry(
+            port = constants["gantry"]["device_identifiers"]["COM_Port"]
+        )
+        self.gripper = Gripper(
+            port = constants["gripper"]["device_identifiers"]["COM_Port"]
+        )
+        self.switchbox = Switchbox(
+            port = constants["characterizationline"]["switchbox"]["device_identifiers"]["COM_Port"]
+        )
 
         # Do we want to use the Gantry/Gripper?
         self.gantry.in_use, self.gripper.in_use = self._handle_gantry_connection()
-        
+        # if self.gripper.in_use:
+            # self.gripper = Gripper()
         # tries to connect to characterization line
         self._handle_characterization_connection()
 
         self.liquidhandler = OT2()
-
+        fake_hps = self._handle_hotplate_connection()
         # Labware
         self.hotplates = {
             "Hotplate1": HotPlate(
@@ -156,7 +165,9 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=1,
+                port = constants["hotplates"]["hp1"]["device_identifiers"]["COM_Port"],
                 p0=constants["hotplates"]["hp1"]["p0"],
+                fake_it = fake_hps,
             ),
             "Hotplate2": HotPlate(
                 name="Hotplate2",
@@ -164,7 +175,9 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=2,
+                port = constants["hotplates"]["hp1"]["device_identifiers"]["COM_Port"],
                 p0=constants["hotplates"]["hp2"]["p0"],
+                fake_it = fake_hps,
             ),
             "Hotplate3": HotPlate(
                 name="Hotplate3",
@@ -172,7 +185,9 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 id=3,
+                port = constants["hotplates"]["hp1"]["device_identifiers"]["COM_Port"],
                 p0=constants["hotplates"]["hp3"]["p0"],
+                fake_it = fake_hps,
             ),
         }
         self.storage = {
@@ -206,6 +221,7 @@ class Maestro:
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
             sc_axis = sc_axis,
+            port = constants["spincoater"]["device_identifiers"]["COM_Port"],
             regular_bootup = regular_bootup
         )
 
@@ -848,5 +864,16 @@ class Maestro:
         self.humanoperator = None
         response = input("Do you need the gantry/gripper? (y/n)")
         need_gantry = response in ["y", "Y"]
+        print(f"need_gantry: {need_gantry}")
         return need_gantry, need_gantry
 
+    def _handle_hotplate_connection(self):
+        """
+        Prompts user if they want to talk to the hotplate controllers in this PASCAL instance,
+        or, manually move samples to/from"""
+
+        self.humanoperator = None
+        response = input("Do you need the hotplate controllers? (y/n)")
+        need_gantry = response in ["y", "Y"]
+        print(f"need_gantry: {need_gantry}")
+        return not need_gantry
