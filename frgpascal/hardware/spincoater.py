@@ -28,7 +28,7 @@ class SpinCoater:
         Args:
                                         gantry (Gantry): PASCAL Gantry control object
                                         serial_number (str, optional): Serial number for spincoater arduino, used to find and connect to correct COM port. Defaults to "558383339323513140D1":str.
-                                        p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
+                                        p0 (tuple, optional): Initial guess for gantry coordinates to sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
         # if port is None:
