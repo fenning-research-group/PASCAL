@@ -21,7 +21,7 @@ STATUS_ALL_DONE = 9
 
 metadata = {
     "protocolName": "Maestro Listener - Large Volume Pipette on Left, Small Volume Pipette on Right",
-    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer",
+    "author": "Rishi Kumar, Deniz Cakan, Jack Palmer, Eric Oberholtz",
     "source": "FRG",
     "apiLevel": "2.10",
 }
@@ -77,6 +77,9 @@ class ListenerWebsocket:
         self.SPINCOATING_DISPENSE_RATE = 200  # uL/s
         self.SLOW_Z_RATE = 20  # mm/s
         self.SLOW_XY_RATE = 100  # mm/s
+        # TODO: Fix slow motion when gantry is updated
+        self.SLOWEST_XY_RATE = 100 # mm/s
+        # self.SLOWEST_XY_RATE = 20 # mm/s
         self.MIX_VOLUME = (
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
@@ -111,6 +114,12 @@ class ListenerWebsocket:
 
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
+
+        # #TODO: uncomment this for eliminating opentrons shaking
+        # ## must also account for new <spincoat> spin_start delay time as speeds decrease
+        # new_speed = self.SLOWEST_XY_RATE
+        # protocol_context.max_speeds["X"] = new_speed
+        # protocol_context.max_speeds["Y"] = new_speed
 
     ### Time Synchronization with NIST
 
@@ -280,6 +289,25 @@ class ListenerWebsocket:
             self.reusable_tips[key] = next_tip
         return next_tip
 
+    def _load_pipettes(self, psk_tray, psk_well, as_tray, as_well, reuse_psk = False, reuse_as = True):
+        p_psk = self.pipettes['right']
+        p_as = self.pipettes['left']
+        if p_psk.has_tip:
+            p_psk.drop_tip()
+        if p_as.has_tip:
+            p_as.drop_tip()
+        if reuse_psk:
+            tip = self._get_reusable_tip(p_psk, psk_tray, psk_well)
+            p_psk.pick_up_tip(tip)
+        elif not reuse_psk:
+            tip = self._next_tip(pipette = p_psk)
+            p_psk.pick_up_tip(tip)
+        if reuse_as:
+            tip = self._get_reusable_tip(p_as, as_tray, as_well)
+            p_as.pick_up_tip(tip)
+        elif not reuse_as:
+            tip = self._next_tip(pipette = p_as)
+            p_as.pick_up_tip(tip)
     ### Callable Tasks
 
     def __initialize_tasks(self):
@@ -338,13 +366,26 @@ class ListenerWebsocket:
         air_gap=True,
         touch_tip=True,
         pre_mix=0,
+        legacy = False,
+        reuse_as = True,
+        reuse_psk = False
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
-        for p in self.pipettes.values():
-            if p.has_tip:
-                p.drop_tip
-        for p in self.pipettes.values():
-            p.pick_up_tip()
+        if legacy:
+            for p in self.pipettes.values():
+                if p.has_tip:
+                    p.drop_tip
+            for p in self.pipettes.values():
+                p.pick_up_tip() # Opentrons API forces all of the first-called pipette process to be done before moving on to pipette # 2
+        else:
+            self._load_pipettes(
+                psk_tray = psk_tray,
+                psk_well = psk_well,
+                as_tray = as_tray,
+                as_well = as_well,
+                reuse_as = reuse_as,
+                reuse_psk = reuse_psk
+            )
 
         self._aspirate_from_well(
             tray=psk_tray,
@@ -373,7 +414,8 @@ class ListenerWebsocket:
             speed = self.SLOW_XY_RATE
         else:
             speed = None
-        p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
+        # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
+        p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
@@ -387,20 +429,23 @@ class ListenerWebsocket:
         if slow_travel:
             p.move_to(
                 location=self.spincoater[self.CHUCK].top(height),
-                speed=self.SLOW_XY_RATE,
+                # speed=self.SLOW_XY_RATE,
+                speed = self.SLOWEST_XY_RATE,
             )
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         if blow_out:
             p.blow_out()
         p.move_to(
-            self.spincoater[self.STANDBY].top(), force_direct=True
+            self.spincoater[self.STANDBY].top(), force_direct=True,
+            speed = self.SLOWEST_XY_RATE,
         )  # Move off of chuck to prevent dripping onto substrate
 
     def clear_chuck(self):
         self.pipettes["right"].move_to(
             location=types.Location(
                 point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
-            )
+            ),
+            speed = self.SLOWEST_XY_RATE,
         )
 
     def mix(self, mixing_netlist, **kwargs):
@@ -468,7 +513,7 @@ class ListenerWebsocket:
 
         next_tip = self._next_tip(pipette="right")
         p = self._get_pipette("right")
-        p.move_to(next_tip.top(5))
+        p.move_to(next_tip.top(5), speed = self.SLOWEST_XY_RATE)
 
 
 def run(protocol_context):
@@ -494,13 +539,13 @@ def run(protocol_context):
     # each piece of labware has to be involved in some dummy moves to be included in protocol
     # we "aspirate" from 10mm above the top of first well on each labware to get it into the protocol
     for side, p in listener.pipettes.items():
-        p.move_to(listener.spincoater[listener.CHUCK].top(30))
+        p.move_to(listener.spincoater[listener.CHUCK].top(30), speed = listener.SLOWEST_XY_RATE)
         for name, labware in labwares.items():
-            p.move_to(labware["A1"].top(30))
+            p.move_to(labware["A1"].top(30), speed = listener.SLOWEST_XY_RATE)
         for labware in tips_300:
-            p.move_to(labware["A1"].top(30))
+            p.move_to(labware["A1"].top(30), speed = listener.SLOWEST_XY_RATE)
         for labware in tips_1000:
-            p.move_to(labware["A1"].top(30))
+            p.move_to(labware["A1"].top(30), speed = listener.SLOWEST_XY_RATE)
 
     # starting with Opentrons v5.0, labware cannot be calibrated unless at least one pipette picks up a tip.
     # If we don't have a mixing netlist, then we need to pick a tip up here to calibrate the labware.
@@ -528,6 +573,10 @@ def run(protocol_context):
             is_last_transfer = []
             for destination_str, volume in destination_strings.items():
                 destination_labware, destination_well = destination_str.split("-")
+                if "96" in destination_labware:
+                    touching = False
+                else:
+                    touching = True
                 destinations.append(labwares[destination_labware][destination_well])
                 volumes.append(volume)
                 is_last_transfer.append(final_generation[destination_str] == gen_idx)
@@ -545,10 +594,12 @@ def run(protocol_context):
                     dest=destinations,
                     disposal_volume=0,
                     carryover=True,
+                    mix_before=(3, 50),
                     new_tip="once",
                     blow_out=True,
                     blow_out_location="source well",
                     air_gap=20,
+                    touch_tip = touching,
                 )
             else:
                 for dest, vol, last_transfer in zip(
@@ -570,8 +621,9 @@ def run(protocol_context):
                         mix_after=mix_after,
                         blow_out=True,
                         blow_out_location="destination well",
-                        touch_tip=True,
+                        touch_tip=touching,
                         air_gap=20,
+                        # touch_tip = True,
                     )
             # listener.pipettes["right"].speed = original_speed
 

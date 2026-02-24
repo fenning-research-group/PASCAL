@@ -3,6 +3,7 @@ import json
 from natsort import natsorted
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 from frgpascal.experimentaldesign.tasks import Solution
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -181,7 +182,8 @@ class LiquidLabware:
             raise ValueError(f"Cannot unload {well}, it's already empty!")
         self._openwells.append(well)
         self._openwells = natsorted(self._openwells)
-        return self.contents.pop(well)[0]
+        # return self.contents.pop(well)[0]
+        return self.contents.pop(well)
 
     def __repr__(self):
         out = f"<LiquidLabware> {self.name}, {self.volume/1e3} mL volume, {self.capacity} wells"
@@ -200,7 +202,7 @@ class LiquidLabware:
         self._openwells = natsorted(self._openwells)
         self.contents = newcontents
 
-    def plot(self, solution_details=None, ax=None):
+    def plot(self, solution_details=None, ax=None, directory = None, updated_colorscheme=True):
         """
         plot labware w/ solution occupants
         """
@@ -217,6 +219,41 @@ class LiquidLabware:
         yvals = np.unique([y for _, y, _ in self._coordinates.values()])
         markersize = 15
 
+        if updated_colorscheme:
+            cmap_x = plt.get_cmap('plasma', len(xvals)) 
+            cmap_y = plt.get_cmap('tab10', len(yvals))
+            
+            norm_x = Normalize(vmin = min(xvals), vmax = max(xvals))
+            norm_y = Normalize(vmin = min(yvals), vmax = max(yvals))
+            
+            markers = ['o', 's', 'D', 'p', 'h', 'H']
+            markers_dict = {}
+            for j, y in enumerate(yvals):
+                if j >= len(markers):
+                    # print(j)
+                    j = j - len(markers)
+                    # print(j)
+                # print(j)
+                markers_dict[y] = markers[j]
+            line_options = ['solid', 'dotted', '--', '-.']
+            lines_dict = {}
+            for j, x in enumerate(np.unique(xvals)):
+                if j >= len(line_options):
+                    if j >= 2*len(line_options):
+                        j = j - 2*len(line_options)
+                        # print(j)
+                    elif j >= 3*len(line_options):
+                        j = j - 3*len(line_options)
+
+                    elif j >= 4*len(line_options):
+                        j = j - 4*len(line_options)
+                    else:
+                        j = j - len(line_options)
+                    print(j)
+                # print(j)
+                lines_dict[x] = line_options[j]
+
+
         for k, (x, y, z) in self._coordinates.items():
             if k in self.contents:
                 solution = self.contents[k]
@@ -231,16 +268,32 @@ class LiquidLabware:
                         fillstyle = "none"
                     else:
                         label = f"{volume} uL " + label
-
-                ax.plot(
+                if updated_colorscheme:
+                    ax.plot(
                     x,
                     y,
                     label=label,
-                    marker="o",
-                    linestyle="none",
+                    marker = markers_dict[y],
+                    linestyle = lines_dict[x],
+                    # linewidth = 7,
+                    # marker="o",
+                    # linestyle="none",
                     markersize=markersize,
                     fillstyle=fillstyle,
+                    markerfacecolor = cmap_x(norm_x(x)),
+                    markeredgecolor = cmap_y(norm_y(y)),
+                    markeredgewidth=3
                 )
+                else:
+                    ax.plot(
+                        x,
+                        y,
+                        label=label,
+                        marker="o",
+                        linestyle="none",
+                        markersize=markersize,
+                        fillstyle=fillstyle,
+                    )
             elif k in self._unavailablewells:
                 ax.scatter(x, y, c="gray", marker="x", alpha=0.2)
             else:
@@ -248,10 +301,25 @@ class LiquidLabware:
 
         plt.sca(ax)
         ax.set_aspect("equal")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+        if updated_colorscheme:
+            plt.legend(
+                bbox_to_anchor=(1.05, 1),
+                loc=2,
+                handleheight=2,
+                labelspacing=1.5,
+                handletextpad=1.0,
+                borderpad=1.0,
+                borderaxespad=0.0,
+            )
+        else:
+            plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
         plt.title(self.name)
         plt.yticks(
             yvals[::-1],
             [chr(65 + i) for i in range(len(yvals))],
         )
         plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
+
+        if directory is not None:
+            fp = os.path.join(directory, f'solutionmap_{self.name}.jpeg')
+            plt.savefig(fp, dpi = 150, bbox_inches="tight")

@@ -210,62 +210,62 @@ class Worker_GantryGripper(WorkerTemplate):
             ),
             "spincoater_to_hotplate": task_tuple(
                 function=self.spincoater_to_hotplate,
-                estimated_duration=22,
+                estimated_duration=27, #if speeding up, then 22
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_storage": task_tuple(
                 function=self.spincoater_to_storage,
-                estimated_duration=19,
+                estimated_duration=30, #if speeding up, then 19
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "spincoater_to_characterization": task_tuple(
                 function=self.spincoater_to_characterization,
-                estimated_duration=23,
+                estimated_duration=33, #if speeding up, then 23
                 other_workers=[Worker_SpincoaterLiquidHandler, Worker_Characterization],
             ),
             "hotplate_to_spincoater": task_tuple(
                 function=self.hotplate_to_spincoater,
-                estimated_duration=16,
+                estimated_duration=33, #if speeding up, then 16
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "hotplate_to_storage": task_tuple(
                 function=self.hotplate_to_storage,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[],
             ),
             "hotplate_to_characterization": task_tuple(
                 function=self.hotplate_to_characterization,
-                estimated_duration=9,
+                estimated_duration=18, #if speeding up, then 9
                 other_workers=[Worker_Characterization],
             ),
             "storage_to_spincoater": task_tuple(
                 function=self.storage_to_spincoater,
-                estimated_duration=16,
+                estimated_duration=33, #if speeding up, then 16
                 other_workers=[Worker_SpincoaterLiquidHandler],
             ),
             "storage_to_hotplate": task_tuple(
                 function=self.storage_to_hotplate,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[],
             ),
             "storage_to_characterization": task_tuple(
                 function=self.storage_to_characterization,
-                estimated_duration=8,
+                estimated_duration=15, #if speeding up, then 8
                 other_workers=[Worker_Characterization],
             ),
             "characterization_to_spincoater": task_tuple(
                 function=self.characterization_to_spincoater,
-                estimated_duration=18,
+                estimated_duration=33, #if speeding up, then 18
                 other_workers=[Worker_Characterization, Worker_SpincoaterLiquidHandler],
             ),
             "characterization_to_hotplate": task_tuple(
                 function=self.characterization_to_hotplate,
-                estimated_duration=9,
+                estimated_duration=18, #if speeding up, then 9
                 other_workers=[Worker_Characterization],
             ),
             "characterization_to_storage": task_tuple(
                 function=self.characterization_to_storage,
-                estimated_duration=8,
+                estimated_duration=18, #if speeding up, then 8
                 other_workers=[Worker_Characterization],
             ),
         }
@@ -472,24 +472,31 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
         completed_tasks = {}
+        # print(f"lh tasks: {liquidhandlertasks}")
         while len(liquidhandlertasks) > len(completed_tasks):
+            # print(f"iteration: {gamma}, tasks_done: {len(completed_tasks)}")
             for task, taskid in liquidhandlertasks.items():
                 if task in completed_tasks:
+                    # print(f"\t\ttask {taskid} already done!")
                     continue  # already got this one, skip
                 if taskid in self.liquidhandler.server.completed_tasks:
                     completed_tasks[task] = (
                         self.liquidhandler.server.completed_tasks[taskid] - t0
                     )  # save the completion time of the liquidhandler task
                     print(
-                        f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {taskid}"
+                        f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {task}, {taskid}"
                     )
                 await asyncio.sleep(0.1)
+            if abs(self.maestro.nist_time - t0) > 140:
+                print(f'\ttaking toooooo long, ending the lh while loop')
+                break
         print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
         return completed_tasks
 
     async def _set_spinspeeds(self, steps, t0, headstart):
         await asyncio.sleep(headstart)
         tnext = headstart
+        print(f"\t\t{t0-self.maestro.nist_time:.2f} it's spinnin' time.")
         for step in steps:
             self.spincoater.set_rpm(rpm=step["rpm"], acceleration=step["acceleration"])
             tnext += step["duration"]
@@ -842,8 +849,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         Returns:
             record: dictionary of recorded spincoating process.
         """
+        print(f"\tstarting Spincoat of {sample}")
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
-
+        print(f"\tliquidhandler.server._start_directly() finished compiling")
         t0 = self.maestro.nist_time
         self.spincoater.start_logging()
         ### set up liquid handler tasks
@@ -872,7 +880,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 #     self.logger.error(f'Exception in {self}: {future.exception()}')
 
         tasks_future.add_done_callback(future_callback)
-
+        print(f"these are the tasks we need to do:\n{tasks_future}")
+        print(f"{t0-self.maestro.nist_time:.2f} starting the deposition tasks")
         drop_times, _ = loop.run_until_complete(tasks_future)
         print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
         rpm_log = self.spincoater.finish_logging()
@@ -917,3 +926,290 @@ class Worker_Characterization(WorkerTemplate):
             }
             msg = json.dumps(msg_dict)
             self.maestro.server.send(msg)
+
+class Worker_HumanOperator(WorkerTemplate):
+    def __init__(self, maestro=None, planning=False):
+        super().__init__(
+            name = "HumanOperator",
+            maestro = maestro,
+            planning = planning,
+            capacity = 1
+        )
+        self.functions = {
+            "idle_gantry": task_tuple(
+                function = self.idle_human,
+                estimated_duration = 1,
+                other_workers = []
+            ),
+            "spincoater_to_hotplate": task_tuple(
+                function = self.spincoater_to_hotplate,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [Worker_SpincoaterLiquidHandler],
+            ),
+            "spincoater_to_storage": task_tuple(
+                function = self.spincoater_to_storage,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_SpincoaterLiquidHandler
+                ]
+            ),
+            "spincoater_to_characterization": task_tuple(
+                function = self.spincoater_to_characterization,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_SpincoaterLiquidHandler,
+                    Worker_Characterization
+                ]
+            ),
+            "hotplate_to_spincoater": task_tuple(
+                function = self.hotplate_to_spincoater,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_SpincoaterLiquidHandler
+                ]
+            ),
+            "hotplate_to_storage": task_tuple(
+                function = self.hotplate_to_storage,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = []
+            ),
+            "hotplate_to_characterization": task_tuple(
+                function = self.hotplate_to_characterization,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_Characterization
+                ]
+            ),
+            "storage_to_spincoater": task_tuple(
+                function = self.storage_to_spincoater,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_SpincoaterLiquidHandler
+                ]
+            ),
+            "storage_to_hotplate": task_tuple(
+                function = self.storage_to_hotplate,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = []
+            ),
+            "storage_to_characterization": task_tuple(
+                function = self.storage_to_characterization,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_Characterization
+                ]
+            ),
+            "charaterization_to_spincoater": task_tuple(
+                function = self.characterization_to_spincoater,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_Characterization,
+                    Worker_SpincoaterLiquidHandler
+                ]
+            ),
+            "characterization_to_hotplate": task_tuple(
+                function = self.characterization_to_hotplate,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_Characterization
+                ]
+            ),
+            "characterization_to_storage": task_tuple(
+                function = self.characterization_to_storage,
+                estimated_duration = 30, # assume 30 seconds for manual pick/place
+                other_workers = [
+                    Worker_Characterization
+                ]
+            ),
+        }
+
+    def idle_human(self, sample, details):
+        self.maestro.idle_human()
+
+    @_to_hotplate
+    def spincoater_to_hotplate(self, sample, details):
+        p1 = self.spincoater()
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        slot = hotplate.get_open_slot()
+        p2 = hotplate(slot)
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
+        f"\n\tFinal Position:\n\t\t{hotplate_name}, {slot}")
+        
+        self.maestro.transfer(p1, p2)
+
+        hotplate.load(slot, sample)
+        sample["hotplate_slot"] = {
+            "hotplate": hotplate_name,
+            "slot": slot,
+        }
+
+    def spincoater_to_storage(self, sample, details):
+        p1 = self.spincoater()
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+        
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
+        f"\n\tFinal Position:\n\t\t{tray}, {slot}")
+
+        self.maestro.transfer(p1, p2)
+
+    def spincoater_to_characterization(self, sample, details):
+        p1 = self.spincoater()
+        p2 = self.characterization.axis()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
+        f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
+
+        self.maestro.transfer(p1, p2)
+
+    def hotplate_to_storage(self, sample, details):
+        hotplate, hpslot = (
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](hpslot)
+
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
+        f"\n\tFinal Position:\n\t\t{tray}, {slot}")
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate].unload(slot=hpslot)
+    
+    def hotplate_to_characterization(self, sample, details):
+        hotplate, hpslot = (
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](hpslot)
+        p2 = self.characterization.axis()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
+        f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate].unload(slot=hpslot)
+
+    def hotplate_to_spincoater(self, sample, details):
+        hotplate, hpslot = (
+            sample["hotplate_slot"]["hotplate"],
+            sample["hotplate_slot"]["slot"],
+        )
+        p1 = self.hotplates[hotplate](hpslot)
+        p2 = self.spincoater()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
+        f"\n\tFinal Position:\n\t\tSpincoater Chuck")
+
+        self.maestro.transfer(p1, p2)
+        self.hotplates[hotplate].unload(slot=hpslot)
+
+    def storage_to_spincoater(self, sample, details):
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p1 = self.maestro.storage[tray](slot)
+        p2 = self.maestro.spincoater()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
+        f"\n\tFinal Position:\n\t\tSpincoater Chuck")
+
+        self.maestro.transfer(p1, p2)
+
+    @_to_hotplate
+    def storage_to_hotplate(self, sample, details):
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p1 = self.maestro.storage[tray](slot)
+
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        hpslot = hotplate.get_open_slot()
+        p2 = hotplate(hpslot)
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
+        f"\n\tFinal Position:\n\t\t{hotplate_name}, {hpslot}")
+
+        self.maestro.transfer(p1, p2)
+
+        hotplate.load(hpslot, sample)
+        sample["hotplate_slot"] = {
+            "hotplate": hotplate_name,
+            "slot": hpslot,
+        }
+
+    def storage_to_characterization(self, sample, details):
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p1 = self.storage[tray](slot)
+        p2 = self.characterization.axis()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
+        f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
+
+        self.maestro.transfer(p1, p2)
+
+    def characterization_to_spincoater(self, sample, details):
+        p1 = self.characterization.axis()
+        p2 = self.spincoater()
+
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
+        f"\n\tFinal Position:\n\t\tSpincoater Chuck")
+
+        self.maestro.transfer(p1, p2)
+
+    @_to_hotplate
+    def characterization_to_hotplate(self, sample, details):
+        p1 = self.characterization.axis()
+
+        hotplate_name = details["destination"]
+        hotplate = self.hotplates[hotplate_name]
+        slot = hotplate.get_open_slot()
+        p2 = hotplate(slot)
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
+        f"\n\tFinal Position:\n\t\t{hotplate_name}, {slot}")
+        self.maestro.transfer(p1, p2)
+
+        hotplate.load(slot, sample)
+        sample["hotplate_slot"] = {
+            "hotplate": hotplate_name,
+            "slot": slot,
+        }
+
+    def characterization_to_storage(self, sample, details):
+        p1 = self.characterization.axis()
+        tray, slot = (
+            sample["storage_slot"]["tray"],
+            sample["storage_slot"]["slot"],
+        )
+        p2 = self.storage[tray](slot)
+        print(f"Move the sample as follows:" \
+        f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
+        f"\n\tFinal Position:\n\t\t{tray}, {slot}")
+
+        self.maestro.transfer(p1, p2)

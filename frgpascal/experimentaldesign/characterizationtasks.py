@@ -35,7 +35,7 @@ class CharacterizationTask(ABC):
             or self.position > constants["axis"]["x_max"]
         ):
             raise Exception(
-                f"Invalid position: {self.position}. Must be between 0 and 400. Check your jitter value!"
+                f"Invalid position: {self.position}. Must be between {constants['axis']['x_min']} and {constants['axis']['x_max']}. Check your jitter value!"
             )
 
     @abstractmethod
@@ -125,7 +125,7 @@ class PLImaging(CharacterizationTask):
 
 class TransmissionSpectroscopy(CharacterizationTask):
     def __init__(
-        self, exposure_times=[0.02, 0.05, 0.2, 1, 5, 15], num_scans=2, jitter=0
+        self, exposure_times=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1, 2], num_scans=2, jitter=0
     ):
         for et in exposure_times:
             if et < 0.02 or et > 60:

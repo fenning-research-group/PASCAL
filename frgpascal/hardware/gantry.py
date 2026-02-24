@@ -23,8 +23,10 @@ class Gantry:
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
+            print(self.port, "if") ## added comment
         else:
             self.port = port
+            print(port, "else") ## added comment
         self.POLLINGDELAY = constants["gantry"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
@@ -53,6 +55,8 @@ class Gantry:
         self.__currentframe = None
         self.__ZLIM = None  # ceiling for current frame
 
+        self._original_pascal = True # False to revert to May 2025 gantry behavior.
+
         self.position = [
             None,
             None,
@@ -73,6 +77,8 @@ class Gantry:
         ]  # mm above endpoints to move to in between points
 
         self.connect()  # connect by default
+        self.in_use = True
+        print("gantry connected")
 
     # communication methods
     def connect(self):
@@ -107,6 +113,12 @@ class Gantry:
         #     "M92 X53.333 Y53.333 Z200.0"
         # )  # set steps/mm, randomly resets to defaults sometimes idk why
         self.write(
+            "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
+        )
+        self.write(
+            "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
+        )
+        self.write(
             "M906 X800 Y800 Z800 E1"
         )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
         self.write(
@@ -115,7 +127,7 @@ class Gantry:
         self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
-        self.set_speed_percentage(100)  # set speed to 80% of max
+        self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -144,13 +156,20 @@ class Gantry:
                     y = float(re.findall(r"Y:(\S*)", line)[0])
                     z = float(re.findall(r"Z:(\S*)", line)[0])
                     found_coordinates = True
+                    # print(f'Home is @ [{x}, {y}, {z}]')
                     break
         self.position = [x, y, z]
         self.__currentframe = self._target_frame(*self.position)
-        self.__ZLIM = (
-            self.__FRAMES["opentrons"]["z_max"] - 3
-        )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
-
+        print(f"\t\t{self.__currentframe}")
+        if self._original_pascal:
+            self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
+        else:
+            self.__ZLIM = (
+                self.__FRAMES["opentrons"]["z_max"] - 3
+            )  # never really needs to go above the height of the opentrons height limit, -3 for buffer
+        # self.__ZLIM = (
+        #         self.__FRAMES["opentrons"]["z_max"] - 3
+        #     )  
         # if self.servoangle > self.MINANGLE:
         self.__gripper_last_opened = time.time()
 
@@ -166,6 +185,7 @@ class Gantry:
         # self.movetoclear()
         self.write("G28 X Y Z")
         self.update()
+        self.movetoclear()
 
     def _target_frame(self, x, y, z):
         """Checks whether a target coordinate is within the liquid handler (OT2), workspace (over the breadboard), or invalid coordinate frames
@@ -179,31 +199,54 @@ class Gantry:
             string: name of frame. if none, returns 'invalid'
         """
         for frame, lims in self.__FRAMES.items():
+            print(f"\tchecking frame {frame}")
             if x < lims["x_min"] or x > lims["x_max"]:
+                print(f"\t\t{x} is outside bounds")
                 continue
             if y < lims["y_min"] or y > lims["y_max"]:
+                print(f"\t\t{y} is outside bounds")
                 continue
             if z < lims["z_min"] or z > lims["z_max"]:
+                print(f"\t\t{z} is outside bounds")
                 continue
+            print(f"\tthe position [{x}, {y}, {z}] is inside of frame {frame}")
             return frame
         return "invalid"
 
     def _transition_to_frame(self, target_frame):
-        self._movecommand(
-            x=self.position[0],
-            y=self.position[1],
-            z=self.__ZLIM,
-            speed=self.speed,
-        )  # move just in z
-
-        # nudge the gantry into the target frame
-        x, y, z = self.TRANSITION_COORDINATES
-        z = self.__ZLIM
-        if target_frame == "opentrons":
-            x -= 0.2
+        if self._original_pascal:
+            self._movecommand(
+                self.position[0],
+                y = self.position[1],
+                z = self.TRANSITION_COORDINATES[2] - 1, #to be within bounds of opentrons
+                speed = self.speed,
+            ) # move in just z
+            # nudge the gantry into the target frame
+            x, y, z = self.TRANSITION_COORDINATES
+            if target_frame == "opentrons":
+                x -= 0.2
+                self.__ZLIM = constants["gantry"]["opentrons_limits"]["z_max"]
+            else:
+                x += 0.2
+                self.__ZLIM = constants["gantry"]["workspace_limits"]["z_max"]
+            self._movecommand(x, y, z, speed = self.speed)
+            print(f'\tGantry is now at Transition Coordinates: \n\t[{x}, {y}, {z}]')
         else:
-            x += 0.2
-        self._movecommand(x, y, z, speed=self.speed)
+            self._movecommand(
+                x=self.position[0],
+                y=self.position[1],
+                z=self.__ZLIM,
+                speed=self.speed,
+            )  # move just in z
+
+            # nudge the gantry into the target frame
+            x, y, z = self.TRANSITION_COORDINATES
+            z = self.__ZLIM
+            if target_frame == "opentrons":
+                x -= 0.2
+            else:
+                x += 0.2
+            self._movecommand(x, y, z, speed=self.speed)
 
     def _move_below_opentrons_limits(self, x, y, z):
         self._movecommand(x, y, z, speed=self.speed)
@@ -225,34 +268,49 @@ class Gantry:
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
+        print(target_frame)
+        cur_frames = list(self.__FRAMES.keys())
+        if target_frame not in cur_frames:
+            print(f"frame {target_frame} is not in the defined frames!")
         if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
+        if self._original_pascal:
+            if self.__currentframe != target_frame:
+                print(f"\ttime to transition to a new frame")
+                self._transition_to_frame(target_frame)
+            return x, y, z
+        else:
+            # checks to see if current z is more than 5mm below opentrons limits
+            # and same for y
+            opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 3
+            opentrons_y_min_limit = 60
+            transition_coord = constants["gantry"]["transition_coordinates"]
+            if self.__currentframe != target_frame:
+                # if z > opentrons_z_max_limit:
+                #     z = opentrons_z_max_limit
+                # if y < opentrons_y_min_limit:
+                #     y = opentrons_y_min_limit
+                if zhop:
+                    self._movecommand(
+                        self.position[0],
+                        self.position[1],
+                        self.__ZLIM,
+                        speed=self.speed,
+                        m400=True,
+                    )
+                    print("zhopping")
+                self._movecommand(
+                    transition_coord[0],
+                    transition_coord[1],
+                    transition_coord[2],
+                    speed=self.speed,
+                    m400=True,
+                )
 
-        # checks to see if current z is more than 5mm below opentrons limits
-        # and same for y
-        opentrons_z_max_limit = constants["gantry"]["opentrons_limits"]["z_max"] - 3
-        opentrons_y_min_limit = 60
-        if self.__currentframe != target_frame and not zhop:
-            # if z > opentrons_z_max_limit:
-            #     z = opentrons_z_max_limit
-            # if y < opentrons_y_min_limit:
-            #     y = opentrons_y_min_limit
-            self._movecommand(
-                self.position[0],
-                self.position[1],
-                opentrons_z_max_limit,
-                speed=self.speed,
-                m400=True,
-            )
-            self._movecommand(
-                self.position[0],
-                opentrons_y_min_limit,
-                self.position[2],
-                speed=self.speed,
-                m400=True,
-            )
+            # elif self.__currentframe != target_frame and zhop:
+            #     print("This motion wants to zhop while doing a frame transition!")
 
-        return x, y, z
+            return x, y, z
 
     def moveto(self, x=None, y=None, z=None, zhop=True, speed=None, m400=False):
         """
@@ -263,28 +321,54 @@ class Gantry:
                 x, y, z = x  # split 3 coordinates into appropriate variables
         except:
             pass
-        x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
-
-        if speed is None:
-            speed = self.speed
-        if (x == self.position[0]) and (y == self.position[1]):
-            zhop = False  # no use zhopping for no lateral movement
-
-        # if self.position[2] > self.__ZLIM:
-        #     m400 = True
-
-        if zhop:
-            z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
-            z_ceiling = min(
-                z_ceiling, self.__ZLIM
-            )  # cant z-hop above build volume. mostly here for first move after homing.
-
-            self.moveto(z=self.__ZLIM, zhop=False, speed=speed, m400=m400)
-            self.moveto(x, y, self.__ZLIM, zhop=False, speed=speed, m400=m400)
-            self.moveto(z=z, zhop=False, speed=speed, m400=True)
-
+        if self._original_pascal:
+            x, y, z = self.premove(x, y, z) # will error out if invalid move
+            if speed is None:
+                speed = self.speed
+            if (x == self.position[0]) and (y == self.position[1]):
+                zhop = False # no use zhopping for no lateral movement
+            if zhop:
+                
+                z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
+                print(f"\tz_ceil: {z_ceiling}, ZLIM: {self.__ZLIM}")
+                z_ceiling = min(
+                    z_ceiling, self.__ZLIM
+                ) # cant z-hop above build volume. mostly here for first move after homing
+                print(f"\tmoving to z_ceil: {z_ceiling}")
+                self.moveto(z = z_ceiling, zhop = False, speed = speed)
+                print(f"\tmoving to x, y: {x}, {y}")
+                self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
+                print(f"\tmoving to z: {z}")
+                self.moveto(z=z, zhop = False, speed = speed)
+            else:
+                self._movecommand(x, y, z, speed)
         else:
-            self._movecommand(x, y, z, speed, m400)
+            x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
+            # print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
+            if speed is None:
+                speed = self.speed
+            if (x == self.position[0]) and (y == self.position[1]):
+                zhop = False  # no use zhopping for no lateral movement
+
+            # if self.position[2] > self.__ZLIM:
+            #     m400 = True
+
+            if zhop:
+                z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
+                z_ceiling = min(
+                    z_ceiling, self.__ZLIM
+                )  # cant z-hop above build volume. mostly here for first move after homing.
+                if self._original_pascal:
+                    self.moveto(z=z_ceiling, zhop = False, speed = speed)
+                    self.moveto(x, y, z_ceiling, zhop=False, speed=speed)
+                    self.moveto(z=z, zhop=False, speed=speed)
+                else:
+                    self.moveto(z=self.__ZLIM, zhop=False, speed=speed, m400=True)
+                    self.moveto(x, y, self.__ZLIM, zhop=False, speed=speed, m400=True)
+                    self.moveto(z=z, zhop=False, speed=speed, m400=True)
+
+            else:
+                self._movecommand(x, y, z, speed, m400)
 
     def movetoclear(self):
         self.moveto(self.CLEAR_COORDINATES)
@@ -299,8 +383,10 @@ class Gantry:
         else:
             self.__targetposition = [x, y, z]
             self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
-
-            return self._waitformovement(m400)
+            if self._original_pascal:
+                return self._waitformovement()
+            else:
+                return self._waitformovement(m400)
 
     def moverel(self, x=0, y=0, z=0, zhop=False, speed=None):
         """
@@ -324,8 +410,11 @@ class Gantry:
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        if m400 is True:
+        if self._original_pascal:
             self._handle.write(f"M400\n".encode())
+        else:
+            if m400 is True:
+                self._handle.write(f"M400\n".encode())
 
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
 

@@ -14,6 +14,7 @@ from datetime import datetime
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    print(f)
     constants = yaml.load(f, Loader=yaml.Loader)
 
 # spincoater_serial_number = constants["spincoater"]["serialid"]
@@ -21,13 +22,13 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class SpinCoater:
-    def __init__(self, gantry: Gantry, switch: SingleSwitch):
+    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
         """Initialize the spincoater control object
 
         Args:
                                         gantry (Gantry): PASCAL Gantry control object
                                         serial_number (str, optional): Serial number for spincoater arduino, used to find and connect to correct COM port. Defaults to "558383339323513140D1":str.
-                                        p0 (tuple, optional): Initial guess for gantry coordinates to drop sample on spincoater. Defaults to (52, 126, 36):tuple.
+                                        p0 (tuple, optional): Initial guess for gantry coordinates to sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
         # if port is None:
@@ -67,81 +68,97 @@ class SpinCoater:
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
-        self.connect()
+        self.connect(sc_axis = sc_axis, regular_bootup = regular_bootup)
         self._current_rps = 0
 
     def connect(self, **kwargs):
-        # connect to odrive BLDC controller
-        print("Connecting to odrive")
-        # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
-        self.odrv0 = odrive.find_any()
-        # try:
-        #     self.odrv0 = odrive.find_any(timeout=3)
-        # except:
-        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
-        # try:
-        #     self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
-        #     self.odrv0._destroy()
-        # except:
-        #     pass  # this always throws an "object lost" error...which is what we want
-        # try:
-        #     self.odrv0 = odrive.find_any(timeout=3)
-        # except:
-        #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+        regular_bootup = kwargs.get('regular_bootup', True)
+        if regular_bootup:
+            # connect to odrive BLDC controller
+            print("Connecting to odrive")
+            # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
+            self.odrv0 = odrive.find_any()
+            # try:
+            #     self.odrv0 = odrive.find_any(timeout=3)
+            # except:
+            #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
+            # try:
+            #     self.odrv0.reboot()  # reboot the odrive, communication sometimes gets broken when we disconnect/reconnect
+            #     self.odrv0._destroy()
+            # except:
+            #     pass  # this always throws an "object lost" error...which is what we want
+            # try:
+            #     self.odrv0 = odrive.find_any(timeout=3)
+            # except:
+            #     raise ValueError("Could not find odrive! confirm that 24V PSU is on")
 
-        print("\tFound motor, now calibrating. This takes 10-20 seconds.")
-        # input("\tPress enter once shroud is out of the way: ")
-        self.axis = self.odrv0.axis0
-        self.axis.requested_state = (
-            AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
-        )
-        time.sleep(5)  # wait for calibration to initiate
-        while self.axis.current_state != 1:
-            time.sleep(1)  # wait for calibration to complete
-        print("\tDone calibrating odrive!")
-        self.axis.requested_state = (
-            AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
-        )
-        # odrive defaults
-        self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
-        self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
-        self.axis.trap_traj.config.vel_limit = (
-            0.5  # for position moves to lock position
-        )
-        self.axis.trap_traj.config.accel_limit = 0.5
-        self.axis.trap_traj.config.decel_limit = 0.5
-        self.lock()
-        self.idle()
+            print("\tFound motor, now calibrating. This takes 10-20 seconds.")
+            # input("\tPress enter once shroud is out of the way: ")
+            self.axis = self.odrv0.axis0
+            self.axis.requested_state = (
+                AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
+            )
+            time.sleep(5)  # wait for calibration to initiate
+            while self.axis.current_state != 1:
+                time.sleep(1)  # wait for calibration to complete
+            print("\tDone calibrating odrive!")
+            self.axis.requested_state = (
+                AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
+            )
+            # odrive defaults
+            self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
+            self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
+            self.axis.trap_traj.config.vel_limit = (
+                0.5  # for position moves to lock position
+            )
+            self.axis.trap_traj.config.accel_limit = 0.5
+            self.axis.trap_traj.config.decel_limit = 0.5
+            self.lock()
+            self.idle()
+            self.__connected = True
+            # start libfibre timer watchdog
+            self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
+            self._libfibre_watchdog.start()
+            self._error_log = []
 
-        # start libfibre timer watchdog
-        self.__connected = True
-        self._libfibre_watchdog = threading.Thread(target=self.__libfibre_timer_worker)
-        self._libfibre_watchdog.start()
-        self._error_log = []
+        else:
+            print("\tSkipping spincoater calibration, will throw silent errors if you try to use any spincoater-inclusive tasks.")
 
-    def disconnect(self):
+    def disconnect(self, reboot = False):
         self.__connected = False
         self._libfibre_watchdog.join()
+        # this always throws an "object lost" error...which is what we want
         try:
-            self.odrv0._destroy()
-        except:
+            # print(self.odrv0.__dict__)
+            if reboot:            
+                print('rebooting instead')
+                self.odrv0.reboot()
+            else:
+                print('destroying')
+                self.odrv0._destroy()
+            # print(self.odrv0.__dict__)
+
+        except Exception as e:
+            print('Oh no the odrive is gone')
+            print(f"Error: {e}")
             pass  # this always throws an "object lost" error...which is what we want
 
     # position calibration methods
     def calibrate(self):
         """Prompt user to manually position the gantry over the spincoater using the Gantry GUI. This position will be recorded and used for future pick/place operations to the spincoater chuck"""
-        # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
-        # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
-        # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = self.gantry.position
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates, f)
+        if self.gantry.in_use:
+            # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
+            # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
+            # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
+            self.gantry.moveto(*self.p0)
+            self.gantry.gui()
+            self.coordinates = self.gantry.position
+            # self.gantry.moverel(z=10, zhop=False)
+            self.__calibrated = True
+            with open(
+                os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
+            ) as f:
+                yaml.dump(self.coordinates, f)
 
     def _load_calibration(self):
         with open(
@@ -196,6 +213,11 @@ class SpinCoater:
         rps = int(rpm / 60)  # convert rpm to rps for odrive
         acceleration = int(acceleration / 60)  # convert rpm/s to rps/s for odrive
         self.axis.controller.config.vel_ramp_rate = acceleration
+        if rps == 0:
+            self.axis.controller.config.vel_ramp_rate = int(
+                500 / 60
+            )  # using 500 as a safe slowdown speed
+
         time.sleep(self.COMMUNICATION_INTERVAL)
         self.axis.controller.input_vel = rps
         time.sleep(self.COMMUNICATION_INTERVAL)
@@ -216,16 +238,25 @@ class SpinCoater:
         routine to lock rotor in registered position for sample transfer
         """
         if self._locked:
+            print('spincoater is already locked')
             return
+        print('starting sc.lock()')
+        print(f"\tcurrent position: {self.axis.encoder.pos_circular}")
+        print(f"\tHome Position: {self.__HOMEPOSITION}")
         if self.axis.current_state != AXIS_STATE_CLOSED_LOOP_CONTROL:
             self.axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
         self.axis.controller.config.input_mode = INPUT_MODE_TRAP_TRAJ
         # self.axis.controller.config.input_mode = INPUT_MODE_POS_FILTER
         self.axis.controller.config.control_mode = CONTROL_MODE_POSITION_CONTROL
         time.sleep(self.COMMUNICATION_INTERVAL)
+        if (self.axis.encoder.pos_circular - self.__HOMEPOSITION) < 0.05:
+            self.axis.controller.input_pos = self.axis.encoder.pos_circular + 0.2
+        time.sleep(self.COMMUNICATION_INTERVAL)
+        time.sleep(self.COMMUNICATION_INTERVAL)
         self.axis.controller.input_pos = self.__HOMEPOSITION
         time.sleep(self.COMMUNICATION_INTERVAL)
         t0 = time.time()
+        print(f"\tStarting to find home: \n\t\tinitial time is {t0}")
         while (
             np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular) > 0.05
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
@@ -234,14 +265,19 @@ class SpinCoater:
                 print("resetting")
                 self.reset()
                 t0 = time.time()
+        tf = time.time()
+        print(f"\tWe Found Home: \n\t\tfinal time is {tf}\n\t\tduration is {tf-t0}")
         self._locked = True
 
     def reset(self):
         try:
+            print('Disconnecting from odrive')
             self.disconnect()
         except:
+            print('There was an error during sc.disconnect()')
             pass
         self.connect()
+        # self.lock()
 
     def twist_off(self):
         """
@@ -271,18 +307,26 @@ class SpinCoater:
         stop rotation and locks the rotor in position
         """
         if self._locked:
+            print("SpinCoater is already locked!")
             return
-        self.set_rpm(0, 1000)
+        print("let's slow it down now")
+        self.set_rpm(0, 500)  # using 500 as a safe decceleration speed
         t0 = time.time()
+        t_0 = time.time()
         min_stopped_time = 2
         while True:
             if self.axis.encoder.vel_estimate > 0:
                 t0 = time.time()
             if time.time() - t0 > min_stopped_time:
                 break
+            if abs(time.time() - t_0) > 20: # using 20 seconds as reasonable stop time for 8k rpm
+                break
             time.sleep(0.1)
+        print(f"\tSpinCoater says it is stopped now")
         self.lock()
+        print(f"\tSpinCoater says it is locked now")
         self.idle()
+        print(f"\tSpinCoater says it is idle now")
 
     def idle(self):
         if self.axis.current_state != AXIS_STATE_IDLE:
@@ -297,13 +341,17 @@ class SpinCoater:
     # logging code
     def __logging_worker(self):
         t0 = time.time()
-        self.__logdata = {"time": [], "rpm": []}
+        self.__logdata = {"time": [], "rpm": [], "pos": []}
         while self.__logging_active:
             if self.__connected:
                 self.__logdata["time"].append(time.time() - t0)
                 self.__logdata["rpm"].append(
                     self.axis.encoder.vel_estimate * 60
                 )  # rps from odrive -> rpm
+                self.__logdata["pos"].append(
+                    # self.axis.encoder.pos_estimate
+                    self.axis.encoder.pos_circular
+                ) # radial position from odrive
             time.sleep(self.LOGGINGINTERVAL)
 
     def start_logging(self):

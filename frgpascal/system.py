@@ -6,6 +6,7 @@ from frgpascal.workers import (
     Worker_Hotplate,
     Worker_SpincoaterLiquidHandler,
     Worker_Storage,
+    Worker_HumanOperator
 )
 
 # define workers
@@ -27,8 +28,9 @@ def generate_workers(maestro=None):
     st2 = Worker_Storage(capacity=45, initial_fill=45, **kws)
     st2.name = "Tray2"
     cl = Worker_Characterization(**kws)
+    ho = Worker_HumanOperator(**kws)
 
-    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl]}
+    return {w.name: w for w in [gg, sclh, hp1, hp2, hp3, st1, st2, cl, ho]}
 
 
 ALL_WORKERS = generate_workers()
@@ -68,11 +70,16 @@ TRANSITION_TASKS = {
     },
 }
 
-transitions = []
+transitions = {
+    True: [], # use GantryGripper
+    False: [], # use HumanOperator for transitions
+}
 for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
     t1, t2 = type(w1), type(w2)
     if Worker_GantryGripper in [t1, t2]:
         continue  # no transition tasks for this worker
+    if Worker_HumanOperator in [t1, t2]:
+        continue # no transition tasks for this worker
     if t1 == t2:
         continue  # no transtion between same type (hotplate->hotplate, etc)
     immediate = False
@@ -82,22 +89,34 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
         immediate = True  # move off of spincoater ASAP
 
     transition_name = TRANSITION_TASKS[t1][t2]
-    this_transition = rf.Transition(
+    this_transition_ho = rf.Transition(
         duration=ALL_TASKS[transition_name]["estimated_duration"],
         source=w1,
         destination=w2,
-        workers=[ALL_WORKERS["GantryGripper"]],
+        # workers=[ALL_WORKERS["GantryGripper"]],
+        workers=[ALL_WORKERS["HumanOperator"]],
         immediate=immediate,
     )
-    this_transition.name = transition_name
-    transitions.append(this_transition)
+    this_transition_ho.name = transition_name
+    transitions[False].append(this_transition_ho)
+    this_transition_gg = rf.Transition(
+        duration = ALL_TASKS[transition_name]["estimated_duration"],
+        source = w1,
+        destination = w2,
+        workers = [ALL_WORKERS["GantryGripper"]],
+        immediate = immediate,
+    )
+    this_transition_gg.name = transition_name
+    transitions[True].append(this_transition_gg)
+    # this_transition.name = transition_name
+    # transitions.append(this_transition)
 
 
 # default system
-def build():
+def build(use_gantry):
     return rf.System(
         workers=list(ALL_WORKERS.values()),
-        transitions=transitions,
+        transitions=transitions[use_gantry],
         starting_worker=ALL_WORKERS["Tray1"],
         ending_worker=ALL_WORKERS["Tray1"],
     )

@@ -21,7 +21,7 @@ def generate_ot2_protocol(
     tipracks_300,
     tipracks_1000,
     directory=".",
-    template=Literal["samepipettebothsides", "1000left300right"],
+    template=Literal["samepipettebothsides", "1000left300right", "1000left300right-lightsON"],
 ):
     if template not in AVAILABLE_PROTOCOLS:
         raise ValueError(

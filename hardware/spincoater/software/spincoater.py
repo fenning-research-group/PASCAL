@@ -40,11 +40,11 @@ class Spincoater():
 		self.write('a{0:d}'.format(rpm))
 
 	def lock(self):
-	'''
-	Locks the chuck into the home position
-	Spins up the chuck to a low speed, then disengages and enables electromagnet
-	to allow the chuck to coast into the home position + engage with the magnet
-	'''
+		'''
+		Locks the chuck into the home position
+		Spins up the chuck to a low speed, then disengages and enables electromagnet
+		to allow the chuck to coast into the home position + engage with the magnet
+		''' #for some reason lines 43-47 were too far to the left, messing with the definition of lock() (03/25/2025 Note)
 		self.setRPM(500)
 		time.sleep(2)
 		self.setRPM(0)

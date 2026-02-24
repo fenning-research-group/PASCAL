@@ -30,9 +30,12 @@ class CharacterizationLine:
     def __init__(self, rootdir, gantry, switchbox: Switchbox):
         self.axis = CharacterizationAxis(gantry=gantry)
         self.rootdir = rootdir
+        #print(self.rootdir) ##added comment
         if not os.path.exists(self.rootdir):
             os.mkdir(self.rootdir)
+            # print("made a new directory") ##added comment
         self.switchbox = switchbox
+        print("switchbox connected") ##added comment
         self.shutter = Shutter()
         self.filterslider = FilterSlider()
         self.camerahost = ThorcamHost()
@@ -193,7 +196,11 @@ class CharacterizationAxis:
 
     # communication methods
     def connect(self):
+        print("Attempting to connect to cl.axis")
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        if self._handle is None:
+            print(self._handle)
+            print("there is an issue with the port/serial connection")
         self.update()
         # self.update_gripper()
         if self.position == max(
@@ -229,16 +236,19 @@ class CharacterizationAxis:
         # self.gantry.moveto(z=self.gantry.OT2_ZLIM, zhop=False)
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
-        self.moveto(self.TRANSFERPOSITION)
-        self.gantry.moveto(*self.p0)
-        self.gantry.gui()
-        self.coordinates = np.array(self.gantry.position)
-        # self.gantry.moverel(z=10, zhop=False)
-        self.__calibrated = True
-        with open(
-            os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
-        ) as f:
-            yaml.dump(self.coordinates.tolist(), f)
+        if self.gantry.in_use:
+            self.moveto(self.TRANSFERPOSITION)
+            self.gantry.moveto(*self.p0)
+            self.gantry.gui()
+            self.coordinates = np.array(self.gantry.position)
+            # self.gantry.moverel(z=10, zhop=False)
+            self.__calibrated = True
+            with open(
+                os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
+            ) as f:
+                yaml.dump(self.coordinates.tolist(), f)
+        else:
+            print("The Gantry is not being used in this PASCAL instance.")
 
     def _load_calibration(self):
         with open(
@@ -296,6 +306,7 @@ class CharacterizationAxis:
 
         self.__targetposition = x
         if self.__targetposition == self.position:
+            # print('pascal evil')
             return False  # already at target position
         return True
 
@@ -317,22 +328,54 @@ class CharacterizationAxis:
         confirm that characterizationline has reached target position. returns False if
         target position is not reached in time allotted by self.characterizationlineTIMEOUT
         """
+        print(f"\ttarget position: {self.__targetposition}")
+        print(f"\tcurrent position: {self.position}")
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
+        time_elapsed_2 = time.time() - start_time
         self._handle.write(f"M400\n".encode())
         self._handle.write(f"M118 E1 FinishedMoving\n".encode())
         reached_destination = False
         while not reached_destination and time_elapsed < self.TIMEOUT:
             time.sleep(self.POLLINGDELAY)
+            print(f"{self._handle.in_waiting} nawwww")
+            while not self._handle.in_waiting and time_elapsed_2 < self.TIMEOUT:
+                time.sleep(2*self.POLLINGDELAY)
+                print('waiting for serial.Serial to have nonzero bytes available to read')
+                time_elapsed_2 = time.time() - start_time
             while self._handle.in_waiting:
                 line = self._handle.readline().decode("utf-8").strip()
                 if line == "echo:FinishedMoving":
+                    print(f"\t\tEncoder thinks we have finished moving, time to update our self.position")
                     self.update()
+                    print(f"\t\tOur updated position has been saved as {self.position}")
                     if self.position - self.__targetposition < self.POSITIONTOLERANCE:
+                        print(f"\tSUCCESS!")
                         reached_destination = True
+                    else:
+                        print("pascal evil yet again")
+                else:
+                    print(f"\tOutput message from the self._handle:\n\t\t{line}")
                 time.sleep(self.POLLINGDELAY)
             time_elapsed = time.time() - start_time
+
+        if (time_elapsed >= self.TIMEOUT) or (time_elapsed_2 >= self.TIMEOUT):
+            print("cl.axis._waitformovement timed-out, so the final position of the motor was not updated from the initial position.")
+            print("time for the backup position definition while-loop")
+            reached_destination = False
+            while not reached_destination:
+                time.sleep(self.POLLINGDELAY)
+                position0 = self._getposition()
+                time.sleep(self.POLLINGDELAY*5)
+                position1 = self._getposition()
+                if position0 == position1:
+                    if position0 is not None:
+                        self.position = position0
+                        reached_destination = True
+                        print(f"\tposition has been brute-forced to update to the current location of {self.position}")
+                    elif position0 is None:
+                        raise ValueError("cl.axis._getposition failed to return a valid position!")
 
         self.inmotion = False
         return reached_destination
@@ -346,10 +389,23 @@ class CharacterizationAxis:
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     found_coordinates = True
                     break
+        print(f"\tWithin self.update, the found_coordinates conditional has been defined to be {found_coordinates}")
         self.position = x
 
     def movetotransfer(self):
         self.moveto(self.TRANSFERPOSITION)
+
+    def _getposition(self):
+        x = None
+        found_coordinates = False
+        while not found_coordinates:
+            output = self.write("M114") # get current position
+            for line in output:
+                if line.startswith("X:"):
+                    x = float(re.findall(r"X:(\S*)", line)[0])
+                    found_coordinates = True
+                    break
+        return x
 
 
 ### Station Methods
@@ -529,7 +585,8 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
         # open shutter + move filter slider
         threads = [
             Thread(
-                target=self.slider.top_left
+                # target=self.slider.top_left
+                target = self.slider.bottom_right
             ),  # move longpass filter out of the detector path
             Thread(target=self.shutter.open),  # open the shutter to transmission lamp
         ]
@@ -557,7 +614,8 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
                 writer.writerow([wl_, t_])
 
     def calibrate(self, exposure_times: list):
-        self.slider.top_left()  # moves longpass filter out of the transmitted path
+        # self.slider.top_left()  # moves longpass filter out of the transmitted path
+        self.slider.bottom_right()
         self.shutter.close()  # close the shutter
         self.spectrometer._exposure_times = exposure_times
         self.spectrometer.take_dark_baseline(skip_repeats=True)
@@ -593,7 +651,8 @@ class PLSpectroscopy(CharacterizationStationTemplate):
         """
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -637,7 +696,8 @@ class PLSpectroscopy(CharacterizationStationTemplate):
         self.spectrometer._exposure_times = exposure_times
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -680,7 +740,8 @@ class PLPhotostability(CharacterizationStationTemplate):
         """
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]
@@ -723,7 +784,8 @@ class PLPhotostability(CharacterizationStationTemplate):
     def calibrate(self, exposure_times: list):
         threads = [
             Thread(
-                target=self.slider.top_right
+                # target=self.slider.top_right
+                target=self.slider.bottom_left
             ),  # move longpass filter into the detector path
             Thread(target=self.shutter.close),  # close the shutter to transmission lamp
         ]

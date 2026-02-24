@@ -33,6 +33,7 @@ from frgpascal.workers import (
     Worker_GantryGripper,
     Worker_Characterization,
     Worker_SpincoaterLiquidHandler,
+    Worker_HumanOperator,
 )
 
 from frgpascal.closedloop.websocket import Server
@@ -133,11 +134,15 @@ class Maestro:
             "catch_attempts"
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
+
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper()
         self.switchbox = Switchbox()
 
+        # Do we want to use the Gantry/Gripper?
+        self.gantry.in_use, self.gripper.in_use = self._handle_gantry_connection()
+        
         # tries to connect to characterization line
         self._handle_characterization_connection()
 
@@ -186,26 +191,43 @@ class Maestro:
                 p0=constants["sampletray"]["p2"],
             ),
         }
-
+        sc_choice = input('Are you using the spincoater/Opentrons for this run? (y/n)')
+        if sc_choice in ['y', 'Y']:
+            regular_bootup = True
+            sc_axis_choice = input("Is the spincoater using ODrive axis0? (y/n)")
+            if sc_axis_choice in ['y', 'Y']:
+                sc_axis = 'axis0'
+            else:
+                sc_axis = 'axis1'
+        else:
+            regular_bootup = False
+            sc_axis = 'axis0'
         self.spincoater = SpinCoater(
             gantry=self.gantry,
             switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+            sc_axis = sc_axis,
+            regular_bootup = regular_bootup
         )
 
         ### Workers to run tasks in parallel
-        self.workers = {
-            "gantry_gripper": Worker_GantryGripper(maestro=self),
-            "spincoater_lh": Worker_SpincoaterLiquidHandler(maestro=self),
-            # "characterization": Worker_Characterization(maestro=self),
-            "hotplates": Worker_Hotplate(
-                maestro=self,
-                capacity=sum([hp.capacity for hp in self.hotplates.values()]),
-            ),
-            "storage": Worker_Storage(
-                maestro=self,
-                capacity=sum([hp.capacity for hp in self.storage.values()]),
-            ),
-        }
+        #### define either gantry_gripper or human_operator first:
+        if self.gantry.in_use and self.gripper.in_use:
+            self.workers = {
+                "gantry_gripper": Worker_GantryGripper(maestro=self)
+            }
+        else:
+            self.workers = {
+                "human_operator": Worker_HumanOperator(maestro=self)
+            }
+        self.workers["spincoater_lh"] = Worker_SpincoaterLiquidHandler(maestro=self)
+        self.workers["hotplates"] = Worker_Hotplate(
+            maestro = self,
+            capacity = sum([hp.capacity for hp in self.hotplates.values()])
+        )
+        self.workers["storage"] = Worker_Storage(
+            maestro = self,
+            capacity = sum([hp.capacity for hp in self.storage.values()])
+        )
         if self.characterization is not None:
             self.workers["characterization"] = Worker_Characterization(maestro=self)
 
@@ -294,79 +316,86 @@ class Maestro:
         """
         Open gripper quickly before picking up a sample
         """
-        val = self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK
-        # print(val)
-        self.gripper.open(
-            val, slow=False
-        )  # slow to prevent sample position shifting upon release
+        if self.gripper.in_use:
+            val = self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK
+            # print(val)
+            self.gripper.open(
+                val, slow=False
+            )  # slow to prevent sample position shifting upon release
 
     def open_to_width(self, width):
-        self.gripper.open(
-            width, slow=False
-        )  # slow to prevent sample position shifting upon release
+        if self.gripper.in_use:
+            self.gripper.open(
+                width, slow=False
+            )  # slow to prevent sample position shifting upon release
 
     def open_to_pwm(self, pwm):
-        self.gripper.open_pwm(pwm)
+        if self.gripper.in_use:
+            self.gripper.open_pwm(pwm)
 
     def catch(self, from_spincoater=False):
         """
         Close gripper barely enough to pick up sample
         """
-        caught_successfully = False
-        catch_attempts = self.CATCHATTEMPTS
+        if self.gripper.in_use:
+            caught_successfully = False
+            catch_attempts = self.CATCHATTEMPTS
 
-        while not caught_successfully and catch_attempts > 0:
-            if from_spincoater or catch_attempts != self.CATCHATTEMPTS:
-                self.gripper.close(slow=True)
-            if from_spincoater and self.TWISTOFF:
-                self.spincoater.twist_off()
+            while not caught_successfully and catch_attempts > 0:
+                if from_spincoater or catch_attempts != self.CATCHATTEMPTS:
+                    self.gripper.close(slow=True)
+                if from_spincoater and self.TWISTOFF:
+                    self.spincoater.twist_off()
+                    self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                    self.spincoater.lock()
+                self.gripper.open(self.SAMPLEWIDTH - 2)
+                # self.gripper.open(self.SAMPLEWIDTH - 1)
+                time.sleep(0.1)
+                if (
+                    not self.gripper.is_under_load()
+                ):  # if springs not pulling on grippers, assume that the sample is grabbed
+                    caught_successfully = True
+                    break
+                else:
+                    catch_attempts -= 1
+                    # lets jog the gripper position and try again.
+                    self.gripper.close()
+                    self.open_to_catch()
+                    # self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False)
+                    # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
+                    self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
+
+            if not caught_successfully:
                 self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-                self.spincoater.lock()
-            self.gripper.open(self.SAMPLEWIDTH - 2)
-            # self.gripper.open(self.SAMPLEWIDTH - 1)
-            time.sleep(0.1)
-            if (
-                not self.gripper.is_under_load()
-            ):  # if springs not pulling on grippers, assume that the sample is grabbed
-                caught_successfully = True
-                break
-            else:
-                catch_attempts -= 1
-                # lets jog the gripper position and try again.
                 self.gripper.close()
-                self.open_to_catch()
-                # self.gripper.open(self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PICK, slow=False)
-                # self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-                self.gantry.moverel(z=-self.gantry.ZHOP_HEIGHT)
-
-        if not caught_successfully:
-            self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-            self.gripper.close()
-            raise ValueError("Failed to pick up sample!")
-        if from_spincoater:
-            self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
+                raise ValueError("Failed to pick up sample!")
+            if from_spincoater:
+                self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
 
     def release(self):
         """
         Open gripper slowly to release a sample without jogging position too much
         """
-        self.gripper.open(
-            self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
-        )  # slow to prevent sample position shifting upon release
+        if self.gripper.in_use:
+            self.gripper.open(
+                self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
+            )  # slow to prevent sample position shifting upon release
 
     def idle_gantry(self):
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
-        self.gantry.movetoidle()
-        self.gripper.close()
+        if self.gantry.in_use:
+            self.gantry.movetoidle()
+            self.gripper.close()
 
     def get_gripper_load(self):
-        time.sleep(0.5)  # wait for gripper to complete motion
-        self.gripper.write("l")
-        with self.gripper._lock:
-            load = float(self.gripper._handle.readline())
-        return load
+        if self.gripper.in_use:
+            time.sleep(0.5)  # wait for gripper to complete motion
+            self.gripper.write("l")
+            with self.gripper._lock:
+                load = float(self.gripper._handle.readline())
+            return load
 
-    def transfer(self, p1, p2, zhop=True):
+    def transfer(self, p1, p2, zhop=True, brute_force=False):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -377,66 +406,146 @@ class Maestro:
         Raises:
             ValueError: Sample has been dropped during transit
         """
-        self.open_to_catch()  # open the grippers
-        if all(
-            [a == b for a, b in zip(p1, self.spincoater())]
-        ):  # moving off of the spincoater
-            wait_for_vacuum_thread = Thread(
-                target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
-            )
-            lock_spincoater_thread = Thread(target=self.spincoater.lock)
-            self.spincoater.vacuum_off()
-            wait_for_vacuum_thread.start()  # wait for vacuum to disengage
-            lock_spincoater_thread.start()  # move the spincoater to registered position
-            self.gantry.moveto(p1, zhop=True)  # move to the pickup position
-            wait_for_vacuum_thread.join()
-            lock_spincoater_thread.join()
-            from_spincoater = True
+        if brute_force:
+            if self.characterization is not None:
+                # moving between sample trays and cl.axis(0)
+                print('Time to manually move the next sample onto the cl.axis() diving board!')
+                response =input(
+                    "Did you place the correct sample onto the characterization line? (y/n)"
+                )
+                if response in ["y", "Y"]:
+                    pass
+                else:
+                    response = input(
+                        "Double-check that you placed the proper sample in the cl.axis() position! (y/n)"
+                    )
+                    if response in ["y", "Y"]:
+                        pass
+                    else:
+                        raise ValueError("The user input to the prompted question was not a valid option.")
+            # else:
+            #     # moving between sample trays, hotplates, spincoater
+            #     raise ValueError(f"This setting should not be used when the hotplate/spincoater are in use, it will mess up the timing of spincoat + anneal delays!\n\treset self._brute_force to be False, then try again.")
+        if self.gantry.in_use and self.gripper.in_use:
+            print(f'\ttransfering from {p1} to {p2}')
+            self.open_to_catch()  # open the grippers
+            if all(
+                [a == b for a, b in zip(p1, self.spincoater())]
+            ):  # moving off of the spincoater
+                wait_for_vacuum_thread = Thread(
+                    target=time.sleep, args=(self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
+                )
+                lock_spincoater_thread = Thread(target=self.spincoater.lock)
+                self.spincoater.vacuum_off()
+                wait_for_vacuum_thread.start()  # wait for vacuum to disengage
+                lock_spincoater_thread.start()  # move the spincoater to registered position
+                self.gantry.moveto(p1, zhop=True)  # move to the pickup position
+                wait_for_vacuum_thread.join()
+                lock_spincoater_thread.join()
+                from_spincoater = True
+            else:
+                self.gantry.moveto(p1, zhop=zhop)
+
+                from_spincoater = False
+
+            self.catch(
+                from_spincoater=from_spincoater
+            )  # pick up the sample. this function checks to see if gripper picks successfully
+
+            ### Code for drop check, currently not being used
+            # self.gantry.moveto(
+            #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+            # )  # move just above destination
+            # if self.gripper.is_under_load():
+            #     raise ValueError("Sample dropped in transit!")
+
+            if all(
+                [a == b for a, b in zip(p2, self.spincoater())]
+            ):  # moving onto the spincoater
+                lock_spincoater_thread = Thread(target=self.spincoater.lock)
+                lock_spincoater_thread.start()  # move the spincoater to registered position
+                self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2], zhop=True)
+                lock_spincoater_thread.join()
+                self.spincoater.vacuum_on()
+                self.gantry.moveto(
+                    x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
+                )  # overshoot z to press sample onto o-ring on spincoater chuck
+            else:
+                self.gantry.moveto(
+                    p2, zhop=True
+                )  # if not dropped, move to the final position
+
+            # time.sleep(2)
+            self.release()  # drop the sample
+
+            self.gantry.moverel(
+                z=self.gantry.ZHOP_HEIGHT
+            )  # move up a bit, mostly to avoid resting gripper on hotplate
+
+            # self.gripper.close()  # fully close gripper to reduce servo strain
+            if all([a == b for a, b in zip(p2, self.spincoater())]):
+                self.gantry._transition_to_frame(
+                    "workspace"
+                )  # move gantry out of the liquid handler
+                try:
+                    print(self.gantry._target_frame(*self.gantry.position))
+                except:
+                    print("uh-oh, trying to determine gantry's frame failed")
+                    print(f"\tfailed for position {self.gantry.position}")
+                    pass
+                self.spincoater.idle()  # dont actively hold chuck in registered position
+            
         else:
-            self.gantry.moveto(p1, zhop=zhop)
+            if all(
+                [a == b for a, b in zip(p1, self.spincoater())]
+            ):  # moving off of the spincoater
+                wait_for_vacuum_thread = Thread(
+                    target = time.sleep, args = (self.spincoater.VACUUM_DISENGAGEMENT_TIME,)
+                )
+                lock_spincoater_thread = Thread(target=self.spincoater.lock)
+                self.spincoater.vacuum_off()
+                wait_for_vacuum_thread.start() # wait for vacuum to disengage
+                lock_spincoater_thread.start() # move the spincoater to registered position
+                wait_for_vacuum_thread.join()
+                lock_spincoater_thread.join()
+                self.spincoater.idle()
+                from_spincoater = True
+            else:
+                from_spincoater = False
 
-            from_spincoater = False
+            if all(
+                [a == b for a, b in zip(p2, self.spincoater())]
+            ):  # moving onto the spincoater
+                lock_spincoater_thread = Thread(target=self.spincoater.lock)
+                lock_spincoater_thread.start() # move the spincoater to registered position
+                lock_spincoater_thread.join()
+                self.spincoater.vacuum_on()
+                self.spincoater.idle()
 
-        self.catch(
-            from_spincoater=from_spincoater
-        )  # pick up the sample. this function checks to see if gripper picks successfully
-
-        ### Code for drop check, currently not being used
-        # self.gantry.moveto(
-        #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-        # )  # move just above destination
-        # if self.gripper.is_under_load():
-        #     raise ValueError("Sample dropped in transit!")
-
-        if all(
-            [a == b for a, b in zip(p2, self.spincoater())]
-        ):  # moving onto the spincoater
-            lock_spincoater_thread = Thread(target=self.spincoater.lock)
-            lock_spincoater_thread.start()  # move the spincoater to registered position
-            self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2], zhop=True)
-            lock_spincoater_thread.join()
-            self.spincoater.vacuum_on()
-            self.gantry.moveto(
-                x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
-            )  # overshoot z to press sample onto o-ring on spincoater chuck
-        else:
-            self.gantry.moveto(
-                p2, zhop=zhop
-            )  # if not dropped, move to the final position
-
-        # time.sleep(2)
-        self.release()  # drop the sample
-
-        self.gantry.moverel(
-            z=self.gantry.ZHOP_HEIGHT
-        )  # move up a bit, mostly to avoid resting gripper on hotplate
-
-        # self.gripper.close()  # fully close gripper to reduce servo strain
-        if all([a == b for a, b in zip(p2, self.spincoater())]):
-            self.gantry._transition_to_frame(
-                "workspace"
-            )  # move gantry out of the liquid handler
-            self.spincoater.idle()  # dont actively hold chuck in registered position
+            # Human Operator indicates when they're done moving the sample
+            if self.characterization is not None:
+                wait_for_sample_transfer_thread = Thread(
+                    target = time.sleep,
+                    args = (
+                        constants['humanoperator']['sample_transfer']['duration']['cl.axis'],
+                    )
+                )
+            else:
+                wait_for_sample_transfer_thread = Thread(
+                    target = time.sleep,
+                    args = (
+                        constants['humanoperator']['sample_transfer']['duration']['no_cl.axis'],
+                    )
+                )
+            # TODO: Replace with a user-defined end to sample_transfer waiting.
+            # wait_for_sample_transfer_thread = Thread(
+            #     target = input,
+            #     args = (
+            #         "Hit Enter Key when done moving the sample",
+            #     )
+            # )
+            wait_for_sample_transfer_thread.start()
+            wait_for_sample_transfer_thread.join()
 
     ### Batch Sample Execution
     def make_background_event_loop(self):
@@ -593,6 +702,7 @@ class Maestro:
         self._experiment_checklist()
         self.pending_tasks = []
         self.completed_tasks = {}
+        self.given_run_ip = ip
         if ip is None:
             self.liquidhandler.server.ip = get_ot2_ip()
         else:
@@ -617,6 +727,7 @@ class Maestro:
             worker.start()
 
     def stop(self):
+        print('Beginning to stop PASCAL')
         self.working = False
         # clean up the experiment, save log of actual timings
         for hp in self.hotplates.values():
@@ -635,17 +746,25 @@ class Maestro:
             )
 
         for w in self.workers.values():
+            print(f"Stopping {w} now")
             w.stop_workers()
-        if self.liquidhandler.server.ip is not None:
+            print(f"\tStop Successful!")
+        # if self.liquidhandler.server.ip is not None:
+        if self.given_run_ip is not None:
+            print("Stopping the liquidhandler Server Now.")
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
+            print("\tStop Successful!")
 
         self.logger.info("Finished experiment, stopping now.")
 
         for h in self.logger.handlers:
+            print(f"Removing logger.handler {h}")
             self.logger.removeHandler(h)
+            print("\tRemoval Successful!")
 
         print("Maestro stopped!")
-        self.gantry.movetoclear()
+        if self.gantry.in_use and self.gripper.in_use:
+            self.gantry.movetoclear()
         # self.thread.join()
 
     def __del__(self):
@@ -712,9 +831,22 @@ class Maestro:
         if needs_char:
             try:
                 self.characterization = CharacterizationLine(
-                    gantry=self.gantry, rootdir=ROOTDIR, switchbox=self.switchbox
+                    gantry=self.gantry,
+                    rootdir=ROOTDIR,
+                    switchbox=self.switchbox,
                 )
             except:
                 print(
                     "Failed to connect to characterization line, continuing without it."
                 )
+
+    def _handle_gantry_connection(self):
+        """
+        Prompts user if they want to use the gantry in this PASCAL instance,
+        or, manually move samples to/from"""
+
+        self.humanoperator = None
+        response = input("Do you need the gantry/gripper? (y/n)")
+        need_gantry = response in ["y", "Y"]
+        return need_gantry, need_gantry
+
