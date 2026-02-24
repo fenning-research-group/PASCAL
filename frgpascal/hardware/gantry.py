@@ -1,4 +1,3 @@
-import serial
 import time
 import re
 import numpy as np
@@ -8,7 +7,9 @@ import PyQt5
 import yaml
 import os
 import subprocess
+import serial
 import socket
+import select
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
 from frgpascal.hardware.helpers import get_port
@@ -89,23 +90,30 @@ class Gantry:
         print("gantry connected")
 
     # communication methods
-    # def connect(self):
-        # self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
-        # self.update()
-        # # self.update_gripper()
-        # if self.position == [
-        #     self.__OVERALL_LIMS["x_max"],
-        #     self.__OVERALL_LIMS["y_max"],
-        #     self.__OVERALL_LIMS["z_max"],
-        # ]:  # this is what it shows when initially turned on, but not homed
-        #     self.position = [
-        #         None,
-        #         None,
-        #         None,
-        #     ]  # start at None's to indicate stage has not been homed.
-        # # self.write('M92 X40.0 Y26.77 Z400.0')
-        # self.set_defaults()
-        # print("Connected to gantry")
+    def connect(self, response = None):
+        if response is None:
+            response = input("Is the Gantry using a Duet Board? (y/n)")
+            self._ethernet = response in ["y", "Y"]
+        if self._ethernet:
+            self.connect_ethernet()
+        elif not self._ethernet:
+            self.connect_usb()
+        self.update()
+        if self.position == [
+            self.__OVERALL_LIMS["x_max"],
+            self.__OVERALL_LIMS["y_max"],
+            self.__OVERALL_LIMS["z_max"],
+        ]:  # this is what is shows when initially turned on, but not homed
+            self.position = [
+                None,
+                None,
+                None
+            ]
+        self.set_defaults()
+        print("Connected to Gantry")
+
+    def connect_usb(self):
+        self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
 
     def ping_duet(self, ip = "192.168.0.11", timeout = 1000):
         """
@@ -122,7 +130,7 @@ class Gantry:
             print(f"Ping error: {e}")
             return False
 
-    def connect(self):
+    def connect_ethernet(self):
         # Have we connected to the Duet already
         if self.ip in self._connected_network_devices:
             print(f"Duet at {self.ip} already connected.")
@@ -173,33 +181,42 @@ class Gantry:
         del self._handle
 
     def set_defaults(self):
-        self.write("M501")  # load defaults from EEPROM
-        self.write("G90")  # absolute coordinate system
-        # self.write(
-        #     "M92 X26.667 Y26.667 Z200.0"
-        # )  # set steps/mm, randomly resets to defaults sometimes idk why
-        # self.write(
-        #     "M92 X53.333 Y53.333 Z200.0"
-        # )  # set steps/mm, randomly resets to defaults sometimes idk why
-        self.write(
-            "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
-        )
-        self.write(
-            "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
-        )
-        self.write(
-            "M906 X800 Y800 Z800 E1"
-        )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
-        self.write(
-            "M84 S0"
-        )  # disable stepper timeout, steppers remain engaged all the time
-        self.write(
-            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
-        )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
+        if self._ethernet:
+            self.write("M501")
+            self.write("G90")
+            self.write(
+                f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z{30}"
+            )
+        else:
+            self.write("M501")  # load defaults from EEPROM
+            self.write("G90")  # absolute coordinate system
+            # self.write(
+            #     "M92 X26.667 Y26.667 Z200.0"
+            # )  # set steps/mm, randomly resets to defaults sometimes idk why
+            # self.write(
+            #     "M92 X53.333 Y53.333 Z200.0"
+            # )  # set steps/mm, randomly resets to defaults sometimes idk why
+            # self.write(
+            #     "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
+            # )
+            self.write(
+                "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
+            )
+            self.write(
+                "M906 X800 Y800 Z800 E1"
+            )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
+            self.write(
+                "M84 S0"
+            )  # disable stepper timeout, steppers remain engaged all the time
+            self.write(
+                f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
+            )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max
 
-    def write(self, msg, legacy_gantry = False):
-        if legacy_gantry:
+    def write(self, msg):
+        if self.ethernet:
+            output = [self.send_gcode(msg, homing = True)]
+        else:
             self._handle.write(f"{msg}\n".encode())
             time.sleep(self.POLLINGDELAY)
             output = []
@@ -208,8 +225,6 @@ class Gantry:
                 if line != "ok":
                     output.append(line)
                 time.sleep(self.POLLINGDELAY)
-        else:
-            output = [self.send_gcode(msg, homing = True)]
         return output
 
     def _enable_steppers(self):
@@ -474,10 +489,13 @@ class Gantry:
         z += self.position[2]
         self.moveto(x, y, z, zhop, speed)
 
-    def _waitformovement(self, m400=False):
+    def _waitformovement(self, m400 = False):
         """
-        confirm that gantry has reached target position. returns False if
-        target position is not reached in time allotted by self.GANTRYTIMEOUT
+        Confirm that gantry has reached target position. returns False if 
+        target position is not reached in time alloted by self.GANTRYTIMEOUT
+        
+        :param m400: bool, whether to wait for all current moves to finish 
+            before moving on.
         """
         self.inmotion = True
         start_time = time.time()
@@ -487,34 +505,43 @@ class Gantry:
         else:
             if m400 is True:
                 self.write("M400")
-
-        self.write("M118 FinishedMoving")
-
+        
+        if self._ethernet:
+            echo_command = "M118 FinishedMoving"
+            self._handle.sendall((echo_command + "\n").encode("utf-8"))
+        else:
+            echo_command = "M118 E1 FinishedMoving"
+            self._handle.write(echo_command)
+        
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
             time.sleep(self.POLLINGDELAY)
-            while self._handle.in_waiting:
-                line = self._handle.readline().decode("utf-8").strip()
-                if line == "echo:FinishedMoving":
+            while self._ready_to_talk():
+                if self._ethernet:
+                    line = self._handle.recv(1024).decode("utf-8").strip()
+                else:
+                    line = self._handle.readline().decode("utf-8").strip()
+                done_move = "echo:FinishedMoving" in line
+                if done_move:
                     self.update()
                     if (
                         np.linalg.norm(
                             [
                                 a - b
-                                for a, b in zip(self.position, self.__targetposition)
+                                for a, b in zip(
+                                    self.position,
+                                    self.__targetposition
+                                )
                             ]
                         )
-                        < self.POSITIONTOLERANCE
                     ):
                         reached_destination = True
-
                 time.sleep(self.POLLINGDELAY)
-
         self.inmotion = ~reached_destination
         self.update()
 
         return reached_destination
-
+    
     # GUI
     def gui(self):
         GantryGUI(gantry=self)  # opens blocking gui to manually jog motors
