@@ -214,7 +214,7 @@ class Gantry:
         self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
-        if self.ethernet:
+        if self._ethernet:
             output = [self.send_gcode(msg, homing = True)]
         else:
             self._handle.write(f"{msg}\n".encode())
@@ -488,6 +488,12 @@ class Gantry:
         y += self.position[1]
         z += self.position[2]
         self.moveto(x, y, z, zhop, speed)
+
+    def _ready_to_talk(self):
+        if self._ethernet:
+            True
+        else:
+            return self._handle.in_waiting
 
     def _waitformovement(self, m400 = False):
         """
