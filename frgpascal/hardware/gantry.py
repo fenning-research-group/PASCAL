@@ -513,7 +513,7 @@ class Gantry:
                 self.write("M400")
         
         if self._ethernet:
-            echo_command = "M118 FinishedMoving"
+            echo_command = 'M118 S"FinishedMoving"'
             self._handle.sendall((echo_command + "\n").encode("utf-8"))
         else:
             echo_command = "M118 E1 FinishedMoving"
