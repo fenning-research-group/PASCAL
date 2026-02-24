@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushBut
 import PyQt5
 import yaml
 import os
-
+import subprocess
+import socket
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
 from frgpascal.hardware.helpers import get_port
@@ -19,7 +20,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class Gantry:
-    def __init__(self, port=None):
+    def __init__(self, port=None, ip=None, duet_port=None):
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
@@ -27,11 +28,18 @@ class Gantry:
         else:
             self.port = port
             print(port, "else") ## added comment
+        if ip is None:
+            ip = constants["gantry"]["device_identifiers"]["duet_ip"]
+        if duet_port is None:
+            duet_port = constants["gantry"]["device_identifiers"]["duet_port"]
+        self.ip = ip
+        print(self.ip)
+        self.duet_port = duet_port
         self.POLLINGDELAY = constants["gantry"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
         self.inmotion = False
-
+        self._connected_network_devices = {}
         # gantry variables
         self.__OVERALL_LIMS = constants["gantry"][
             "overall_gantry_limits"
@@ -81,23 +89,84 @@ class Gantry:
         print("gantry connected")
 
     # communication methods
+    # def connect(self):
+        # self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+        # self.update()
+        # # self.update_gripper()
+        # if self.position == [
+        #     self.__OVERALL_LIMS["x_max"],
+        #     self.__OVERALL_LIMS["y_max"],
+        #     self.__OVERALL_LIMS["z_max"],
+        # ]:  # this is what it shows when initially turned on, but not homed
+        #     self.position = [
+        #         None,
+        #         None,
+        #         None,
+        #     ]  # start at None's to indicate stage has not been homed.
+        # # self.write('M92 X40.0 Y26.77 Z400.0')
+        # self.set_defaults()
+        # print("Connected to gantry")
+
+    def ping_duet(self, ip = "192.168.0.11", timeout = 1000):
+        """
+        Ping a duet at the given ip address over a websocket connection
+        """
+        try:
+            result = subprocess.run(
+                ["ping", "-n", "5", "-w", str(timeout), ip],
+                capture_output = True,
+                text = True
+            )
+            return "Reply from" in result.stdout
+        except Exception as e:
+            print(f"Ping error: {e}")
+            return False
+
     def connect(self):
-        self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
-        self.update()
-        # self.update_gripper()
-        if self.position == [
-            self.__OVERALL_LIMS["x_max"],
-            self.__OVERALL_LIMS["y_max"],
-            self.__OVERALL_LIMS["z_max"],
-        ]:  # this is what it shows when initially turned on, but not homed
-            self.position = [
-                None,
-                None,
-                None,
-            ]  # start at None's to indicate stage has not been homed.
-        # self.write('M92 X40.0 Y26.77 Z400.0')
-        self.set_defaults()
-        print("Connected to gantry")
+        # Have we connected to the Duet already
+        if self.ip in self._connected_network_devices:
+            print(f"Duet at {self.ip} already connected.")
+            return self._connected_network_devices[ip]
+        # Can we talk with the Duet
+        if not self.ping_duet(ip = self.ip):
+            raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
+        # open a TCP socket
+        try:
+            for port in [self.duet_port, "21", "23", "80"]:
+                try:
+                    print(f"Trying to connect to Duet at {self.ip}:{port}...")
+                    self._handle = socket.create_connection((self.ip, port), timeout = 5)
+                    if port == "21":
+                        print(f"\tDuet connected over OTHER type connection")
+                    elif port == "23":
+                        print(f"\tDuet connected over TCP type connection")
+                    elif port == "80":
+                        print(f"\tDuet connected over HTTP type connection")
+                    self.duet_port = port
+                    break
+                except:
+                    print(f"\tConnecting at {self.ip}:{port} failed!")
+            self._connected_network_devices[self.ip] = self._handle
+            print(f"Connected to Duet at {self.ip}:{port}")
+        except Exception as e:
+            raise ValueError(f"Failed to connect to Duet at {self.ip}:{port}! \n{e}")
+    
+    def send_gcode(self, command, homing = False):
+        """
+        Send a G-code command to the Duet over the given socket.
+        Return the response string.
+        """
+        if not self._handle:
+            raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+        self._handle.sendall((command + "\n").encode("utf-8"))
+        if homing:
+            self._handle.settimeout(None)
+            response = self._handle.recv(1024).decode("utf-8").strip()
+            self._handle.settimeout(30)
+        else:
+            reponse = self._handle.recv(1024).decode("utf-8").strip()
+        return response
+
 
     def disconnect(self):
         self._handle.close()
@@ -129,15 +198,18 @@ class Gantry:
         )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max
 
-    def write(self, msg):
-        self._handle.write(f"{msg}\n".encode())
-        time.sleep(self.POLLINGDELAY)
-        output = []
-        while self._handle.in_waiting:
-            line = self._handle.readline().decode("utf-8").strip()
-            if line != "ok":
-                output.append(line)
+    def write(self, msg, legacy_gantry = False):
+        if legacy_gantry:
+            self._handle.write(f"{msg}\n".encode())
             time.sleep(self.POLLINGDELAY)
+            output = []
+            while self._handle.in_waiting:
+                line = self._handle.readline().decode("utf-8").strip()
+                if line != "ok":
+                    output.append(line)
+                time.sleep(self.POLLINGDELAY)
+        else:
+            output = [self.send_gcode(msg, homing = True)]
         return output
 
     def _enable_steppers(self):
@@ -411,12 +483,12 @@ class Gantry:
         start_time = time.time()
         time_elapsed = time.time() - start_time
         if self._original_pascal:
-            self._handle.write(f"M400\n".encode())
+            self.write("M400")
         else:
             if m400 is True:
-                self._handle.write(f"M400\n".encode())
+                self.write("M400")
 
-        self._handle.write(f"M118 E1 FinishedMoving\n".encode())
+        self.write("M118 FinishedMoving")
 
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:

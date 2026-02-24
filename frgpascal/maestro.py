@@ -137,7 +137,9 @@ class Maestro:
 
         # Workers
         self.gantry = Gantry()
-        self.gripper = Gripper()
+        self.gripper = Gripper(
+            constants["gripper"]["device_identifiers"]["COM_Port"]
+        )
         self.switchbox = Switchbox()
 
         # Do we want to use the Gantry/Gripper?

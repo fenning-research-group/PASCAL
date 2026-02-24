@@ -6,6 +6,10 @@ gantry:
     vid: 7855 #vendor id, converted from hex to integer. WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
     pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
     location: "1-10" #WINDOWS
+    # duet_ip: 192.168.0.11
+    duet_ip: 192.168.0.100
+    # duet_port: 255.255.255.0
+    duet_port: 0.0.0.0
     # com_port: "COM72"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
@@ -15,34 +19,34 @@ gantry:
   speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
-  idle_coordinates: [192.25, 60, 95] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
-  clear_coordinates: [564.2, 254.3, 136.1] #coordinates to move the gantry out of the way for of glovebox operator
-  opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
-  opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
-  opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
+  idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+  clear_coordinates: [637, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
+  opentrons_z: 19 #above this point, the gantry will collide with the opentrons frame
+  opentrons_y: 50 #above this point, the gantry will collide with the opentrons frame
+  opentrons_x: 240 #below this point, the gantry will enter the opentrons frame
   overall_gantry_limits:
-    x_max: 567 #max x position (mm)
+    x_max: 647 #max x position (mm)
     x_min: 0 #min x position (mm)
-    y_max: 282.0 #max y position (mm)
+    y_max: 187 #max y position (mm)
     y_min: 0 #min y position (mm)
-    z_max: 166.0 #max z position (mm)
+    z_max: 37 #max z position (mm)
     z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
-    x_max: 567 #max x position (mm)
-    x_min: 192.25 #min x position (mm)
-    y_max: 282.0 #max y position (mm)
-    y_min: 0 #min y position (mm)
-    z_max: 166.0 #max z position (mm)
+    x_max: 647 #max x position (mm)
+    x_min: 240 #min x position (mm)
+    y_max: 187 #max y position (mm)
+    y_min: 28 #min y position (mm)
+    z_max: 37 #max z position (mm)
     z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
-    x_max: 192.25
+    x_max: 230
     x_min: 0
-    y_max: 200.7
-    y_min: 2
-    z_max: 75
+    y_max: 50
+    y_min: 0
+    z_max: 19
     z_min: 0
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-  transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
+  transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
 
 gripper:
   #communication
@@ -50,6 +54,7 @@ gripper:
     vid: 1027 #WINDOWS ONLY
     pid: 24597 #WINDOWS ONLY
     serial_number: "DN066QRWA"
+    COM_Port: "COM5"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)
