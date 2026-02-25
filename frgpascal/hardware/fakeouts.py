@@ -14,7 +14,7 @@ from odrive.enums import *  # control/state enumerations
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
-    constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
+    constants = yaml.load(f, Loader=yaml.FullLoader)
 
 # ================
 # Fakeout Switches
@@ -40,10 +40,10 @@ class FakeSwitchboxSerial:
 class FakeSwitchbox(Switchbox):
     def __init__(self, port: str = None):
         self.port = port
-        self.POLLINGDELAY = constants["switchbox"][
+        self.POLLINGDELAY = constants["characterizationline"]["switchbox"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
-        self.RELAYRESPONSETIME = constants["switchbox"][
+        self.RELAYRESPONSETIME = constants["characterizationline"]["switchbox"][
             "relayresponsetime"
         ]  # delay between changing relay state and relay open/closing
         self._relay_key = {
@@ -205,6 +205,8 @@ class FakeOmega(Omega):
 
         self.__end = b"\r\n"
         
+        self._Omega__end = b"\r\n"
+        
         # Fake connection
         self.connect()
     def connect(self):
@@ -303,8 +305,8 @@ class FakeOT2Server(OT2Server):
         self.__local_nist_offset = time.time() - offset_time
         # self._OT2Server__calibrate_time_to_nist()
         self.connected = False
-        self.ip = constants["server"]["ip"]
-        self.port = constants["server"]["port"]
+        self.ip = constants["liquidhandler"]["server"]["ip"]
+        self.port = constants["liquidhandler"]["server"]["port"]
         self.pending_tasks = []
         self.completed_tasks = {}
         self.POLLINGRATE = 1

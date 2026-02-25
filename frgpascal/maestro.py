@@ -20,10 +20,10 @@ from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-from frgpascal.hardware.characterizationline import (
-    CharacterizationAxis,
-    CharacterizationLine,
-)
+# from frgpascal.hardware.characterizationline import (
+    # CharacterizationAxis,
+    # CharacterizationLine,
+# )
 from frgpascal.hardware.switchbox import Switchbox
 from frgpascal.analysis.processing import load_all
 from frgpascal.hardware.fakeouts import (
@@ -46,7 +46,7 @@ from frgpascal.workers import (
 from frgpascal.closedloop.websocket import Server
 from frgpascal.hardware.helpers import get_ot2_ip
 
-from frgpascal.hardware.characterizationline import CharacterizationLine
+# from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -147,7 +147,9 @@ class Maestro:
         self.TWISTOFF = True
         self._fakeout = test_gantrygripper
         # Workers
-        self.gantry = Gantry()
+        self.gantry = Gantry(
+            port = "5",
+        )
         self.gripper = Gripper(
             constants["gripper"]["device_identifiers"]["COM_Port"]
         )
