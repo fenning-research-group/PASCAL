@@ -183,6 +183,8 @@ class FakeSpinCoater(SpinCoater):
     def twist_off(self):
         if not self._locked:
             self.lock()
+    def __libfibre_timer_worker(self):
+        return super().__libfibre_timer_worker()
 
 # ===========================
 # Fakeout HotPlate Controller
