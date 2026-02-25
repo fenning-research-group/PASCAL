@@ -49,8 +49,11 @@ def expected_timings(drop):
 
 
 class OT2:
-    def __init__(self):
-        self.server = OT2Server()
+    def __init__(self, server = None):
+        if server is None:
+            self.server = OT2Server()
+        else:
+            self.server = server
         # self.server.start()
         self.POLLINGRATE = constants["pollingrate"]
         # self.DISPENSE_DELAY = constants[

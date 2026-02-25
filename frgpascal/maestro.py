@@ -26,6 +26,13 @@ from frgpascal.hardware.characterizationline import (
 )
 from frgpascal.hardware.switchbox import Switchbox
 from frgpascal.analysis.processing import load_all
+from frgpascal.hardware.fakeouts import (
+    FakeSwitchbox,
+    FakeSingleSwitch,
+    FakeSpinCoater,
+    FakeOmega,
+    FakeOT2Server,
+)
 
 from frgpascal.workers import (
     Worker_Hotplate,
@@ -113,12 +120,16 @@ class Maestro:
     def __init__(
         self,
         samplewidth: float = 10,
+        test_gantrygripper: bool = False
     ):
-        """Initialize Maestro, which coordinates all the PASCAL hardware
-
-        Args:
-            numsamples (int): number of substrates loaded in sampletray
-            samplewidth (float, optional): width of the substrates (mm). Defaults to 10 (ie 1 cm).
+        """
+        Initialize Maestro, which coordinates all the PASCAL hardware to
+        accomplish tasks.
+        
+        :param samplewidth: The width of the square substrates, in mm. Defaults to 10 (ie 1cm).
+        :type samplewidth: float
+        :param test_gantrygripper: Whether this instance of PASCAL should communicate with hotplates/spincoater/opentrons/characterization
+        :type test_gantrygripper: bool
         """
 
         # Constants
@@ -134,13 +145,16 @@ class Maestro:
             "catch_attempts"
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
-
+        self._fakeout = test_gantrygripper
         # Workers
         self.gantry = Gantry()
         self.gripper = Gripper(
             constants["gripper"]["device_identifiers"]["COM_Port"]
         )
-        self.switchbox = Switchbox()
+        if self._fakeout:
+            self.switchbox = FakeSwitchbox()
+        else:
+            self.switchbox = Switchbox()
 
         # Do we want to use the Gantry/Gripper?
         self.gantry.in_use, self.gripper.in_use = self._handle_gantry_connection()
@@ -148,35 +162,74 @@ class Maestro:
         # tries to connect to characterization line
         self._handle_characterization_connection()
 
-        self.liquidhandler = OT2()
+        self.__calibrate_time_to_nist()  # for sync with other hardware
+        # TODO: fakeout the OT2Server()
+        if self._fakeout:
+            offset_time = self.__local_nist_offset
+            self.liquidhandler = OT2(
+                server = FakeOT2Server(offset_time)
+            )
+        else:
+            self.liquidhandler = OT2()
 
         # Labware
-        self.hotplates = {
-            "Hotplate1": HotPlate(
-                name="Hotplate1",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=1,
-                p0=constants["hotplates"]["hp1"]["p0"],
-            ),
-            "Hotplate2": HotPlate(
-                name="Hotplate2",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=2,
-                p0=constants["hotplates"]["hp2"]["p0"],
-            ),
-            "Hotplate3": HotPlate(
-                name="Hotplate3",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=3,
-                p0=constants["hotplates"]["hp3"]["p0"],
-            ),
-        }
+        if self._fakeout:
+            self.hotplates = {
+                "Hotplate1": HotPlate(
+                    name = "Hotplate1",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 1,
+                    p0 = constants["hotplates"]["hp1"]["p0"],
+                    controller = FakeOmega(id = 1)
+                ),
+                "Hotplate2": HotPlate(
+                    name = "Hotplate2",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 2,
+                    p0 = constants["hotplates"]["hp2"]["p0"],
+                    controller = FakeOmega(id = 2)
+                ),
+                "Hotplate3": HotPlate(
+                    name = "Hotplate3",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 3,
+                    p0 = constants["hotplates"]["hp3"]["p0"],
+                    controller = FakeOmega(id = 3)
+                ),
+            }
+        else:
+            self.hotplates = {
+                "Hotplate1": HotPlate(
+                    name="Hotplate1",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=1,
+                    p0=constants["hotplates"]["hp1"]["p0"],
+                ),
+                "Hotplate2": HotPlate(
+                    name="Hotplate2",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=2,
+                    p0=constants["hotplates"]["hp2"]["p0"],
+                ),
+                "Hotplate3": HotPlate(
+                    name="Hotplate3",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=3,
+                    p0=constants["hotplates"]["hp3"]["p0"],
+                ),
+            }
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
@@ -204,12 +257,18 @@ class Maestro:
         else:
             regular_bootup = False
             sc_axis = 'axis0'
-        self.spincoater = SpinCoater(
-            gantry=self.gantry,
-            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-            sc_axis = sc_axis,
-            regular_bootup = regular_bootup
-        )
+        if self._fakeout:
+            self.spincoater = FakeSpinCoater(
+                gantry = self.gantry,
+                switch = self.switchbox.Switch((constants["spincoater"]["switchindex"]))
+            )
+        else:
+            self.spincoater = SpinCoater(
+                gantry=self.gantry,
+                switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+                sc_axis = sc_axis,
+                regular_bootup = regular_bootup
+            )
 
         ### Workers to run tasks in parallel
         #### define either gantry_gripper or human_operator first:
@@ -234,7 +293,7 @@ class Maestro:
             self.workers["characterization"] = Worker_Characterization(maestro=self)
 
         self._load_calibrations()  # load coordinate calibrations for labware
-        self.__calibrate_time_to_nist()  # for sync with other hardware
+        
         # Status
         self.samples = {}
         self.tasks = []
