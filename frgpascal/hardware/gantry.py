@@ -184,9 +184,9 @@ class Gantry:
         if self._ethernet:
             self.write("M501")
             self.write("G90")
-            self.write(
-                f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z{30}"
-            )
+            # self.write(
+                # f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z{30}"
+            # )
         else:
             self.write("M501")  # load defaults from EEPROM
             self.write("G90")  # absolute coordinate system
@@ -491,7 +491,7 @@ class Gantry:
 
     def _ready_to_talk(self):
         if self._ethernet:
-            True
+            return True
         else:
             return self._handle.in_waiting
 
@@ -521,15 +521,27 @@ class Gantry:
         
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
+            print("Are we there yet?")
             time.sleep(self.POLLINGDELAY)
-            while self._ready_to_talk():
+            yapping = self._ready_to_talk()
+            while yapping:
+                print("Ready to talk")
                 if self._ethernet:
                     line = self._handle.recv(1024).decode("utf-8").strip()
+                    # print(line)
                 else:
                     line = self._handle.readline().decode("utf-8").strip()
-                done_move = "echo:FinishedMoving" in line
+                done_move = "FinishedMoving" in line
+                yapping = self._ready_to_talk()
+                print(f"done_move: {done_move}")
                 if done_move:
+                    print(f"\tUpdating...")
                     self.update()
+                    print(f"\tUpdated!")
+                    print(f"self.position: {self.position}")
+                    print(f"self.__targetposition: {self.__targetposition}")
+                    print(0 == int(np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)])))
+                    print(0 == np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)]))
                     if (
                         np.linalg.norm(
                             [
@@ -539,9 +551,10 @@ class Gantry:
                                     self.__targetposition
                                 )
                             ]
-                        )
+                        ) == 0
                     ):
                         reached_destination = True
+                        yapping = False
                 time.sleep(self.POLLINGDELAY)
         self.inmotion = ~reached_destination
         self.update()
