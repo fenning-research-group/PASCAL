@@ -50,6 +50,7 @@ gripper:
     vid: 1027 #WINDOWS ONLY
     pid: 24597 #WINDOWS ONLY
     serial_number: "DN066QRWA"
+    COM_Port: "COM10"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)

@@ -99,7 +99,11 @@ class ListenerWebsocket:
                 "p1000_single_gen2", mount="left", tip_racks=tip_racks_1000
             ),
         }
-        _sync_hardware = protocol_context._core.get_hardware()
+        for arm, pipette in self.pipettes.items():
+            pipette.default_speed = self.SLOWEST_XY_RATE
+        
+        # _sync_hardware = protocol_context._core.get_hardware()
+
         # TODO: HardwareManager(_sync_hardware)
         # Look for HardwareManager in opentrons/api/src/opentrons/protocol_api/robot_context.py
         # _sync_hardware
@@ -336,7 +340,7 @@ class ListenerWebsocket:
         touch_tip=True,
         pre_mix=(0, 0),
         reuse_tip=False,
-        xy_speed=None
+        # xy_speed=None
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
         p = self._get_pipette(pipette=pipette)
@@ -374,7 +378,7 @@ class ListenerWebsocket:
         legacy = False,
         reuse_as = True,
         reuse_psk = False,
-        xy_speed = None,
+        # xy_speed = None,
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
         if legacy:
@@ -414,7 +418,12 @@ class ListenerWebsocket:
 
         self.stage_for_dispense(pipette="perovskite")
 
-    def stage_for_dispense(self, pipette, slow_travel=False, xy_speed = None):
+    def stage_for_dispense(
+            self, 
+            pipette, 
+            slow_travel=False, 
+            # xy_speed = None
+        ):
         p = self._get_pipette(pipette)
         if slow_travel:
             speed = self.SLOW_XY_RATE
@@ -495,7 +504,10 @@ class ListenerWebsocket:
             p.flow_rate.aspirate = aspirate_rate0
             p.flow_rate.dispense = dispense_rate0
 
-    def cleanup(self, xy_speed):
+    def cleanup(
+            self,
+            # xy_speed
+        ):
         """drops/returns tips of all pipettes to prepare pipettes for future commands
 
         the order of operations feels overly complicated, but is chosen to minimize
