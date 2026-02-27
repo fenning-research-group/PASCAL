@@ -99,6 +99,7 @@ class OT2:
         reuse_tip=False,
         taskid=None,
         nist_time=None,
+        xy_speed=None,
         **kwargs,
     ):
         taskid = self.server.add_to_queue(
@@ -114,12 +115,18 @@ class OT2:
             touch_tip=touch_tip,
             reuse_tip=reuse_tip,
             pre_mix=pre_mix,
+            xy_speed=xy_speed
             **kwargs,
         )
         return taskid
 
     def stage_perovskite(
-        self, taskid=None, nist_time=None, slow_travel=False, **kwargs
+        self, 
+        taskid=None, 
+        nist_time=None, 
+        slow_travel=False, 
+        xy_speed=None,
+        **kwargs
     ):
         taskid = self.server.add_to_queue(
             task="stage_for_dispense",
@@ -127,12 +134,18 @@ class OT2:
             nist_time=nist_time,
             pipette="perovskite",
             slow_travel=slow_travel,
+            xy_speed=xy_speed,
             **kwargs,
         )
         return taskid
 
     def stage_antisolvent(
-        self, taskid=None, nist_time=None, slow_travel=False, **kwargs
+        self, 
+        taskid=None, 
+        nist_time=None, 
+        slow_travel=False, 
+        xy_speed=None,
+        **kwargs
     ):
         taskid = self.server.add_to_queue(
             task="stage_for_dispense",
@@ -140,24 +153,38 @@ class OT2:
             nist_time=nist_time,
             pipette="antisolvent",
             slow_travel=slow_travel,
+            xy_speed=xy_speed,
             **kwargs,
         )
         return taskid
 
-    def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
+    def clear_chuck(
+        self, 
+        taskid=None, 
+        nist_time=None,
+        xy_speed=None, 
+        **kwargs
+    ):
         taskid = self.server.add_to_queue(
             task="clear_chuck",
             taskid=taskid,
             nist_time=nist_time,
+            xy_speed=xy_speed,
             **kwargs,
         )
         return taskid
 
-    def cleanup(self, taskid=None, nist_time=None, **kwargs):
+    def cleanup(
+        self, 
+        taskid=None, 
+        nist_time=None, 
+        xy_speed = None,
+        **kwargs):
         taskid = self.server.add_to_queue(
             task="cleanup",
             taskid=taskid,
             nist_time=nist_time,
+            xy_speed=xy_speed,
             **kwargs,
         )
         return taskid
