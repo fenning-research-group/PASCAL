@@ -29,14 +29,14 @@ gantry:
     x_min: 0 #min x position (mm)
     y_max: 187 #max y position (mm)
     y_min: 0 #min y position (mm)
-    z_max: 37 #max z position (mm)
+    z_max: 41 #max z position (mm)
     z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
     x_max: 647 #max x position (mm)
     x_min: 240 #min x position (mm)
     y_max: 187 #max y position (mm)
     y_min: 28 #min y position (mm)
-    z_max: 37 #max z position (mm)
+    z_max: 41 #max z position (mm)
     z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
     x_max: 230
@@ -77,21 +77,21 @@ hotplates:
       pid: 24577
       serial_number: "AB0OYUYZA"
     address: 1 #rs485 address
-    p0: [214.4, 73.3, 69.0]
+    p0: [250, 80, 21.0]
   hp2:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKDA"
     address: 2
-    p0: [214.2, 216.3, 68.0]
+    p0: [250, 100, 21.0]
   hp3:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKPA"
     address: 3
-    p0: [367.2, 217.3, 65.0]
+    p0: [300, 100, 21.0]
 
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
@@ -117,7 +117,8 @@ liquidhandler:
 
 sampletray:
   p1: [494.0, 20.0, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
-  p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  # p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  p2: [528.0, 53.0, 5.0]
 
 spincoater:
   # communication

@@ -140,7 +140,7 @@ class Gantry:
             raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
         # open a TCP socket
         try:
-            for port in [self.duet_port, "21", "23", "80"]:
+            for port in ["23", self.duet_port, "21", "23", "80"]:
                 try:
                     print(f"Trying to connect to Duet at {self.ip}:{port}...")
                     self._handle = socket.create_connection((self.ip, port), timeout = 5)
@@ -152,8 +152,8 @@ class Gantry:
                         print(f"\tDuet connected over HTTP type connection")
                     self.duet_port = port
                     break
-                except:
-                    print(f"\tConnecting at {self.ip}:{port} failed!")
+                except Exception as e:
+                    print(f"\tConnecting at {self.ip}:{port} failed\n\t{e}")
             self._connected_network_devices[self.ip] = self._handle
             print(f"Connected to Duet at {self.ip}:{port}")
         except Exception as e:
@@ -352,6 +352,10 @@ class Gantry:
             y = self.position[1]
         if z is None:
             z = self.position[2]
+        print(f"Checking x: {x}, y: {y}, z: {z}")
+        # print(f"type of the y object: {type(y)}")
+        # if isinstance(y, float):
+            # y = round(y, 1)
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
@@ -409,6 +413,9 @@ class Gantry:
         except:
             pass
         if self._original_pascal:
+            # x = np.round(x, decimals = 1)
+            # y = np.round(y, decimals = 1)
+            # z = np.round(z, decimals = 1)
             x, y, z = self.premove(x, y, z) # will error out if invalid move
             if speed is None:
                 speed = self.speed
@@ -468,6 +475,9 @@ class Gantry:
         if self.position == [x, y, z]:
             return True  # already at target position
         else:
+            x = np.round(x, decimals = 1)
+            y = np.round(y, decimals = 1)
+            z = np.round(z, decimals = 1)
             self.__targetposition = [x, y, z]
             self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
             if self._original_pascal:
