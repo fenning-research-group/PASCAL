@@ -20,6 +20,34 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 # Fakeout Switches
 # ================
 class FakeSwitchboxSerial:
+    """_brief summary_
+
+    _detailed summary_
+
+    Parameters
+    ----------
+    param1 : _type_
+        _description_
+    
+    Attributes
+    ----------
+    attr1 : _type_
+        _description_
+    
+    See Also
+    --------
+    other_function : related function for additional context
+
+    Notes
+    -----
+    Additional notes or background theory on this object.
+
+    Examples
+    --------
+    >>> instance = FakeSwitchboxSerial(param1 = _type_)
+    >>> instance.do_something()
+    # Expected Result
+    """
     def __init__(self):
         self.state = {}
 

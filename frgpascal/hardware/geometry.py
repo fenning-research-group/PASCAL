@@ -45,22 +45,30 @@ class CoordinateMapper:
 
         return pmap
 
-
 def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
-    """prompts user to move gripper to target points on labware for
-    calibration purposes
+    """Prompts user to move gripper to target points on labware for calibration purposes.
 
+    Parameters
+    ----------
+    name : str
+        name of labware to save in filename of output calibrations yaml file
+    slots : list
+        str labels of the target points of interest, e.g. ['I1', 'A1', 'A5', 'I5']
+    points : list
+        the vertex points [[x,y,z], [x1,y1,z1], ...] to be measured. These points will be used by 
+        `frgpascal.hardware.geometry.CoordinateMapper` to define the the xy coordinate map of a given labware.
+    gantry : `frgpascal.hardware.gantry.Gantry`
+        The gantry hardware used to move the grippers along the X, Y, Z axes.
+    z_clearance : int, optional
+        Vertical offset (mm) from points to start at to prevent collision by initial misalignment, defaults to 5.
 
-    :param points: list of points [[x,y,z],[x,y,z]...] to map to. In destination coordinates
-    :type points: list
-    :param p0: coordinate of first point in points, in source coordinates
-    :type p0: list
-    :param gantry: gantry object
-    :type gantry: gantry.Gantry
-    :param z_clearance: verstical offset (mm) from points to start at to prevent collision by initial misalignment, defaults to 5
-    :type z_clearance: int, optional
+    Returns
+    -------
+    `frgpascal.hardware.geometry.CoordinateMapper`
+        Instance of CoordinateMapper, initializes with the measured coordinates of the vertex points in absolute (`p0`)
+        and relative (`p1`) frames of reference. For the relative (`p1`) frame of reference, we define with respect to the
+        first vertex point element provided in points
     """
-
     points = np.asarray(points).astype(float).round(2)  # destination coordinates
     p_prev = points[0]
 
@@ -95,6 +103,27 @@ class Workspace:
     """
     General class for defining planar workspaces. Primary use is to calibrate the coordinate system of this workspace to
     the reference workspace to account for any tilt/rotation/translation in workspace mounting.
+
+    Parameters
+    ----------
+    name : str
+        name of workspaces, for logging purposes.
+    pitch : tuple
+        Space between neighboring slots (x,y) (mm). Assumes workspace is 2D, parallel to `frgpascal.hardware.gantry.Gantry` XY plane.
+    gridsize : tuple
+        Number of slots available (x,y)
+    gantry : `frgpascal.hardware.gantry.Gantry`
+        Gantry control object, needed for calibration.
+    gripper : `frgpascal.hardware.gripper.Gripper`
+        Gripper control object, needed for calibration.
+    p0 : list, optional
+        approximate location of the lower left slot of the labware, for calibration initial point.
+    testslots : list, optional
+        Slots with which to calibrate the plane tilt from. Defaults to None.
+    z_clearance : float, optional
+        Vertical clearance (mm) to give when calibrating points, to avoid crashes. Defaults to 5.
+    openwidth : float, optional
+        Width (mm) to open gripper to when picking samples from this workspace. Defaults to 20.
     """
 
     def __init__(
@@ -109,21 +138,7 @@ class Workspace:
         z_clearance: float = 5,
         openwidth: float = 12,
     ):
-        """
-        Args:
-            name (str): Name of workspaces, for logging purposes
-            pitch (tuple): space between neighboring slots (x,y) (mm). Assumes workspace is 2D, parallel to gantry XY plane
-            gridsize (tuple): number of slots available (x,y)
-            gantry (Gantry): Gantry control object. needed for calibration
-            p0 (list, optional): [description]. approximate location of lower left slot, for calibration initial point.
-            testslots ([type], optional. Slots to calibrate the plane tilt from. Defaults to None.
-            z_clearance (float, optional): vertical clearance (mm)to give when calibrating points, to avoid crashes. Defaults to 5.
-            openwidth (float, optional): width (mm) to open gripper to when picking samples from this workspace. Defaults to 20.
-
-        Raises:
-            Exception: [description]
-        """
-
+        
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
         if gantry is None and gripper is None:
