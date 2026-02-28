@@ -98,6 +98,7 @@ gantry_v2:
       z_min: 0
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
     transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
   socket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
     #communication constants
@@ -140,6 +141,8 @@ gantry_v2:
       z_min: 0
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
     transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
+
   websocket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
     # communication constants
     device_identifiers:
@@ -180,6 +183,7 @@ gantry_v2:
       z_min: 0
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
     transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
 gripper:
   #communication
