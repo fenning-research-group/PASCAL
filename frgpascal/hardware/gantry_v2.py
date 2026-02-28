@@ -13,6 +13,8 @@ import os
 from functools import partial
 from frgpascal.hardware.helpers import get_port
 
+from typing import Union, List, Literal, Optional
+
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader = yaml.FullLoader)
@@ -30,6 +32,7 @@ def setup_constants(communicator_instance):
         ("TRANSITION_COORDINATES", "transition_coordinates"),
         ("CLEAR_COORDINATES", "clear_coordinates"),
         ("IDLE_COORDINATES", "idle_coordinates"),
+        ("TRANSITION_NUDGE", "transition_nudge"),
         ("_currentframe", None),
         ("_ZLIM", None),
         ("position", [None, None, None]),
@@ -101,7 +104,7 @@ class SerialCommunicator:
         self.write(
             f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
         )   # set max speeds, steps/mm. Z is hardcoded, limited by leadscrew hardware
-        self.set_speed_percentage(80)
+        self.set_speed_percentage(p = 80)
     
     def write(self, msg):
         self._handle.write(f"{msg}\n".encode())
@@ -113,8 +116,10 @@ class SerialCommunicator:
                 output.append(line)
             time.sleep(self.POLLINGDELAY)
         return output
+    
     def _enable_steppers(self):
         self.write("M17")
+    
     def _disable_steppers(self):
         self.write("M18")
 
@@ -141,6 +146,229 @@ class SerialCommunicator:
         self.write(
             msg = f"G0 F{self.speed}"
         )
+
+    def _target_frame(self, position): # -> Literal("invalid") | set(k for k in self._FRAMES.keys()): # <- not sure if this will work, but would be nice for type hints in documentation.
+        """
+        Determines which frame contains the position.
+
+        Parameters
+        ----------
+        position : list/np.ndarray
+            [x, y, z] coordinate of point in 3D space
+
+        Returns
+        -------
+        string
+            name of frame. if none, returns "invalid"
+        """
+        for frame, lims in self._FRAMES.items():
+            print(f"\tchecking frame {frame}")
+            for idx, coord in enumerate(["x", "y", "z"]):
+                v = position[idx]
+                if (v < lims[f"{coord}_min"]) or (v > lims[f"{coord}_max"]):
+                    print(f"\t\t{v} is outside bounds of {coord}-axis!")
+                    continue
+            print(f"\t\tThe position {position} is inside of frame {frame}")
+            return frame
+        return "invalid"
+    
+    def _transition_to_frame(self, target_frame):
+        self._movecommand(
+            x = self.position[0],
+            y = self.position[1],
+            z = self.TRANSITION_COORDINATES[2] - 1, # to be within bounds of opentrons
+            speed = self.speed,
+        )   # move in just z
+        # nudge the gantry into the target frame
+        x, y, z = self.TRANSITION_COORDINATES
+        if target_frame == "opentrons":
+            x -= self.TRANSITION_NUDGE
+            self._ZLIM = self._constants["opentrons_limits"]["z_max"]
+        else:
+            x += self.TRANSITION_NUDGE
+            self._ZLIM = self._constants["workspace_limits"]["z_max"]
+        self._movecommand(
+            x, y, z, speed = self.speed
+        )
+        print(f"\tGantry is not at the Transition Coordinates: \n\t[{x}, {y}, {z}]")
+    
+    def _move_below_opentrons_limits(self, x, y, z):
+        self._movecommand(x, y, z, speed = self.speed)
+    
+    def premove(self, x, y, z, zhop = True):
+        """
+        Check to confirm that all target positions are valid
+
+        Parameters
+        ----------
+        x : float
+            destination x-coordinate
+        y : float
+            destination y-coordinate
+        z : float
+            destination z-coordinate
+        zhop : bool, optional
+            Move up a little in z before lateral motions to avoid gripper collisions, defaults to True.
+
+        Returns
+        -------
+        tuple
+            (x, y, z) position, if valid.
+
+        Raises
+        ------
+        ValueError
+            If target frame is not pre-defined, then the target position is invalid and we cannot move there.
+        Exception
+            If the gantry has not been homed, then we cannot move to controlled positions.
+        """
+        if self.position == [None, None, None]:
+            raise Exception(
+                "Stage has not been homed! Home with self.gohome() before moving please."
+            )
+        for idx, coord in enumerate([x, y, z]):
+            if coord is None:
+                coord = self.position[idx]
+        # do we transition between opentrons/workspace? if so, handle it.
+        target_frame = self._target_frame(position = [x, y, z])
+        print(target_frame)
+        cur_frames = list(self._FRAMES.keys())
+        if target_frame not in cur_frames:
+            print(f"frame {target_frame} is not in the defined frames!")
+        if target_frame == "invalid": 
+            raise ValueError(f"Coordinate {x}, {y}, {z} is invalid!")
+        if self._currentframe != target_frame:
+            print(f"\ttime to transition to a new frame")
+            self._transition_to_frame(target_frame)
+        return x, y, z
+    
+    def moveto(
+            self,
+            x: Optional[Union[float, List[float]]] = None,
+            y: Optional[Union[float, List[float]]] = None,
+            z: Optional[Union[float, List[float]]] = None,
+            zhop: Optional[bool] = True,
+            speed: Optional[float] = None,
+    ):
+        """Move the gantry to provided x, y, z coordinates
+
+        Parameters
+        ----------
+        x : Optional[Union[float, List[float]]], optional
+            If is a float, then is the x-coordinate to move to. 
+            If is a list, then is the [x, y, z] coordinates to move to.
+            By default is None.
+        y : Optional[Union[float, List[float]]], optional
+            y-coordinate to move to, by default None.
+        z : Optional[Union[float, List[float]]], optional
+            z-coordinate to move to, by default None.
+        zhop : Optional[bool], optional
+            Whether to move up in z a little to avoid potential gripper crash, by default True
+        speed : Optional[float], optional
+            movement speed, in mm/s for this motion, by default `self.speed`.
+
+        Returns
+        -------
+        _type_
+            _description_
+
+        Raises
+        ------
+        ValueError
+            _description_
+        """
+        try:
+            if len(x) == 3:
+                x, y, z = x #split 3 coordiantes into appropriate variables
+        except:
+            pass
+        x, y, z = self.premove(x, y, z, zhop)
+        if speed is None:
+            speed = self.speed
+        if (x == self.position[0]) and (y == self.position[1]):
+            zhop = False #why zhop if no lateral movement
+        if zhop:
+            z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
+            print(f"\tz_ceil: {z_ceiling}, ZLIM: {self._ZLIM}")
+            z_ceiling = min(
+                z_ceiling, self._ZLIM
+            )
+            print(f"\tmoving to z: {z_ceiling}")
+            self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
+            print(f"\tmoving to x, y: {x}, {y}")
+            self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
+            print(f"\tmoving to z: {z}")
+            self.moveto(z = z, zhop = False, speed = speed)
+        else:
+            self._movecommand(x, y, z, speed)
+    
+    def movetoclear(self):
+        self.moveto(self.CLEAR_COORDINATES)
+    def movetoidle(self):
+        self.moveto(self.IDLE_COORDINATES)
+    
+    def moverel(
+            self,
+            x: float = 0,
+            y: float = 0,
+            z: float = 0,
+            zhop: bool = False,
+            speed: float = None,
+        ):
+        try:
+            if len(x) == 3:
+                x, y, z = x
+        except:
+            pass
+        x += self.position[0]
+        y += self.position[1]
+        z += self.position[2]
+        self.moveto(x, y, z, zhop, speed)
+
+    def _movecommand(
+            self,
+            x: float,
+            y: float,
+            z: float,
+            speed: float,
+    ) -> bool:
+        """Internal command to execute a direct move from current location to new location."""
+        if self.position == [x, y, z]:
+            return True
+        self._targetposition = [x, y, z]
+        self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
+        return self._waitformovement()
+    
+    def _waitformovement(self):
+        """
+        Confirm that gantry has reached target position. returns False if 
+        target position is not reached in time allotted by self.GANTRYTIMEOUT.
+        """
+        self.inmotion = True
+        start_time = time.time()
+        time_elapsed = time.time() - start_time
+        self._handle.write(f"M400\n".encode()) #Halt compiling additional commands until previous command returns a response
+        self._handle.write(f"M118 E1 FinishedMoving\n".encode()) # respond with keyword "FinishedMoving"
+        reached_destination = False
+        while (not reached_destination) and (time_elapsed < self.GANTRYTIMEOUT):
+            time.sleep(self.POLLINGDELAY)
+            while self._handle.in_waiting:
+                line = self._handle.readline().decode("utf-8").strip()
+                if line == "echo:FinishedMoving":
+                    self.update()
+                    if (
+                        np.linalg.norm(
+                            [
+                                a - b for a, b in zip(self.position, self._targetposition)
+                            ]
+                        ) 
+                        < self.POSITIONTOLERANCE
+                    ):
+                        reached_destination = True
+                time.sleep(self.POLLINGDELAY)
+        self.inmotion = ~reached_destination
+        self.update()
+        return reached_destination
 
 class SocketCommunicator:
     """
@@ -220,3 +448,9 @@ class Gantry:
         self._communicator.write("G28 X Y Z")
         self.update()
         self.movetoclear()
+    
+    def set_speed_percentage(
+            self, 
+            p: float = 80.0,
+    ):
+        self._communicator.set_speed_percentage(p = p)
