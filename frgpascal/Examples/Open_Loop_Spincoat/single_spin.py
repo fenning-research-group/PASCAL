@@ -276,7 +276,7 @@ class SingleSpin:
             "acceleration": acceleration, 
             "duration": duration
         }
-        for key, value in step_settings:
+        for key, value in step_settings.items():
             if value != -1:
                 if isinstance(value, numbers.Number):
                     self._details['steps'][0][key] = value
@@ -319,7 +319,7 @@ class SingleSpin:
             "solution": solution
         }
         
-        for key, value in drop_settings:
+        for key, value in drop_setting.items():
             if value != -1:
                 if (key == "time" or key == "volume" or key == "rate") and isinstance(value, numbers.Number):
                     self._details['drops'][drop_number][key] = value
@@ -392,9 +392,9 @@ class SingleSpin:
         :param settings: Description
         """
 
-        update_step_settings(self, rpm, acceleration, duration)
+        self.update_step_settings(rpm, acceleration, duration)
         if drop_number != -1:
-            update_drop_settings(self, drop_number, time, volume, rate, slow_travel, slow_retract,
+            self.update_drop_settings(drop_number, time, volume, rate, slow_travel, slow_retract,
                              air_gap, touch_tip, blow_out, pre_mix, reuse_tip, solution)
         else:
             print("Drop number not specified; skipping drop updates. If updating anything other than rpm, acceleration, or duration, please specify which drop to update (0 or 1)")
@@ -408,7 +408,7 @@ class SingleSpin:
         """
         if self.ready_to_spin:
             # 5. Execute using asyncio
-            print(f"\nExecuting {self._details['steps'][0]['rpm']} RPM for {self._details['steps'][0]['duration']}s with {self._details['steps'][0]['vol']}uL drop at {self._details['steps'][0]['drop_time']}s.")
+            print(f"\nExecuting {self._details['steps'][0]['rpm']} RPM for {self._details['steps'][0]['duration']}s with {self._details['drops'][0]['vol']}uL drop at {self._details['drops'][0]['drop_time']}s.")
             try:
                 loop = asyncio.get_event_loop()
                 # Pass a mock sample dictionary
