@@ -134,7 +134,7 @@ class Gantry:
         # Have we connected to the Duet already
         if self.ip in self._connected_network_devices:
             print(f"Duet at {self.ip} already connected.")
-            return self._connected_network_devices[ip]
+            return self._connected_network_devices[self.ip]
         # Can we talk with the Duet
         if not self.ping_duet(ip = self.ip):
             raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
@@ -175,6 +175,23 @@ class Gantry:
             reponse = self._handle.recv(1024).decode("utf-8").strip()
         return response
 
+    def send_gcode(self, command, homing = False):
+        """
+        Send a G-code command to the Duet over the given socket.
+        Return the response string.
+        """
+        if not self._handle:
+            raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+        self._handle.sendall((command + "\n").encode("utf-8"))
+        if homing:
+            self._handle.settimeout(None)
+            response_0 = self._handle.recv(1024).decode("utf-8")
+            response = response_0.split()
+            self._handle.settimeout(30)
+        else:
+            reponse = self._handle.recv(1024).decode("utf-8").strip()
+            response_0 = None
+        return response_0, response
 
     def disconnect(self):
         self._handle.close()
