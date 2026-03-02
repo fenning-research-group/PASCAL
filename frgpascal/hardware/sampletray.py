@@ -26,6 +26,7 @@ class SampleTray(Workspace):
         gripper: Gripper,
         p0=[0, 0, 0],
     ):
+        # print("Initializing SampleTray")
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
             name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs
@@ -60,6 +61,7 @@ class Tray1(SampleTray):
     """Wrapper class with default arguments for Tray1"""
 
     def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+        # print("Initializing Tray1")
         super().__init__(
             name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0
         )

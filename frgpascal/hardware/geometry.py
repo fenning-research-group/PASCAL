@@ -138,7 +138,7 @@ class Workspace:
         z_clearance: float = 5,
         openwidth: float = 12,
     ):
-        
+        print("Initializing Workspace")
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
         if gantry is None and gripper is None:

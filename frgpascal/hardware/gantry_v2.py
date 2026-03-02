@@ -12,16 +12,22 @@ import yaml
 import os
 from functools import partial
 from frgpascal.hardware.helpers import get_port
-
-from typing import Union, List, Literal, Optional
-
+try:
+    from typing import Union, List, Literal, Optional
+except:
+    from typing import Union, List, Optional
+    from typing_extensions import Literal
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader = yaml.FullLoader)
 
 def setup_constants(communicator_instance):
     """
-    Scrape the hardware constants for the given communicator_instance, add relevant attributes for motion control.
+    Scrape the hardware constants for the given communicator_instance.
+
+    Add common attributes for motion control which will be used regardless of 
+    the type of communicator_instance. Checks the type of communicator_instance, 
+    and adds special cases as attributes.
     """
     ci = communicator_instance
     attr_info = [
@@ -44,6 +50,14 @@ def setup_constants(communicator_instance):
         ("ZHOP_HEIGHT", "zhop_height"),
         ("in_use", True)
     ]
+    #TODO: handle special cases
+    # spec_attrs = []
+    # if isinstance(communicator_instance, SerialCommunicator):
+    #     # add special constants for the SerialCommunicator, if they have not yet been defined as attributes
+    # elif isinstance(communicator_instance, SocketCommunicator):
+    #     # add special constants for just the SocketCommunicator
+    # elif isinstance(communicator_instance, WebsocketCommunicator):
+
     for ati in attr_info:
         name_, val_ = ati
         if isinstance(val_, dict):
@@ -57,6 +71,7 @@ def setup_constants(communicator_instance):
             name = name_,
             value = val
         )
+
 
 class SerialCommunicator:
     """
@@ -378,8 +393,13 @@ class SocketCommunicator:
     to handle dual X-axis closed-loop stepper motors with HSS57 external drivers, and 
     open-loop Y and Z axis stepper motors driven by on-board TMC2209 drivers.
     """
-    def __init__(self):
+    def __init__(self, ip: str = None, port: str = None):
         self._purpose = "Store relevant motion settings for the Gantry when using a Duet 3 Mini 5+ Ethernet control board for closed-loop dual X and open-loop Y, Z stepper motors"
+        
+        setup_constants(
+            communicator_instance = self
+        )
+
 
 class WebsocketCommunicator:
     """
@@ -389,6 +409,8 @@ class WebsocketCommunicator:
     to handle dual X-axis closed-loop stepper motors with HSS57 external drivers, and 
     open-loop Y and Z axis stepper motors driven by on-board TMC2209 drivers.
     """
+    def __init__(self):
+        raise NotImplementedError("Communication over a websocket connection has not yet been developed. This method is for future generalization.")
 
 class Gantry:
     """
