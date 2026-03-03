@@ -139,6 +139,10 @@ gantry_v2:
       y_min: 0
       z_max: 19
       z_min: 0
+    grid_spacing:
+      x_axis: 0.5 #smallest discrete movement along x-axis (mm)
+      y_axis: 0.5 #smallest discrete movement along y-axis (mm)
+      z_axis: 0.5 #smallest discrete movement along z-axis (mm)
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
     transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
     transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames

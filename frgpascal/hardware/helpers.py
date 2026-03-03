@@ -383,3 +383,4 @@ def get_ot2_ip():
     except Exception as e:
         print(f"Error retrieving IP address: {e}")
         return None
+    

@@ -13,13 +13,16 @@ import os
 from functools import partial
 from frgpascal.hardware.helpers import get_port
 try:
-    from typing import Union, List, Literal, Optional
+    from typing import Union, List, Literal, Optional, Set
 except:
-    from typing import Union, List, Optional
+    from typing import Union, List, Optional, Set
     from typing_extensions import Literal
+
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader = yaml.FullLoader)
+
+AllowedFrames = Literal["invalid", "workspace", "opentrons"]
 
 def setup_constants(communicator_instance):
     """
@@ -162,7 +165,7 @@ class SerialCommunicator:
             msg = f"G0 F{self.speed}"
         )
 
-    def _target_frame(self, position): # -> Literal("invalid") | set(k for k in self._FRAMES.keys()): # <- not sure if this will work, but would be nice for type hints in documentation.
+    def _target_frame(self, position) -> Set[AllowedFrames]: # <- validate that the AllowedFrames are the only options defined in the codebase.
         """
         Determines which frame contains the position.
 
