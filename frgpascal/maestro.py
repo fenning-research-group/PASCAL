@@ -330,6 +330,9 @@ class Maestro:
 
     @property
     def nist_time(self):
+        """
+        Returns the new time aligned with NIST
+        """
         return time.time() + self.__local_nist_offset
 
     def calibrate(self):
@@ -346,6 +349,9 @@ class Maestro:
             component.calibrate()
 
     def gohome(self):
+        """
+        Tells the gantry to go to its home coordinates and connects the spincoater
+        """
         threads = []
         tasks = [self.gantry.gohome, self.spincoater.connect]
         if self.characterization is not None:
@@ -760,6 +766,9 @@ class Maestro:
         print(get_ot2_ip())
 
     def run(self, ip=None):
+        """
+        Starts PASCAL and turns on the workers
+        """
         if len(self.samples) == 0:
             raise Exception("No samples loaded, did you forget to run .load_netlist()?")
         self._experiment_checklist()
@@ -790,6 +799,9 @@ class Maestro:
             worker.start()
 
     def stop(self):
+        """
+        Stops PASCAL
+        """
         print('Beginning to stop PASCAL')
         self.working = False
         # clean up the experiment, save log of actual timings

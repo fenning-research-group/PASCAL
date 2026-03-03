@@ -133,9 +133,15 @@ class SerialCommunicator:
         return output
     
     def _enable_steppers(self):
+        """
+        Enables the motors on the gantry
+        """
         self.write("M17")
     
     def _disable_steppers(self):
+        """
+        Disables the motors on the gantry
+        """
         self.write("M18")
 
     def update(self):
@@ -155,6 +161,14 @@ class SerialCommunicator:
         self._ZLIM = self._FRAMES[self._currentframe]["z_max"]
     
     def set_speed_percentage(self, p):
+        """
+        Multiplies the self.speed attribute by a percentage p
+
+        Parameters
+        ----------
+        p : float
+            the percentage by which the speed should be multiplied by
+        """
         if (p < 0) or (p > 100):
             raise Exception("Speed must be set by a percentage value between 0-100!")
         self.speed = (p / 100) * (self.MAXSPEED - self.MINSPEED) + self.MINSPEED
@@ -318,8 +332,14 @@ class SerialCommunicator:
             self._movecommand(x, y, z, speed)
     
     def movetoclear(self):
+        """
+        Moves the gantry to specified clear coordinates
+        """
         self.moveto(self.CLEAR_COORDINATES)
     def movetoidle(self):
+        """
+        Moves the gantry to specified idle coordinates
+        """
         self.moveto(self.IDLE_COORDINATES)
     
     def moverel(
@@ -327,9 +347,28 @@ class SerialCommunicator:
             x: float = 0,
             y: float = 0,
             z: float = 0,
-            zhop: bool = False,
-            speed: float = None,
+            zhop: bool = False, # is true in moveto(...) by default
+            speed: float = None, 
         ):
+        """
+        Moves the gantry a specified distance along each of the x, y, and z axes irrespective of absolute coordinates
+        
+        note: zhop probably should match exactly with moveto(...) 
+        Parameters
+        ----------
+        x : Optional[Union[float, List[float]]], optional
+            If is a float, then is the x-coordinate to move to. 
+            If is a list, then is the [x, y, z] coordinates to move to.
+            By default is 0.
+        y : Optional[Union[float, List[float]]], optional
+            y-coordinate to move to, by default 0.
+        z : Optional[Union[float, List[float]]], optional
+            z-coordinate to move to, by default 0.
+        zhop : Optional[bool], optional
+            Whether to move up in z a little to avoid potential gripper crash, by default False
+        speed : Optional[float], optional
+            movement speed, in mm/s for this motion, by default 'self.speed'
+        """
         try:
             if len(x) == 3:
                 x, y, z = x
@@ -467,6 +506,9 @@ class Gantry:
         self.__grippper_last_opened = time.time()
 
     def go_home(self):
+        """
+        Moves the gantry's coordinates to (0, 0, 0)
+        """
         self._communicator.write("G28 X Y Z")
         self.update()
         self.movetoclear()
