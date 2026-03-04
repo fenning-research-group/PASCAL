@@ -39,17 +39,17 @@ class TargetError(Exception):
 class ConnectConfig:
     """dataclass for storing base properties used to set up communications."""
     POLLINGDELAY: float
-    port: str | None
-    ip: str | None
+    port: Union[str, None]
+    ip: Union[str, None]
 
 @dataclass
 class MotionConfig:
     """dataclass for storing the base properties used for continuous motion control"""
     # Motion Planning:
-    position: tuple | list
-    TRANSITION_COORDINATES: tuple | list
-    CLEAR_COORDINATES: tuple | list
-    IDLE_COORDINATES: tuple | list
+    position: Union[tuple, list]
+    TRANSITION_COORDINATES: Union[tuple, list]
+    CLEAR_COORDINATES: Union[tuple, list]
+    IDLE_COORDINATES: Union[tuple, list]
     _targetposition: tuple
     _currentframe: str
     _ZLIM: float
@@ -77,7 +77,7 @@ class Frames(str, Enum):
     Invalid = "invalid"
 
 class BaseCommunicator(ABC):
-    def __init__(self, config: ConnectConfig):
+    def __init__(self, config: ConnectConfig = ConnectConfig()):
         self._config = config
     
     @property
@@ -86,7 +86,7 @@ class BaseCommunicator(ABC):
 
     # abstractmethods
     @abstractmethod
-    def connect(self, port: str | None, ip: str | None) -> Union[serial.Serial, socket.socket, websockets.WebSocketClientProtocol]:
+    def connect(self, port: Union[str, None], ip: Union[str, None]) -> Union[serial.Serial, socket.socket, websockets.WebSocketClientProtocol]:
         """Setup the communication link."""
         raise NotImplementedError
     @abstractmethod
@@ -458,7 +458,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
 
 class DiscreteMotionControl(BaseMotionControl[GridConfig]):
 
-    def _transform_coordinates(self, x: float, y: float, z: float) -> Union[Tuple[int, int, int], List[int, int, int]]:
+    def _transform_coordinates(self, x: float, y: float, z: float) -> Tuple[int, int, int]:
         """Map provided target position into discrete grid coordinates:
 
         Parameters

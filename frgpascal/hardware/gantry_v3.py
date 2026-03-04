@@ -6,7 +6,7 @@ import time
 import re
 import numpy as np
 import sys
-from PyQt5.Widgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
+# from PyQt5.Widgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
 import yaml
 import os
 from functools import partial
@@ -25,115 +25,6 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader = yaml.FullLoader)
 
 AllowedFrames = Literal["invalid", "workspace", "opentrons"]
-
-def setup_constants(obj_instance, attr_info):
-    """Scrapes the hardware constants.
-    
-    Adds attrs from attr_info into the configuration of the provided obj_instance
-    
-    Parameters
-    ----------
-    obj_instance : Union[BaseMotionControl, DiscreteMotionControl, BaseCommunicator, SerialCommunicator, SocketCommunicator, WebsocketCommunicator]
-
-    attr_info : List[Tuple]
-        Each element of attr_info should be of the form (str(attribute name), Union[str(key for relevant value in yaml), (default value if not in yaml)])
-    """
-    for ati in attr_info:
-        name_, val_ = ati
-        if isinstance(val_, dict):
-            val = {k: obj_instance._constants[v] for k, v in val_.items()}
-        elif isinstance(val_, str):
-            val = obj_instance._constants[val_]
-        else:
-            val = val_
-        setattr(
-            obj = obj_instance.config,
-            name = name_,
-            value = val
-        )
-
-def setup_motion_constants(controller_instance: Union[BaseMotionControl, BTTSKRMiniE3_MotionControl, DiscreteMotionControl, Duet3Mini5Plus_MotionControl]):
-    """
-    Scrape the hardware constants for the given controller_instance.
-
-    Adds common attributes for motion control into the controller config.
-    Parameters
-    ----------
-    controller_instance : 
-        _description_
-    """
-    attr_info = [
-        # (name, constants key)
-        ("_OVERALL_LIMS", "overall_gantry_limits"),
-        ("_FRAMES", {"workspace": "workspace_limits", "opentrons": "opentrons_limits"}),
-        ("TRANSITION_COORDINATES", "transition_coordinates"),
-        ("CLEAR_COORDINATES", "clear_coordinates"),
-        ("IDLE_COORDINATES", "idle_coordinates"),
-        ("TRANSITION_NUDGE", "transition_nudge"),
-        ("_currentframe", None),
-        ("_ZLIM", None),
-        ("position", [None, None, None]),
-        ("_targetposition", [None, None, None]),
-        ("GANTRYTIMEOUT", "timeout"),
-        ("POSITIONTOLERANCE", "positiontolerance"),
-        ("MAXSPEED", "speed_max"),
-        ("MINSPEED", "speed_min"),
-        ("ZHOP_HEIGHT", "zhop_height"),
-        ("in_use", True)
-    ]
-    if isinstance(controller_instance, DiscreteMotionControl) or isinstance(controller_instance, Duet3Mini5Plus_MotionControl):
-        for axis in ["x", "y", "z"]:
-            attr_info.append(
-                (f"grid_spacing_{axis}", {"grid_spacing": f"{axis}_axis"})
-            )
-    setup_constants(
-        obj_instance = controller_instance,
-        attr_info = attr_info
-    )
-
-def setup_connect_constants(communicator_instance: Union[BaseCommunicator, SerialCommunicator, SocketCommunicator, WebsocketCommunicator]):
-    """
-    Scrape the hardware constants for the given communicator_instance.
-
-    Add common attributes for hardware communications into the communicator config.
-    Parameters
-    ----------
-    communicator_instance : _type_
-        _description_
-    """
-    attr_info = [
-        # (name, constants key)
-        ("POLLINGDELAY", "pollingrate")
-    ]
-    if isinstance(communicator_instance, SerialCommunicator):
-        attr_info.append(
-            ("port", {"device_identifiers": "port"})
-        )
-        attr_info.append(
-            ("device_identifiers", "device_identifiers")
-        )
-    elif isinstance(communicator_instance, SocketCommunicator):
-        attr_info.append(
-            ("ip", {"device_identifiers": "ip"})
-        )
-        attr_info.append(
-            ("device_identifiers", "device_identifiers")
-        )
-        attr_info.append(
-            ("_connected_network_devices", {})
-        )
-    #TODO: handle special cases
-    # spec_attrs = []
-    # if isinstance(communicator_instance, SerialCommunicator):
-    #     # add special constants for the SerialCommunicator, if they have not yet been defined as attributes
-    # elif isinstance(communicator_instance, SocketCommunicator):
-    #     # add special constants for just the SocketCommunicator
-    # elif isinstance(communicator_instance, WebsocketCommunicator):
-
-    setup_constants(
-        obj_instance = communicator_instance,
-        attr_info = attr_info
-    )
 
 
 
@@ -178,7 +69,7 @@ class SerialCommunicator(BaseCommunicator):
     def _search_for_echo(self, stop_moving = True):
         return self._comms.readline().decode("utf-8").strip()
     
-    def write(self, msg: str) -> list[str]:
+    def write(self, msg: str) -> List[str]:
         self._comms.write(
             f"{msg}\n".encode()
         )
@@ -197,6 +88,7 @@ class SocketCommunicator(BaseCommunicator):
 
     def __init__(self):
         self._constants = constants["gantry_v2"]["socket_connection"]
+        super().__init__()
         setup_connect_constants(
             communicator_instance = self
         )
@@ -260,7 +152,7 @@ class SocketCommunicator(BaseCommunicator):
             response = [self._handle.recv(bytes_to_receive).decode("utf-8").strip()]
         return response
     
-    def write(self, msg: str) -> list[str]:
+    def write(self, msg: str) -> List[str]:
         response = self.send_gcode(command = msg)
         return response
     
@@ -287,7 +179,7 @@ class BTTSKRMiniE3_MotionControl(BaseMotionControl):
         setup_motion_constants(
             controller_instance = self
         )
-        super().__init__(config = self.config, communicator = communicator)
+        super().__init__(config = self._config, communicator = communicator)
 
 
     def set_defaults(self):
@@ -317,6 +209,121 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
     def set_defaults(self):
         self.write("M501")
         self.write("G90")
+
+def setup_constants(obj_instance, attr_info):
+    """Scrapes the hardware constants.
+    
+    Adds attrs from attr_info into the configuration of the provided obj_instance
+    
+    Parameters
+    ----------
+    obj_instance : Union[BaseMotionControl, DiscreteMotionControl, BaseCommunicator, SerialCommunicator, SocketCommunicator, WebsocketCommunicator]
+
+    attr_info : List[Tuple]
+        Each element of attr_info should be of the form (str(attribute name), Union[str(key for relevant value in yaml), (default value if not in yaml)])
+    """
+    for ati in attr_info:
+        name_, val_ = ati
+        if isinstance(val_, dict):
+            val = {k: obj_instance._constants[v] for k, v in val_.items()}
+        elif isinstance(val_, str):
+            val = obj_instance._constants[val_]
+        else:
+            val = val_
+        setattr(
+            obj = obj_instance._config,
+            name = name_,
+            value = val
+        )
+
+def setup_motion_constants(controller_instance: Union[BaseMotionControl, BTTSKRMiniE3_MotionControl, DiscreteMotionControl, Duet3Mini5Plus_MotionControl]):
+    """
+    Scrape the hardware constants for the given controller_instance.
+
+    Adds common attributes for motion control into the controller config.
+    Parameters
+    ----------
+    controller_instance : 
+        _description_
+    """
+    attr_info = [
+        # (name, constants key)
+        ("_OVERALL_LIMS", "overall_gantry_limits"),
+        ("_FRAMES", {"workspace": "workspace_limits", "opentrons": "opentrons_limits"}),
+        ("TRANSITION_COORDINATES", "transition_coordinates"),
+        ("CLEAR_COORDINATES", "clear_coordinates"),
+        ("IDLE_COORDINATES", "idle_coordinates"),
+        ("TRANSITION_NUDGE", "transition_nudge"),
+        ("_currentframe", None),
+        ("_ZLIM", None),
+        ("position", [None, None, None]),
+        ("_targetposition", [None, None, None]),
+        ("GANTRYTIMEOUT", "timeout"),
+        ("POSITIONTOLERANCE", "positiontolerance"),
+        ("MAXSPEED", "speed_max"),
+        ("MINSPEED", "speed_min"),
+        ("ZHOP_HEIGHT", "zhop_height"),
+        ("in_use", True)
+    ]
+    if isinstance(controller_instance, DiscreteMotionControl) or isinstance(controller_instance, Duet3Mini5Plus_MotionControl):
+        for axis in ["x", "y", "z"]:
+            attr_info.append(
+                (f"grid_spacing_{axis}", {"grid_spacing": f"{axis}_axis"})
+            )
+    setup_constants(
+        obj_instance = controller_instance,
+        attr_info = attr_info
+    )
+
+def setup_connect_constants(
+    communicator_instance: Union[
+        BaseCommunicator, SerialCommunicator, SocketCommunicator, 
+        # WebsocketCommunicator
+    ]
+):
+    """
+    Scrape the hardware constants for the given communicator_instance.
+
+    Add common attributes for hardware communications into the communicator config.
+    Parameters
+    ----------
+    communicator_instance : _type_
+        _description_
+    """
+    attr_info = [
+        # (name, constants key)
+        ("POLLINGDELAY", "pollingrate")
+    ]
+    if isinstance(communicator_instance, SerialCommunicator):
+        attr_info.append(
+            ("port", {"device_identifiers": "port"})
+        )
+        attr_info.append(
+            ("device_identifiers", "device_identifiers")
+        )
+    elif isinstance(communicator_instance, SocketCommunicator):
+        attr_info.append(
+            ("ip", {"device_identifiers": "ip"})
+        )
+        attr_info.append(
+            ("device_identifiers", "device_identifiers")
+        )
+        attr_info.append(
+            ("_connected_network_devices", {})
+        )
+    #TODO: handle special cases
+    # spec_attrs = []
+    # if isinstance(communicator_instance, SerialCommunicator):
+    #     # add special constants for the SerialCommunicator, if they have not yet been defined as attributes
+    # elif isinstance(communicator_instance, SocketCommunicator):
+    #     # add special constants for just the SocketCommunicator
+    # elif isinstance(communicator_instance, WebsocketCommunicator):
+
+    setup_constants(
+        obj_instance = communicator_instance,
+        attr_info = attr_info
+    )
+
 
 from frgpascal.hardware.gantry import GantryGUI #TODO: Extend GantryGUI to work for a discrete coordinate basis.
 
