@@ -11,7 +11,7 @@ import yaml
 import os
 from functools import partial
 
-from frgpascal.hardware.base_gantry import BaseCommunicator, BaseMotionControl, DiscreteMotionControl
+from frgpascal.hardware.base_gantry import BaseCommunicator, BaseMotionControl, DiscreteMotionControl, MotionConfig, GridConfig
 from frgpascal.hardware.helpers import get_port
 
 try:
@@ -92,7 +92,7 @@ class SocketCommunicator(BaseCommunicator):
         setup_connect_constants(
             communicator_instance = self
         )
-        self.connect()
+        # self.connect()
 
     def connect(self) -> socket.socket:
         """Connect to a socket communication."""
@@ -176,11 +176,11 @@ class BTTSKRMiniE3_MotionControl(BaseMotionControl):
 
     def __init__(self, communicator: SerialCommunicator):
         self._constants = constants["gantry_v2"]["serial_connection"]
+        self._config = MotionConfig()
         setup_motion_constants(
             controller_instance = self
         )
         super().__init__(config = self._config, communicator = communicator)
-
 
     def set_defaults(self):
         self.write("M501")   # load defaults from EEPROM
@@ -201,10 +201,11 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
 
     def __init__(self, communicator: SocketCommunicator):
         self._constants = constants["gantry_v2"]["socket_connection"]
+        self._config = GridConfig()
         setup_motion_constants(
             controller_instance = self
         )
-        super().__init__(config = self.config, communicator = communicator)
+        super().__init__(config = self._config, communicator = communicator)
 
     def set_defaults(self):
         self.write("M501")
@@ -223,17 +224,26 @@ def setup_constants(obj_instance, attr_info):
         Each element of attr_info should be of the form (str(attribute name), Union[str(key for relevant value in yaml), (default value if not in yaml)])
     """
     for ati in attr_info:
+        # print(ati)
+        # print(obj_instance._config)
         name_, val_ = ati
+        # print(obj_instance._constants)
         if isinstance(val_, dict):
-            val = {k: obj_instance._constants[v] for k, v in val_.items()}
+            if ("_" in name_) and (not val_):
+                val = {k: obj_instance._constants[v] for k, v in val_.items()}
+            elif ("_" in name_) and (val_):
+                val = {}
+            else:
+                val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
         elif isinstance(val_, str):
             val = obj_instance._constants[val_]
         else:
             val = val_
+        # print(name_, val)
         setattr(
-            obj = obj_instance._config,
-            name = name_,
-            value = val
+            obj_instance._config,
+            name_,
+            val
         )
 
 def setup_motion_constants(controller_instance: Union[BaseMotionControl, BTTSKRMiniE3_MotionControl, DiscreteMotionControl, Duet3Mini5Plus_MotionControl]):
@@ -328,10 +338,65 @@ def setup_connect_constants(
 from frgpascal.hardware.gantry import GantryGUI #TODO: Extend GantryGUI to work for a discrete coordinate basis.
 
 class NewGantry:
+    """The Gantry control object for interfacing with the other control objects of PASCAL.
+
+    Primarily a wrapper around the MotionControl objects, for converting the expected Gantry methods
+    into the backend MotionControl methods.
+    """
     def __init__(self, communicator: Union[SerialCommunicator, SocketCommunicator], controller: Union[BTTSKRMiniE3_MotionControl, Duet3Mini5Plus_MotionControl]):
-        comms = communicator()
-        controls = controller(comms)
+        self.__comms = communicator()
+        self._controls = controller(self.__comms)
         print("Gantry ready to go!")
+
+    def connect(self):
+        self._controls._handle.connect()
+    def disconnect(self):
+        self._controls._handle.disconnect()
+    def set_defaults(self):
+        self._controls.set_defaults
+    def write(self, msg):
+        self._controls._handle.write(msg)
+    def _enable_steppers(self):
+        self._controls._enable_steppers()
+    def _disable_steppers(self):
+        self._controls._disable_steppers()
+    def update(self):
+        self._controls.update()
+    def gohome(self):
+        self._controls.gohome()
+    def set_speed_percentage(self, p):
+        self._controls.set_speed_percentage(p = p)
+    def movetoclear(self):
+        self._controls.movetoclear()
+    def movetoidle(self):
+        self._controls.movetoidle()
+    def moveto(self, x, y, z, zhop, speed):
+        self._controls.moveto(x, y, z, zhop, speed)
+    def premove(self, x, y, z, zhop):
+        self._controls.premove(x, y, z, zhop)
+    def _transition_to_frame(self, target_frame):
+        self._controls._transition_to_frame(target_frame = target_frame)
+    
+    def _waitformovement(self):
+        self._controls._waitformovement()
+    def _movecommand(self, x: float, y: float, z: float, speed: float):
+        self._controls._movecommand(x = x, y = y, z = z, speed = speed)
+    def moverel(
+        self,
+        x: float = 0,
+        y: float = 0,
+        z: float = 0,
+        zhop: bool = False,
+        speed: float = None,
+    ):
+        self._controls.moverel(
+            x = x,
+            y = y,
+            z = z,
+            zhop = zhop,
+            speed = speed
+        )
+    
     
     def gui(self):
         GantryGUI(gantry = self)

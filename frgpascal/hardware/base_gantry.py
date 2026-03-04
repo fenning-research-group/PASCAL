@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, _MISSING_TYPE, field
 from abc import ABC, abstractmethod
 from enum import Enum
 import time
@@ -38,35 +38,46 @@ class TargetError(Exception):
 @dataclass
 class ConnectConfig:
     """dataclass for storing base properties used to set up communications."""
-    POLLINGDELAY: float
-    port: Union[str, None]
-    ip: Union[str, None]
+    POLLINGDELAY: float = 0.05
+    port: Union[str, None] = ""
+    ip: Union[str, None] = ""
+
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
 
 @dataclass
 class MotionConfig:
     """dataclass for storing the base properties used for continuous motion control"""
     # Motion Planning:
-    position: Union[tuple, list]
-    TRANSITION_COORDINATES: Union[tuple, list]
-    CLEAR_COORDINATES: Union[tuple, list]
-    IDLE_COORDINATES: Union[tuple, list]
-    _targetposition: tuple
-    _currentframe: str
-    _ZLIM: float
-    TRANSITION_NUDGE: float
+    position: Union[tuple, list] = field(default_factory = list)
+    TRANSITION_COORDINATES: Union[tuple, list] = field(default_factory = list)
+    CLEAR_COORDINATES: Union[tuple, list] = field(default_factory = list)
+    IDLE_COORDINATES: Union[tuple, list] = field(default_factory = list)
+    _targetposition: tuple = field(default_factory = tuple)
+    _currentframe: str = ""
+    _ZLIM: float = 1
+    TRANSITION_NUDGE: float = 1
     # Motion Execution:
-    MAXSPEED: float
-    MINSPEED: float
-    ZHOP_HEIGHT: float
-    in_use: bool
-    GANTRYTIMEOUT: float
+    MAXSPEED: float = 1
+    MINSPEED: float = 1
+    ZHOP_HEIGHT: float = 1
+    in_use: bool = True
+    GANTRYTIMEOUT: float = 1
 
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
 @dataclass
 class GridConfig(MotionConfig):
     """dataclass for storing the base properties used for discrete motion control."""
-    grid_spacing_x: float
-    grid_spacing_y: float
-    grid_spacing_z: float
+    grid_spacing_x: float = 1
+    grid_spacing_y: float = 1
+    grid_spacing_z: float = 1
 
 ConfigVar = TypeVar("ConfigVar", bound = MotionConfig)
 
@@ -123,12 +134,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         self._handle = communicator
     # abstract properties
     @property
-    @abstractmethod
     def speed(self) -> float:
         return self._speed
     
     @speed.setter
-    @abstractmethod
     def speed(self, value):
         self._speed = value
         self._handle.write(
