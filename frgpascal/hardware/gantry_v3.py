@@ -229,6 +229,8 @@ def setup_constants(obj_instance, attr_info):
         name_, val_ = ati
         # print(obj_instance._constants)
         if isinstance(val_, dict):
+            if "device_identifiers" == name_:
+                val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
             if ("_" in name_) and (not val_):
                 val = {k: obj_instance._constants[v] for k, v in val_.items()}
             elif ("_" in name_) and (val_):

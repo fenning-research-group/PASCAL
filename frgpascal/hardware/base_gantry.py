@@ -484,7 +484,7 @@ class DiscreteMotionControl(BaseMotionControl[GridConfig]):
         Union[Tuple[int, int, int], List[int, int, int]]
             The nearest grid coordinates for the target coordinates.
         """
-        x = int(round(x / self.config._grid_spacing_x))
-        y = int(round(y / self.config._grid_spacing_y))
-        z = int(round(z / self.config._grid_spacing_z))
+        x = int(round(x / self.config._grid_spacing_x)) * self.config._grid_spacing_x
+        y = int(round(y / self.config._grid_spacing_y)) * self.config._grid_spacing_y
+        z = int(round(z / self.config._grid_spacing_z)) * self.config._grid_spacing_z
         return x, y, z
