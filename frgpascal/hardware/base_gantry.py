@@ -157,6 +157,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     
     # communal methods, same across all inheritors
 
+    def gohome(self):
+        self._handle.write("G28 X Y Z")
+        self.update()
+        self.movetoclear()
     def _enable_steppers(self):
         """Send M17 GCode command to turn on the stepper motors"""
         self._handle.write("M17")
