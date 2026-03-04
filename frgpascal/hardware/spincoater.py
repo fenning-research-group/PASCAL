@@ -22,6 +22,41 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class SpinCoater:
+    """
+    Control object for the spin coater.
+
+    The SpinCoater class interfaces with an ODrive BLDC motor controller
+    to execute rotational commands. It coordinates with the Gantry for exact placements 
+    during sample transfer. Features background data logging.
+
+    Parameters
+    ----------
+    gantry : Gantry
+        Reference to the PASCAL Gantry control object for coordinate referencing.
+    switch : SingleSwitch
+        Reference to the specific Switchbox solenoid relay that controls the chuck vacuum.
+    sc_axis : str, optional
+        The specific ODrive axis controlling the motor, by default 'axis0'.
+    regular_bootup : bool, optional
+        Whether to run the ODrive calibration sequence upon initialization, by default True.
+
+    Attributes
+    ----------
+    ACCELERATIONRANGE : tuple
+        (min, max) allowed angular acceleration values in rpm/s.
+    SPEEDRANGE : tuple
+        (min, max) allowed angular velocity values in rpm.
+    VACUUM_DISENGAGEMENT_TIME : float
+        Time in seconds required for the vacuum to fully release a substrate.
+
+    See Also
+    --------
+    Worker_SpincoaterLiquidHandler : coordinates this class with the Opentrons robot.
+
+    Examples
+    --------
+    >>> TODO: Add usage examples
+    """
     def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
         """Initialize the spincoater control object
 
@@ -72,6 +107,14 @@ class SpinCoater:
         self._current_rps = 0
 
     def connect(self, **kwargs):
+        """
+        Connects to the ODrive controller and executes the calibration sequence.
+
+        Parameters
+        ----------
+        regular_bootup : bool, optional
+            A keyword argument. If True, initiates the full encoder calibration sequence and starts the watchdog thread. Defaults to True.
+        """
         regular_bootup = kwargs.get('regular_bootup', True)
         if regular_bootup:
             # connect to odrive BLDC controller
@@ -125,6 +168,18 @@ class SpinCoater:
             print("\tSkipping spincoater calibration, will throw silent errors if you try to use any spincoater-inclusive tasks.")
 
     def disconnect(self, reboot = False):
+        """
+        Safely disconnects from the ODrive controller and stops background threads.
+
+        Parameters
+        ----------
+        reboot : bool, optional
+            Whether to reboot the ODrive board upon disconnection, by default False.
+
+        Raises
+        ------
+        AttributeError
+        """
         self.__connected = False
         self._libfibre_watchdog.join()
         # this always throws an "object lost" error...which is what we want
@@ -161,6 +216,7 @@ class SpinCoater:
                 yaml.dump(self.coordinates, f)
 
     def _load_calibration(self):
+        """Loads the pre-calibrated gantry transfer coordinates from the local YAML file."""
         with open(
             os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
         ) as f:
@@ -168,13 +224,19 @@ class SpinCoater:
         self.__calibrated = True
 
     def __call__(self):
-        """Calling the spincoater object will return its gantry coordinates. For consistency with the callable nature of gridded hardware (storage, hotplate, etc)
+        """
+        Calling the spincoater object will return its gantry coordinates. 
+        For consistency with the callable nature of gridded hardware (storage, hotplate, etc).
 
-        Raises:
-                        Exception: If spincoater position is not calibrated, error will thrown.
+        Returns
+        -------
+        tuple
+            (x,y,z) coordinates for gantry to pick/place sample on spincoater chuck.
 
-        Returns:
-                        tuple: (x,y,z) coordinates for gantry to pick/place sample on spincoater chuck.
+        Raises
+        ------
+        Exception
+            If spincoater position is not calibrated.
         """
         if self.__calibrated == False:
             raise Exception(f"Need to calibrate spincoater position before use!")
@@ -192,11 +254,22 @@ class SpinCoater:
 
     # odrive BLDC motor control methods
     def set_rpm(self, rpm: int, acceleration: float = 1000):
-        """sends commands to arduino to set a target speed with a target acceleration
+        """
+        Sends commands to ODrive to set a target speed with a target acceleration
 
-        Args:
-                        rpm (int): target angular velocity, in rpm
-                        acceleration (float, optional): target angular acceleration, in rpm/second.  Defaults to 500.
+        Parameters
+        ----------
+        rpm : int
+            Target angular velocity in RPM
+        acceleration : float, optional
+            Target angular acceleration in RPM/second, defaults to 1000
+
+        Raises
+        ------
+        ValueError
+            If the requested RPM is outside the allowable SPEEDRANGE
+        ValueError
+            If the requested acceleration is outside the allowable ACCELERATIONRANGE
         """
         if rpm != 0 and (rpm < self.SPEEDRANGE[0] or rpm > self.SPEEDRANGE[1]):
             raise ValueError(
@@ -235,7 +308,7 @@ class SpinCoater:
 
     def lock(self):
         """
-        routine to lock rotor in registered position for sample transfer
+        Routine to lock rotor in registered position for sample transfer
         """
         if self._locked:
             print('spincoater is already locked')
@@ -270,6 +343,9 @@ class SpinCoater:
         self._locked = True
 
     def reset(self):
+        """
+        Force resets the connection to the ODrive board
+        """
         try:
             print('Disconnecting from odrive')
             self.disconnect()
@@ -281,9 +357,9 @@ class SpinCoater:
 
     def twist_off(self):
         """
-        routine to slightly rotate the chuck from home position.
+        Routine to slightly rotate the chuck from home position.
 
-        intended to help remove a stuck substrate from the o-ring, which can get sticky if
+        Intended to help remove a stuck substrate from the o-ring, which can get sticky if
         perovskite solution drips onto the o-ring.
         """
         if not self._locked:
@@ -329,17 +405,26 @@ class SpinCoater:
         print(f"\tSpinCoater says it is idle now")
 
     def idle(self):
+        """
+        Sets the ODrive axis to an idle state
+        """
         if self.axis.current_state != AXIS_STATE_IDLE:
             self.axis.requested_state = AXIS_STATE_IDLE
         self._locked = False
 
     def _lookup_error(self):
+        """
+        Returns the text string of the current ODrive axis error
+        """
         for err in dir(odrive.enums):
             if self.axis.error == getattr(odrive.enums, err):
                 return err
 
     # logging code
     def __logging_worker(self):
+        """
+        Background worker thread that polls the ODrive encoder and logs rpm and position.
+        """
         t0 = time.time()
         self.__logdata = {"time": [], "rpm": [], "pos": []}
         while self.__logging_active:
@@ -355,6 +440,14 @@ class SpinCoater:
             time.sleep(self.LOGGINGINTERVAL)
 
     def start_logging(self):
+        """
+        Initializes and starts the background logging thread.
+
+        Raises
+        ------
+        ValueError
+            If logging is already currently active.
+        """
         if self.__logging_active:
             raise ValueError("Logging is already active!")
         self.__logging_active = True
@@ -362,6 +455,19 @@ class SpinCoater:
         self.__logging_thread.start()
 
     def finish_logging(self):
+        """
+        Stops the logging thread and returns the collected data.
+
+        Returns
+        -------
+        dict
+            Dictionary containing 'time', 'rpm', and 'pos' arrays of the logged sequence
+
+        Raises
+        ------
+        ValueError
+            If logging is not currently active.
+        """
         if not self.__logging_active:
             raise ValueError("Logging is already stopped!")
         self.__logging_active = False
