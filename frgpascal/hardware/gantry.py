@@ -433,6 +433,7 @@ class Gantry:
             # x = np.round(x, decimals = 1)
             # y = np.round(y, decimals = 1)
             # z = np.round(z, decimals = 1)
+            x, y, z = self._transform_coordinates(x, y, z)
             x, y, z = self.premove(x, y, z) # will error out if invalid move
             if speed is None:
                 speed = self.speed
@@ -587,6 +588,28 @@ class Gantry:
         self.update()
 
         return reached_destination
+    
+    def _transform_coordinates(self, x: float, y: float, z: float):
+        """Map provided target position into discrete grid coordinates:
+
+        Parameters
+        ----------
+        x : float
+            target x_coordinate, in mm.
+        y : float
+            target y_coordinate, in mm.
+        z : float
+            target z_coordinate, in mm.
+
+        Returns
+        -------
+        Union[Tuple[int, int, int], List[int, int, int]]
+            The nearest grid coordinates for the target coordinates.
+        """
+        x = int(round(x / self.config.grid_spacing_x)) * self.config.grid_spacing_x
+        y = int(round(y / self.config.grid_spacing_y)) * self.config.grid_spacing_y
+        z = int(round(z / self.config.grid_spacing_z)) * self.config.grid_spacing_z
+        return (x, y, z)
     
     # GUI
     def gui(self):
