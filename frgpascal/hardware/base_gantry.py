@@ -355,7 +355,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             # x, y, z = tuple(x_, y_, z_)
         except:
             pass
-        if [x, y, z] == [None, None, None]:
+        if (x is None) or (y is None) or (z is None):
             raise TargetError()
         print(x, y, z)
         # if len(x) == 3:
