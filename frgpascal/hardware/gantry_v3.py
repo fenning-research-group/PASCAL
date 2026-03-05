@@ -12,7 +12,7 @@ import os
 from functools import partial
 
 from frgpascal.hardware.base_gantry import BaseCommunicator, BaseMotionControl, DiscreteMotionControl, MotionConfig, GridConfig
-from frgpascal.hardware.helpers import get_port
+from frgpascal.hardware.helpers import get_port, get_qapp
 
 try:
     from typing import Literal
@@ -168,6 +168,19 @@ class SocketCommunicator(BaseCommunicator):
     def _search_for_echo(self):
         return self._handle.recv(1024).decode("utf-8").strip()
 
+class FakeCommunicator(SocketCommunicator):
+    def connect(self):
+        self._handle = None
+    def disconnect(self):
+        print("Disconnected")
+        # del self._handle
+    def send_gcode(self, command, homing = True):
+        return ["M114 X0.00 Y0.00 Z0.00"]
+    def _send_echo(self, stop_moving = True):
+        return "echo sent"
+    def _search_for_echo(self):
+        return "FinishedMoving"
+
 class WebCommunicator(BaseCommunicator):
     def __init__(self):
         raise NotImplementedError("Support for websockets connection is planned for future development.")
@@ -227,13 +240,23 @@ def setup_constants(obj_instance, attr_info):
         # print(ati)
         # print(obj_instance._config)
         name_, val_ = ati
+        print(name_, val_)
         # print(obj_instance._constants)
         if isinstance(val_, dict):
             if "device_identifiers" == name_:
                 val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
-            if ("_" in name_) and (not val_):
+            elif "grid_spacing" in name_:
+                print(val_)
+                vd = {k: obj_instance._constants[k][v] for k, v in val_.items()}
+                print(vd)
+                vv = [v for k, v in vd.items()][0]
+                print(type(vv), vv)
+                val = vv
+            elif ("_" in name_) and (not val_):
+                print(f"\t{name_}\t{val_}")
                 val = {k: obj_instance._constants[v] for k, v in val_.items()}
             elif ("_" in name_) and (val_):
+                print(name_, val_)
                 val = {}
             else:
                 val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
@@ -281,6 +304,7 @@ def setup_motion_constants(controller_instance: Union[BaseMotionControl, BTTSKRM
         for axis in ["x", "y", "z"]:
             attr_info.append(
                 (f"grid_spacing_{axis}", {"grid_spacing": f"{axis}_axis"})
+                # (f"grid_spacing_{axis}", f"grid_spacing_{axis}")
             )
     setup_constants(
         obj_instance = controller_instance,
@@ -338,6 +362,7 @@ def setup_connect_constants(
 
 
 from frgpascal.hardware.gantry import GantryGUI #TODO: Extend GantryGUI to work for a discrete coordinate basis.
+from frgpascal.hardware.gantry_gui import GantryControlWidget, BestGantryGUI
 
 class NewGantry:
     """The Gantry control object for interfacing with the other control objects of PASCAL.
@@ -345,10 +370,36 @@ class NewGantry:
     Primarily a wrapper around the MotionControl objects, for converting the expected Gantry methods
     into the backend MotionControl methods.
     """
-    def __init__(self, communicator: Union[SerialCommunicator, SocketCommunicator], controller: Union[BTTSKRMiniE3_MotionControl, Duet3Mini5Plus_MotionControl]):
+    def __init__(self, communicator: Union[SerialCommunicator, SocketCommunicator, FakeCommunicator], controller: Union[BTTSKRMiniE3_MotionControl, Duet3Mini5Plus_MotionControl]):
         self.__comms = communicator()
         self._controls = controller(self.__comms)
+        self._position = self._controls.position
+        self._min_step = {
+            "x_min": self._controls._config.grid_spacing_x,
+            "y_min": self._controls._config.grid_spacing_y,
+            "z_min": self._controls._config.grid_spacing_z
+        }
+        # if not simulating:
+            # self.connect()
         print("Gantry ready to go!")
+
+    @property
+    def position(self):
+        return self._position
+    @position.setter
+    def position(self, pos):
+        self._position = pos
+
+    @property
+    def min_step(self):
+        return self._min_step
+    
+    @min_step.setter
+    def min_step(self, min_x = None, min_y = None, min_z = None):
+        min_dict = {f"{ax}": ax for ax in [min_x, min_y, min_z] if ax is not None}
+        self._min_step.update(min_dict)
+
+
 
     def connect(self):
         self._controls._handle.connect()
@@ -375,14 +426,17 @@ class NewGantry:
     def moveto(self, x, y, z, zhop, speed):
         self._controls.moveto(x, y, z, zhop, speed)
     def premove(self, x, y, z, zhop):
-        self._controls.premove(x, y, z, zhop)
+        return self._controls.premove(x, y, z, zhop)
     def _transition_to_frame(self, target_frame):
         self._controls._transition_to_frame(target_frame = target_frame)
-    
+    def _target_frame(self, position: Union[tuple, list]):
+        return self._controls._target_frame(position)
     def _waitformovement(self):
-        self._controls._waitformovement()
+        return self._controls._waitformovement()
     def _movecommand(self, x: float, y: float, z: float, speed: float):
-        self._controls._movecommand(x = x, y = y, z = z, speed = speed)
+        return self._controls._movecommand(x = x, y = y, z = z, speed = speed)
+    def _transform_coordinates(self, x, y, z):
+        return self._controls._transform_coordinates(x, y, z)
     def moverel(
         self,
         x: float = 0,
@@ -400,5 +454,172 @@ class NewGantry:
         )
     
     
+    # def gui(self):
+    #     GantryGUI(gantry = self)
     def gui(self):
-        GantryGUI(gantry = self)
+        app = get_qapp()
+
+        gui = NewGantryGUI(self)
+        gui.show()
+        return gui
+    def launch_gui(self):
+        app = get_qapp()
+        # self._gui = NewGantryGUI(self)
+        # self._gui = GantryControlWidget(self)
+        self._gui = BestGantryGUI(self)
+        self._gui.show()
+        return self._gui
+    def open_gui(self):
+        if not hasattr(self, "_gui") or self._gui is None:
+            self._gui = self.launch_gui()
+        else:
+            self._gui.raise_()
+            self._gui.activateWindow()
+
+from functools import partial
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QLabel,
+    QPushButton,
+    QGridLayout,
+)
+from PyQt5.QtCore import Qt, QCoreApplication
+
+
+class NewGantryGUI(QWidget):
+    WINDOW_TITLE = "PASCAL Gantry GUI"
+    WINDOW_GEOMETRY = (300, 300, 600, 220)
+    STEP_OPTIONS = [0.1, 1, 10, 50, 100]
+    AXES = ["x", "y", "z"]
+
+    def __init__(self, gantry):
+        super().__init__()
+
+        self.gantry = gantry
+        self.stepsize = {axis: 1.0 for axis in self.AXES}
+        self.position_labels = {}
+        self.step_buttons = {axis: {} for axis in self.AXES}
+
+        # self._ensure_app()
+        self._build_layout()
+        self._create_axes_display()
+        self._create_jog_buttons()
+        self._create_step_controls()
+        self._create_status_label()
+
+        self.update_position()
+        self._highlight_active_steps()
+
+        self._finalize_window()
+
+    # -------------------------------------------------
+    # App Setup
+    # -------------------------------------------------
+
+    # def _ensure_app(self):
+    #     self.app = QCoreApplication.instance()
+    #     if self.app is None:
+    #         self.app = QApplication([])
+    #     self.app.aboutToQuit.connect(self.app.deleteLater)
+
+    # -------------------------------------------------
+    # UI Construction
+    # -------------------------------------------------
+
+    def _build_layout(self):
+        self.grid = QGridLayout()
+        self.setLayout(self.grid)
+
+    def _create_axes_display(self):
+        for col, axis in enumerate(self.AXES):
+            label = QLabel(axis.upper())
+            label.setAlignment(Qt.AlignHCenter)
+            self.grid.addWidget(label, 0, col)
+
+            pos_label = QLabel("0.00")
+            pos_label.setAlignment(Qt.AlignHCenter)
+            self.grid.addWidget(pos_label, 1, col)
+
+            self.position_labels[axis] = pos_label
+
+    def _create_jog_buttons(self):
+        jog_map = {
+            "Forward": dict(x=0, y=1, z=0, row=2, col=1),
+            "Back": dict(x=0, y=-1, z=0, row=3, col=1),
+            "Left": dict(x=-1, y=0, z=0, row=3, col=0),
+            "Right": dict(x=1, y=0, z=0, row=3, col=2),
+            "Up": dict(x=0, y=0, z=1, row=2, col=3),
+            "Down": dict(x=0, y=0, z=-1, row=3, col=3),
+        }
+
+        for name, cfg in jog_map.items():
+            btn = QPushButton(name)
+            btn.clicked.connect(
+                partial(self.jog, x=cfg["x"], y=cfg["y"], z=cfg["z"])
+            )
+            self.grid.addWidget(btn, cfg["row"], cfg["col"])
+
+    def _create_step_controls(self):
+        base_row = 5
+
+        for axis_index, axis in enumerate(self.AXES):
+            for col, step in enumerate(self.STEP_OPTIONS):
+                btn = QPushButton(f"{step} mm")
+                btn.clicked.connect(partial(self.set_stepsize, axis, step))
+                self.grid.addWidget(btn, base_row + axis_index, col)
+                self.step_buttons[axis][step] = btn
+
+    def _create_status_label(self):
+        self.status_label = QLabel("Idle")
+        self.status_label.setAlignment(Qt.AlignHCenter)
+        self.grid.addWidget(self.status_label, 4, 4)
+
+    def _finalize_window(self):
+        self.setWindowTitle(self.WINDOW_TITLE)
+        self.setGeometry(*self.WINDOW_GEOMETRY)
+        self.show()
+
+        # self.app.setQuitOnLastWindowClosed(True)
+        # self.app.exec_()
+
+    # -------------------------------------------------
+    # Functional Logic
+    # -------------------------------------------------
+
+    def set_stepsize(self, axis, value):
+        self.stepsize[axis] = value
+        self._highlight_active_steps()
+
+    def _highlight_active_steps(self):
+        for axis in self.AXES:
+            for value, button in self.step_buttons[axis].items():
+                if self.stepsize[axis] == value:
+                    button.setStyleSheet("background-color: #a7d4d2")
+                else:
+                    button.setStyleSheet("")
+
+    def jog(self, x=0, y=0, z=0):
+        self._set_status("Moving", "red")
+
+        dx = x * self.stepsize["x"]
+        dy = y * self.stepsize["y"]
+        dz = z * self.stepsize["z"]
+
+        # self.gantry.moverel(dx, dy, dz)
+        x, y, z = tuple(self.gantry.position)
+        self.gantry.position = [x + dx, y + dy, z + dz]
+        self.update_position()
+
+        self._set_status("Idle")
+
+    def update_position(self):
+        for axis, value in zip(self.AXES, self.gantry.position):
+            self.position_labels[axis].setText(f"{value:.2f}")
+
+    def _set_status(self, text, color=None):
+        self.status_label.setText(text)
+        if color:
+            self.status_label.setStyleSheet(f"color: {color}")
+        else:
+            self.status_label.setStyleSheet("")

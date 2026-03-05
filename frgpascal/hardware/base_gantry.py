@@ -7,6 +7,7 @@ from typing import Union, Set, List, Optional, Tuple, Generic, TypeVar
 import serial
 import socket
 import websockets
+import numpy as np
 
 
 # AllowedFrames = Literal["invalid", "workspace", "opentrons"]
@@ -131,6 +132,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     def __init__(self, config: ConfigVar, communicator: BaseCommunicator):
         self._config = config
         self._speed = self._config.MAXSPEED
+        self._position = self._config.position
         self._handle = communicator
     # abstract properties
     @property
@@ -143,6 +145,14 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         self._handle.write(
             msg = f"G0 F{value}"
         )
+
+    @property
+    def position(self) -> List:
+        return self._position
+    
+    @position.setter
+    def position(self, pos):
+        self._position = pos
 
     # concrete properties
     @property
@@ -488,7 +498,7 @@ class DiscreteMotionControl(BaseMotionControl[GridConfig]):
         Union[Tuple[int, int, int], List[int, int, int]]
             The nearest grid coordinates for the target coordinates.
         """
-        x = int(round(x / self.config._grid_spacing_x)) * self.config._grid_spacing_x
-        y = int(round(y / self.config._grid_spacing_y)) * self.config._grid_spacing_y
-        z = int(round(z / self.config._grid_spacing_z)) * self.config._grid_spacing_z
-        return x, y, z
+        x = int(round(x / self.config.grid_spacing_x)) * self.config.grid_spacing_x
+        y = int(round(y / self.config.grid_spacing_y)) * self.config.grid_spacing_y
+        z = int(round(z / self.config.grid_spacing_z)) * self.config.grid_spacing_z
+        return (x, y, z)

@@ -12,6 +12,7 @@ import yaml
 import numpy as np
 from odrive.enums import *  # control/state enumerations
 
+
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
@@ -342,3 +343,4 @@ class FakeOT2Server(OT2Server):
         self.completed_tasks = {}
         self.POLLINGRATE = 1
         self.loop = asyncio.new_event_loop()
+        
