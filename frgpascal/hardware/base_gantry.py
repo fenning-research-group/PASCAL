@@ -133,7 +133,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         self._config = config
         self._speed = self._config.MAXSPEED
         self._position = self._config.position
-        self._handle = communicator
+        self._comms = communicator
     # abstract properties
     @property
     def speed(self) -> float:
@@ -142,7 +142,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     @speed.setter
     def speed(self, value):
         self._speed = value
-        self._handle.write(
+        self._comms.write(
             msg = f"G0 F{value}"
         )
 
@@ -168,16 +168,16 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     # communal methods, same across all inheritors
 
     def gohome(self):
-        self._handle.write("G28 X Y Z")
+        self._comms.write("G28 X Y Z")
         self.update()
         self.movetoclear()
     def _enable_steppers(self):
         """Send M17 GCode command to turn on the stepper motors"""
-        self._handle.write("M17")
+        self._comms.write("M17")
     
     def _disable_steppers(self):
         """Send M18 GCode command to turn on the stepper motors"""
-        self._handle.write("M18")
+        self._comms.write("M18")
     
     def set_speed_percentage(self, p):
         """Set the max allowed motion speed to a percentage 0-100% of max possible motion speed"""
@@ -233,7 +233,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     def update(self):
         found_coordinates = False
         while not found_coordinates:
-            output = self._handle.write("M114") # get current position
+            output = self._comms.write("M114") # get current position
             for line in output:
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
@@ -305,7 +305,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             raise HomingError()
         # do we transition between opentrons/workspace? if so, handle it.
         target_frame = self._target_frame(position = (x, y, z))
-        cur_frames = list(self.config._FRAMES.keys())
+        # cur_frames = list(self.config._FRAMES.keys())
         # if target_frame not in cur_frames:
             # print(f"frame {target_frame} is not in the defined frames!")
         if target_frame == "invalid":
@@ -430,10 +430,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             speed = self.speed
             reset_speed = None
         self.config._targetposition = [x, y, z]
-        self._handle.write(f"G1 X{x} Y{y} Z{z} F{speed}")
+        self._comms.write(f"G1 X{x} Y{y} Z{z} F{speed}")
         done_moving = self._waitformovement()
         if reset_speed is not None:
-            self._handle.write(f"G0 F{reset_speed}")
+            self._comms.write(f"G0 F{reset_speed}")
         return done_moving
 
     def _waitformovement(self) -> bool:
@@ -448,17 +448,17 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         self.config.in_motion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
-        self._handle.write("M400")
+        self._comms.write("M400")
         self._send_echo(stop_moving = True)
 
         reached_destination = False
         while (not reached_destination) and (time_elapsed < self.config.GANTRYTIMEOUT):
             print("Are we there yet?")
-            time.sleep(self._handle.config.POLLINGDELAY)
-            yapping = self._handle._ready_to_talk()
+            time.sleep(self._comms.config.POLLINGDELAY)
+            yapping = self._comms._ready_to_talk()
             while yapping:
                 print("Ready to talk")
-                done_move = self._handle._search_for_echo()
+                done_move = self._comms._search_for_echo()
                 if done_move:
                     self.update()
                     if (
@@ -474,7 +474,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                     ):
                         reached_destination = True
                         yapping = False
-                time.sleep(self._handle.config.POLLINGDELAY)
+                time.sleep(self._comms.config.POLLINGDELAY)
         self.config.in_motion = ~reached_destination
         self.update()
         return reached_destination

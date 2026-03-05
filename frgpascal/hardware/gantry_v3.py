@@ -245,7 +245,7 @@ def setup_constants(obj_instance, attr_info):
         if isinstance(val_, dict):
             if "device_identifiers" == name_:
                 val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
-            elif "grid_spacing" in name_:
+            elif "grid_spacing" in name_ or "ip" in name_:
                 print(val_)
                 vd = {k: obj_instance._constants[k][v] for k, v in val_.items()}
                 print(vd)
@@ -402,13 +402,13 @@ class NewGantry:
 
 
     def connect(self):
-        self._controls._handle.connect()
+        self._controls._comms.connect()
     def disconnect(self):
-        self._controls._handle.disconnect()
+        self._controls._comms.disconnect()
     def set_defaults(self):
         self._controls.set_defaults
     def write(self, msg):
-        self._controls._handle.write(msg)
+        self._controls._comms.write(msg)
     def _enable_steppers(self):
         self._controls._enable_steppers()
     def _disable_steppers(self):
