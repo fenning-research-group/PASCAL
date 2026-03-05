@@ -243,7 +243,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                     break
 
             self.config.position = [x, y, z]
-            self.config._currentframe = self._target_frame(*self.config.position)
+            self.config._currentframe = self._target_frame(self.config.position)
             print(f"\t\t{self._currentframe}")
             self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
 
@@ -347,17 +347,24 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             If all of {x, y, z} are None, then there is no defined coordiante to move to.
         """
         try:
-            x, y, z = x
+            if len(x) == 3:
+                y = x[1]
+                z = x[2]
+                x = x[0]
+            # x_, y_, z_ = tuple(x)
+            # x, y, z = tuple(x_, y_, z_)
         except:
             pass
         if [x, y, z] == [None, None, None]:
             raise TargetError()
+        print(x, y, z)
+        # if len(x) == 3:
         x, y, z = self._transform_coordinates(x, y, z)
-        x, y, z = self.premove(x, y, z, zhop)
+        x, y, z = self.premove(x, y, z)
         if (x == self.config.position[0]) and (y == self.position[1]):
             zhop = False #why zhop if no lateral movement
         if zhop:
-            z_ceiling = max(self.config.position[2], z) + self.ZHOP_HEIGHT
+            z_ceiling = max(self.config.position[2], z) + self.config.ZHOP_HEIGHT
             z_ceiling = min(z_ceiling, self.config._ZLIM)
             self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
             self.moveto(x, y, z_ceiling, zhop = False)

@@ -98,7 +98,7 @@ class SocketCommunicator(BaseCommunicator):
         """Connect to a socket communication."""
         if self.config.ip in self.config._connected_network_devices:
             print(f"The device at {self.config.ip} is already connected!")
-            return self.config._connected_network.devices[self.config.ip]
+            return self.config._connected_network_devices[self.config.ip]
         # Can we talk with the device? (deprecated)
         # if not self.ping_device(ip = self.ip):
             # raise ValueError(f"Device at {self.config.ip}:{self.config.port} is not reachable (ping failed)!")
@@ -144,7 +144,7 @@ class SocketCommunicator(BaseCommunicator):
         self._handle.sendall((command + "\n").encode("utf-8"))
         bytes_to_receive = 1024
         if homing:
-            self._handle.settimout(None)
+            self._handle.settimeout(None)
             response_0 = self._handle.recv(bytes_to_receive).decode("utf-8")
             response = response_0.split()
             self._handle.settimeout(30)
@@ -224,6 +224,31 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
         self.write("M501")
         self.write("G90")
 
+    def update(self):
+        found = {f"{ax}": False for ax in ["X", "Y", "Z"]}
+        found_coordinates = False
+        while not found_coordinates:
+            output = self._comms.write("M114") # get current position
+            for line in output:
+                if line.startswith("X:"):
+                    x = float(re.findall(r"X:(\S*)", line)[0])
+                    found["X"] = True
+                if line.startswith("Y:"):
+                    y = float(re.findall(r"Y:(\S*)", line)[0])
+                    found["Y"] = True
+                if line.startswith("Z:"):
+                    z = float(re.findall(r"Z:(\S*)", line)[0])
+                    found["Z"] = True
+                if sum([found[ax] for ax in ["X", "Y", "Z"]]) == 3:
+                    found_coordinates = True
+                    break
+
+            self.config.position = [x, y, z]
+            self.config._currentframe = self._target_frame(self.config.position)
+            print(f"\t\t{self.config._currentframe}")
+            self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
+
+
 def setup_constants(obj_instance, attr_info):
     """Scrapes the hardware constants.
     
@@ -255,9 +280,12 @@ def setup_constants(obj_instance, attr_info):
             elif ("_" in name_) and (not val_):
                 print(f"\t{name_}\t{val_}")
                 val = {k: obj_instance._constants[v] for k, v in val_.items()}
-            elif ("_" in name_) and (val_):
+            elif ("_" in name_) and (val_) and ("FRAMES" not in name_):
                 print(name_, val_)
                 val = {}
+            elif ("FRAMES" in name_):
+                print(val_)
+                val = {k: obj_instance._constants[v] for k, v in val_.items()}
             else:
                 val = {k: obj_instance._constants[k][v] for k, v in val_.items()}
         elif isinstance(val_, str):
