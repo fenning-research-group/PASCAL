@@ -18,13 +18,23 @@ tc = constants["timings"]
 
 
 def expected_timings(drop):
-    """Estimate the duration (seconds) liquid aspiration will require for a given drop
+    """
+    Estimate the duration required for liquid aspiration for a given drop.
 
-    Args:
-        drop (dict): dictionary of drop parameters
+    Parameters
+    ----------
+    drop : dict
+        Dictionary of drop parameters containing keys like 'volume', 'pre_mix', 
+        'touch_tip', 'slow_retract', 'air_gap', and 'slow_travel'.
 
-    Returns:
-        float: duration, in seconds
+    Returns
+    -------
+    aspirate_duration : float
+        Estimated duration to aspirate the liquid, in seconds.
+    staging_duration : float
+        Estimated duration to travel and stage the pipette, in seconds.
+    dispense_duration : float
+        Estimated duration to dispense the liquid, in seconds.
     """
     ac = tc["aspirate"]  # aspiration constants
     aspirate_duration = ac["preparetip"] + drop["volume"] / 100 + tc["travel"]
@@ -49,6 +59,29 @@ def expected_timings(drop):
 
 
 class OT2:
+    """
+    High-level control interface for the Opentrons OT-2 liquid handler. 
+
+    This class acts as a job packager and coordinator. It does not execute 
+    commands natively but packages them into formatted JSON dictionaries and 
+    pushes them to the `OT2Server` queue, which communicates with the physical 
+    robot over a network WebSocket.
+
+    Parameters
+    ----------
+    server : OT2Server, optional
+        A pre-initialized server object to handle network communications. 
+        If None, a new `OT2Server` is instantiated.
+
+    Attributes
+    ----------
+    server : OT2Server
+        The server handling the WebSocket connection to the robot.
+    POLLINGRATE : float
+        The polling interval in seconds.
+    CONSTANTS : dict
+        Hardware timing constants loaded from the configuration file.
+    """
     def __init__(self, server = None):
         if server is None:
             self.server = OT2Server()
@@ -68,6 +101,23 @@ class OT2:
         self.CONSTANTS = constants["timings"]
 
     def drop_perovskite(self, taskid=None, nist_time=None, **kwargs):
+        """
+        Queue a task to dispense perovskite solution onto the spin coater chuck.
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task. If None, one is generated automatically.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        **kwargs
+            Additional arguments packaged into the command (e.g., rate, height).
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
             taskid=taskid,
@@ -80,6 +130,23 @@ class OT2:
         return taskid
 
     def drop_antisolvent(self, taskid=None, nist_time=None, **kwargs):
+        """
+        Queue a task to dispense antisolvent onto the spin coater
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="dispense_onto_chuck",
             taskid=taskid,
@@ -104,6 +171,41 @@ class OT2:
         nist_time=None,
         **kwargs,
     ):
+        """
+        Queue a task to aspirate liquid from a specified well in preparation for spin coating.
+
+        Parameters
+        ----------
+        tray : str
+            The name or identifier of the source tray.
+        well : str
+            The specific well to aspirate from (e.g., 'A1').
+        volume : float
+            The volume of liquid to aspirate in microliters.
+        pipette : str, optional
+            The pipette designation to use, by default "perovskite".
+        slow_retract : bool, optional
+            Whether to retract the pipette slowly to prevent droplets, by default True.
+        air_gap : bool, optional
+            Whether to pull an air gap after aspiration, by default True.
+        touch_tip : bool, optional
+            Whether to touch the tip to the side of the well, by default True.
+        pre_mix : tuple of int, optional
+            ` (repetitions, volume)` for mixing before aspiration, by default (0, 0).
+        reuse_tip : bool, optional
+            Whether to keep the tip attached for future use, by default False.
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="aspirate_for_spincoating",
             taskid=taskid,
@@ -124,6 +226,25 @@ class OT2:
     def stage_perovskite(
         self, taskid=None, nist_time=None, slow_travel=False, **kwargs
     ):
+        """
+        Queue a task to move the perovskite pipette into position over the spin coater.
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        slow_travel : bool, optional
+            Whether to move the gantry slowly, by default False.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="stage_for_dispense",
             taskid=taskid,
@@ -137,6 +258,25 @@ class OT2:
     def stage_antisolvent(
         self, taskid=None, nist_time=None, slow_travel=False, **kwargs
     ):
+        """
+        Queue a task to move the antisolvent pipette into position over the spin coater.
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        slow_travel : bool, optional
+            Whether to move the gantry slowly, by default False.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="stage_for_dispense",
             taskid=taskid,
@@ -148,6 +288,23 @@ class OT2:
         return taskid
 
     def clear_chuck(self, taskid=None, nist_time=None, **kwargs):
+        """
+        Queue a task to move the pipettes away from the spin coater chuck
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="clear_chuck",
             taskid=taskid,
@@ -157,6 +314,23 @@ class OT2:
         return taskid
 
     def cleanup(self, taskid=None, nist_time=None, **kwargs):
+        """
+        Queue a task to perform general liquid handler cleanup (e.g., dropping tips).
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        **kwargs
+            Additional arguments packaged into the command.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="cleanup",
             taskid=taskid,
@@ -166,6 +340,23 @@ class OT2:
         return taskid
 
     def mix(self, taskid=None, nist_time=None, mixing_netlist={}):
+        """
+        Queue a task to mix solutions according to a provided netlist
+
+        Parameters
+        ----------
+        taskid : str, optional
+            A unique identifier for the task.
+        nist_time : float, optional
+            The NIST-synchronized timestamp for execution.
+        mixing_netlist : dict, optional
+            Instructions for mixing operations, by default {}.
+
+        Returns
+        -------
+        str
+            The unique identifier assigned to this task.
+        """
         taskid = self.server.add_to_queue(
             task="mix",
             taskid=taskid,
@@ -175,6 +366,9 @@ class OT2:
         return taskid
 
     def mark_completed(self):
+        """
+        Signal the server to conclude its operations and cleanly shut down
+        """
         print("Running self.server._start_directly() now")
         self.server._start_directly()
         print("\tSuccess!")
@@ -186,6 +380,14 @@ class OT2:
         print("\tSuccess!")
 
     def wait_for_task_complete(self, taskid):
+        """
+        Block execution until the server confirms the specific task has been completed.
+
+        Parameters
+        ----------
+        taskid : str
+            The unique identifier of the task to wait for.
+        """
         while taskid not in self.server.completed_tasks:
             time.sleep(self.POLLINGRATE)
         # while taskid not in self.server.completed_tasks:
@@ -200,6 +402,30 @@ class OT2:
 
 
 class OT2Server:
+    """
+    WebSocket server for managing asynchronous communication with the Opentrons OT-2 robot.
+
+    This class handles the underlying network connection, queues tasks in JSON 
+    format, and maintains exact NIST clock synchronization to ensure drop timing 
+    precisely aligns with the spin coater
+
+    Attributes
+    ----------
+    connected : bool
+        Whether the WebSocket connection is currently active.
+    ip : str
+        The IP address of the OT-2 robot.
+    port : int
+        The network port for the WebSocket connection.
+    pending_tasks : list
+        List of task IDs that have been sent but not yet marked complete.
+    completed_tasks : dict
+        Dictionary of completed task IDs mapped to their completion timestamps.
+    POLLINGRATE : float
+        Interval in seconds between checking the status of the OT-2.
+    loop : asyncio.AbstractEventLoop
+        The event loop managing asynchronous background tasks.
+    """
     def __init__(self):
         self.__calibrate_time_to_nist()
         self.connected = False
@@ -212,6 +438,9 @@ class OT2Server:
 
     ### Time Synchronization with NIST
     def __calibrate_time_to_nist(self):
+        """
+        Pings an NTP server to determine the local clock offset relative to NIST time
+        """
         client = ntplib.NTPClient()
         response = None
         while response is None:
@@ -224,10 +453,21 @@ class OT2Server:
 
     @property
     def nist_time(self):
+        """
+        Get the current precise time adjusted by the NIST offset.
+
+        Returns
+        -------
+        float
+            The synchronized Unix timestamp.
+        """
         return time.time() + self.__local_nist_offset
 
     ### Server Methods
     async def __connect_to_websocket(self):
+        """
+        Asynchronously establish the WebSocket connection to the physical OT-2.
+        """
         try:
             print(f"\t\ttrying to delete self.websocket attribute")
             del self.websocket
@@ -242,6 +482,16 @@ class OT2Server:
         print(f"\t\tseems to have connected?")
 
     def start(self, ip=None, port=None):
+        """
+        Initialize the background thread and connect to the robot, prompting for user confirmation.
+
+        Parameters
+        ----------
+        ip : str, optional
+            Override the target IP address.
+        port : int, optional
+            Override the target port.
+        """
         if ip is not None:
             self.ip = ip
         if port is not None:
@@ -298,6 +548,9 @@ class OT2Server:
             )
 
     def _start_directly(self):
+        """
+        Silently initialize the background thread and connect to the robot without user prompting
+        """
         self.uri = f"ws://{self.ip}:{self.port}"
 
         def run_loop(loop):
@@ -324,6 +577,9 @@ class OT2Server:
         self._worker = asyncio.run_coroutine_threadsafe(self.worker(), self.loop)
 
     def stop(self):
+        """
+        Shut down the background worker and close the WebSocket connection.
+        """
         # self.mark_completed()
         self._timeout_duration = 10
         self.connected = False
@@ -359,6 +615,14 @@ class OT2Server:
             print(f"\t{self} does not have a websocket?? \n\t\tSkipping this `del self.websocket` command for now.")
 
     def _update_completed_tasklist(self, tasklist):
+        """
+        Update the internal statuses of pending and completed tasks
+
+        Parameters
+        ----------
+        tasklist : dict
+            Dictionary containing task IDs mapped to their completion timestamps.
+        """
         for taskid, nisttime in tasklist.items():
             # print(f"{taskid} completed at {nisttime}")
             if taskid in self.pending_tasks:
@@ -366,6 +630,9 @@ class OT2Server:
         self.completed_tasks.update(tasklist)
 
     async def worker(self):
+        """
+        Continuous background coroutine that listens for WebSocket messages from the OT-2.
+        """
         while self.connected:
             try:
                 response = await asyncio.wait_for(self.websocket.recv(), timeout=0.5)
@@ -388,15 +655,52 @@ class OT2Server:
                 self._update_completed_tasklist(ot2["completed"])
 
     async def __add_task(self, task):
+        """
+        Pushes a task JSON to the WebSocket.
+
+        Parameters
+        ----------
+        task : dict
+            The formatted task dictionary.
+        """
         # print(task)
         await self.websocket.send(json.dumps(task))
 
     def _add_task(self, task):
+        """
+        Thread-safe wrapper to schedule a task to be sent over the WebSocket.
+
+        Parameters
+        ----------
+        task : dict
+            The formatted task dictionary.
+        """
         asyncio.run_coroutine_threadsafe(self.__add_task(task), loop=self.loop)
         # # asyncio.create_task(self.__add_task(task))
         # asyncio.run_coroutine_threadsafe(self.__add_task(task), self.loop)
 
     def add_to_queue(self, task, taskid=None, nist_time=None, *args, **kwargs):
+        """
+        Construct a final task dictionary and add it to the execution queue.
+
+        Parameters
+        ----------
+        task : str
+            The primary command label (e.g., "dispense_onto_chuck").
+        taskid : str, optional
+            A unique identifier. If None, one is generated.
+        nist_time : float, optional
+            The target NIST time for execution.
+        *args
+            Positional arguments for the task.
+        **kwargs
+            Keyword arguments for the task.
+
+        Returns
+        -------
+        str
+            The assigned task ID.
+        """
         if taskid is None:
             taskid = str(uuid.uuid4())
 
@@ -416,9 +720,15 @@ class OT2Server:
         return taskid
 
     def status_update(self):
+        """
+        Send a status update request to the OT2
+        """
         maestro = {"status": 0}
         self._add_task(maestro)
 
     def mark_completed(self):
+        """
+        Send a completion signal to the OT-2 to wrap up operations.
+        """
         maestro = {"complete": 0}
         self._add_task(maestro)

@@ -22,12 +22,27 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class CoordinateMapper:
-    """Transforms from one coordinate system (source) to another (destination)
-    Assumes the two coordinate systems are nearly parallel - can handle some rotation,
-    but otherwise just does translation in xy. Actually projects xy plane with z offset,
-    so this will have issues under severe rotation.
     """
+    Transforms from one coordinate system (source) to another (destination).
 
+    This class calculates the spatial offset between a set of measured source points 
+    and ideal destination points. It projects the xy plane with a z-offset to map 
+    coordinates accurately. 
+
+    Notes
+    -----
+    Assumes the two coordinate systems are nearly parallel. It can handle some 
+    slight rotation, but otherwise primarily performs translation in xy. Because 
+    it projects the xy plane with a z-offset, this mapping approach will have 
+    accuracy issues under severe rotation.
+
+    Parameters
+    ----------
+    p0 : array_like
+        The array of measured source coordinates `[[x, y, z], ...]`.
+    p1 : array_like
+        The array of ideal destination coordinates `[[x, y, z], ...]`
+    """
     def __init__(self, p0, p1):
         self.destination = np.asarray(p1)
         self.source = np.asarray(p0)
@@ -36,6 +51,19 @@ class CoordinateMapper:
         self.zinterp = LinearNDInterpolator(self.destination[:, :2], self.source[:, 2])
 
     def map(self, p):
+        """
+        Map a specific point from the source coordinate frame to the destination frame.
+
+        Parameters
+        ----------
+        p : array_like
+            The point to transform. Can be a 2D `[x, y]` or 3D `[x, y, z]` coordinate.
+
+        Returns
+        -------
+        ndarray
+            The transformed 3D coordinate `[x, y, z]`.
+        """
         if len(p) == 2:
             p = list(p)
             p.append(0)
@@ -46,7 +74,8 @@ class CoordinateMapper:
         return pmap
 
 def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
-    """Prompts user to move gripper to target points on labware for calibration purposes.
+    """
+    Prompts user to move gripper to target points on labware for calibration purposes.
 
     Parameters
     ----------
@@ -125,7 +154,6 @@ class Workspace:
     openwidth : float, optional
         Width (mm) to open gripper to when picking samples from this workspace. Defaults to 20.
     """
-
     def __init__(
         self,
         name: str,
@@ -181,7 +209,12 @@ class Workspace:
             [self._coordinates[name] for name in testslots]
         ).astype(np.float32)
 
+
     def __generate_coordinates(self):
+        """
+        Internal method to build the theoretical coordinate dictionary mapping 
+        slot names (e.g., 'A1') to their physical offsets based on pitch and gridsize.
+        """
         def letter(num):
             # converts number (0-25) to letter (A-Z)
             return chr(ord("A") + num)
@@ -208,6 +241,26 @@ class Workspace:
                 # self._coordinates[name] = [p + poffset for p, poffset in zip(relative_position, self.offset)]
 
     def slot_coordinates(self, name):
+        """
+        Get the calibrated physical 3D coordinates for a specific slot name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the slot (e.g., 'A1').
+
+        Returns
+        -------
+        ndarray
+            The calibrated `[x, y, z]` coordinate of the requested slot.
+
+        Raises
+        ------
+        Exception
+            If the workspace has not yet been calibrated.
+        Exception
+            If the transformed coordinate results in `np.nan` due to a bad calibration mapping.
+        """
         if self.__calibrated == False:
             raise Exception(f"Need to calibrate {self.name} before use!")
         coords = self.transform.map(self._coordinates[name])
@@ -218,9 +271,35 @@ class Workspace:
         return self.transform.map(self._coordinates[name])
 
     def __call__(self, name):
+        """
+        Alias for `slot_coordinates`, allows calling the workspace object directly 
+        with a slot name to get its coordinates.
+
+        Parameters
+        ----------
+        name : str
+            The name of the slot.
+
+        Returns
+        -------
+        ndarray
+            The calibrated `[x, y, z]` coordinate.
+        """
         return self.slot_coordinates(name)
 
     def calibrate(self):
+        """
+        Initiate the physical calibration sequence using the gantry GUI.
+
+        This method moves the gantry to the defined test slots (usually the corners) 
+        and allows the user to manually align the gripper. It then calculates the 
+        coordinate transformation matrix for the entire workspace.
+
+        Raises
+        ------
+        Exception
+            If the workspace was initialized in simulation mode without a real gantry.
+        """
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
@@ -247,6 +326,9 @@ class Workspace:
     #         )
 
     def _load_calibration(self):
+        """
+        Load a previously saved coordinate calibration mapping from the local YAML file
+        """
         with open(
             os.path.join(CALIBRATION_DIR, f"{self.name}_calibration.yaml"), "r"
         ) as f:
@@ -255,16 +337,25 @@ class Workspace:
         self.__calibrated = True
 
     def load(self, contents) -> str:
-        """Load new contents into the labware. Returns the next empty slot, or error if none exists.
+        """
+        Load new contents into the workspace labware.
 
-        Args:
-            contents (object): SolutionRecipe or a string representing the solution
+        Automatically finds the next available open slot and assigns the contents to it.
 
-        Raises:
-            IndexError: If the labware is full
+        Parameters
+        ----------
+        contents : object
+            A `SolutionRecipe`, sample object, or string representing the solution
 
-        Returns:
-            (str): which slot has been allocated to the new contents
+        Returns
+        -------
+        str
+            The name of the slot that has been allocated to the new contents.
+
+        Raises
+        ------
+        IndexError
+            If all slots in the labware are currently occupied.
         """
         try:
             slot = self._openslots.pop(0)  # take the next open slot
@@ -274,14 +365,28 @@ class Workspace:
             raise IndexError("This labware is full!")
 
     def unload(self, slot: str):
-        """Unload contents from a slot in the labware.
-            Sorts the list of open slots so we always fill the lowest index open slot.
+        """
+        Unload contents from a specific slot in the labware.
+        
+        This also re-sorts the list of open slots so the workspace consistently 
+        fills the lowest index open slot on subsequent loads.
 
-        Args:
-            slot (str): which slot to unload
+        Parameters
+        ----------
+        slot : str
+            The name of the slot to unload (e.g., 'A1').
 
-        Raises:
-            ValueError: If that slot either does not exist, or is already empty
+        Returns
+        -------
+        object
+            The contents that were removed from the specified slot.
+
+        Raises
+        ------
+        ValueError
+            If the requested slot does not exist within the workspace grid.
+        ValueError
+            If the requested slot is already empty.
         """
         if slot not in self._coordinates:
             raise ValueError(f"{slot} is not a valid slot")
@@ -293,7 +398,7 @@ class Workspace:
 
     def unload_all(self):
         """
-        resets the labware to an empty state
+        Reset the workspace to a completely empty state.
         """
         self._openslots = list(self._coordinates.keys())
         self._openslots.sort()
@@ -301,7 +406,16 @@ class Workspace:
 
     def plot(tray, ax=None, is_samples = False, updated_colorscheme = False):
         """
-        plot current contents of the labware
+        (deprecated?) Plot the current spatial layout and contents of the labware.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            A pre-existing matplotlib axis to plot on. If None, a new figure is created.
+        is_samples : bool, optional
+            Flag to indicate if the plot should use sample-specific coloring schemes. Defaults to False.
+        updated_colorscheme : bool, optional
+            Flag to use the newer, more distinguishable color mapping. Defaults to False.
         """
         if ax is None:
             fig, ax = plt.subplots()
@@ -386,6 +500,16 @@ class Workspace:
         plt.xticks(xvals, [i + 1 for i in range(len(xvals))])
 
     def plot_new(tray, ax=None, is_samples = False):
+        """
+        An updated plotting method to visualize the contents of the labware tray.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            A pre-existing matplotlib axis to plot on. If None, a new figure is created.
+        is_samples : bool, optional
+            Flag to apply sample-specific discrete colormaps and markers. Defaults to False.
+        """
         if ax is None:
             fig, ax = plt.subplots()
             ax.set_aspect("equal")
