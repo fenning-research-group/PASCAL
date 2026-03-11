@@ -254,7 +254,14 @@ class Gantry:
         found_coordinates = False
         while not found_coordinates:
             output = self.write("M114")  # get current position
+            # print(output)
+            # print(type(output))
+            # print(len(output))
+            output, _ = output[0]
+            if isinstance(output, str):
+                output = [output]
             for line in output:
+                print(line)
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     y = float(re.findall(r"Y:(\S*)", line)[0])
@@ -262,7 +269,8 @@ class Gantry:
                     found_coordinates = True
                     # print(f'Home is @ [{x}, {y}, {z}]')
                     break
-        self.position = [x, y, z]
+        self.position = [
+            round(x, 1), round(y,1), round(z,1)]
         self.__currentframe = self._target_frame(*self.position)
         print(f"\t\t{self.__currentframe}")
         if self._original_pascal:
@@ -433,6 +441,7 @@ class Gantry:
             # x = np.round(x, decimals = 1)
             # y = np.round(y, decimals = 1)
             # z = np.round(z, decimals = 1)
+            print(x, y, z)
             x, y, z = self._transform_coordinates(x, y, z)
             x, y, z = self.premove(x, y, z) # will error out if invalid move
             if speed is None:
@@ -555,6 +564,7 @@ class Gantry:
             while yapping:
                 print("Ready to talk")
                 if self._ethernet:
+                    self._handle.settimeout(None)
                     line = self._handle.recv(1024).decode("utf-8").strip()
                     # print(line)
                 else:
@@ -582,7 +592,8 @@ class Gantry:
                         ) == 0
                     ):
                         reached_destination = True
-                        yapping = False
+                        # yapping = False
+                        break
                 time.sleep(self.POLLINGDELAY)
         self.inmotion = ~reached_destination
         self.update()
@@ -606,10 +617,16 @@ class Gantry:
         Union[Tuple[int, int, int], List[int, int, int]]
             The nearest grid coordinates for the target coordinates.
         """
-        x = int(round(x / self.config.grid_spacing_x)) * self.config.grid_spacing_x
-        y = int(round(y / self.config.grid_spacing_y)) * self.config.grid_spacing_y
-        z = int(round(z / self.config.grid_spacing_z)) * self.config.grid_spacing_z
-        return (x, y, z)
+        self.grid_spacing_x = 0.072
+        self.grid_spacing_y = 0.075
+        self.grid_spacing_z = 0.075
+        if x is not None:
+            x = int(round(x / self.grid_spacing_x)) * self.grid_spacing_x
+        if y is not None:
+            y = int(round(y / self.grid_spacing_y)) * self.grid_spacing_y
+        if z is not None:
+            z = int(round(z / self.grid_spacing_z)) * self.grid_spacing_z
+        return x, y, z
     
     # GUI
     def gui(self):
