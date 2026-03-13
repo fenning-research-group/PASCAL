@@ -8,6 +8,8 @@ import yaml
 import threading
 from abc import ABC, abstractmethod
 
+import frgpascal
+
 
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
@@ -20,7 +22,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class BaseSpinCoater(ABC):
-    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
+    def __init__(self, gantry: frgpascal.hardware.gantry.Gantry = None, switch: frgpascal.hardware.switchboard.SingleSwitch = None, sc_axis: str = 'axis0', regular_bootup: bool = True):
          super().__init__()
         
     @abstractmethod

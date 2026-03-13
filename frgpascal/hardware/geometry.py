@@ -235,6 +235,13 @@ class Workspace:
             self.gantry,
             self.z_clearance,
         )
+        # TODO: Redefine pitch via self.transform.destination
+        grid_x = self.transform.destination[2, 0] / (self.gridsize[0] - 1)
+        grid_y = self.transform.destination[2, 1] / (self.gridsize[1] - 1)
+        self.pitch = (grid_x, grid_y)
+        del self._coordinates
+        self.__generate_coordinates()
+        # TODO: Call __generate_coordinates() again to redefine self._coordinates
         self.__calibrated = True
         self.GRIPPERTIMEOUT = constants["gripper"][
             "idle_timeout"
