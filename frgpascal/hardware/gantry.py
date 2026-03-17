@@ -4,6 +4,7 @@ import numpy as np
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
 import PyQt5
+from tenacity import retry
 import yaml
 import os
 import subprocess
@@ -133,11 +134,12 @@ class Gantry:
     def connect_ethernet(self):
         # Have we connected to the Duet already
         if self.ip in self._connected_network_devices:
+            print (self._connected_network_devices)
             print(f"Duet at {self.ip} already connected.")
             return self._connected_network_devices[self.ip]
         # Can we talk with the Duet
-        if not self.ping_duet(ip = self.ip):
-            raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
+        # if not self.ping_duet(ip = self.ip):
+        #     raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
         # open a TCP socket
         try:
             for port in ["23", self.duet_port, "21", "23", "80"]:
@@ -182,6 +184,7 @@ class Gantry:
         """
         if not self._handle:
             raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+        # print("im still running")
         self._handle.sendall((command + "\n").encode("utf-8"))
         if homing:
             self._handle.settimeout(None)
@@ -231,6 +234,7 @@ class Gantry:
         self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
+        # print("cool thing: {self._ethernet})")
         if self._ethernet:
             output = [self.send_gcode(msg, homing = True)]
         else:
