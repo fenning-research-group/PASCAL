@@ -235,14 +235,14 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v3",
+                version="storage_v4",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
             ),
             "Tray2": SampleTray(
                 name="Tray2",
-                version="storage_v3",
+                version="storage_v4",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
@@ -514,7 +514,7 @@ class Maestro:
             self.catch(
                 from_spincoater=from_spincoater
             )  # pick up the sample. this function checks to see if gripper picks successfully
-
+            time.sleep(1)
             ### Code for drop check, currently not being used
             # self.gantry.moveto(
             #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
@@ -540,7 +540,7 @@ class Maestro:
 
             # time.sleep(2)
             self.release()  # drop the sample
-
+            time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
             )  # move up a bit, mostly to avoid resting gripper on hotplate
