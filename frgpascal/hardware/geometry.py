@@ -236,6 +236,7 @@ def map_coordinates_best(name, slots, points, gantry: Gantry, z_clearance=2):
             # using the delta of the IDEAL coordinates.
             # This 'jumps' the correct distance from the last confirmed spot.
             movedelta = p_ideal - points_ideal[i-1]
+            print(movedelta)
             gantry.moverel(*movedelta, zhop=True)
 
         print(f"--- Calibrating Slot {slotname} ---")
@@ -388,10 +389,11 @@ class Workspace:
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
-        self.gripper.GRIPPERTIMEOUT = (
-            69420  # prevents the gripper from closing during calibration of sampletray
-        )
-        self.gripper.open(self.OPENWIDTH)
+        if self.gripper is not None:
+            self.gripper.GRIPPERTIMEOUT = (
+                69420  # prevents the gripper from closing during calibration of sampletray
+            )
+            self.gripper.open(self.OPENWIDTH)
         # self.transform = map_coordinates(
         # self.transform = map_coordinates_better(
         self.transform = map_coordinates_best(
@@ -409,9 +411,11 @@ class Workspace:
         # self.__generate_coordinates()
         # TODO: Call __generate_coordinates() again to redefine self._coordinates
         self.__calibrated = True
-        self.GRIPPERTIMEOUT = constants["gripper"][
-            "idle_timeout"
-        ]  # reset to the hardware constants value
+        # if isinstance(self.gripper, frgpascal.hardware.gripper.Gripper): # type checking
+        if self.gripper is not None:
+            self.GRIPPERTIMEOUT = constants["gripper"][
+                "idle_timeout"
+            ]  # reset to the hardware constants value
 
     # def _save_calibration(self):
     #     if not self.__calibrated:

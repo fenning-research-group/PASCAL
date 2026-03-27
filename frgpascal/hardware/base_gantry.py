@@ -33,7 +33,7 @@ class FrameError(Exception):
 class TargetError(Exception):
     """Exception raised if the target coordinate is not given to the `premove()` method of a class inheritor of BaseMotionControl"""
     def __init__(self):
-        super().init("Cannot move to a coordinate that is [None, None, None]!")
+        super().__init__("Cannot move to a coordinate that is [None, None, None]!")
 
 
 @dataclass
@@ -203,9 +203,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             print(f"\tchecking frame {frame}")
             for idx, coord in enumerate(["x", "y", "z"]):
                 v = position[idx]
-                if (v < lims[f"{coord}_min"]) or (v > lims[f"{coord}_max"]):
-                    print(f"\t\t{v} is outside bounds of {coord}-axis!")
-                    continue
+                if v is not None:
+                    if (v < lims[f"{coord}_min"]) or (v > lims[f"{coord}_max"]):
+                        print(f"\t\t{v} is outside bounds of {coord}-axis!")
+                        continue
             print(f"\t\tThe position {position} is inside of frame {frame}")
             return frame
         return "invalid"
@@ -224,7 +225,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             x -= self.config.TRANSITION_NUDGE
         else:
             x += self.config.TRANSITION_NUDGE
-        self.config._ZLIM = self.config._FRAMES[f"{target_frame}_limits"]["z_max"]
+        self.config._ZLIM = self.config._FRAMES[f"{target_frame}"]["z_max"]
         self._movecommand(
             x, y, z, speed = self.speed
         )
@@ -355,7 +356,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             # x, y, z = tuple(x_, y_, z_)
         except:
             pass
-        if (x is None) or (y is None) or (z is None):
+        if (x is None) and (y is None) and (z is None):
             raise TargetError()
         print(x, y, z)
         # if len(x) == 3:
@@ -505,7 +506,10 @@ class DiscreteMotionControl(BaseMotionControl[GridConfig]):
         Union[Tuple[int, int, int], List[int, int, int]]
             The nearest grid coordinates for the target coordinates.
         """
-        x = int(round(x / self.config.grid_spacing_x)) * self.config.grid_spacing_x
-        y = int(round(y / self.config.grid_spacing_y)) * self.config.grid_spacing_y
-        z = int(round(z / self.config.grid_spacing_z)) * self.config.grid_spacing_z
+        if x is not None:
+            x = int(round(x / self.config.grid_spacing_x)) * self.config.grid_spacing_x
+        if y is not None:
+            y = int(round(y / self.config.grid_spacing_y)) * self.config.grid_spacing_y
+        if z is not None:
+            z = int(round(z / self.config.grid_spacing_z)) * self.config.grid_spacing_z
         return (x, y, z)

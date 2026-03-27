@@ -413,10 +413,11 @@ class NewGantry:
 
     @property
     def position(self):
-        return self._position
+        return self._controls.config.position
     @position.setter
     def position(self, pos):
-        self._position = pos
+        # self._position = pos
+        self._controls.config.position = pos
 
     @property
     def min_step(self):
@@ -451,9 +452,9 @@ class NewGantry:
         self._controls.movetoclear()
     def movetoidle(self):
         self._controls.movetoidle()
-    def moveto(self, x, y, z, zhop, speed):
+    def moveto(self, x, y, z, zhop = True, speed = None):
         self._controls.moveto(x, y, z, zhop, speed)
-    def premove(self, x, y, z, zhop):
+    def premove(self, x, y, z, zhop = True):
         return self._controls.premove(x, y, z, zhop)
     def _transition_to_frame(self, target_frame):
         self._controls._transition_to_frame(target_frame = target_frame)
@@ -482,27 +483,27 @@ class NewGantry:
         )
     
     
-    # def gui(self):
-    #     GantryGUI(gantry = self)
     def gui(self):
-        app = get_qapp()
+        GantryGUI(gantry = self)
+    # def gui(self):
+    #     # app = get_qapp()
 
-        gui = NewGantryGUI(self)
-        gui.show()
-        return gui
-    def launch_gui(self):
-        app = get_qapp()
-        # self._gui = NewGantryGUI(self)
-        # self._gui = GantryControlWidget(self)
-        self._gui = BestGantryGUI(self)
-        self._gui.show()
-        return self._gui
-    def open_gui(self):
-        if not hasattr(self, "_gui") or self._gui is None:
-            self._gui = self.launch_gui()
-        else:
-            self._gui.raise_()
-            self._gui.activateWindow()
+    #     gui = NewGantryGUI(self)
+    #     gui.show()
+    #     return gui
+    # def launch_gui(self):
+    #     app = get_qapp()
+    #     # self._gui = NewGantryGUI(self)
+    #     # self._gui = GantryControlWidget(self)
+    #     self._gui = BestGantryGUI(self)
+    #     self._gui.show()
+    #     return self._gui
+    # def open_gui(self):
+    #     if not hasattr(self, "_gui") or self._gui is None:
+    #         self._gui = self.launch_gui()
+    #     else:
+    #         self._gui.raise_()
+    #         self._gui.activateWindow()
 
 from functools import partial
 from PyQt5.QtWidgets import (
