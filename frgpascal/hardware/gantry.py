@@ -116,7 +116,7 @@ class Gantry:
     def connect_usb(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
 
-    def ping_duet(self, ip = "192.168.0.11", timeout = 1000):
+    def ping_duet(self, ip = "192.168.0.11", port = "23", timeout = 1000):
         """
         Ping a duet at the given ip address over a websocket connection
         """
@@ -139,7 +139,7 @@ class Gantry:
             return self._connected_network_devices[self.ip]
         # Can we talk with the Duet
         # if not self.ping_duet(ip = self.ip):
-        #     raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
+            # raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
         # open a TCP socket
         try:
             for port in ["23", self.duet_port, "21", "23", "80"]:
@@ -255,12 +255,13 @@ class Gantry:
         self.write("M18")
 
     def update(self):
+        print("UPDATING:")
         found_coordinates = False
         while not found_coordinates:
             output = self.write("M114")  # get current position
-            # print(output)
-            # print(type(output))
-            # print(len(output))
+            print("\t", output)
+            print("\t", type(output))
+            print("\t", len(output))
             output, _ = output[0]
             if isinstance(output, str):
                 output = [output]

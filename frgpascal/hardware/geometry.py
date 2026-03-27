@@ -70,7 +70,7 @@ class AffineCoordinateMapper:
         self.transform_matrix, _, _, _ = np.linalg.lstsq(A, self.p_measured[:, :2], rcond = None)
 
         # use a plane fit for Z interpolation
-        self.z_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, :2])
+        self.z_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, 2])
 
     def map(self, p_ideal):
         p_ideal = np.asarray(p_ideal)
@@ -99,9 +99,9 @@ class NonlinearCoordinateMapper:
         """
         self.p_ideal = np.asarray(p_ideal)
         self.p_measured = np.asarray(p_measured)
-        self.x_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, :0])
-        self.y_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, :1])
-        self.z_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, :2])
+        self.x_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, 0])
+        self.y_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, 1])
+        self.z_interp = LinearNDInterpolator(self.p_ideal[:, :2], self.p_measured[:, 2])
 
     def map(self, p):
         p = np.asarray(p)
@@ -167,8 +167,10 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
             .tolist(),  # rounding error bs
         }
         yaml.dump(out, f)
+    # return AffineCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
+    # return CoordinateMapper(p0=points_source_meas, p1=points)
+    return NonlinearCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
 
-    return CoordinateMapper(p0=points_source_meas, p1=points)
 
 def map_coordinates_better(name, slots, points, gantry: Gantry, z_clearance=2):
     """
@@ -389,14 +391,14 @@ class Workspace:
         if self.__is_simulation:
             raise Exception("Cannot calibrate a simulated workspace")
         self.gantry.moveto(*self.p0)
-        if self.gripper is not None:
-            self.gripper.GRIPPERTIMEOUT = (
-                69420  # prevents the gripper from closing during calibration of sampletray
-            )
-            self.gripper.open(self.OPENWIDTH)
-        # self.transform = map_coordinates(
+        # if self.gripper is not None:
+        self.gripper.GRIPPERTIMEOUT = (
+            69420  # prevents the gripper from closing during calibration of sampletray
+        )
+        self.gripper.open(self.OPENWIDTH)
+        self.transform = map_coordinates(
         # self.transform = map_coordinates_better(
-        self.transform = map_coordinates_best(
+        # self.transform = map_coordinates_best(
             self.name,
             self.testslots,
             self.testpoints,
@@ -412,10 +414,10 @@ class Workspace:
         # TODO: Call __generate_coordinates() again to redefine self._coordinates
         self.__calibrated = True
         # if isinstance(self.gripper, frgpascal.hardware.gripper.Gripper): # type checking
-        if self.gripper is not None:
-            self.GRIPPERTIMEOUT = constants["gripper"][
-                "idle_timeout"
-            ]  # reset to the hardware constants value
+        # if self.gripper is not None:
+        self.GRIPPERTIMEOUT = constants["gripper"][
+            "idle_timeout"
+        ]  # reset to the hardware constants value
 
     # def _save_calibration(self):
     #     if not self.__calibrated:
@@ -428,7 +430,9 @@ class Workspace:
             os.path.join(CALIBRATION_DIR, f"{self.name}_calibration.yaml"), "r"
         ) as f:
             pts = yaml.load(f, Loader=yaml.FullLoader)
-        self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
+        # self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
+        # self.transform = AffineCoordinateMapper(p_measured=pts["p0"], p_ideal=pts["p1"])
+        self.transform = NonlinearCoordinateMapper(p_measured=pts["p0"], p_ideal=pts["p1"])
         self.__calibrated = True
 
     def load(self, contents) -> str:

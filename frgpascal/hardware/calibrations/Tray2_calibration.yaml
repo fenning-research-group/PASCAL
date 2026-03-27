@@ -1,112 +1,25 @@
-ideal_real_space:
-- - 0.0
-  - 0.0
-  - 0.0
-- - 0.0
-  - 125.2
-  - 0.0
-- - 54.0
-  - 125.2
-  - 0.0
-- - 54.0
-  - 0.0
-  - 0.0
-measured_robot_space:
-- - 637
-  - 170
-  - 33
-- - 637
-  - 170
-  - 33
-- - 637
-  - 170
-  - 33
-- - 637
-  - 170
-  - 33
 p0:
-- !!python/object/apply:numpy.core.multiarray._reconstruct
-  args:
-  - &id001 !!python/name:numpy.ndarray ''
-  - !!python/tuple
-    - 0
-  - !!binary |
-    Yg==
-  state: !!python/tuple
-  - 1
-  - !!python/tuple
-    - 3
-  - &id002 !!python/object/apply:numpy.dtype
-    args:
-    - i8
-    - false
-    - true
-    state: !!python/tuple
-    - 3
-    - <
-    - null
-    - null
-    - null
-    - -1
-    - -1
-    - 0
-  - false
-  - !!binary |
-    fQIAAAAAAACqAAAAAAAAACEAAAAAAAAA
-- !!python/object/apply:numpy.core.multiarray._reconstruct
-  args:
-  - *id001
-  - !!python/tuple
-    - 0
-  - !!binary |
-    Yg==
-  state: !!python/tuple
-  - 1
-  - !!python/tuple
-    - 3
-  - *id002
-  - false
-  - !!binary |
-    fQIAAAAAAACqAAAAAAAAACEAAAAAAAAA
-- !!python/object/apply:numpy.core.multiarray._reconstruct
-  args:
-  - *id001
-  - !!python/tuple
-    - 0
-  - !!binary |
-    Yg==
-  state: !!python/tuple
-  - 1
-  - !!python/tuple
-    - 3
-  - *id002
-  - false
-  - !!binary |
-    fQIAAAAAAACqAAAAAAAAACEAAAAAAAAA
-- !!python/object/apply:numpy.core.multiarray._reconstruct
-  args:
-  - *id001
-  - !!python/tuple
-    - 0
-  - !!binary |
-    Yg==
-  state: !!python/tuple
-  - 1
-  - !!python/tuple
-    - 3
-  - *id002
-  - false
-  - !!binary |
-    fQIAAAAAAACqAAAAAAAAACEAAAAAAAAA
+- - 367.9
+  - 78.6
+  - 20.1
+- - 368.4
+  - 202.9
+  - 19.3
+- - 422.2
+  - 202.9
+  - 19.3
+- - 421.7
+  - 78.8
+  - 20.2
 p1:
 - - 0.0
   - 0.0
   - 0.0
 - - 0.0
-  - 125.2
+  - 128.32
   - 0.0
 - - 54.0
-  - 125.2
+  - 128.32
   - 0.0
 - - 54.0
   - 0.0
