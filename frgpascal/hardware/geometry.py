@@ -10,7 +10,7 @@ os.environ["FOR_DISABLE_CONSOLE_CTRL_HANDLER"] = (
     "1"  # to preserve ctrl-c with scipy loaded
 )
 
-from scipy.interpolate import LinearNDInterpolator
+from scipy.interpolate import LinearNDInterpolator, RBFInterpolator
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
 import yaml
@@ -116,6 +116,20 @@ class NonlinearCoordinateMapper:
         cordmap = CoordinateMapper(self.p_ideal, self.p_measured)
         cordmap.map(p)
 
+class NewCoordinateMapper:
+    def __init__(self, p0, p1):
+        self.destination = np.asarray(p1)
+        self.source = np.asarray(p0)
+        self.rbf = RBFInterpolator(
+            self.destination[:, :2], # only account for x y interpolation
+            self.source,
+            kernel = 'thin_plate_spline',
+            smoothing = 1e-3*np.mean(np.linalg.norm(self.source, axis = 1)),
+        )
+    def map(self, p):
+        p = np.asarray(p)[:2]
+        return self.rbf(p[None, :])[0]
+
 
 def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     """Prompts user to move gripper to target points on labware for calibration purposes.
@@ -169,8 +183,8 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
         yaml.dump(out, f)
     # return AffineCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
     # return CoordinateMapper(p0=points_source_meas, p1=points)
-    return NonlinearCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
-
+    # return NonlinearCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
+    return NewCoordinateMapper(p0=points_source_meas, p1=points)
 
 def map_coordinates_better(name, slots, points, gantry: Gantry, z_clearance=2):
     """
