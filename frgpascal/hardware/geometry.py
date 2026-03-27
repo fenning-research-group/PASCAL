@@ -131,6 +131,23 @@ class NewCoordinateMapper:
         return self.rbf(p[None, :])[0]
 
 
+class NewCoordinateMapper2:
+    def __init__(self, p0, p1):
+        self.destination = np.asarray(p1)
+        self.source = np.asarray(p0)
+        self.rbf = RBFInterpolator(
+            self.destination[:, :2], # only account for x y interpolation
+            self.source,
+            kernel = 'thin_plate_spline',
+            smoothing = 1e-3*np.mean(np.linalg.norm(self.source, axis = 1)),
+        )
+        self.zinterp = LinearNDInterpolator(self.destination[:, :2], self.source[:, 2])
+    def map(self, p):
+        p = np.asarray(p)[:2]
+        goal = self.rbf(p[None, :])[0]
+        goal[2] = self.zinterp(p[:2])
+        return self.rbf(p[None, :])[0]
+
 def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     """Prompts user to move gripper to target points on labware for calibration purposes.
 
@@ -184,7 +201,8 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
     # return AffineCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
     # return CoordinateMapper(p0=points_source_meas, p1=points)
     # return NonlinearCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
-    return NewCoordinateMapper(p0=points_source_meas, p1=points)
+    # return NewCoordinateMapper(p0=points_source_meas, p1=points)
+    return NewCoordinateMapper2(p0=points_source_meas, p1=points)
 
 def map_coordinates_better(name, slots, points, gantry: Gantry, z_clearance=2):
     """
@@ -445,8 +463,10 @@ class Workspace:
         ) as f:
             pts = yaml.load(f, Loader=yaml.FullLoader)
         # self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
+        # self.transform = NewCoordinateMapper(p0=pts["p0"], p1=pts["p1"])
+        self.transform = NewCoordinateMapper2(p0=pts["p0"], p1=pts["p1"])
         # self.transform = AffineCoordinateMapper(p_measured=pts["p0"], p_ideal=pts["p1"])
-        self.transform = NonlinearCoordinateMapper(p_measured=pts["p0"], p_ideal=pts["p1"])
+        # self.transform = NonlinearCoordinateMapper(p_measured=pts["p0"], p_ideal=pts["p1"])
         self.__calibrated = True
 
     def load(self, contents) -> str:
