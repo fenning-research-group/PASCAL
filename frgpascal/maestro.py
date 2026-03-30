@@ -248,6 +248,7 @@ class Maestro:
                 p0=constants["sampletray"]["p2"],
             ),
         }
+        self.__tray_endpoints = None
         sc_choice = input('Are you using the spincoater/Opentrons for this run? (y/n)')
         if sc_choice in ['y', 'Y']:
             regular_bootup = True
@@ -435,7 +436,7 @@ class Maestro:
             if from_spincoater:
                 self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
 
-    def release(self):
+    def release(self, from_tray):
         """
         Open gripper slowly to release a sample without jogging position too much
         """
@@ -443,6 +444,12 @@ class Maestro:
             self.gripper.open(
                 self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
             )  # slow to prevent sample position shifting upon release
+            if from_tray: # move up a tiny amount in z to get claws unstuck from a sample tray
+                self.gantry.moverel(z = 0.15, zhop = False)
+                self.gripper.open(
+                    1.05*(self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE),
+                    slow = True
+                )
 
     def idle_gantry(self):
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
@@ -539,7 +546,8 @@ class Maestro:
                 )  # if not dropped, move to the final position
 
             # time.sleep(2)
-            self.release()  # drop the sample
+            to_tray = self._is_target_on_a_tray(p2)
+            self.release(from_tray = to_tray)  # drop the sample
             time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
@@ -913,3 +921,44 @@ class Maestro:
         need_gantry = response in ["y", "Y"]
         return need_gantry, need_gantry
 
+    def _is_target_on_a_tray(self, p):
+        trays_to_calibrate = []
+        for trayname, trayobj in self.storage.items():
+            if not trayobj._Workspace.__calibrated:
+                trays_to_calibrate.append(trayname)
+        if len(trays_to_calibrate) != 0:
+            raise Exception(f"You must calibrate the following SampleTrays before you can move substrates on/off of them!\n\t{trays_to_calibrate}")
+        p = np.asarray(p)
+        if self.__tray_endpoints is None:
+            endpoints = {}
+            for tray in [1, 2]:
+                endpoints[f"Tray{tray}"] = {}
+                x = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                y = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                z = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                for slot in ["A1", "A5", "I1", "I5"]:
+                    pos = self.storage[f"Tray{tray}"](slot)
+                    px, py, pz = tuple(pos)
+                    for axis, pdict, axlab in zip([px, py, pz], [x, y, z], ["x", "y", "z"]):
+                        if 0.95*axis < pdict["min"]:
+                            pdict["min"] = 0.95*axis
+                        if 1.05*axis > pdict["max"]:
+                            pdict["max"] = 1.05*axis
+                    endpoints[f"Tray{tray}"][axlab] = pdict
+        self.__tray_endpoints = endpoints
+        x, y, z = tuple(p)
+        to_tray = False
+        for tray in endpoints.keys():
+            if x < endpoints[tray]["x"]["max"]:
+                to_tray = True
+                break
+        return to_tray
