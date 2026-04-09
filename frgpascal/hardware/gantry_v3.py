@@ -125,6 +125,10 @@ class SocketCommunicator(BaseCommunicator):
     def disconnect(self):
         """Disconnect the socket communication."""
         self._handle.close()
+        try:
+            self.config._connected_network_devices.pop(self.config.ip)
+        except KeyError:
+            self.config._connected_network_devices = {}
         del self._handle
     
     def send_gcode(self, command, homing = True):

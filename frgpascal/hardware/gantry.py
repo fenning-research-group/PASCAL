@@ -85,7 +85,7 @@ class Gantry:
         self.ZHOP_HEIGHT = constants["gantry"][
             "zhop_height"
         ]  # mm above endpoints to move to in between points
-
+        self.__done_connecting = False
         self.connect()  # connect by default
         self.in_use = True
         print("gantry connected")
@@ -161,21 +161,21 @@ class Gantry:
         except Exception as e:
             raise ValueError(f"Failed to connect to Duet at {self.ip}:{port}! \n{e}")
     
-    def send_gcode(self, command, homing = False):
-        """
-        Send a G-code command to the Duet over the given socket.
-        Return the response string.
-        """
-        if not self._handle:
-            raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
-        self._handle.sendall((command + "\n").encode("utf-8"))
-        if homing:
-            self._handle.settimeout(None)
-            response = self._handle.recv(1024).decode("utf-8").strip()
-            self._handle.settimeout(30)
-        else:
-            reponse = self._handle.recv(1024).decode("utf-8").strip()
-        return response
+    # def send_gcode(self, command, homing = False):
+    #     """
+    #     Send a G-code command to the Duet over the given socket.
+    #     Return the response string.
+    #     """
+    #     if not self._handle:
+    #         raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+    #     self._handle.sendall((command + "\n").encode("utf-8"))
+    #     if homing:
+    #         self._handle.settimeout(None)
+    #         response = self._handle.recv(1024).decode("utf-8").strip()
+    #         self._handle.settimeout(30)
+    #     else:
+    #         reponse = self._handle.recv(1024).decode("utf-8").strip()
+    #     return response
 
     def send_gcode(self, command, homing = False):
         """
@@ -186,13 +186,15 @@ class Gantry:
             raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
         # print("im still running")
         self._handle.sendall((command + "\n").encode("utf-8"))
+        if not self.__done_connecting:
+            homing = False
         if homing:
             self._handle.settimeout(None)
             response_0 = self._handle.recv(1024).decode("utf-8")
             response = response_0.split()
             self._handle.settimeout(30)
         else:
-            reponse = self._handle.recv(1024).decode("utf-8").strip()
+            response = self._handle.recv(1024).decode("utf-8").strip()
             response_0 = None
         return response_0, response
 
@@ -262,7 +264,9 @@ class Gantry:
             print("\t", output)
             print("\t", type(output))
             print("\t", len(output))
-            output, _ = output[0]
+            output, output2 = output[0]
+            if output is None:
+                output = output2
             if isinstance(output, str):
                 output = [output]
             for line in output:

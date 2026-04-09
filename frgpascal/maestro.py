@@ -958,7 +958,7 @@ class Maestro:
         x, y, z = tuple(p)
         to_tray = False
         for tray in endpoints.keys():
-            if x < endpoints[tray]["x"]["max"]:
+            if (x <= endpoints[tray]["x"]["max"]) and (x >= endpoints[tray]["x"]["min"]):
                 to_tray = True
                 break
         return to_tray
