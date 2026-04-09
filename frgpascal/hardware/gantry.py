@@ -4,7 +4,7 @@ import numpy as np
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
 import PyQt5
-from tenacity import retry
+# from tenacity import retry
 import yaml
 import os
 import subprocess
