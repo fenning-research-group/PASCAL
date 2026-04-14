@@ -14,6 +14,7 @@ gantry:
     # duet_ip: 192.168.0.11
     # duet_ip: 192.168.0.100 # JVBot PC
     duet_ip: 169.254.0.100
+    # duet_ip: 169.254.0.100
     duet_port: 255.255.255.0
     # duet_port: 0.0.0.0
     # com_port: "COM72"
@@ -25,34 +26,39 @@ gantry:
   speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
-  idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
-  clear_coordinates: [615, 265, 33] #coordinates to move the gantry out of the way for of glovebox operator
-  opentrons_z: 19 #above this point, the gantry will collide with the opentrons frame
-  opentrons_y: 50 #above this point, the gantry will collide with the opentrons frame
-  opentrons_x: 240 #below this point, the gantry will enter the opentrons frame
+  idle_coordinates: [385, 140, 25] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+  clear_coordinates: [545, 270, 33] #coordinates to move the gantry out of the way for of glovebox operator
+  opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
+  opentrons_y: 165 #above this point, the gantry will collide with the opentrons trash deckslot 12
+  opentrons_x: 199 #below this point, the gantry will enter the opentrons frame
   overall_gantry_limits:
-    x_max: 619 #max x position (mm)
+    x_max: 553 #max x position (mm)
     x_min: 0 #min x position (mm)
     y_max: 285 #187 #max y position (mm)
     y_min: 0 #min y position (mm)
     z_max: 40.9 #41.0 #max z position (mm)
     z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
-    x_max: 619 #max x position (mm)
-    x_min: 240 #min x position (mm)
+    x_max: 553 #max x position (mm)
+    x_min: 199 #min x position (mm)
     y_max: 285 #187 #max y position (mm)
-    y_min: 28 #min y position (mm)
+    y_min: 42 #min y position (mm)
     z_max: 40.9 #max z position (mm)
     z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
-    x_max: 230
+    x_max: 196
     x_min: 0
-    y_max: 50
+    y_max: 165
     y_min: 0
-    z_max: 19
+    z_max: 21.5
     z_min: 0
+  grid_spacing:
+    x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
+    y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
+    z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-  transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
+  transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
+  transition_nudge: 10 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
 
 
@@ -115,37 +121,37 @@ gantry_v2:
     speed_min: 500 #min gantry speed, mm/min
     zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
     idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
-    clear_coordinates: [637, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
-    opentrons_z: 19 #above this point, the gantry will collide with the opentrons frame
-    opentrons_y: 50 #above this point, the gantry will collide with the opentrons frame
-    opentrons_x: 240 #below this point, the gantry will enter the opentrons frame
+    clear_coordinates: [545, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
+    opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
+    opentrons_y: 165 #above this point, the gantry will collide with the opentrons trash deckslot 12
+    opentrons_x: 199 #below this point, the gantry will enter the opentrons frame
     overall_gantry_limits:
-      x_max: 619 #max x position (mm)
+      x_max: 553 #max x position (mm)
       x_min: 0 #min x position (mm)
       y_max: 285 #187 #max y position (mm)
       y_min: 0 #min y position (mm)
       z_max: 40.9 #41.0 #max z position (mm)
       z_min: 0 #min z position (mm)
     workspace_limits: #gantry limits in workspace frame
-      x_max: 619 #max x position (mm)
-      x_min: 240 #min x position (mm)
+      x_max: 553 #max x position (mm)
+      x_min: 199 #min x position (mm)
       y_max: 285 #187 #max y position (mm)
-      y_min: 28 #min y position (mm)
+      y_min: 42 #min y position (mm)
       z_max: 40.9 #max z position (mm)
       z_min: 0 #min z position (mm)
     opentrons_limits: #gantry limits in opentrons frame
-      x_max: 230
+      x_max: 196
       x_min: 0
-      y_max: 50
+      y_max: 165
       y_min: 0
-      z_max: 19
+      z_max: 21.5
       z_min: 0
     grid_spacing:
       x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
       y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
       z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-    transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
+    transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
     transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
   websocket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
@@ -197,7 +203,7 @@ gripper:
     pid: 24597 #WINDOWS ONLY
     serial_number: "DN066QRWA"
     # COM_Port: "COM5" # JVBot PC
-    COM_Port: "COM11"
+    COM_Port: "COM16"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)

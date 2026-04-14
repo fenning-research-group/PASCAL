@@ -158,6 +158,7 @@ class Gantry:
                     print(f"\tConnecting at {self.ip}:{port} failed\n\t{e}")
             self._connected_network_devices[self.ip] = self._handle
             print(f"Connected to Duet at {self.ip}:{port}")
+            self.__done_connecting = True
         except Exception as e:
             raise ValueError(f"Failed to connect to Duet at {self.ip}:{port}! \n{e}")
     

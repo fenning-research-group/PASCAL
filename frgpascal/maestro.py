@@ -20,10 +20,10 @@ from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
-# from frgpascal.hardware.characterizationline import (
-    # CharacterizationAxis,
-    # CharacterizationLine,
-# )
+from frgpascal.hardware.characterizationline import (
+    CharacterizationAxis,
+    CharacterizationLine,
+)
 from frgpascal.hardware.switchbox import Switchbox
 from frgpascal.analysis.processing import load_all
 from frgpascal.hardware.fakeouts import (
