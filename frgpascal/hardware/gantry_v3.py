@@ -1,3 +1,53 @@
+"""This file contains the core logic of handling a modality of motion control in JVBot.
+
+Classes
+-------
+ConnectConfig: Type[BaseConstantsConfig]
+    Dataclass container to hold hardwareconstants relevant to some form of hardware communication.
+MotionConfig: Type[BaseConstantsConfig]
+    Dataclass container to hold hardwareconstants relevant to some form of gantry motion control.
+GridConfig: Type[MotionConfig]
+    Wrapper of MotionConfig to also include hardwareconstants relevant to gantry-space 3D discrete mappings.
+Frames: Type[Enum]
+    Enumeration class to match pre-allocation gantry coordinate sets in partitions.
+
+BaseCommunicator: Type[abc.ABC]
+    Base class to define fundamental hardware communication logic
+SerialCommunicator: Type[BaseCommunicator]
+    Wrapper of BaseCommunicator specialized to interface with BigTreeTech SKR Mini E3 V2.0 motion control 
+    over a wired USB connection.
+SocketCommunicator: Type[BaseCommunicator]
+    Wrapper of BaseCommunicator specialized to interface with a Duet 3 Mini 5+ Ethernet motion control 
+    board over a wired Ethernet TCP connection.
+WiFiCommunicator: Type[SocketCommunicator]
+    Wrapper of SocketCommunicator specialized to interface with a Duet 3 Mini 5+ WiFi motion control
+    board over the wireless connection.
+FakeCommunicator: Type[SocketCommunicator]
+    Wrapper of SocketCommunicator designed to simulate Duet 3 Mini 5+ motion control board communications
+    for testing of non-communication errors of the gantry module.
+
+BaseMotionControl: Type[abc.ABC]
+    Base class to define fundamental cartesian X,Y,Z motion logic over g-code commands to motor drivers.
+DiscreteMotionControl: Type[BaseMotionControl]
+    Wrapper of BaseMotionControl to handle conversion of continuous 3-space into discrete 3-space to 
+    minimize accumulation of positional errors of open-loop stepper motors in long-term operation.
+BTTSKRMiniE3_MotionControl: Type[BaseMotionControl]
+    Wrapper of BaseMotionControl to implement the SerialCommunicator with the g-code logic
+Duet3Mini5PlusEthernet_MotionControl: Type[DiscreteMotionControl]:
+    Wrapper of DiscreteMotionControl to implement the SocketCommunicator with the G-code logic
+
+Errors
+------
+HomingError:
+    Exception raised if the gantry has not been homed before a motion is attempted.
+FrameError:
+    Exception raised if the gantry needs to transition between coordinate frames of reference.
+    e.g., if some region of the gantry's maximum range of motion has geometric constraints.
+TargetError:
+    Exception raised if the positional target of the move command is outside of the 
+    allowed domain of gantry motion.
+"""
+
 import serial
 import socket
 import websockets
