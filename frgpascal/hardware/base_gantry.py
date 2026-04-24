@@ -251,8 +251,8 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                     found_coordinates = True
                     break
 
-            self.config.position = [x, y, z]
-            self.config._currentframe = self._target_frame(self.config.position)
+            self.position = [x, y, z]
+            self.config._currentframe = self._target_frame(self.position)
             print(f"\t\t{self._currentframe}")
             self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
 
