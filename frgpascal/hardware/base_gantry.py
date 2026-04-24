@@ -411,9 +411,11 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         speed : Optional[float], optional
             Speed to overwrite default for this move only, defaults to None.
         """
+        print(x, self.config.position[0])
         x += self.config.position[0]
         y += self.config.position[1]
         z += self.config.position[2]
+        print(x, self.config.position[0])
         self.moveto(x, y, z, zhop, speed)
     
     def _movecommand(
@@ -441,7 +443,9 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         bool
             _description_
         """
-        if [p == c for p, c in zip(self.config.position, [x, y, z])]:
+        print([x, y, z])
+        print(self.config.position)
+        if all([p == c for p, c in zip(self.config.position, [x, y, z])]):
             print("We are already there?")
             return True
         reset_speed = self.speed
@@ -469,7 +473,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         start_time = time.time()
         time_elapsed = time.time() - start_time
         self._comms.write("M400")
-        self._send_echo(stop_moving = True)
+        self._comms._send_echo(stop_moving = True)
 
         reached_destination = False
         while (not reached_destination) and (time_elapsed < self.config.GANTRYTIMEOUT):

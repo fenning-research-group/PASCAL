@@ -244,7 +244,8 @@ class FakeCommunicator(SocketCommunicator):
         print("Disconnected")
         # del self._handle
     def send_gcode(self, command, homing = True):
-        return ["M114 X0.00 Y0.00 Z0.00"]
+        # return ["M114 X0.00 Y0.00 Z0.00"]
+        return ["M114 X450.00 Y150.00 Z33.00"]
     def _send_echo(self, stop_moving = True):
         return "echo sent"
     def _search_for_echo(self):
@@ -290,8 +291,8 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
         super().__init__(config = self._config, communicator = communicator)
 
     def set_defaults(self):
-        self.write("M501")
-        self.write("G90")
+        self._comms.write("M501")
+        self._comms.write("G90")
 
     def update(self):
         found = {f"{ax}": False for ax in ["X", "Y", "Z"]}
