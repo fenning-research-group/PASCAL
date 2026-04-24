@@ -117,7 +117,11 @@ class SerialCommunicator(BaseCommunicator):
         self._comms.write(echo_command)
     
     def _search_for_echo(self, stop_moving = True):
-        return self._comms.readline().decode("utf-8").strip()
+        if "FinishedMoving" in self._comms.write(""):
+            return True
+        else:
+            return False
+        # return self._comms.readline().decode("utf-8").strip()
     
     def write(self, msg: str) -> List[str]:
         self._comms.write(
@@ -168,9 +172,9 @@ class SocketCommunicator(BaseCommunicator):
                         pass # Buffer is now empty
                     self._handle.setblocking(True)
                     # Now that Buffer is empty, do a quick restart of the Duet board's task execution queue.
-                    # self._handle.sendall(b"M999\n")
-                    # print("Resetting Duet to initial state!")
-                    # time.sleep(10)
+                    self._handle.sendall(b"M999\n")
+                    print("Resetting Duet to initial state!")
+                    time.sleep(15)
                     if port == "21":
                         print(f"\tDevice conneted over OTHER type connection")
                     elif port == "23":
@@ -196,7 +200,7 @@ class SocketCommunicator(BaseCommunicator):
             self.config._connected_network_devices = {}
         del self._handle
     
-    def send_gcode(self, command, homing = True):
+    def send_gcode(self, command, homing = False):
         """
         Send a G-code command to a device over the SocketCommunicator._handle socket object.
 
@@ -208,6 +212,7 @@ class SocketCommunicator(BaseCommunicator):
             If True, removes timeout to collect response from socket (Default setting)
             If False, sets timeout for response from socket to 30 seconds
         """
+        print(f"\tHOMING: {homing}")
         if not self._handle:
             raise ValueError("socket is not connected, be sure to run .connect() first!")
         self._handle.sendall((command + "\n").encode("utf-8"))
@@ -218,11 +223,12 @@ class SocketCommunicator(BaseCommunicator):
             response = response_0.split()
             self._handle.settimeout(30)
         else:
-            response = [self._handle.recv(bytes_to_receive).decode("utf-8").strip()]
+            response = self._handle.recv(bytes_to_receive).decode("utf-8").split()
+            print(response)
         return response
     
-    def write(self, msg: str) -> List[str]:
-        response = self.send_gcode(command = msg)
+    def write(self, msg: str, bootup: bool = False) -> List[str]:
+        response = self.send_gcode(command = msg, homing = not bootup)
         return response
     
     def _ready_to_talk(self) -> bool:
@@ -235,7 +241,11 @@ class SocketCommunicator(BaseCommunicator):
         self._handle.sendall((echo_command + "\n").encode("utf-8"))
     
     def _search_for_echo(self):
-        return self._handle.recv(1024).decode("utf-8").strip()
+        if "FinishedMoving" in self.send_gcode(""):
+            return True
+        else:
+            return False
+        # return self._handle.recv(1024).decode("utf-8").strip()
 
 class FakeCommunicator(SocketCommunicator):
     def connect(self):
@@ -294,12 +304,12 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
         self._comms.write("M501")
         self._comms.write("G90")
 
-    def update(self):
+    def update(self, bootup = False):
         found = {f"{ax}": False for ax in ["X", "Y", "Z"]}
         found_coordinates = False
         print("UPDATING")
         while not found_coordinates:
-            output = self._comms.write("M114") # get current position
+            output = self._comms.write("M114", bootup = bootup) # get current position
             for line in output:
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
@@ -482,7 +492,7 @@ class NewGantry:
             # self.connect()
         self.connect()
         if not simulating:
-            self.update()
+            self.update(bootup = True)
         self.set_defaults()
         # self.update()
         print("Gantry ready to go!")
@@ -519,8 +529,8 @@ class NewGantry:
         self._controls._enable_steppers()
     def _disable_steppers(self):
         self._controls._disable_steppers()
-    def update(self):
-        self._controls.update()
+    def update(self, bootup: str = False):
+        self._controls.update(bootup = bootup)
     def gohome(self):
         self._controls.gohome()
     def set_speed_percentage(self, p):
