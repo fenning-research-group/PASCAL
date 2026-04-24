@@ -313,8 +313,8 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
                     found_coordinates = True
                     break
 
-        self.config.position = [x, y, z]
-        self.config._currentframe = self._target_frame(self.config.position)
+        self.position = [x, y, z]
+        self.config._currentframe = self._target_frame(self.position)
         print(f"\t\t{self.config._currentframe}")
         self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
 
@@ -468,10 +468,10 @@ class NewGantry:
     Primarily a wrapper around the MotionControl objects, for converting the expected Gantry methods
     into the backend MotionControl methods.
     """
-    def __init__(self, communicator: Union[SerialCommunicator, SocketCommunicator, FakeCommunicator], controller: Union[BTTSKRMiniE3_MotionControl, Duet3Mini5Plus_MotionControl]):
+    def __init__(self, communicator: Union[SerialCommunicator, SocketCommunicator, FakeCommunicator], controller: Union[BTTSKRMiniE3_MotionControl, Duet3Mini5Plus_MotionControl], simulating = False):
         self.__comms = communicator()
         self._controls = controller(self.__comms)
-        self._position = self._controls.position
+        # self._position = self._controls.config.position
         self._min_step = {
             "x_min": self._controls._config.grid_spacing_x,
             "y_min": self._controls._config.grid_spacing_y,
@@ -480,18 +480,20 @@ class NewGantry:
         # if not simulating:
             # self.connect()
         self.connect()
-        self.update()
+        if not simulating:
+            self.update()
         self.set_defaults()
         # self.update()
         print("Gantry ready to go!")
 
     @property
     def position(self):
-        return self._controls.config.position
+        return self._controls.position
     @position.setter
     def position(self, pos):
         # self._position = pos
-        self._controls.config.position = pos
+        # self._controls.config.position = pos
+        self._controls.position = pos
 
     @property
     def min_step(self):

@@ -132,7 +132,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     def __init__(self, config: ConfigVar, communicator: BaseCommunicator):
         self._config = config
         self._speed = self._config.MAXSPEED
-        self._position = self._config.position
+        # self._position = self._config.position
         self._comms = communicator
     # abstract properties
     @property
@@ -148,11 +148,19 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
 
     @property
     def position(self) -> List:
-        return self._position
+        return self._config.position
     
     @position.setter
     def position(self, pos):
-        self._position = pos
+        print("PRE-SET")
+        print(pos)
+        # print(f"._position: {self._position}")
+        print(f"._config.position: {self._config.position}")
+        self._config.position = pos
+        print("POST-SET")
+        print(pos)
+        # print(f"._position: {self._position}")
+        print(f"._config.position: {self._config.position}")
 
     # concrete properties
     @property
