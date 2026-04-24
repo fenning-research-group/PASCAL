@@ -313,10 +313,10 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
                     found_coordinates = True
                     break
 
-            self.config.position = [x, y, z]
-            self.config._currentframe = self._target_frame(self.config.position)
-            print(f"\t\t{self.config._currentframe}")
-            self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
+        self.config.position = [x, y, z]
+        self.config._currentframe = self._target_frame(self.config.position)
+        print(f"\t\t{self.config._currentframe}")
+        self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
 
 
 def setup_constants(obj_instance, attr_info):
