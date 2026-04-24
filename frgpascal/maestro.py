@@ -15,7 +15,7 @@ from tqdm import tqdm
 from warnings import warn
 
 from frgpascal.hardware.spincoater import SpinCoater
-# from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gantry_v3 import SocketCommunicator, Duet3Mini5Plus_MotionControl, NewGantry
 from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.liquidhandler import OT2

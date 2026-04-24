@@ -510,7 +510,7 @@ class NewGantry:
     def set_defaults(self):
         self._controls.set_defaults
     def write(self, msg):
-        self._controls._comms.write(msg)
+        return self._controls._comms.write(msg)
     def _enable_steppers(self):
         self._controls._enable_steppers()
     def _disable_steppers(self):
