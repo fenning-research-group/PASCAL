@@ -373,12 +373,14 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         if (x == self.config.position[0]) and (y == self.position[1]):
             zhop = False #why zhop if no lateral movement
         if zhop:
+            print("Still a zhop == True, let's loop thorough moveto() again")
             z_ceiling = max(self.config.position[2], z) + self.config.ZHOP_HEIGHT
             z_ceiling = min(z_ceiling, self.config._ZLIM)
             self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
             self.moveto(x, y, z_ceiling, zhop = False)
             self.moveto(z = z, zhop = False, speed = speed)
         else:
+            print("Finally, a zhop == False, let's try to send the G1 command.")
             self._movecommand(x, y, z, speed)
     
     def movetoclear(self):
@@ -440,6 +442,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             _description_
         """
         if [p == c for p, c in zip(self.config.position, [x, y, z])]:
+            print("We are already there?")
             return True
         reset_speed = self.speed
         if speed is None:
@@ -447,6 +450,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             reset_speed = None
         self.config._targetposition = [x, y, z]
         self._comms.write(f"G1 X{x} Y{y} Z{z} F{speed}")
+        print("Just Sent G1 Command!")
         done_moving = self._waitformovement()
         if reset_speed is not None:
             self._comms.write(f"G0 F{reset_speed}")
