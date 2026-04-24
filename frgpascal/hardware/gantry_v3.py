@@ -296,6 +296,7 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
     def update(self):
         found = {f"{ax}": False for ax in ["X", "Y", "Z"]}
         found_coordinates = False
+        print("UPDATING")
         while not found_coordinates:
             output = self._comms.write("M114") # get current position
             for line in output:
