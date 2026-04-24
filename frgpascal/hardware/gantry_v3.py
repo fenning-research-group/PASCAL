@@ -158,19 +158,19 @@ class SocketCommunicator(BaseCommunicator):
                     print(f"Trying to connect to device at {self.config.ip}:{port}...")
                     self._handle = socket.create_connection((self.config.ip, port), timeout = 5)
                     # Clear any stale data from the socket connected. e.g., partially executed Gantry.moveto() commands which could crash gripper.
-                    self._handle.setblocking(False)
-                    try:
-                        while True:
-                            data = self._handle.recv(4096)
-                            if not data:
-                                break
-                    except (BlockingIOError, socket.error):
-                        pass # Buffer is now empty
-                    self._handle.setblocking(True)
+                    # self._handle.setblocking(False)
+                    # try:
+                    #     while True:
+                    #         data = self._handle.recv(4096)
+                    #         if not data:
+                    #             break
+                    # except (BlockingIOError, socket.error):
+                    #     pass # Buffer is now empty
+                    # self._handle.setblocking(True)
                     # Now that Buffer is empty, do a quick restart of the Duet board's task execution queue.
-                    self._handle.sendall(b"M999\n")
-                    print("Resetting Duet to initial state!")
-                    time.sleep(10)
+                    # self._handle.sendall(b"M999\n")
+                    # print("Resetting Duet to initial state!")
+                    # time.sleep(10)
                     if port == "21":
                         print(f"\tDevice conneted over OTHER type connection")
                     elif port == "23":
@@ -478,6 +478,10 @@ class NewGantry:
         }
         # if not simulating:
             # self.connect()
+        self.connect()
+        self.update()
+        self.set_defaults()
+        # self.update()
         print("Gantry ready to go!")
 
     @property

@@ -15,7 +15,8 @@ from tqdm import tqdm
 from warnings import warn
 
 from frgpascal.hardware.spincoater import SpinCoater
-from frgpascal.hardware.gantry import Gantry
+# from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gantry_v3 import SocketCommunicator, Duet3Mini5Plus_MotionControl, NewGantry
 from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
@@ -147,8 +148,12 @@ class Maestro:
         self.TWISTOFF = True
         self._fakeout = test_gantrygripper
         # Workers
-        self.gantry = Gantry(
-            port = "5",
+        # self.gantry = Gantry(
+        #     port = "5",
+        # )
+        self.gantry = NewGantry(
+            communicator = SocketCommunicator,
+            controller = Duet3Mini5Plus_MotionControl,
         )
         self.gripper = Gripper(
             constants["gripper"]["device_identifiers"]["COM_Port"]
@@ -230,6 +235,7 @@ class Maestro:
                     gripper=self.gripper,
                     id=3,
                     p0=constants["hotplates"]["hp3"]["p0"],
+                    # testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 2, 3]]
                 ),
             }
         self.storage = {
@@ -239,6 +245,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
+                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
             "Tray2": SampleTray(
                 name="Tray2",
@@ -246,6 +253,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
+                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
         }
         self.__tray_endpoints = None
