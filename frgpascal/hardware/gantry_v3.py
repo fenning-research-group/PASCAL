@@ -223,13 +223,16 @@ class SocketCommunicator(BaseCommunicator):
             response = response_0.split()
             self._handle.settimeout(30)
         else:
-            response = self._handle.recv(bytes_to_receive).decode("utf-8").split()
+            response = self._handle.recv(bytes_to_receive).decode("utf-8").strip()
             print(response)
-        return response
+            response_0 = None
+        return response_0, response
     
     def write(self, msg: str, bootup: bool = False) -> List[str]:
-        response = self.send_gcode(command = msg, homing = not bootup)
-        return response
+        response_0, response = self.send_gcode(command = msg, homing = not bootup)
+        if response_0 is None:
+            response_0 = response
+        return response_0
     
     def _ready_to_talk(self) -> bool:
         return True
