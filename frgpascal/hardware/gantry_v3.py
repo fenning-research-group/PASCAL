@@ -308,26 +308,23 @@ class Duet3Mini5Plus_MotionControl(DiscreteMotionControl):
         self._comms.write("G90")
 
     def update(self, bootup = False):
-        found = {f"{ax}": False for ax in ["X", "Y", "Z"]}
         found_coordinates = False
         print("UPDATING")
         while not found_coordinates:
             output = self._comms.write("M114", bootup = bootup) # get current position
+            if isinstance(output, str):
+                output = [output]
             for line in output:
+                print(line)
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
-                    found["X"] = True
-                if line.startswith("Y:"):
                     y = float(re.findall(r"Y:(\S*)", line)[0])
-                    found["Y"] = True
-                if line.startswith("Z:"):
                     z = float(re.findall(r"Z:(\S*)", line)[0])
-                    found["Z"] = True
-                if sum([found[ax] for ax in ["X", "Y", "Z"]]) == 3:
                     found_coordinates = True
                     break
 
-        self.position = [x, y, z]
+        self.position = [
+            round(x, 1), round(y, 1), round(z, 1)]
         self.config._currentframe = self._target_frame(self.position)
         print(f"\t\t{self.config._currentframe}")
         self.config._ZLIM = self.config._FRAMES[self.config._currentframe]["z_max"]
