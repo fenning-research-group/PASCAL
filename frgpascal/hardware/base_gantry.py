@@ -456,7 +456,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         if speed is None:
             speed = self.speed
             reset_speed = None
-        self.config._targetposition = [x, y, z]
+        self.config._targetposition = [round(x, 1), round(y, 1), round(z, 1)]
         self._comms.write(f"G1 X{x} Y{y} Z{z} F{speed}")
         print("Just Sent G1 Command!")
         done_moving = self._waitformovement()
@@ -481,27 +481,17 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
 
         reached_destination = False
         while (not reached_destination) and (time_elapsed < self.config.GANTRYTIMEOUT):
-            print("Are we there yet?")
+            # print(f"\tAre we there yet?")
             time.sleep(self._comms.config.POLLINGDELAY)
             yapping = self._comms._ready_to_talk()
             while yapping:
-                print("Ready to talk")
+                # print(f"\t\tReady to talk")
                 done_move = self._comms._search_for_echo()
-                print(f"done_move: {done_move}")
+                # print(f"done_move: {done_move}")
                 if done_move:
                     self.update()
-                    print(f'config.position: {self.config.position}')
-                    print(f'config._targetposition: {self.config._targetposition}')
-                    eee = np.linalg.norm(
-                            [
-                                a - round(b, 1) 
-                                for a, b in zip(
-                                    self.config.position,
-                                    self.config._targetposition
-                                )
-                            ]
-                        )
-                    print(eee)
+                    # print(f'config.position: {self.config.position}')
+                    # print(f'config._targetposition: {self.config._targetposition}')
                     if (
                         np.linalg.norm(
                             [
@@ -516,9 +506,9 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                         reached_destination = True
                         yapping = False
                         # break
-                    print("Still Yapping BUT done_move == True")
-                print(f"Still Yapping and {reached_destination}")
-            print(f"Done Yapping: {reached_destination}")
+                    # print(f"\t\t\tStill Yapping BUT done_move == True")
+                # print(f"\t\tStill Yapping and {reached_destination}")
+            # print(f"\tDone Yapping: {reached_destination}")
             time.sleep(self._comms.config.POLLINGDELAY)
         self.config.in_motion = ~reached_destination
         self.update()
