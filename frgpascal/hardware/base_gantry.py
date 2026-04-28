@@ -381,6 +381,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             self.moveto(z = z, zhop = False, speed = speed)
         else:
             print("Finally, a zhop == False, let's try to send the G1 command.")
+            if x is None:
+                x = self.config.position[0]
+            if y is None:
+                y = self.config.position[1]
             self._movecommand(x, y, z, speed)
     
     def movetoclear(self):
@@ -483,22 +487,39 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
             while yapping:
                 print("Ready to talk")
                 done_move = self._comms._search_for_echo()
+                print(f"done_move: {done_move}")
                 if done_move:
                     self.update()
-                    if (
-                        np.linalg.norm(
+                    print(f'config.position: {self.config.position}')
+                    print(f'config._targetposition: {self.config._targetposition}')
+                    eee = np.linalg.norm(
                             [
-                                a - b 
+                                a - round(b, 1) 
                                 for a, b in zip(
                                     self.config.position,
                                     self.config._targetposition
                                 )
                             ]
                         )
+                    print(eee)
+                    if (
+                        np.linalg.norm(
+                            [
+                                a - round(b, 1) #rounding errors, positions to 0.1 decimals 
+                                for a, b in zip(
+                                    self.config.position,
+                                    self.config._targetposition
+                                )
+                            ]
+                        ) == 0
                     ):
                         reached_destination = True
                         yapping = False
-                time.sleep(self._comms.config.POLLINGDELAY)
+                        # break
+                    print("Still Yapping BUT done_move == True")
+                print(f"Still Yapping and {reached_destination}")
+            print(f"Done Yapping: {reached_destination}")
+            time.sleep(self._comms.config.POLLINGDELAY)
         self.config.in_motion = ~reached_destination
         self.update()
         return reached_destination

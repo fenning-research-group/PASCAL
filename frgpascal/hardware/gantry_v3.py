@@ -172,7 +172,7 @@ class SocketCommunicator(BaseCommunicator):
                         pass # Buffer is now empty
                     self._handle.setblocking(True)
                     # Now that Buffer is empty, do a quick restart of the Duet board's task execution queue.
-                    self._handle.sendall(b"M999\n")
+                    # self._handle.sendall(b"M999\n")
                     print("Resetting Duet to initial state!")
                     time.sleep(15)
                     if port == "21":
@@ -220,7 +220,7 @@ class SocketCommunicator(BaseCommunicator):
         if homing:
             self._handle.settimeout(None)
             response_0 = self._handle.recv(bytes_to_receive).decode("utf-8")
-            response = response_0.split()
+            response = response_0.strip()
             self._handle.settimeout(30)
         else:
             response = self._handle.recv(bytes_to_receive).decode("utf-8").strip()
@@ -244,7 +244,24 @@ class SocketCommunicator(BaseCommunicator):
         self._handle.sendall((echo_command + "\n").encode("utf-8"))
     
     def _search_for_echo(self):
-        if "FinishedMoving" in self.send_gcode(""):
+        resp, resp1 = self.send_gcode("")
+        if resp is None:
+            resp = resp1
+        if isinstance(resp, str):
+            resp = [resp]
+        print(f"resp[0]: {resp[0]}")
+        print(f"{'FinishedMoving' in resp}, {'FinishedMoving'==resp[0]}, {type(resp[0])} ")
+        aaa = resp[0].strip()
+        Cond1 = 'FinishedMoving' in aaa
+        Cond2 = 'FinishedMoving' == aaa
+        print(f"aaa: {aaa}, {Cond1}, {Cond2}")
+        bbb = [r.strip() for r in resp]
+        ccc = resp[0].split()
+        print(f"bbb: {bbb}")
+        print(f"ccc: {ccc}")
+        ddd = [c.strip() for c in ccc]
+        print(f"ddd: {ddd}")
+        if "FinishedMoving" in ddd:
             return True
         else:
             return False
