@@ -40,6 +40,7 @@ class Spectrometer:
 
         self.__baseline_dark = {}
         self.__baseline_light = {}
+        self.exposure_time = self.__integrationtime
 
     @property
     def exposure_time(self):

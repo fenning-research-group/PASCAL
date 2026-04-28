@@ -16,6 +16,7 @@ from warnings import warn
 
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
+from frgpascal.hardware.gantry_v3 import SocketCommunicator, Duet3Mini5Plus_MotionControl, NewGantry
 from frgpascal.hardware.gripper import Gripper
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
@@ -26,6 +27,13 @@ from frgpascal.hardware.characterizationline import (
 )
 from frgpascal.hardware.switchbox import Switchbox
 from frgpascal.analysis.processing import load_all
+from frgpascal.hardware.fakeouts import (
+    FakeSwitchbox,
+    FakeSingleSwitch,
+    FakeSpinCoater,
+    FakeOmega,
+    FakeOT2Server,
+)
 
 from frgpascal.workers import (
     Worker_Hotplate,
@@ -39,7 +47,7 @@ from frgpascal.workers import (
 from frgpascal.closedloop.websocket import Server
 from frgpascal.hardware.helpers import get_ot2_ip
 
-from frgpascal.hardware.characterizationline import CharacterizationLine
+# from frgpascal.hardware.characterizationline import CharacterizationLine
 
 
 MODULE_DIR = os.path.dirname(__file__)
@@ -113,12 +121,16 @@ class Maestro:
     def __init__(
         self,
         samplewidth: float = 10,
+        test_gantrygripper: bool = False
     ):
-        """Initialize Maestro, which coordinates all the PASCAL hardware
-
-        Args:
-            numsamples (int): number of substrates loaded in sampletray
-            samplewidth (float, optional): width of the substrates (mm). Defaults to 10 (ie 1 cm).
+        """
+        Initialize Maestro, which coordinates all the PASCAL hardware to
+        accomplish tasks.
+        
+        :param samplewidth: The width of the square substrates, in mm. Defaults to 10 (ie 1cm).
+        :type samplewidth: float
+        :param test_gantrygripper: Whether this instance of PASCAL should communicate with hotplates/spincoater/opentrons/characterization
+        :type test_gantrygripper: bool
         """
 
         # Constants
@@ -134,11 +146,22 @@ class Maestro:
             "catch_attempts"
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
-
+        self._fakeout = test_gantrygripper
         # Workers
-        self.gantry = Gantry()
-        self.gripper = Gripper()
-        self.switchbox = Switchbox()
+        # self.gantry = Gantry(
+        #     port = "5",
+        # )
+        self.gantry = NewGantry(
+            communicator = SocketCommunicator,
+            controller = Duet3Mini5Plus_MotionControl,
+        )
+        self.gripper = Gripper(
+            constants["gripper"]["device_identifiers"]["COM_Port"]
+        )
+        if self._fakeout:
+            self.switchbox = FakeSwitchbox()
+        else:
+            self.switchbox = Switchbox()
 
         # Do we want to use the Gantry/Gripper?
         self.gantry.in_use, self.gripper.in_use = self._handle_gantry_connection()
@@ -146,51 +169,94 @@ class Maestro:
         # tries to connect to characterization line
         self._handle_characterization_connection()
 
-        self.liquidhandler = OT2()
+        self.__calibrate_time_to_nist()  # for sync with other hardware
+        # TODO: fakeout the OT2Server()
+        if self._fakeout:
+            offset_time = self.__local_nist_offset
+            self.liquidhandler = OT2(
+                server = FakeOT2Server(offset_time)
+            )
+        else:
+            self.liquidhandler = OT2()
 
         # Labware
-        self.hotplates = {
-            "Hotplate1": HotPlate(
-                name="Hotplate1",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=1,
-                p0=constants["hotplates"]["hp1"]["p0"],
-            ),
-            "Hotplate2": HotPlate(
-                name="Hotplate2",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=2,
-                p0=constants["hotplates"]["hp2"]["p0"],
-            ),
-            "Hotplate3": HotPlate(
-                name="Hotplate3",
-                version="hotplate_frg4inch",
-                gantry=self.gantry,
-                gripper=self.gripper,
-                id=3,
-                p0=constants["hotplates"]["hp3"]["p0"],
-            ),
-        }
+        if self._fakeout:
+            self.hotplates = {
+                "Hotplate1": HotPlate(
+                    name = "Hotplate1",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 1,
+                    p0 = constants["hotplates"]["hp1"]["p0"],
+                    controller = FakeOmega(id = 1)
+                ),
+                "Hotplate2": HotPlate(
+                    name = "Hotplate2",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 2,
+                    p0 = constants["hotplates"]["hp2"]["p0"],
+                    controller = FakeOmega(id = 2)
+                ),
+                "Hotplate3": HotPlate(
+                    name = "Hotplate3",
+                    version = "hotplate_frg4inch",
+                    gantry = self.gantry,
+                    gripper = self.gripper,
+                    id = 3,
+                    p0 = constants["hotplates"]["hp3"]["p0"],
+                    controller = FakeOmega(id = 3)
+                ),
+            }
+        else:
+            self.hotplates = {
+                "Hotplate1": HotPlate(
+                    name="Hotplate1",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=1,
+                    p0=constants["hotplates"]["hp1"]["p0"],
+                ),
+                "Hotplate2": HotPlate(
+                    name="Hotplate2",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=2,
+                    p0=constants["hotplates"]["hp2"]["p0"],
+                ),
+                "Hotplate3": HotPlate(
+                    name="Hotplate3",
+                    version="hotplate_frg4inch",
+                    gantry=self.gantry,
+                    gripper=self.gripper,
+                    id=3,
+                    p0=constants["hotplates"]["hp3"]["p0"],
+                    # testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 2, 3]]
+                ),
+            }
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v3",
+                version="storage_v4",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
+                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
             "Tray2": SampleTray(
                 name="Tray2",
-                version="storage_v3",
+                version="storage_v4",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
+                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
         }
+        self.__tray_endpoints = None
         sc_choice = input('Are you using the spincoater/Opentrons for this run? (y/n)')
         if sc_choice in ['y', 'Y']:
             regular_bootup = True
@@ -202,12 +268,18 @@ class Maestro:
         else:
             regular_bootup = False
             sc_axis = 'axis0'
-        self.spincoater = SpinCoater(
-            gantry=self.gantry,
-            switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
-            sc_axis = sc_axis,
-            regular_bootup = regular_bootup
-        )
+        if self._fakeout:
+            self.spincoater = FakeSpinCoater(
+                gantry = self.gantry,
+                switch = self.switchbox.Switch((constants["spincoater"]["switchindex"]))
+            )
+        else:
+            self.spincoater = SpinCoater(
+                gantry=self.gantry,
+                switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
+                sc_axis = sc_axis,
+                regular_bootup = regular_bootup
+            )
 
         ### Workers to run tasks in parallel
         #### define either gantry_gripper or human_operator first:
@@ -232,7 +304,7 @@ class Maestro:
             self.workers["characterization"] = Worker_Characterization(maestro=self)
 
         self._load_calibrations()  # load coordinate calibrations for labware
-        self.__calibrate_time_to_nist()  # for sync with other hardware
+        
         # Status
         self.samples = {}
         self.tasks = []
@@ -372,7 +444,7 @@ class Maestro:
             if from_spincoater:
                 self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
 
-    def release(self):
+    def release(self, from_tray):
         """
         Open gripper slowly to release a sample without jogging position too much
         """
@@ -380,6 +452,12 @@ class Maestro:
             self.gripper.open(
                 self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE, slow=True
             )  # slow to prevent sample position shifting upon release
+            if from_tray: # move up a tiny amount in z to get claws unstuck from a sample tray
+                self.gantry.moverel(z = 0.15, zhop = False)
+                self.gripper.open(
+                    1.05*(self.SAMPLEWIDTH + self.SAMPLETOLERANCE_PLACE),
+                    slow = True
+                )
 
     def idle_gantry(self):
         """Move gantry to the idle position. This is primarily to provide cameras a clear view"""
@@ -451,7 +529,7 @@ class Maestro:
             self.catch(
                 from_spincoater=from_spincoater
             )  # pick up the sample. this function checks to see if gripper picks successfully
-
+            time.sleep(1)
             ### Code for drop check, currently not being used
             # self.gantry.moveto(
             #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
@@ -476,8 +554,9 @@ class Maestro:
                 )  # if not dropped, move to the final position
 
             # time.sleep(2)
-            self.release()  # drop the sample
-
+            to_tray = self._is_target_on_a_tray(p2)
+            self.release(from_tray = to_tray)  # drop the sample
+            time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
             )  # move up a bit, mostly to avoid resting gripper on hotplate
@@ -850,3 +929,44 @@ class Maestro:
         need_gantry = response in ["y", "Y"]
         return need_gantry, need_gantry
 
+    def _is_target_on_a_tray(self, p):
+        trays_to_calibrate = []
+        for trayname, trayobj in self.storage.items():
+            if not trayobj._Workspace.__calibrated:
+                trays_to_calibrate.append(trayname)
+        if len(trays_to_calibrate) != 0:
+            raise Exception(f"You must calibrate the following SampleTrays before you can move substrates on/off of them!\n\t{trays_to_calibrate}")
+        p = np.asarray(p)
+        if self.__tray_endpoints is None:
+            endpoints = {}
+            for tray in [1, 2]:
+                endpoints[f"Tray{tray}"] = {}
+                x = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                y = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                z = {
+                    "min": 10000,
+                    "max": 0,
+                }
+                for slot in ["A1", "A5", "I1", "I5"]:
+                    pos = self.storage[f"Tray{tray}"](slot)
+                    px, py, pz = tuple(pos)
+                    for axis, pdict, axlab in zip([px, py, pz], [x, y, z], ["x", "y", "z"]):
+                        if 0.95*axis < pdict["min"]:
+                            pdict["min"] = 0.95*axis
+                        if 1.05*axis > pdict["max"]:
+                            pdict["max"] = 1.05*axis
+                    endpoints[f"Tray{tray}"][axlab] = pdict
+        self.__tray_endpoints = endpoints
+        x, y, z = tuple(p)
+        to_tray = False
+        for tray in endpoints.keys():
+            if (x <= endpoints[tray]["x"]["max"]) and (x >= endpoints[tray]["x"]["min"]):
+                to_tray = True
+                break
+        return to_tray

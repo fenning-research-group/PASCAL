@@ -33,7 +33,8 @@ class WorkerTemplate(Worker_roboflo):
             self.working = False
             self.POLLINGRATE = 0.1  # seconds
 
-        super().__init__(name=name, capacity=capacity, initial_fill=initial_fill)
+        # super().__init__(name=name, capacity=capacity, initial_fill=initial_fill)
+        super().__init__(name=name, capacity=capacity)
 
     def prime(self, loop):
         asyncio.set_event_loop(loop)

@@ -113,7 +113,7 @@ for w1, w2 in itt.permutations(ALL_WORKERS.values(), 2):
 
 
 # default system
-def build(use_gantry):
+def build(use_gantry = True):
     return rf.System(
         workers=list(ALL_WORKERS.values()),
         transitions=transitions[use_gantry],

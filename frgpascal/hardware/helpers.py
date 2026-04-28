@@ -383,3 +383,12 @@ def get_ot2_ip():
     except Exception as e:
         print(f"Error retrieving IP address: {e}")
         return None
+    
+from PyQt5.QtWidgets import QApplication
+import sys
+
+def get_qapp():
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+    return app

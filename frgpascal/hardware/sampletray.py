@@ -3,6 +3,7 @@ import yaml
 from frgpascal.hardware.geometry import Workspace
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
+from typing import List
 
 MODULE_DIR = os.path.dirname(__file__)
 TRAY_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "sampletrays")
@@ -24,11 +25,14 @@ class SampleTray(Workspace):
         version,
         gantry: Gantry,
         gripper: Gripper,
+        testslots: List[str],
         p0=[0, 0, 0],
     ):
+        # print("Initializing SampleTray")
         constants, workspace_kwargs = self._load_version(version)
+        print(workspace_kwargs)
         super().__init__(
-            name=name, gantry=gantry, gripper=gripper, p0=p0, **workspace_kwargs
+            name=name, gantry=gantry, gripper=gripper, testslots = testslots, p0=p0, **workspace_kwargs
         )
 
         # only consider slots with blanks loaded
@@ -60,6 +64,7 @@ class Tray1(SampleTray):
     """Wrapper class with default arguments for Tray1"""
 
     def __init__(self, version="storage_v1", gantry=None, gripper=None, p0=[0, 0, 0]):
+        # print("Initializing Tray1")
         super().__init__(
             name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0
         )

@@ -1,13 +1,16 @@
-import serial
 import time
 import re
 import numpy as np
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QPushButton
 import PyQt5
+# from tenacity import retry
 import yaml
 import os
-
+import subprocess
+import serial
+import socket
+import select
 # from PyQt5.QtCore.Qt import AlignHCenter
 from functools import partial
 from frgpascal.hardware.helpers import get_port
@@ -19,7 +22,7 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 
 class Gantry:
-    def __init__(self, port=None):
+    def __init__(self, port=None, ip=None, duet_port=None):
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
@@ -27,11 +30,18 @@ class Gantry:
         else:
             self.port = port
             print(port, "else") ## added comment
+        if ip is None:
+            ip = constants["gantry"]["device_identifiers"]["duet_ip"]
+        if duet_port is None:
+            duet_port = constants["gantry"]["device_identifiers"]["duet_port"]
+        self.ip = ip
+        print(self.ip)
+        self.duet_port = duet_port
         self.POLLINGDELAY = constants["gantry"][
             "pollingrate"
         ]  # delay between sending a command and reading a response, in seconds
         self.inmotion = False
-
+        self._connected_network_devices = {}
         # gantry variables
         self.__OVERALL_LIMS = constants["gantry"][
             "overall_gantry_limits"
@@ -75,69 +85,170 @@ class Gantry:
         self.ZHOP_HEIGHT = constants["gantry"][
             "zhop_height"
         ]  # mm above endpoints to move to in between points
-
+        self.__done_connecting = False
         self.connect()  # connect by default
         self.in_use = True
         print("gantry connected")
 
     # communication methods
-    def connect(self):
-        self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+    def connect(self, response = None):
+        if response is None:
+            response = input("Is the Gantry using a Duet Board? (y/n)")
+            self._ethernet = response in ["y", "Y"]
+        if self._ethernet:
+            self.connect_ethernet()
+        elif not self._ethernet:
+            self.connect_usb()
         self.update()
-        # self.update_gripper()
         if self.position == [
             self.__OVERALL_LIMS["x_max"],
             self.__OVERALL_LIMS["y_max"],
             self.__OVERALL_LIMS["z_max"],
-        ]:  # this is what it shows when initially turned on, but not homed
+        ]:  # this is what is shows when initially turned on, but not homed
             self.position = [
                 None,
                 None,
-                None,
-            ]  # start at None's to indicate stage has not been homed.
-        # self.write('M92 X40.0 Y26.77 Z400.0')
+                None
+            ]
         self.set_defaults()
-        print("Connected to gantry")
+        print("Connected to Gantry")
+
+    def connect_usb(self):
+        self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
+
+    def ping_duet(self, ip = "192.168.0.11", port = "23", timeout = 1000):
+        """
+        Ping a duet at the given ip address over a websocket connection
+        """
+        try:
+            result = subprocess.run(
+                ["ping", "-n", "5", "-w", str(timeout), ip],
+                capture_output = True,
+                text = True
+            )
+            return "Reply from" in result.stdout
+        except Exception as e:
+            print(f"Ping error: {e}")
+            return False
+
+    def connect_ethernet(self):
+        # Have we connected to the Duet already
+        if self.ip in self._connected_network_devices:
+            print (self._connected_network_devices)
+            print(f"Duet at {self.ip} already connected.")
+            return self._connected_network_devices[self.ip]
+        # Can we talk with the Duet
+        # if not self.ping_duet(ip = self.ip):
+            # raise ValueError(f"Duet at {self.ip}:{self.duet_port} is not reachable (ping failed)!")
+        # open a TCP socket
+        try:
+            for port in ["23", self.duet_port, "21", "23", "80"]:
+                try:
+                    print(f"Trying to connect to Duet at {self.ip}:{port}...")
+                    self._handle = socket.create_connection((self.ip, port), timeout = 5)
+                    if port == "21":
+                        print(f"\tDuet connected over OTHER type connection")
+                    elif port == "23":
+                        print(f"\tDuet connected over TCP type connection")
+                    elif port == "80":
+                        print(f"\tDuet connected over HTTP type connection")
+                    self.duet_port = port
+                    break
+                except Exception as e:
+                    print(f"\tConnecting at {self.ip}:{port} failed\n\t{e}")
+            self._connected_network_devices[self.ip] = self._handle
+            print(f"Connected to Duet at {self.ip}:{port}")
+            self.__done_connecting = True
+        except Exception as e:
+            raise ValueError(f"Failed to connect to Duet at {self.ip}:{port}! \n{e}")
+    
+    # def send_gcode(self, command, homing = False):
+    #     """
+    #     Send a G-code command to the Duet over the given socket.
+    #     Return the response string.
+    #     """
+    #     if not self._handle:
+    #         raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+    #     self._handle.sendall((command + "\n").encode("utf-8"))
+    #     if homing:
+    #         self._handle.settimeout(None)
+    #         response = self._handle.recv(1024).decode("utf-8").strip()
+    #         self._handle.settimeout(30)
+    #     else:
+    #         reponse = self._handle.recv(1024).decode("utf-8").strip()
+    #     return response
+
+    def send_gcode(self, command, homing = False):
+        """
+        Send a G-code command to the Duet over the given socket.
+        Return the response string.
+        """
+        if not self._handle:
+            raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
+        # print("im still running")
+        self._handle.sendall((command + "\n").encode("utf-8"))
+        if not self.__done_connecting:
+            homing = False
+        if homing:
+            self._handle.settimeout(None)
+            response_0 = self._handle.recv(1024).decode("utf-8")
+            response = response_0.split()
+            self._handle.settimeout(30)
+        else:
+            response = self._handle.recv(1024).decode("utf-8").strip()
+            response_0 = None
+        return response_0, response
 
     def disconnect(self):
         self._handle.close()
         del self._handle
 
     def set_defaults(self):
-        self.write("M501")  # load defaults from EEPROM
-        self.write("G90")  # absolute coordinate system
-        # self.write(
-        #     "M92 X26.667 Y26.667 Z200.0"
-        # )  # set steps/mm, randomly resets to defaults sometimes idk why
-        # self.write(
-        #     "M92 X53.333 Y53.333 Z200.0"
-        # )  # set steps/mm, randomly resets to defaults sometimes idk why
-        self.write(
-            "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
-        )
-        self.write(
-            "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
-        )
-        self.write(
-            "M906 X800 Y800 Z800 E1"
-        )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
-        self.write(
-            "M84 S0"
-        )  # disable stepper timeout, steppers remain engaged all the time
-        self.write(
-            f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
-        )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
+        if self._ethernet:
+            self.write("M501")
+            self.write("G90")
+            # self.write(
+                # f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z{30}"
+            # )
+        else:
+            self.write("M501")  # load defaults from EEPROM
+            self.write("G90")  # absolute coordinate system
+            # self.write(
+            #     "M92 X26.667 Y26.667 Z200.0"
+            # )  # set steps/mm, randomly resets to defaults sometimes idk why
+            # self.write(
+            #     "M92 X53.333 Y53.333 Z200.0"
+            # )  # set steps/mm, randomly resets to defaults sometimes idk why
+            # self.write(
+            #     "M92 X79.5" # set steps/mm if using 2mm pitch belts on x-axis
+            # )
+            self.write(
+                "M92 X53" # set steps/mm if using 3mm pitch belts on x-axis
+            )
+            self.write(
+                "M906 X800 Y800 Z800 E1"
+            )  # set max stepper RMS currents (mA) per axis. E = extruder, unused to set low
+            self.write(
+                "M84 S0"
+            )  # disable stepper timeout, steppers remain engaged all the time
+            self.write(
+                f"M203 X{self.MAXSPEED} Y{self.MAXSPEED} Z20.00"
+            )  # set max speeds, steps/mm. Z is hardcoded, limited by lead screw hardware.
         self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
-        self._handle.write(f"{msg}\n".encode())
-        time.sleep(self.POLLINGDELAY)
-        output = []
-        while self._handle.in_waiting:
-            line = self._handle.readline().decode("utf-8").strip()
-            if line != "ok":
-                output.append(line)
+        # print("cool thing: {self._ethernet})")
+        if self._ethernet:
+            output = [self.send_gcode(msg, homing = True)]
+        else:
+            self._handle.write(f"{msg}\n".encode())
             time.sleep(self.POLLINGDELAY)
+            output = []
+            while self._handle.in_waiting:
+                line = self._handle.readline().decode("utf-8").strip()
+                if line != "ok":
+                    output.append(line)
+                time.sleep(self.POLLINGDELAY)
         return output
 
     def _enable_steppers(self):
@@ -147,10 +258,20 @@ class Gantry:
         self.write("M18")
 
     def update(self):
+        print("UPDATING:")
         found_coordinates = False
         while not found_coordinates:
             output = self.write("M114")  # get current position
+            print("\t", output)
+            print("\t", type(output))
+            print("\t", len(output))
+            output, output2 = output[0]
+            if output is None:
+                output = output2
+            if isinstance(output, str):
+                output = [output]
             for line in output:
+                print(line)
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     y = float(re.findall(r"Y:(\S*)", line)[0])
@@ -158,7 +279,8 @@ class Gantry:
                     found_coordinates = True
                     # print(f'Home is @ [{x}, {y}, {z}]')
                     break
-        self.position = [x, y, z]
+        self.position = [
+            round(x, 1), round(y,1), round(z,1)]
         self.__currentframe = self._target_frame(*self.position)
         print(f"\t\t{self.__currentframe}")
         if self._original_pascal:
@@ -265,6 +387,10 @@ class Gantry:
             y = self.position[1]
         if z is None:
             z = self.position[2]
+        print(f"Checking x: {x}, y: {y}, z: {z}")
+        # print(f"type of the y object: {type(y)}")
+        # if isinstance(y, float):
+            # y = round(y, 1)
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
@@ -322,6 +448,11 @@ class Gantry:
         except:
             pass
         if self._original_pascal:
+            # x = np.round(x, decimals = 1)
+            # y = np.round(y, decimals = 1)
+            # z = np.round(z, decimals = 1)
+            print(x, y, z)
+            x, y, z = self._transform_coordinates(x, y, z)
             x, y, z = self.premove(x, y, z) # will error out if invalid move
             if speed is None:
                 speed = self.speed
@@ -381,6 +512,9 @@ class Gantry:
         if self.position == [x, y, z]:
             return True  # already at target position
         else:
+            x = np.round(x, decimals = 1)
+            y = np.round(y, decimals = 1)
+            z = np.round(z, decimals = 1)
             self.__targetposition = [x, y, z]
             self.write(f"G0 X{x} Y{y} Z{z} F{speed}")
             if self._original_pascal:
@@ -402,47 +536,108 @@ class Gantry:
         z += self.position[2]
         self.moveto(x, y, z, zhop, speed)
 
-    def _waitformovement(self, m400=False):
+    def _ready_to_talk(self):
+        if self._ethernet:
+            return True
+        else:
+            return self._handle.in_waiting
+
+    def _waitformovement(self, m400 = False):
         """
-        confirm that gantry has reached target position. returns False if
-        target position is not reached in time allotted by self.GANTRYTIMEOUT
+        Confirm that gantry has reached target position. returns False if 
+        target position is not reached in time alloted by self.GANTRYTIMEOUT
+        
+        :param m400: bool, whether to wait for all current moves to finish 
+            before moving on.
         """
         self.inmotion = True
         start_time = time.time()
         time_elapsed = time.time() - start_time
         if self._original_pascal:
-            self._handle.write(f"M400\n".encode())
+            self.write("M400")
         else:
             if m400 is True:
-                self._handle.write(f"M400\n".encode())
-
-        self._handle.write(f"M118 E1 FinishedMoving\n".encode())
-
+                self.write("M400")
+        
+        if self._ethernet:
+            echo_command = 'M118 S"FinishedMoving"'
+            self._handle.sendall((echo_command + "\n").encode("utf-8"))
+        else:
+            echo_command = "M118 E1 FinishedMoving"
+            self._handle.write(echo_command)
+        
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
+            print("Are we there yet?")
             time.sleep(self.POLLINGDELAY)
-            while self._handle.in_waiting:
-                line = self._handle.readline().decode("utf-8").strip()
-                if line == "echo:FinishedMoving":
+            yapping = self._ready_to_talk()
+            while yapping:
+                print("Ready to talk")
+                if self._ethernet:
+                    self._handle.settimeout(None)
+                    line = self._handle.recv(1024).decode("utf-8").strip()
+                    # print(line)
+                else:
+                    line = self._handle.readline().decode("utf-8").strip()
+                done_move = "FinishedMoving" in line
+                yapping = self._ready_to_talk()
+                print(f"done_move: {done_move}")
+                if done_move:
+                    print(f"\tUpdating...")
                     self.update()
+                    print(f"\tUpdated!")
+                    print(f"self.position: {self.position}")
+                    print(f"self.__targetposition: {self.__targetposition}")
+                    print(0 == int(np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)])))
+                    print(0 == np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)]))
                     if (
                         np.linalg.norm(
                             [
                                 a - b
-                                for a, b in zip(self.position, self.__targetposition)
+                                for a, b in zip(
+                                    self.position,
+                                    self.__targetposition
+                                )
                             ]
-                        )
-                        < self.POSITIONTOLERANCE
+                        ) == 0
                     ):
                         reached_destination = True
-
+                        # yapping = False
+                        break
                 time.sleep(self.POLLINGDELAY)
-
         self.inmotion = ~reached_destination
         self.update()
 
         return reached_destination
+    
+    def _transform_coordinates(self, x: float, y: float, z: float):
+        """Map provided target position into discrete grid coordinates:
 
+        Parameters
+        ----------
+        x : float
+            target x_coordinate, in mm.
+        y : float
+            target y_coordinate, in mm.
+        z : float
+            target z_coordinate, in mm.
+
+        Returns
+        -------
+        Union[Tuple[int, int, int], List[int, int, int]]
+            The nearest grid coordinates for the target coordinates.
+        """
+        self.grid_spacing_x = 0.072
+        self.grid_spacing_y = 0.075
+        self.grid_spacing_z = 0.075
+        if x is not None:
+            x = int(round(x / self.grid_spacing_x)) * self.grid_spacing_x
+        if y is not None:
+            y = int(round(y / self.grid_spacing_y)) * self.grid_spacing_y
+        if z is not None:
+            z = int(round(z / self.grid_spacing_z)) * self.grid_spacing_z
+        return x, y, z
+    
     # GUI
     def gui(self):
         GantryGUI(gantry=self)  # opens blocking gui to manually jog motors

@@ -6,6 +6,17 @@ gantry:
     vid: 7855 #vendor id, converted from hex to integer. WINDOWS ONLY can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
     pid: 4 #product id, converted from hex to integer. WINDOWS ONLY. see link above
     location: "1-10" #WINDOWS
+    serial:
+      vid: 7855 #vendor id, converted from hex to integer. WINDOW ONLY. Can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
+      pid: 4 #product id, converted from hex to integer. WINDOW ONLY. see link above
+      location: "1-10" #WINDOWS ONLY
+      com_port: "COM72"
+    # duet_ip: 192.168.0.11
+    # duet_ip: 192.168.0.100 # JVBot PC
+    duet_ip: 169.254.0.100
+    # duet_ip: 169.254.0.100
+    duet_port: 255.255.255.0
+    # duet_port: 0.0.0.0
     # com_port: "COM72"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
@@ -15,34 +26,175 @@ gantry:
   speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
   speed_min: 500 #min gantry speed, mm/min
   zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
-  idle_coordinates: [192.25, 60, 95] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
-  clear_coordinates: [564.2, 254.3, 136.1] #coordinates to move the gantry out of the way for of glovebox operator
-  opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
-  opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
-  opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
+  idle_coordinates: [385, 140, 25] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+  clear_coordinates: [545, 270, 33] #coordinates to move the gantry out of the way for of glovebox operator
+  opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
+  opentrons_y: 165 #above this point, the gantry will collide with the opentrons trash deckslot 12
+  opentrons_x: 199 #below this point, the gantry will enter the opentrons frame
   overall_gantry_limits:
-    x_max: 567 #max x position (mm)
+    x_max: 553 #max x position (mm)
     x_min: 0 #min x position (mm)
-    y_max: 282.0 #max y position (mm)
+    y_max: 285 #187 #max y position (mm)
     y_min: 0 #min y position (mm)
-    z_max: 166.0 #max z position (mm)
+    z_max: 40.9 #41.0 #max z position (mm)
     z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
-    x_max: 567 #max x position (mm)
-    x_min: 192.25 #min x position (mm)
-    y_max: 282.0 #max y position (mm)
-    y_min: 0 #min y position (mm)
-    z_max: 166.0 #max z position (mm)
+    x_max: 553 #max x position (mm)
+    x_min: 199 #min x position (mm)
+    y_max: 285 #187 #max y position (mm)
+    y_min: 42 #min y position (mm)
+    z_max: 40.9 #max z position (mm)
     z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
-    x_max: 192.25
+    x_max: 196
     x_min: 0
-    y_max: 200.7
-    y_min: 2
-    z_max: 75
+    y_max: 165
+    y_min: 0
+    z_max: 21.5
     z_min: 0
+  grid_spacing:
+    x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
+    y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
+    z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-  transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
+  transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
+  transition_nudge: 10 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
+
+
+
+gantry_v2:
+  serial_connection: # Legacy BTT SKR Mini E3 V2.0 mode
+    # communication constants
+    device_identifiers:
+      vid: 7855 #vendor id, converted from hex to integer. WINDOW ONLY. Can be determined by https://interworks.com/blog/ijahanshahi/2014/07/18/identify-vid-pid-usb-device/
+      pid: 4 #product id, converted from hex to integer. WINDOW ONLY. see link above
+      location: "1-10" #WINDOWS ONLY
+      # com_port: "COM72"
+    pollingrate:  0.05  #delay (seconds) between sending a command and reading a response
+    timeout:  15 #max time (seconds) allotted to gantry motion before flagging a movement error
+    # movement constants
+    positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
+    speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
+    speed_min: 500 #min gantry speed, mm/min
+    zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+    idle_coordinates: [192.25, 60, 95] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+    clear_coordinates: [564.2, 254.3, 136.1] #coordinates to move the gantry out of the way for of glovebox operator
+    opentrons_z: 83 #above this point, the gantry will collide with the opentrons frame
+    opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
+    opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
+    overall_gantry_limits:
+      x_max: 567 #max x position (mm)
+      x_min: 0 #min x position (mm)
+      y_max: 282.0 #max y position (mm)
+      y_min: 0 #min y position (mm)
+      z_max: 166.0 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    workspace_limits: #gantry limits in workspace frame
+      x_max: 567 #max x position (mm)
+      x_min: 192.25 #min x position (mm)
+      y_max: 282.0 #max y position (mm)
+      y_min: 0 #min y position (mm)
+      z_max: 166.0 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    opentrons_limits: #gantry limits in opentrons frame
+      x_max: 192.25
+      x_min: 0
+      y_max: 200.7
+      y_min: 2
+      z_max: 75
+      z_min: 0
+    # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+    transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
+
+  socket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
+    #communication constants
+    device_identifiers:
+      # duet_ip: 192.168.0.11
+      ip: 169.254.0.100
+      # TODO: vid, pid, location, com_port?
+    pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
+    timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
+    # movement constants
+    positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
+    speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
+    speed_min: 500 #min gantry speed, mm/min
+    zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+    idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+    clear_coordinates: [545, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
+    opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
+    opentrons_y: 165 #above this point, the gantry will collide with the opentrons trash deckslot 12
+    opentrons_x: 199 #below this point, the gantry will enter the opentrons frame
+    overall_gantry_limits:
+      x_max: 553 #max x position (mm)
+      x_min: 0 #min x position (mm)
+      y_max: 285 #187 #max y position (mm)
+      y_min: 0 #min y position (mm)
+      z_max: 40.9 #41.0 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    workspace_limits: #gantry limits in workspace frame
+      x_max: 553 #max x position (mm)
+      x_min: 199 #min x position (mm)
+      y_max: 285 #187 #max y position (mm)
+      y_min: 42 #min y position (mm)
+      z_max: 40.9 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    opentrons_limits: #gantry limits in opentrons frame
+      x_max: 196
+      x_min: 0
+      y_max: 165
+      y_min: 0
+      z_max: 21.5
+      z_min: 0
+    grid_spacing:
+      x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
+      y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
+      z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
+    # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+    transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
+
+  websocket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
+    # communication constants
+    device_identifiers:
+      duet_ip: 192.168.0.100
+      #TODO: vid, pid, location, com_port?
+    pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
+    timeout: 15 #max time (seconds) allotted to gantry motion before flagging a movement error
+    # movement constants
+    positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
+    speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
+    speed_min: 500 #min gantry speed, mm/min
+    zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+    idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
+    clear_coordinates: [637, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
+    opentrons_z: 19 #above this point, the gantry will collide with the opentrons frame
+    opentrons_y: 50 #above this point, the gantry will collide with the opentrons frame
+    opentrons_x: 240 #below this point, the gantry will enter the opentrons frame
+    overall_gantry_limits:
+      x_max: 647 #max x position (mm)
+      x_min: 0 #min x position (mm)
+      y_max: 187 #max y position (mm)
+      y_min: 0 #min y position (mm)
+      z_max: 41 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    workspace_limits: #gantry limits in workspace frame
+      x_max: 647 #max x position (mm)
+      x_min: 240 #min x position (mm)
+      y_max: 187 #max y position (mm)
+      y_min: 28 #min y position (mm)
+      z_max: 41 #max z position (mm)
+      z_min: 0 #min z position (mm)
+    opentrons_limits: #gantry limits in opentrons frame
+      x_max: 230
+      x_min: 0
+      y_max: 50
+      y_min: 0
+      z_max: 19
+      z_min: 0
+    # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
+    transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
+    transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
 gripper:
   #communication
@@ -50,6 +202,8 @@ gripper:
     vid: 1027 #WINDOWS ONLY
     pid: 24597 #WINDOWS ONLY
     serial_number: "DN066QRWA"
+    # COM_Port: "COM5" # JVBot PC
+    COM_Port: "COM16"
   pollingrate: 0.05 #delay (seconds) between sending a command and reading a response
   timeout: 10 #max time (seconds) allotted to gripper motion before flagging a movement error
   width_max: 13 #maximum opening width (mm)
@@ -72,21 +226,25 @@ hotplates:
       pid: 24577
       serial_number: "AB0OYUYZA"
     address: 1 #rs485 address
-    p0: [214.4, 73.3, 69.0]
+    # p0: [250, 80, 21.0]
+    # p0: [241, 131.2, 19.6]
+    p0: [502.6, 138.0, 20.7]
   hp2:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKDA"
     address: 2
-    p0: [214.2, 216.3, 68.0]
+    # p0: [250, 100, 21.0]
+    p0: [502.6, 138.0, 20.7]
   hp3:
     device_identifiers:
       vid: 1027
       pid: 24577
       serial_number: "AB0OYQKPA"
     address: 3
-    p0: [367.2, 217.3, 65.0]
+    # p0: [300, 100, 21.0]
+    p0: [502.6, 138.0, 20.7]
 
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
@@ -111,8 +269,13 @@ liquidhandler:
     port: 8764
 
 sampletray:
-  p1: [494.0, 20.0, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
-  p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  # p1: [369.1, 77.6, 20.7]
+  p1: [502.6, 138.0, 20.7]
+  # p1: [494.0, 20.0, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  # p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
+  # p2: [528.0, 53.0, 5.0]
+  p2: [502.6, 138.0, 20.7]
+  # p2: [475.1, 77.6, 20.7]
 
 spincoater:
   # communication
@@ -124,7 +287,8 @@ spincoater:
   switchindex: "vacuumsolenoid" #key for switchbox relay that controls the vacuum solenoid (look at line ~32 in frgpascal.hardware.switchbox)
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
-  p0: [4.6, 16.0, 64] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  # p0: [4.6, 16.0, 64] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
+  p0: [502.6, 138.0, 20.7]
   rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 200 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
@@ -146,7 +310,8 @@ characterizationline:
     x_max: 1600.0 #max x positon (mm)
     x_min: 0 #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
-    p0: [563.5, 249.9, 76] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    # p0: [563.5, 249.9, 76] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
+    p0: [502.6, 138.0, 25]
     traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
       m: 0.0461
       b: 1.161

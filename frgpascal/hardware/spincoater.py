@@ -1,12 +1,22 @@
 import odrive  # odrive documentation https://docs.odriverobotics.com/
-from odrive.enums import *  # control/state enumerations
-import serial
+# from odrive.enums import *  # control/state enumerations
+from odrive.enums import (
+    AXIS_STATE_FULL_CALIBRATION_SEQUENCE,
+    AXIS_STATE_CLOSED_LOOP_CONTROL,
+    CONTROL_MODE_VELOCITY_CONTROL,
+    INPUT_MODE_VEL_RAMP,
+    INPUT_MODE_TRAP_TRAJ,
+    INPUT_MODE_POS_FILTER,
+    CONTROL_MODE_POSITION_CONTROL,
+    AXIS_STATE_IDLE,
+)
+# import serial
 import time
 import numpy as np
 import os
 import yaml
 import threading
-from frgpascal.hardware.helpers import get_port
+# from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.switchbox import SingleSwitch
 from datetime import datetime

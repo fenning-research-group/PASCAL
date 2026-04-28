@@ -1,31 +1,7 @@
 import serial
 import numpy as np
-
-# from pydlcp import errors
-import time
 import os
 import yaml
-import logging
-import configparser
-from typing import List
-from frgpascal.hardware.geometry import Workspace
-from frgpascal.hardware.gantry import Gantry
-from frgpascal.hardware.gripper import Gripper
-
-MODULE_DIR = os.path.dirname(__file__)
-HOTPLATE_VERSIONS_DIR = os.path.join(MODULE_DIR, "versions", "hotplates")
-AVAILABLE_VERSIONS = {
-    os.path.splitext(f)[0]: os.path.join(HOTPLATE_VERSIONS_DIR, f)
-    for f in os.listdir(HOTPLATE_VERSIONS_DIR)
-    if ".yaml" in f
-}
-
-from matplotlib.pyplot import hot
-import serial
-import numpy as np
-import os
-import yaml
-from typing import List
 from threading import Lock
 
 from frgpascal.hardware.geometry import Workspace
@@ -232,6 +208,7 @@ class HotPlate(Workspace):
         gripper: Gripper = None,
         id: int = None,
         p0=[None, None, None],
+        controller = None,
     ):
         constants, workspace_kwargs = self._load_version(version)
         super().__init__(
@@ -241,12 +218,14 @@ class HotPlate(Workspace):
             p0=p0,
             **workspace_kwargs,
         )
-        if id is not None:
+        if id is not None and controller is None:
             self.controller = Omega(id=id)
             self.controller._set_PIDchannel(
                 4
             )  # auto select PID settings based on setpoint
-
+        if id is not None and controller is not None:
+            self.controller = controller
+            self.controller._set_PIDchannel(4)
         xmean = np.mean([p[0] for p in self._coordinates.values()])
         ymean = np.mean([p[1] for p in self._coordinates.values()])
         self._centerproximity = {
