@@ -119,7 +119,7 @@ gantry_v2:
     positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
     speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
     speed_min: 500 #min gantry speed, mm/min
-    zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+    zhop_height: 1 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
     idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
     clear_coordinates: [545, 270, 33] #coordinates to move the gantry out of the way for of glovebox operator
     opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame

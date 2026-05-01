@@ -148,7 +148,7 @@ class NewCoordinateMapper2:
         goal[2] = self.zinterp(p[:2])
         return self.rbf(p[None, :])[0]
 
-def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5, sample_size: dict = "sample_10mm"):
+def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5, sample_size: str = "square_10mm"):
     """Prompts user to move gripper to target points on labware for calibration purposes.
 
     Parameters
@@ -443,6 +443,7 @@ class Workspace:
             self.testpoints,
             self.gantry,
             self.z_clearance,
+            sample_size= self._SAMPLESIZEOPTION
         )
         # TODO: Redefine pitch via self.transform.destination
         # grid_x = self.transform.destination[2, 0] / (self.gridsize[0] - 1)
