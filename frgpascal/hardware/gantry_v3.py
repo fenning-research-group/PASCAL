@@ -522,7 +522,10 @@ class NewGantry:
         # self._position = pos
         # self._controls.config.position = pos
         self._controls.position = pos
-
+        
+    @property 
+    def ZHOP_HEIGHT(self):
+        return self._controls.config.ZHOP_HEIGHT
     @property
     def min_step(self):
         return self._min_step

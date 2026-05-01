@@ -346,7 +346,7 @@ class Workspace:
         print("Initializing Workspace")
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
-        self._SAMPLESIZEOPT = sample_size
+        self._SAMPLESIZEOPTION = sample_size
         if gantry is None and gripper is None:
             self.__is_simulation = True
             self.p0 = np.array([0, 0, 0])

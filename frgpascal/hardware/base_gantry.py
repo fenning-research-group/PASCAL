@@ -64,7 +64,7 @@ class MotionConfig:
     # Motion Execution:
     MAXSPEED: float = 1
     MINSPEED: float = 1
-    ZHOP_HEIGHT: float = 1
+    ZHOP_HEIGHT: float = 5
     in_use: bool = True
     GANTRYTIMEOUT: float = 1
 
@@ -367,6 +367,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         if (x is None) and (y is None) and (z is None):
             raise TargetError()
         print(x, y, z)
+        print(f"\t{self.config.position}")
         # if len(x) == 3:
         x, y, z = self._transform_coordinates(x, y, z)
         x, y, z = self.premove(x, y, z)
@@ -385,6 +386,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                 x = self.config.position[0]
             if y is None:
                 y = self.config.position[1]
+            print(x, y, z)
             self._movecommand(x, y, z, speed)
     
     def movetoclear(self):

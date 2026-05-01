@@ -121,7 +121,7 @@ gantry_v2:
     speed_min: 500 #min gantry speed, mm/min
     zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
     idle_coordinates: [300, 100, 23] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
-    clear_coordinates: [545, 170, 33] #coordinates to move the gantry out of the way for of glovebox operator
+    clear_coordinates: [545, 270, 33] #coordinates to move the gantry out of the way for of glovebox operator
     opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
     opentrons_y: 165 #above this point, the gantry will collide with the opentrons trash deckslot 12
     opentrons_x: 199 #below this point, the gantry will enter the opentrons frame
@@ -228,7 +228,7 @@ hotplates:
     address: 1 #rs485 address
     # p0: [250, 80, 21.0]
     # p0: [241, 131.2, 19.6]
-    p0: [502.6, 138.0, 20.7]
+    p0: [218.6, 77.0, 22.0]
   hp2:
     device_identifiers:
       vid: 1027
@@ -236,7 +236,7 @@ hotplates:
       serial_number: "AB0OYQKDA"
     address: 2
     # p0: [250, 100, 21.0]
-    p0: [502.6, 138.0, 20.7]
+    p0: [218.6, 217.0, 22.0]
   hp3:
     device_identifiers:
       vid: 1027
@@ -244,7 +244,7 @@ hotplates:
       serial_number: "AB0OYQKPA"
     address: 3
     # p0: [300, 100, 21.0]
-    p0: [502.6, 138.0, 20.7]
+    p0: [372.6, 254.0, 22.0]
 
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
@@ -270,11 +270,11 @@ liquidhandler:
 
 sampletray:
   # p1: [369.1, 77.6, 20.7]
-  p1: [502.6, 138.0, 20.7]
+  p1: [502.6, 47.0, 22.0]
   # p1: [494.0, 20.0, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
   # p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
   # p2: [528.0, 53.0, 5.0]
-  p2: [502.6, 138.0, 20.7]
+  p2: [398.6, 47.0, 22.0]
   # p2: [475.1, 77.6, 20.7]
 
 spincoater:
