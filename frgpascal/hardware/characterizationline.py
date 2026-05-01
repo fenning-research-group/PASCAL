@@ -10,6 +10,11 @@ from tifffile import imwrite
 import csv
 import json
 
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
+
 from frgpascal.hardware.helpers import get_port
 from frgpascal.hardware.thorcam import Thorcam, ThorcamHost
 from frgpascal.hardware.spectrometer import Spectrometer
@@ -27,8 +32,8 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir, gantry, switchbox: Switchbox):
-        self.axis = CharacterizationAxis(gantry=gantry)
+    def __init__(self, rootdir, gantry, switchbox: Switchbox, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
+        self.axis = CharacterizationAxis(gantry=gantry, sample_size = sample_size)
         self.rootdir = rootdir
         #print(self.rootdir) ##added comment
         if not os.path.exists(self.rootdir):
@@ -161,7 +166,7 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self, gantry, port=None,
+        self, gantry, port=None, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]
     ):
         # communication variables
         if port is None:
@@ -174,6 +179,7 @@ class CharacterizationAxis:
         self.inmotion = False
 
         # characterizationline variables
+        self._SAMPLESIZEOPTION = sample_size
         self.XLIM = (
             constants["axis"]["x_min"],
             constants["axis"]["x_max"],
@@ -243,10 +249,14 @@ class CharacterizationAxis:
             self.coordinates = np.array(self.gantry.position)
             # self.gantry.moverel(z=10, zhop=False)
             self.__calibrated = True
+            with open(os.path.join(CALIBRATION_DIR, "characterizationaxis_calibration.yaml"), "r") as f:
+                old = yaml.safe_load(f)
+            old[self._SAMPLESIZEOPTION].update(self.coordinates)
             with open(
                 os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
             ) as f:
-                yaml.dump(self.coordinates.tolist(), f)
+                # yaml.dump(self.coordinates.tolist(), f)
+                yaml.dump(old)
         else:
             print("The Gantry is not being used in this PASCAL instance.")
 
@@ -254,7 +264,7 @@ class CharacterizationAxis:
         with open(
             os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "r"
         ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader)[self._SAMPLESIZEOPTION])
         self.__calibrated = True
 
     def set_defaults(self):

@@ -291,7 +291,7 @@ class Maestro:
                 switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
                 sc_axis = sc_axis,
                 regular_bootup = regular_bootup,
-                # sample_size = self.__sample_size_key,
+                sample_size = self.__sample_size_key,
             )
 
         ### Workers to run tasks in parallel
