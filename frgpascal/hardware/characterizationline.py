@@ -251,7 +251,7 @@ class CharacterizationAxis:
             self.__calibrated = True
             with open(os.path.join(CALIBRATION_DIR, "characterizationaxis_calibration.yaml"), "r") as f:
                 old = yaml.safe_load(f)
-            old[self._SAMPLESIZEOPTION].update(self.coordinates)
+            old[self._SAMPLESIZEOPTION] = self.coordinates.tolist()
             with open(
                 os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
             ) as f:

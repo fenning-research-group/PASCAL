@@ -176,7 +176,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     # communal methods, same across all inheritors
 
     def gohome(self):
-        self._comms.write("G28 X Y Z")
+        # self._comms.write("G28 X Y Z")
+        self._comms.write("G28 Z")
+        self._comms.write("G28 Y")
+        self._comms.write("G28 X")
         self.update()
         self.movetoclear()
     def _enable_steppers(self):

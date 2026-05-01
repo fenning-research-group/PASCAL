@@ -566,7 +566,7 @@ class Maestro:
                 lock_spincoater_thread.join()
                 self.spincoater.vacuum_on()
                 self.gantry.moveto(
-                    x=p2[0], y=p2[1], z=p2[2] - 0.4, zhop=False
+                    x=p2[0], y=p2[1], z=p2[2] - 0.05, zhop=False
                 )  # overshoot z to press sample onto o-ring on spincoater chuck
             else:
                 self.gantry.moveto(
@@ -1000,7 +1000,7 @@ class Maestro:
         size_dict = {
             "10mm x 10mm": "square_10mm",
             "17mm x 17mm": "square_17mm",
-            "25.3mm x 23.5mm": "square_25.3mm",
+            "25.3mm x 25.3mm": "square_25.3mm",
         }
         app = QApplication(sys.argv)
         items = tuple(size_dict.keys())

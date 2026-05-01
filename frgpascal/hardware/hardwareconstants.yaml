@@ -274,7 +274,7 @@ sampletray:
   # p1: [494.0, 20.0, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
   # p2: [409.1, 10.9, 80.0] #initial guess [x,y,z] coordinates for gantry to center over bottom left corner slot. Safer to overestimate z value here to avoid collisions
   # p2: [528.0, 53.0, 5.0]
-  p2: [398.6, 47.0, 22.0]
+  p2: [368.6, 47.0, 22.0]
   # p2: [475.1, 77.6, 20.7]
 
 spincoater:
@@ -288,7 +288,7 @@ spincoater:
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
   # p0: [4.6, 16.0, 64] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
-  p0: [502.6, 138.0, 20.7]
+  p0: [11.8, 21.5, 18.9]
   rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 200 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
