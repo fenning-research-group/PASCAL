@@ -4,6 +4,11 @@ import os
 import yaml
 from threading import Lock
 
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
+
 from frgpascal.hardware.geometry import Workspace
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gripper import Gripper
@@ -22,6 +27,13 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 def available_versions(self):
     return AVAILABLE_VERSIONS
+
+def get_sizekey(size_str):
+    if '.' in size_str:
+        bef, aft = size_str.split('.')
+        size_str = f"{bef}-{aft}"
+    return size_str
+
 
 
 class Omega:
@@ -209,8 +221,9 @@ class HotPlate(Workspace):
         id: int = None,
         p0=[None, None, None],
         controller = None,
+        sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"],
     ):
-        constants, workspace_kwargs = self._load_version(version)
+        constants, workspace_kwargs = self._load_version(version, sample_size = get_sizekey(size_str = sample_size))
         super().__init__(
             name=name,
             gantry=gantry,
@@ -295,13 +308,13 @@ class HotPlate(Workspace):
         self.emptyslots.append(slot)
         return sample
 
-    def _load_version(self, version):
+    def _load_version(self, version, sample_size):
         if version not in AVAILABLE_VERSIONS:
             raise Exception(
                 f'Invalid tray version "{version}".\n Available versions are: {list(AVAILABLE_VERSIONS.keys())}.'
             )
         with open(AVAILABLE_VERSIONS[version], "r") as f:
-            constants = yaml.load(f, Loader=yaml.FullLoader)
+            constants = yaml.load(f, Loader=yaml.FullLoader)[sample_size]
         workspace_kwargs = {
             "pitch": (constants["xpitch"], constants["ypitch"]),
             "gridsize": (constants["numx"], constants["numy"]),

@@ -556,7 +556,7 @@ class NewGantry:
         self._controls.movetoclear()
     def movetoidle(self):
         self._controls.movetoidle()
-    def moveto(self, x, y, z, zhop = True, speed = None):
+    def moveto(self, x: Union[List[float], float], y = None, z = None, zhop = True, speed = None):
         self._controls.moveto(x, y, z, zhop, speed)
     def premove(self, x, y, z, zhop = True):
         return self._controls.premove(x, y, z, zhop)

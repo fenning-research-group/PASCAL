@@ -14,6 +14,8 @@ from natsort import natsorted
 from tqdm import tqdm
 from warnings import warn
 
+from PyQt5.QtWidgets import QApplication, QMessageBox, QInputDialog
+
 from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gantry_v3 import SocketCommunicator, Duet3Mini5Plus_MotionControl, NewGantry
@@ -132,7 +134,8 @@ class Maestro:
         :param test_gantrygripper: Whether this instance of PASCAL should communicate with hotplates/spincoater/opentrons/characterization
         :type test_gantrygripper: bool
         """
-
+        # What sample size are we doing?
+        samplewidth, self.__sample_size_key = self._get_sample_size()
         # Constants
         self.logger = logging.getLogger("PASCAL")
         self.SAMPLEWIDTH = samplewidth  # mm
@@ -147,6 +150,7 @@ class Maestro:
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
         self._fakeout = test_gantrygripper
+        
         # Workers
         # self.gantry = Gantry(
         #     port = "5",
@@ -189,7 +193,8 @@ class Maestro:
                     gripper = self.gripper,
                     id = 1,
                     p0 = constants["hotplates"]["hp1"]["p0"],
-                    controller = FakeOmega(id = 1)
+                    controller = FakeOmega(id = 1),
+                    sample_size = sample_size_key,
                 ),
                 "Hotplate2": HotPlate(
                     name = "Hotplate2",
@@ -198,7 +203,8 @@ class Maestro:
                     gripper = self.gripper,
                     id = 2,
                     p0 = constants["hotplates"]["hp2"]["p0"],
-                    controller = FakeOmega(id = 2)
+                    controller = FakeOmega(id = 2),
+                    sample_size = sample_size_key,
                 ),
                 "Hotplate3": HotPlate(
                     name = "Hotplate3",
@@ -207,7 +213,8 @@ class Maestro:
                     gripper = self.gripper,
                     id = 3,
                     p0 = constants["hotplates"]["hp3"]["p0"],
-                    controller = FakeOmega(id = 3)
+                    controller = FakeOmega(id = 3),
+                    sample_size = sample_size_key,
                 ),
             }
         else:
@@ -219,6 +226,7 @@ class Maestro:
                     gripper=self.gripper,
                     id=1,
                     p0=constants["hotplates"]["hp1"]["p0"],
+                    sample_size = sample_size_key,
                 ),
                 "Hotplate2": HotPlate(
                     name="Hotplate2",
@@ -227,6 +235,7 @@ class Maestro:
                     gripper=self.gripper,
                     id=2,
                     p0=constants["hotplates"]["hp2"]["p0"],
+                    sample_size = sample_size_key,
                 ),
                 "Hotplate3": HotPlate(
                     name="Hotplate3",
@@ -235,6 +244,7 @@ class Maestro:
                     gripper=self.gripper,
                     id=3,
                     p0=constants["hotplates"]["hp3"]["p0"],
+                    sample_size = sample_size_key,
                     # testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 2, 3]]
                 ),
             }
@@ -245,6 +255,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
+                sample_size = sample_size_key,
                 testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
             "Tray2": SampleTray(
@@ -253,6 +264,7 @@ class Maestro:
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
+                sample_size = sample_size_key,
                 testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
         }
@@ -278,7 +290,8 @@ class Maestro:
                 gantry=self.gantry,
                 switch=self.switchbox.Switch(constants["spincoater"]["switchindex"]),
                 sc_axis = sc_axis,
-                regular_bootup = regular_bootup
+                regular_bootup = regular_bootup,
+                sample_size = sample_size_key,
             )
 
         ### Workers to run tasks in parallel
@@ -913,6 +926,7 @@ class Maestro:
                     gantry=self.gantry,
                     rootdir=ROOTDIR,
                     switchbox=self.switchbox,
+                    sample_size = self.__sample_size_key
                 )
             except:
                 print(
@@ -970,3 +984,28 @@ class Maestro:
                 to_tray = True
                 break
         return to_tray
+    
+    def _get_sample_size(self):
+        size_dict = {
+            "10mm x 10mm": "square_10mm",
+            "17mm x 17mm": "square_17mm",
+            "25.3mm x 23.5mm": "square_25.3mm",
+        }
+        app = QApplication(sys.argv)
+        items = tuple(size_dict.keys())
+        item, ok = QInputDialog.getItem(
+            None,
+            "Configuration",
+            "Select Substrate Sample Size",
+            items,
+            0,
+            False
+        )
+        if ok and item:
+            sizekey = size_dict[item]
+            size = float(sizekey.split('mm')[0].split('_')[-1].strip())
+            return size, sizekey
+        else:
+            print("Selection Failed. Defaulting to 10mm x 10mm.")
+            del app
+            return 10, "square_10mm"
