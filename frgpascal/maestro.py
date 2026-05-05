@@ -152,13 +152,13 @@ class Maestro:
         self._fakeout = test_gantrygripper
         
         # Workers
-        # self.gantry = Gantry(
-        #     port = "5",
-        # )
-        self.gantry = NewGantry(
-            communicator = SocketCommunicator,
-            controller = Duet3Mini5Plus_MotionControl,
+        self.gantry = Gantry(
+            port = "5",
         )
+        # self.gantry = NewGantry(
+        #     communicator = SocketCommunicator,
+        #     controller = Duet3Mini5Plus_MotionControl,
+        # )
         self.gripper = Gripper(
             constants["gripper"]["device_identifiers"]["COM_Port"]
         )
@@ -458,8 +458,8 @@ class Maestro:
                 raise ValueError("Failed to pick up sample!")
             if from_spincoater:
                 self.spincoater.idle()  # no need to hold chuck at registered position once sample is removed
-            print("++Brute force move up a little++")
-            self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
+            # print("++Brute force move up a little++")
+            # self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
     def release(self, from_tray):
         """
         Open gripper slowly to release a sample without jogging position too much
@@ -522,8 +522,8 @@ class Maestro:
             #     raise ValueError(f"This setting should not be used when the hotplate/spincoater are in use, it will mess up the timing of spincoat + anneal delays!\n\treset self._brute_force to be False, then try again.")
         if self.gantry.in_use and self.gripper.in_use:
             print(f'\ttransfering from {p1} to {p2}')
-            print("++Brute force move up a little to not crash++")
-            self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
+            # print("++Brute force move up a little to not crash++")
+            # self.gantry.moverel(z = self.gantry.ZHOP_HEIGHT)
             print("++m.open_to_catch++")
             self.open_to_catch()  # open the grippers
             if all(
@@ -537,6 +537,7 @@ class Maestro:
                 wait_for_vacuum_thread.start()  # wait for vacuum to disengage
                 lock_spincoater_thread.start()  # move the spincoater to registered position
                 print("++m.gantry.moveto(p1) p1: {p1}, zhop: True++")
+                self.gantry.moverel(z = 0.5, zhop = False) # Dodge the spincoater bowl
                 self.gantry.moveto(p1, zhop=True)  # move to the pickup position
                 wait_for_vacuum_thread.join()
                 lock_spincoater_thread.join()

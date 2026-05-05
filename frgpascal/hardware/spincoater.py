@@ -184,7 +184,7 @@ class SpinCoater:
             self.__calibrated = True
             with open(os.path.join(CALIBRATION_DIR, "spincoater_calibration.yaml"), "r") as f:
                 old = yaml.safe_load(f)
-            old[self._SAMPLESIZEOPTION] = self.coordinates.tolist()
+            old[self._SAMPLESIZEOPTION] = self.coordinates
             with open(
                 os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
             ) as f:

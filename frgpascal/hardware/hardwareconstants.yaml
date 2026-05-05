@@ -25,7 +25,7 @@ gantry:
   positiontolerance: 0.05 #tolerance (mm) for movements to be considered complete
   speed_max: 10000 #max gantry speed, mm/min, #20,000 if we want to be speedy
   speed_min: 500 #min gantry speed, mm/min
-  zhop_height: 10 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
+  zhop_height: 2.5 #vertical clearance (mm) to use when moving between two points. will move this amount above the highest z point
   idle_coordinates: [385, 140, 25] #coordinates to move the gantry to when idle mid-process, mainly to avoid cameras
   clear_coordinates: [545, 270, 33] #coordinates to move the gantry out of the way for of glovebox operator
   opentrons_z: 21.5 #above this point, the gantry will collide with the opentrons frame
@@ -40,24 +40,24 @@ gantry:
     z_min: 0 #min z position (mm)
   workspace_limits: #gantry limits in workspace frame
     x_max: 553 #max x position (mm)
-    x_min: 199 #min x position (mm)
+    x_min: 198 #min x position (mm)
     y_max: 285 #187 #max y position (mm)
     y_min: 42 #min y position (mm)
     z_max: 40.9 #max z position (mm)
     z_min: 0 #min z position (mm)
   opentrons_limits: #gantry limits in opentrons frame
-    x_max: 196
+    x_max: 198
     x_min: 0
     y_max: 165
     y_min: 0
-    z_max: 21.5
+    z_max: 21.56
     z_min: 0
   grid_spacing:
     x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
     y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
     z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
   # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-  transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
+  transition_coordinates: [198, 80, 21.3] #spincoater in deck slot 3
   transition_nudge: 10 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
 
@@ -83,28 +83,32 @@ gantry_v2:
     opentrons_y: 195.3 #above this point, the gantry will collide with the opentrons frame
     opentrons_x: 190.5 #below this point, the gantry will enter the opentrons frame
     overall_gantry_limits:
-      x_max: 567 #max x position (mm)
+      x_max: 553 #max x position (mm)
       x_min: 0 #min x position (mm)
-      y_max: 282.0 #max y position (mm)
+      y_max: 285 #187 #max y position (mm)
       y_min: 0 #min y position (mm)
-      z_max: 166.0 #max z position (mm)
+      z_max: 40.9 #41.0 #max z position (mm)
       z_min: 0 #min z position (mm)
     workspace_limits: #gantry limits in workspace frame
-      x_max: 567 #max x position (mm)
-      x_min: 192.25 #min x position (mm)
-      y_max: 282.0 #max y position (mm)
-      y_min: 0 #min y position (mm)
-      z_max: 166.0 #max z position (mm)
+      x_max: 553 #max x position (mm)
+      x_min: 198 #min x position (mm)
+      y_max: 285 #187 #max y position (mm)
+      y_min: 42 #min y position (mm)
+      z_max: 40.9 #max z position (mm)
       z_min: 0 #min z position (mm)
     opentrons_limits: #gantry limits in opentrons frame
-      x_max: 192.25
+      x_max: 198
       x_min: 0
-      y_max: 200.7
-      y_min: 2
-      z_max: 75
+      y_max: 165
+      y_min: 0
+      z_max: 21.5
       z_min: 0
+    grid_spacing:
+      x_axis: 0.072 #smallest discrete movement along x-axis (mm) Note: true minimum 0.012, this must be an integer multiple
+      y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
+      z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-    transition_coordinates: [192.25, 30, 75] #spincoater in deck slot 3
+    transition_coordinates: [198, 80, 21.3] #spincoater in deck slot 3
     transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
   socket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
@@ -134,13 +138,13 @@ gantry_v2:
       z_min: 0 #min z position (mm)
     workspace_limits: #gantry limits in workspace frame
       x_max: 553 #max x position (mm)
-      x_min: 199 #min x position (mm)
+      x_min: 198 #min x position (mm)
       y_max: 285 #187 #max y position (mm)
       y_min: 42 #min y position (mm)
       z_max: 40.9 #max z position (mm)
       z_min: 0 #min z position (mm)
     opentrons_limits: #gantry limits in opentrons frame
-      x_max: 196
+      x_max: 198
       x_min: 0
       y_max: 165
       y_min: 0
@@ -151,7 +155,7 @@ gantry_v2:
       y_axis: 0.075 #smallest discrete movement along y-axis (mm) Note: true minimum 0.01875, this must be an integer multiple
       z_axis: 0.075 #smallest discrete movement along z-axis (mm) Note: true minimum: 0.000625, this must be an integer multiple
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
-    transition_coordinates: [199, 80, 21.5] #spincoater in deck slot 3
+    transition_coordinates: [198, 80, 21.3] #spincoater in deck slot 3
     transition_nudge: 0.2 # distance in mm along x-axis to nudge the gantry when moving between workspace and OT2 frames
 
   websocket_connection: # Duet 3 Mini 5+ Ethernet + 2XD Expansion Board mode
@@ -190,7 +194,7 @@ gantry_v2:
       x_min: 0
       y_max: 50
       y_min: 0
-      z_max: 19
+      z_max: 21
       z_min: 0
     # transition_coordinates: [192.25, 195.3, 83] #coordinate to move to when transitioning between workspace and OT2 frames
     transition_coordinates: [240, 45, 19] #spincoater in deck slot 3
@@ -211,7 +215,7 @@ gripper:
   pwm_max: 780 ##1300 #pulse width (us) corresponding to maximum width
   pwm_min: 0  ##740 #pulse width (us) corresponding to minimum width
   extra_opening_width_pick: 2.3 #extra width (mm) to open gripper when moving to pick up a sample
-  extra_opening_width_place: 2.0 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
+  extra_opening_width_place: 2.3 #extra width (mm) to open gripper when placing a sample. should be less than on picking!
   # slow_movement_interval: 0.7 #time (s) between intermediate servo setpoints when opening/closing slowly
   slow_interval: 7 #rate (us pwm/ 10 ms) to open at during "slow" setting
   fast_interval: 50 #rate to open at during "fast" setting
@@ -288,7 +292,7 @@ spincoater:
   communication_interval: 0.1 #delay (seconds) between communication to the odrive
   # movement
   # p0: [4.6, 16.0, 64] #initial guess [x,y,z] coordinates for gantry to center over the chuck. Safer to overestimate z value here to avoid collisions
-  p0: [11.8, 21.5, 18.9]
+  p0: [11.8, 21.5, 19.3]
   rpm_max: 9000 #maximum angular velocity (rpm) the spincoater can hit
   rpm_min: 200 #minimum angular velocity (rpm) the spincoater can hit
   acceleration_max: 5000 #maximum angular acceleration (rpm/s) the spincoater can hit
