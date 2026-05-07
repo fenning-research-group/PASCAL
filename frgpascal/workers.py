@@ -320,7 +320,7 @@ class Worker_GantryGripper(WorkerTemplate):
         )
         p2 = self.storage[tray](slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, from_hotplate = True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_characterization(self, sample, details):
@@ -331,7 +331,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.characterization.axis()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, from_hotplate=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_spincoater(self, sample, details):
@@ -342,7 +342,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.spincoater()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, from_hotplate = True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def storage_to_spincoater(self, sample, details):
@@ -464,7 +464,10 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         )
         self.functions = {
             "spincoat": task_tuple(
-                function=self.spincoat, estimated_duration=None, other_workers=[]
+                function=self.spincoat, 
+                # estimated_duration=None, 
+                estimated_duration=160, 
+                other_workers=[]
             ),
             "mix": task_tuple(
                 function=self.mix, estimated_duration=None, other_workers=[]

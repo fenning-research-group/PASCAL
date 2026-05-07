@@ -489,7 +489,7 @@ class Maestro:
                 load = float(self.gripper._handle.readline())
             return load
 
-    def transfer(self, p1, p2, zhop=True, brute_force=False):
+    def transfer(self, p1, p2, zhop=True, brute_force=False, from_hotplate = False):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -551,6 +551,10 @@ class Maestro:
                 from_spincoater=from_spincoater
             )  # pick up the sample. this function checks to see if gripper picks successfully
             time.sleep(1)
+            # Are we on a hotplate?
+            # from_hotplate = self._is_target_on_a_hotplate(p1)
+            if from_hotplate:
+                self.gantry.moverel(y = 0.5, zhop = False)
             ### Code for drop check, currently not being used
             # self.gantry.moveto(
             #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
@@ -996,6 +1000,22 @@ class Maestro:
             print(e)
             to_tray = False
         return to_tray
+    
+    def _is_target_on_a_hotplate(self, p):
+        try:
+            from_hotplate = any(
+                [
+                    [
+                        p in pos for _, pos in {
+                            slot: hotplate.slot_coordinates(slot) for slot in hotplate.slots
+                        }.items()
+                    ]
+                    for _, hotplate in self.hotplates.items()
+                ]
+            )
+            return from_hotplate
+        except:
+            return False
     
     def _get_sample_size(self):
         size_dict = {
