@@ -133,6 +133,7 @@ class WorkerTemplate(Worker_roboflo):
             sample_task["start_actual"] = self.maestro.experiment_time
             function = self.functions[task["name"]].function
             details = sample_task.get("details", {})
+            details["task_id"] = task["id"]
             if asyncio.iscoroutinefunction(function):
                 self.logger.info(f"executing {task_description} as coroutine")
                 output_dict = await function(sample, details)
@@ -283,7 +284,7 @@ class Worker_GantryGripper(WorkerTemplate):
         slot = hotplate.get_open_slot()
         p2 = hotplate(slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
@@ -299,13 +300,13 @@ class Worker_GantryGripper(WorkerTemplate):
         )
         p2 = self.storage[tray](slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def spincoater_to_characterization(self, sample, details):
         p1 = self.spincoater()
         p2 = self.characterization.axis()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def hotplate_to_storage(self, sample, details):
         hotplate, hpslot = (
@@ -320,7 +321,7 @@ class Worker_GantryGripper(WorkerTemplate):
         )
         p2 = self.storage[tray](slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_characterization(self, sample, details):
@@ -331,7 +332,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.characterization.axis()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_spincoater(self, sample, details):
@@ -342,7 +343,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.hotplates[hotplate](hpslot)
         p2 = self.spincoater()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def storage_to_spincoater(self, sample, details):
@@ -353,7 +354,7 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.maestro.storage[tray](slot)
         p2 = self.maestro.spincoater()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     @_to_hotplate
     def storage_to_hotplate(self, sample, details):
@@ -368,7 +369,7 @@ class Worker_GantryGripper(WorkerTemplate):
         slot = hotplate.get_open_slot()
         p2 = hotplate(slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
@@ -384,13 +385,13 @@ class Worker_GantryGripper(WorkerTemplate):
         p1 = self.storage[tray](slot)
         p2 = self.characterization.axis()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def characterization_to_spincoater(self, sample, details):
         p1 = self.characterization.axis()
         p2 = self.spincoater()
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
@@ -401,7 +402,7 @@ class Worker_GantryGripper(WorkerTemplate):
         slot = hotplate.get_open_slot()
         p2 = hotplate(slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
@@ -417,7 +418,7 @@ class Worker_GantryGripper(WorkerTemplate):
         )
         p2 = self.storage[tray](slot)
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
 
 class Worker_Hotplate(WorkerTemplate):
@@ -1038,7 +1039,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
         f"\n\tFinal Position:\n\t\t{hotplate_name}, {slot}")
         
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
@@ -1058,7 +1059,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
         f"\n\tFinal Position:\n\t\t{tray}, {slot}")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def spincoater_to_characterization(self, sample, details):
         p1 = self.spincoater()
@@ -1068,7 +1069,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\tSpincoater Chuck" \
         f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def hotplate_to_storage(self, sample, details):
         hotplate, hpslot = (
@@ -1087,7 +1088,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
         f"\n\tFinal Position:\n\t\t{tray}, {slot}")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
     
     def hotplate_to_characterization(self, sample, details):
@@ -1102,7 +1103,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
         f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_spincoater(self, sample, details):
@@ -1117,7 +1118,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{hotplate}, {hpslot}" \
         f"\n\tFinal Position:\n\t\tSpincoater Chuck")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def storage_to_spincoater(self, sample, details):
@@ -1132,7 +1133,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
         f"\n\tFinal Position:\n\t\tSpincoater Chuck")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     @_to_hotplate
     def storage_to_hotplate(self, sample, details):
@@ -1151,7 +1152,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
         f"\n\tFinal Position:\n\t\t{hotplate_name}, {hpslot}")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(hpslot, sample)
         sample["hotplate_slot"] = {
@@ -1171,7 +1172,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\t{tray}, {slot}" \
         f"\n\tFinal Position:\n\t\tcl.axis() Diving Board")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def characterization_to_spincoater(self, sample, details):
         p1 = self.characterization.axis()
@@ -1181,7 +1182,7 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
         f"\n\tFinal Position:\n\t\tSpincoater Chuck")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
@@ -1194,7 +1195,7 @@ class Worker_HumanOperator(WorkerTemplate):
         print(f"Move the sample as follows:" \
         f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
         f"\n\tFinal Position:\n\t\t{hotplate_name}, {slot}")
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
         hotplate.load(slot, sample)
         sample["hotplate_slot"] = {
@@ -1213,4 +1214,4 @@ class Worker_HumanOperator(WorkerTemplate):
         f"\n\tInitial Position:\n\t\tcl.axis() Diving Board" \
         f"\n\tFinal Position:\n\t\t{tray}, {slot}")
 
-        self.maestro.transfer(p1, p2)
+        self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)

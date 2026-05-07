@@ -10,6 +10,8 @@ import asyncio
 import datetime
 import logging
 import numpy as np
+import cv2
+import h5py
 from natsort import natsorted
 from tqdm import tqdm
 from warnings import warn
@@ -18,6 +20,7 @@ from frgpascal.hardware.spincoater import SpinCoater
 from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.gantry_v3 import SocketCommunicator, Duet3Mini5Plus_MotionControl, NewGantry
 from frgpascal.hardware.gripper import Gripper
+from frgpascal.hardware.grippercamera import GripperCamera
 from frgpascal.hardware.liquidhandler import OT2
 from frgpascal.hardware.hotplate import HotPlate
 from frgpascal.hardware.sampletray import SampleTray
@@ -147,6 +150,11 @@ class Maestro:
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
         self._fakeout = test_gantrygripper
+
+        # ID is 0 by default and increments based on how many cameras are connected, i.e if it is the second 
+        # conencted camera then it should have an id of 1, etc. 
+        self.gripper_camera = GripperCamera(id = 0) 
+
         # Workers
         # self.gantry = Gantry(
         #     port = "5",
@@ -404,7 +412,7 @@ class Maestro:
     def open_to_pwm(self, pwm):
         if self.gripper.in_use:
             self.gripper.open_pwm(pwm)
-
+                
     def catch(self, from_spincoater=False):
         """
         Close gripper barely enough to pick up sample
@@ -413,7 +421,8 @@ class Maestro:
             caught_successfully = False
             catch_attempts = self.CATCHATTEMPTS
 
-            while not caught_successfully and catch_attempts > 0:
+            # basically always takes one attempt
+            while not caught_successfully and catch_attempts > 0: 
                 if from_spincoater or catch_attempts != self.CATCHATTEMPTS:
                     self.gripper.close(slow=True)
                 if from_spincoater and self.TWISTOFF:
@@ -473,7 +482,7 @@ class Maestro:
                 load = float(self.gripper._handle.readline())
             return load
 
-    def transfer(self, p1, p2, zhop=True, brute_force=False):
+    def transfer(self, p1, p2, sample=None, task_id=False, take_picture=True, zhop=True, brute_force=False):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -528,7 +537,20 @@ class Maestro:
 
             self.catch(
                 from_spincoater=from_spincoater
-            )  # pick up the sample. this function checks to see if gripper picks successfully
+            )  
+            # camera things
+            if take_picture:
+                meta = {
+                    "action": "catch",
+                    "sample": sample["name"], 
+                    "task_id": task_id,
+                    "timestamp": time.time()
+                }
+
+                img = self.gripper_camera.capture_image()
+                self.gripper_camera.log_capture(img, meta)
+            
+            # pick up the sample. this function checks to see if gripper picks successfully
             time.sleep(1)
             ### Code for drop check, currently not being used
             # self.gantry.moveto(
@@ -556,6 +578,17 @@ class Maestro:
             # time.sleep(2)
             to_tray = self._is_target_on_a_tray(p2)
             self.release(from_tray = to_tray)  # drop the sample
+            # camera things
+            if take_picture:
+                meta = {
+                    "action": "release",
+                    "sample": sample["name"], 
+                    "task_id": task_id,
+                    "timestamp": time.time()
+                }
+
+                img = self.gripper_camera.capture_image()
+                self.gripper_camera.log_capture(img, meta)
             time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
@@ -804,6 +837,8 @@ class Maestro:
 
         for worker in self.workers.values():
             worker.start()
+
+        self.gripper_camera.archive_production_batch(filepath)
 
     def stop(self):
         print('Beginning to stop PASCAL')
