@@ -24,8 +24,7 @@ class GripperCamera:
         self.id = id
         self.handle = None
         self.batch_id = 0
-        self.batch_size = 10
-        self.file_path = "gripper_camera_default.h5"
+        self.base_dir = None
         
         # In-memory storage for the current 'hot' batch
         self._current_images = []
@@ -68,57 +67,60 @@ class GripperCamera:
                     
         return False # No sample detected
 
+    # TODO: Implement sample detection
     def log_capture(self, image: np.ndarray, metadata: dict):
         """Adds a processed image, a raw image, and metadata to the current batch."""
         self._current_images.append(image)
         self._raw_images.append(image)  
         self._current_meta.append(metadata)
 
-        # If the batch is full, automatically flush it to disk
-        if len(self._current_images) >= self.batch_size:
-            self.archive_production_batch()
 
-    def archive_production_batch(self, filepath=None):
-        """Saves the current memory buffer to HDF5 and clears it."""
+    def archive_production_batch(self):
+        """Saves the current memory buffer to structured sample folders and clears it."""
         if len(self._current_images) == 0:
             return # Nothing to save
 
-        if filepath is None:
-            filepath = self.file_path
+        if self.base_dir is None:
+            print("base_dir is not set, skipping archive.")
+            return
 
-        # Convert list of images to 4D numpy arrays (N, H, W, C)
-        images_array = np.array(self._current_images)
-        raw_images_array = np.array(self._raw_images)
+        for i in range(len(self._current_images)):
+            img = self._current_images[i]
+            meta = self._current_meta[i]
 
-        # Create a batch-level metadata context
-        batch_meta = {
-            "timestamp_saved": time.time(),
-            "batch_size": len(self._current_images)
-        }
+            sample_name = meta.get("sample", "unknown_sample")
+            task_id = meta.get("task_id", f"unknown_task_{time.time()}")
+            action = meta.get("action", "unknown_action")
 
-        # Call HDF5 saving logic
-        with h5py.File(filepath, 'a') as f:
-            # Create a group for the batch
-            grp = f.create_group(f"batch_{self.batch_id}")
-            
-            # Batch-level info (Global context)
-            for k, v in batch_meta.items():
-                grp.attrs[k] = v
+            filename = f"{task_id}_{action}.png"
+
+            # Ensure sample transfer directory exists
+            sample_dir = os.path.join(self.base_dir, sample_name)
+            transfers_dir = os.path.join(sample_dir, "transfers")
+            os.makedirs(transfers_dir, exist_ok=True)
+
+            # Convert RGB back to BGR for OpenCV saving
+            img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+            # Save PNG
+            cv2.imwrite(os.path.join(transfers_dir, filename), img_bgr)
+
+            # Save Metadata to HDF5
+            h5_path = os.path.join(sample_dir, f"{sample_name}.h5")
+            with h5py.File(h5_path, 'a') as f:
+                group_name = f"{task_id}_{action}"
+                if group_name in f:
+                    grp = f[group_name]
+                else:
+                    grp = f.create_group(group_name)
                 
-            # Processed Images
-            grp.create_dataset('images', data=images_array, compression="lzf")  # Fixed variable name
-            
-            # Raw Images (Added this dataset)
-            grp.create_dataset('raw_images', data=raw_images_array, compression="lzf")
-            
-            # Per-image metadata
-            meta_json_btns = np.array([json.dumps(m).encode('utf-8') for m in self._current_meta])  # Fixed variable name
-            grp.create_dataset('meta', data=meta_json_btns)
+                for k, v in meta.items():
+                    grp.attrs[k] = v
 
-        print(f"Batch {self.batch_id} saved to {filepath}")
+        print(f"Batch {self.batch_id} saved to {self.base_dir}")
 
-        # Reset memory and increment batch ID
+        # Reset memory
         self._current_images = []
-        self._raw_images = []  # Reset raw images memory buffer
+        self._raw_images = []
         self._current_meta = []
         self.batch_id += 1

@@ -839,8 +839,7 @@ class Maestro:
 
         if self.gantry.in_use and self.gripper.in_use:
             self.gripper_camera.connect()
-            # TODO: Finalize saving structure for camera batches
-            self.gripper_camera.file_path = os.path.join(self.experiment_folder, "camera_batch.h5")
+            self.gripper_camera.base_dir = os.path.join(self.experiment_folder, "gripper_camera_pictures")
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
