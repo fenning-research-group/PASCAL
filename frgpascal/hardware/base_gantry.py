@@ -64,7 +64,7 @@ class MotionConfig:
     # Motion Execution:
     MAXSPEED: float = 1
     MINSPEED: float = 1
-    ZHOP_HEIGHT: float = 1
+    ZHOP_HEIGHT: float = 5
     in_use: bool = True
     GANTRYTIMEOUT: float = 1
 
@@ -176,7 +176,10 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
     # communal methods, same across all inheritors
 
     def gohome(self):
-        self._comms.write("G28 X Y Z")
+        # self._comms.write("G28 X Y Z")
+        self._comms.write("G28 Z")
+        self._comms.write("G28 Y")
+        self._comms.write("G28 X")
         self.update()
         self.movetoclear()
     def _enable_steppers(self):
@@ -207,14 +210,33 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         Set[Frames]
             name of frame. if none, returns "invalid".
         """
+        x, y, z = tuple(position)
+        if x is None:
+            x = self.position[0]
+        if y is None:
+            y = self.position[1]
+        if z is None:
+            z = self.position[2]
         for frame, lims in self.config._FRAMES.items():
             print(f"\tchecking frame {frame}")
-            for idx, coord in enumerate(["x", "y", "z"]):
-                v = position[idx]
-                if v is not None:
-                    if (v < lims[f"{coord}_min"]) or (v > lims[f"{coord}_max"]):
-                        print(f"\t\t{v} is outside bounds of {coord}-axis!")
-                        continue
+            # for idx, coord in enumerate(["x", "y", "z"]):
+            #     v = position[idx]
+            #     if v is not None:
+            #         if (v < lims[f"{coord}_min"]) or (v > lims[f"{coord}_max"]):
+            #             print(f"\t\t{v} is outside bounds of {coord}-axis!")
+            #             continue
+            #     continue
+            print(f"\tchecking frame {frame}")
+            if x < lims["x_min"] or x > lims["x_max"]:
+                print(f"\t\t{x} is outside bounds")
+                continue
+            if y < lims["y_min"] or y > lims["y_max"]:
+                print(f"\t\t{y} is outside bounds")
+                continue
+            if z < lims["z_min"] or z > lims["z_max"]:
+                print(f"\t\t{z} is outside bounds")
+                continue
+            print(f"\tthe position [{x}, {y}, {z}] is inside of frame {frame}")
             print(f"\t\tThe position {position} is inside of frame {frame}")
             return frame
         return "invalid"
@@ -367,6 +389,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         if (x is None) and (y is None) and (z is None):
             raise TargetError()
         print(x, y, z)
+        print(f"\t{self.config.position}")
         # if len(x) == 3:
         x, y, z = self._transform_coordinates(x, y, z)
         x, y, z = self.premove(x, y, z)
@@ -385,6 +408,7 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
                 x = self.config.position[0]
             if y is None:
                 y = self.config.position[1]
+            print(x, y, z)
             self._movecommand(x, y, z, speed)
     
     def movetoclear(self):
@@ -419,6 +443,11 @@ class BaseMotionControl(ABC, Generic[ConfigVar]):
         x += self.config.position[0]
         y += self.config.position[1]
         z += self.config.position[2]
+        # check we don't go too far up in z with a moverel command:
+        # occurs when moving away from spincoater
+        max_z = self.config._FRAMES[self.config._currentframe]["z_max"]
+        z_ceil = min(max_z, z)
+        z = z_ceil
         print(x, self.config.position[0])
         self.moveto(x, y, z, zhop, speed)
     

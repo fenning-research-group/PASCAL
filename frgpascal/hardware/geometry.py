@@ -148,7 +148,7 @@ class NewCoordinateMapper2:
         goal[2] = self.zinterp(p[:2])
         return self.rbf(p[None, :])[0]
 
-def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
+def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5, sample_size: str = "square_10mm"):
     """Prompts user to move gripper to target points on labware for calibration purposes.
 
     Parameters
@@ -164,7 +164,8 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
         The gantry hardware used to move the grippers along the X, Y, Z axes.
     z_clearance : int, optional
         Vertical offset (mm) from points to start at to prevent collision by initial misalignment, defaults to 5.
-
+    sample_size : str, optional
+        The sample shape identifier string matching one of the presets within the calibrations yaml files.
     Returns
     -------
     `frgpascal.hardware.geometry.CoordinateMapper`
@@ -189,15 +190,19 @@ def map_coordinates(name, slots, points, gantry: Gantry, z_clearance=5):
         p_prev = p
 
     # save calibration
-    with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
-        out = {
+    with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "r") as f:
+        old = yaml.safe_load(f)
+    out = {
             "p0": points_source_meas,
             "p1": np.asarray(points)
             .astype(float)
             .round(2)
             .tolist(),  # rounding error bs
         }
-        yaml.dump(out, f)
+    old[sample_size].update(out)
+    with open(os.path.join(CALIBRATION_DIR, f"{name}_calibration.yaml"), "w") as f:
+        
+        yaml.dump(old, f)
     # return AffineCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
     # return CoordinateMapper(p0=points_source_meas, p1=points)
     # return NonlinearCoordinateMapper(p_ideal=points, p_measured=points_source_meas)
@@ -336,10 +341,12 @@ class Workspace:
         testslots=None,
         z_clearance: float = 5,
         openwidth: float = 12,
+        sample_size: str = "square_10mm",
     ):
         print("Initializing Workspace")
         self.__calibrated = False  # set to True after calibration routine has been run
         self.name = name
+        self._SAMPLESIZEOPTION = sample_size
         if gantry is None and gripper is None:
             self.__is_simulation = True
             self.p0 = np.array([0, 0, 0])
@@ -436,6 +443,7 @@ class Workspace:
             self.testpoints,
             self.gantry,
             self.z_clearance,
+            sample_size= self._SAMPLESIZEOPTION
         )
         # TODO: Redefine pitch via self.transform.destination
         # grid_x = self.transform.destination[2, 0] / (self.gridsize[0] - 1)
@@ -461,7 +469,7 @@ class Workspace:
         with open(
             os.path.join(CALIBRATION_DIR, f"{self.name}_calibration.yaml"), "r"
         ) as f:
-            pts = yaml.load(f, Loader=yaml.FullLoader)
+            pts = yaml.load(f, Loader=yaml.FullLoader)[self._SAMPLESIZEOPTION]
         # self.transform = CoordinateMapper(p0=pts["p0"], p1=pts["p1"])
         # self.transform = NewCoordinateMapper(p0=pts["p0"], p1=pts["p1"])
         self.transform = NewCoordinateMapper2(p0=pts["p0"], p1=pts["p1"])

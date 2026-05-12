@@ -21,6 +21,11 @@ from frgpascal.hardware.gantry import Gantry
 from frgpascal.hardware.switchbox import SingleSwitch
 from datetime import datetime
 
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
+
 MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
@@ -29,10 +34,21 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
 
 # spincoater_serial_number = constants["spincoater"]["serialid"]
 # print(constants["spincoater"])
-
+def get_sizekey(size_str):
+    if '.' in size_str:
+        bef, aft = size_str.split('.')
+        size_str = f"{bef}-{aft}"
+    return size_str
 
 class SpinCoater:
-    def __init__(self, gantry: Gantry, switch: SingleSwitch, sc_axis = 'axis0', regular_bootup = True):
+    def __init__(
+            self, 
+            gantry: Gantry, 
+            switch: SingleSwitch, 
+            sc_axis = 'axis0', 
+            regular_bootup = True,
+            sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]
+            ):
         """Initialize the spincoater control object
 
         Args:
@@ -41,6 +57,7 @@ class SpinCoater:
                                         p0 (tuple, optional): Initial guess for gantry coordinates to sample on spincoater. Defaults to (52, 126, 36):tuple.
         """
         # constants
+        self._SAMPLESIZEOPTION = sample_size
         # if port is None:
         #     self.port = get_port(
         #         constants["spincoater"]["device_identifiers"]
@@ -77,7 +94,7 @@ class SpinCoater:
             "vacuum_disengagement_time"
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
-        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
+        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 0.05]
         self.connect(sc_axis = sc_axis, regular_bootup = regular_bootup)
         self._current_rps = 0
 
@@ -165,16 +182,22 @@ class SpinCoater:
             self.coordinates = self.gantry.position
             # self.gantry.moverel(z=10, zhop=False)
             self.__calibrated = True
+            with open(os.path.join(CALIBRATION_DIR, "spincoater_calibration.yaml"), "r") as f:
+                old = yaml.safe_load(f)
+            old[self._SAMPLESIZEOPTION] = self.coordinates
             with open(
                 os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "w"
             ) as f:
-                yaml.dump(self.coordinates, f)
+                yaml.dump(old, f)
 
     def _load_calibration(self):
-        with open(
-            os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
-        ) as f:
-            self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
+        with open(os.path.join(CALIBRATION_DIR, "spincoater_calibration.yaml"), "r") as f:
+            old = yaml.safe_load(f)
+        self.coordinates = np.array(old[self._SAMPLESIZEOPTION])
+        # with open(
+        #     os.path.join(CALIBRATION_DIR, f"spincoater_calibration.yaml"), "r"
+        # ) as f:
+        #     self.coordinates = np.array(yaml.load(f, Loader=yaml.FullLoader))
         self.__calibrated = True
 
     def __call__(self):

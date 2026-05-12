@@ -1,11 +1,27 @@
-## 3D printed storage plate version 2, Duet Gantry coordinate basis now
-# vertical gripping orientation
-
-
-samplewidth: 10   #intended sample width (mm)
-openwidth: 12     #max gripper opening width (mm) that can reach into tray slots
-xpitch: 13.5        #horizontal center-center distance (mm) between adjacent slots
-ypitch: 16.04        #vertical center-center distance (mm) between adjacent slots
-numx: 5           #number of slot columns
-numy: 9           #number of slot rows
-z_clearance: 5    #extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
+square_10mm:
+  samplewidth: 10   # intended sample width (mm)
+  openwidth: 12     # max gripper opening width (mm) that can reach into tray slots
+  xpitch: 13.5      # horizontal center-center distance (mm) between adjacent slots
+  ypitch: 16.04     # vertical center-center distance (mm) between adjacent slots
+  numx: 5           # number of slot columns
+  numy: 9           # number of slot rows
+  z_clearance: 3    # extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
+  testslots: ['I1', 'I3', 'I5', 'G1', 'G3', 'G5', 'E1', 'E3', 'E5', 'C1', 'C3', 'C5', 'A1', 'A3', 'A5'] # slots to touch during calibration
+square_17mm:
+  samplewidth: 17   # intended sample width (mm)
+  openwidth: 19     # max gripper opening width (mm) that can reach into tray slots
+  xpitch: 20.5      # horizontal center-center distance (mm) between adjacent slots
+  ypitch: 22.65     # vertical center-center distance (mm) between adjacent slots
+  numx: 3           # number of slot columns
+  numy: 6           # number of slot rows
+  z_clearance: 3    # extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
+  testslots: ['F1', 'F3', 'E2', 'D1', 'D3', 'C2', 'B1', 'B3', 'A1', 'A3'] # slots to touch during calibration
+square_25-3mm:
+  samplewidth: 25.3   # intended sample width (mm)
+  openwidth: 27.3     # max gripper opening width (mm) that can reach into tray slots
+  xpitch: 27.5      # horizontal center-center distance (mm) between adjacent slots
+  ypitch: 30.3     # vertical center-center distance (mm) between adjacent slots
+  numx: 3           # number of slot columns
+  numy: 5           # number of slot rows
+  z_clearance: 2    # extra z clearance for gantry to use when calibrating slot positions. should be > slot depth
+  testslots: ['E1', 'E3', 'D2', 'C1', 'C3', 'B2', 'A1', 'A3'] # slots to touch during calibration
