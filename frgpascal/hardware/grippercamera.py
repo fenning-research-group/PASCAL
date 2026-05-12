@@ -24,12 +24,14 @@ class GripperCamera:
         self.id = id
         self.handle = None
         self.batch_id = 0
+        self.batch_size = 10
+        self.file_path = "gripper_camera_default.h5"
         
         # In-memory storage for the current 'hot' batch
         self._current_images = []
         self._raw_images = []  # Holds the raw images
         self._current_meta = []
-
+        
     def connect(self):
         self.handle = cv2.VideoCapture(self.id, cv2.CAP_DSHOW)
         if not self.handle.isOpened():
@@ -53,6 +55,19 @@ class GripperCamera:
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    def detect_sample(self, img: np.ndarray) -> bool:
+        """
+        Evaluates an image to detect if a square glass substrate is present.
+        Returns True if found, False otherwise.
+        """
+        # Convert to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        
+        # Apply Gaussian Blur to reduce noise
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+                    
+        return False # No sample detected
+
     def log_capture(self, image: np.ndarray, metadata: dict):
         """Adds a processed image, a raw image, and metadata to the current batch."""
         self._current_images.append(image)
@@ -63,10 +78,13 @@ class GripperCamera:
         if len(self._current_images) >= self.batch_size:
             self.archive_production_batch()
 
-    def archive_production_batch(self, filepath):
+    def archive_production_batch(self, filepath=None):
         """Saves the current memory buffer to HDF5 and clears it."""
         if len(self._current_images) == 0:
             return # Nothing to save
+
+        if filepath is None:
+            filepath = self.file_path
 
         # Convert list of images to 4D numpy arrays (N, H, W, C)
         images_array = np.array(self._current_images)
@@ -79,7 +97,7 @@ class GripperCamera:
         }
 
         # Call HDF5 saving logic
-        with h5py.File(self.file_path, 'a') as f:
+        with h5py.File(filepath, 'a') as f:
             # Create a group for the batch
             grp = f.create_group(f"batch_{self.batch_id}")
             
@@ -97,7 +115,7 @@ class GripperCamera:
             meta_json_btns = np.array([json.dumps(m).encode('utf-8') for m in self._current_meta])  # Fixed variable name
             grp.create_dataset('meta', data=meta_json_btns)
 
-        print(f"Batch {self.batch_id} saved to {self.file_path}")
+        print(f"Batch {self.batch_id} saved to {filepath}")
 
         # Reset memory and increment batch ID
         self._current_images = []

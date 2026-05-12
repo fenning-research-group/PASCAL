@@ -482,7 +482,7 @@ class Maestro:
                 load = float(self.gripper._handle.readline())
             return load
 
-    def transfer(self, p1, p2, sample=None, task_id=False, take_picture=True, zhop=True, brute_force=False):
+    def transfer(self, p1, p2, zhop=True, brute_force=False, capture_metadata=None):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -539,16 +539,23 @@ class Maestro:
                 from_spincoater=from_spincoater
             )  
             # camera things
-            if take_picture:
-                meta = {
+            if capture_metadata is not None:
+                meta = capture_metadata.copy()
+                meta.update({
                     "action": "catch",
-                    "sample": sample["name"], 
-                    "task_id": task_id,
                     "timestamp": time.time()
-                }
-
+                })
                 img = self.gripper_camera.capture_image()
+                
+                # Verify Pick
+                sample_present = self.gripper_camera.detect_sample(img)
+                meta["sample_present"] = sample_present
                 self.gripper_camera.log_capture(img, meta)
+                
+                if not sample_present:
+                    self.gripper.close()
+                    self.idle_gantry()
+                    raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
             
             # pick up the sample. this function checks to see if gripper picks successfully
             time.sleep(1)
@@ -579,16 +586,23 @@ class Maestro:
             to_tray = self._is_target_on_a_tray(p2)
             self.release(from_tray = to_tray)  # drop the sample
             # camera things
-            if take_picture:
-                meta = {
+            if capture_metadata is not None:
+                meta = capture_metadata.copy()
+                meta.update({
                     "action": "release",
-                    "sample": sample["name"], 
-                    "task_id": task_id,
                     "timestamp": time.time()
-                }
-
+                })
                 img = self.gripper_camera.capture_image()
+                
+                # Verify Place
+                sample_present = self.gripper_camera.detect_sample(img)
+                meta["sample_present"] = sample_present
                 self.gripper_camera.log_capture(img, meta)
+                
+                if sample_present:
+                    self.gripper.close()
+                    self.idle_gantry()
+                    raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
             time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
@@ -823,6 +837,11 @@ class Maestro:
         self._start_loop()
         self.t0 = self.nist_time
 
+        if self.gantry.in_use and self.gripper.in_use:
+            self.gripper_camera.connect()
+            # TODO: Finalize saving structure for camera batches
+            self.gripper_camera.file_path = os.path.join(self.experiment_folder, "camera_batch.h5")
+
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
         for task in self.tasks:
@@ -838,7 +857,8 @@ class Maestro:
         for worker in self.workers.values():
             worker.start()
 
-        self.gripper_camera.archive_production_batch(filepath)
+        if self.gantry.in_use and self.gripper.in_use:
+            self.gripper_camera.archive_production_batch()
 
     def stop(self):
         print('Beginning to stop PASCAL')
@@ -879,6 +899,8 @@ class Maestro:
         print("Maestro stopped!")
         if self.gantry.in_use and self.gripper.in_use:
             self.gantry.movetoclear()
+            if self.gripper_camera.handle is not None:
+                self.gripper_camera.disconnect()
         # self.thread.join()
 
     def __del__(self):
