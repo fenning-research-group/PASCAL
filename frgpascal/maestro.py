@@ -573,10 +573,10 @@ class Maestro:
                 meta["sample_present"] = sample_present
                 self.gripper_camera.log_capture(img, meta)
                 
-                if not sample_present:
-                    self.gripper.close()
-                    self.idle_gantry()
-                    raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
+                #if not sample_present:
+                #    self.gripper.close()
+                 #   self.idle_gantry()
+                 #   raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
             
             # pick up the sample. this function checks to see if gripper picks successfully
             time.sleep(1)
@@ -626,10 +626,10 @@ class Maestro:
                 meta["sample_present"] = sample_present
                 self.gripper_camera.log_capture(img, meta)
                 
-                if sample_present:
-                    self.gripper.close()
-                    self.idle_gantry()
-                    raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
+                #if sample_present:
+                #    self.gripper.close()
+                 #   self.idle_gantry()
+                 #   raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
             time.sleep(2)
             self.gantry.moverel(
                 z=self.gantry.ZHOP_HEIGHT
