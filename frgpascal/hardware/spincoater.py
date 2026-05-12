@@ -94,7 +94,7 @@ class SpinCoater:
             "vacuum_disengagement_time"
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
-        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 5]
+        self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 0.05]
         self.connect(sc_axis = sc_axis, regular_bootup = regular_bootup)
         self._current_rps = 0
 
