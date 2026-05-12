@@ -59,13 +59,8 @@ class GripperCamera:
         Evaluates an image to detect if a square glass substrate is present.
         Returns True if found, False otherwise.
         """
-        # Convert to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        
-        # Apply Gaussian Blur to reduce noise
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-                    
-        return False # No sample detected
+        # TODO: implement properly, for now assuming sample is always present
+        return True
 
     # TODO: Implement sample detection
     def log_capture(self, image: np.ndarray, metadata: dict):
