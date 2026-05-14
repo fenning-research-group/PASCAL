@@ -476,7 +476,7 @@ class Mix(Task):
 
 
 class Spincoat(Task):
-    def __init__(self, steps: list, drops: list, immediate=False):
+    def __init__(self, steps: list, drops: list, duration: float = None, immediate=False):
         """
 
         Args:
@@ -524,25 +524,31 @@ class Spincoat(Task):
         self.start_times = [
             max(0, -first_drop_time)
         ]  # push back spinning times to allow static drop beforehand
-        for duration in self.steps[:-1, 2]:
-            self.start_times.append(self.start_times[-1] + duration)
-        duration = self.steps[:, 2].sum() + self.start_times[0]
+        for step_duration in self.steps[:-1, 2]:
+            self.start_times.append(self.start_times[-1] + step_duration)
+        calculated_duration = self.steps[:, 2].sum() + self.start_times[0]
 
         # add overhead time based on number of pipetting steps. These numbers are calibrated from experiments
         if len(drops) == 1:
             asp, stage, disp = liquidhandler.expected_timings(drops[0].to_dict())
-            duration += max(
+            calculated_duration += max(
                 asp + stage + disp - self.drops[0].time,
                 0,
             )
         elif len(drops) == 2:
             asp0, stage0, disp0 = liquidhandler.expected_timings(drops[0].to_dict())
             asp1, stage1, disp1 = liquidhandler.expected_timings(drops[1].to_dict())
-            duration += max(
+            calculated_duration += max(
                 (asp0 + stage0 + disp0) + asp1 - self.drops[0].time,
                 0,
             )
-        super().__init__(task="spincoat", duration=duration, immediate=immediate)
+            
+        if duration is not None:
+            final_duration = duration
+        else:
+            final_duration = calculated_duration
+
+        super().__init__(task="spincoat", duration=final_duration, immediate=immediate)
 
     def generate_details(self):
         steps = [
