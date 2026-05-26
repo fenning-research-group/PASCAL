@@ -559,6 +559,20 @@ class Maestro:
             self.catch(
                 from_spincoater=from_spincoater
             )  
+            
+            # pick up the sample. this function checks to see if gripper picks successfully
+            time.sleep(1)
+            # Are we on a hotplate?
+            # from_hotplate = self._is_target_on_a_hotplate(p1)
+            if from_hotplate:
+                self.gantry.moverel(y = 0.5, zhop = False)
+            ### Code for drop check, currently not being used
+            # self.gantry.moveto(
+            #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
+            # )  # move just above destination
+            # if self.gripper.is_under_load():
+            #     raise ValueError("Sample dropped in transit!")
+
             # camera things
             if capture_metadata is not None:
                 meta = capture_metadata.copy()
@@ -577,20 +591,7 @@ class Maestro:
                 #    self.gripper.close()
                  #   self.idle_gantry()
                  #   raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
-            
-            # pick up the sample. this function checks to see if gripper picks successfully
-            time.sleep(1)
-            # Are we on a hotplate?
-            # from_hotplate = self._is_target_on_a_hotplate(p1)
-            if from_hotplate:
-                self.gantry.moverel(y = 0.5, zhop = False)
-            ### Code for drop check, currently not being used
-            # self.gantry.moveto(
-            #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop
-            # )  # move just above destination
-            # if self.gripper.is_under_load():
-            #     raise ValueError("Sample dropped in transit!")
-
+                 
             if all(
                 [a == b for a, b in zip(p2, self.spincoater())]
             ):  # moving onto the spincoater
@@ -612,6 +613,25 @@ class Maestro:
             # time.sleep(2)
             to_tray = self._is_target_on_a_tray(p2)
             self.release(from_tray = to_tray)  # drop the sample
+
+            time.sleep(2)
+            self.gantry.moverel(
+                z=self.gantry.ZHOP_HEIGHT
+            )  # move up a bit, mostly to avoid resting gripper on hotplate
+
+            # self.gripper.close()  # fully close gripper to reduce servo strain
+            if all([a == b for a, b in zip(p2, self.spincoater())]):
+                self.gantry._transition_to_frame(
+                    "workspace"
+                )  # move gantry out of the liquid handler
+                try:
+                    print(self.gantry._target_frame(*self.gantry.position))
+                except:
+                    print("uh-oh, trying to determine gantry's frame failed")
+                    print(f"\tfailed for position {self.gantry.position}")
+                    pass
+                self.spincoater.idle()  # dont actively hold chuck in registered position
+
             # camera things
             if capture_metadata is not None:
                 meta = capture_metadata.copy()
@@ -630,23 +650,6 @@ class Maestro:
                 #    self.gripper.close()
                  #   self.idle_gantry()
                  #   raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
-            time.sleep(2)
-            self.gantry.moverel(
-                z=self.gantry.ZHOP_HEIGHT
-            )  # move up a bit, mostly to avoid resting gripper on hotplate
-
-            # self.gripper.close()  # fully close gripper to reduce servo strain
-            if all([a == b for a, b in zip(p2, self.spincoater())]):
-                self.gantry._transition_to_frame(
-                    "workspace"
-                )  # move gantry out of the liquid handler
-                try:
-                    print(self.gantry._target_frame(*self.gantry.position))
-                except:
-                    print("uh-oh, trying to determine gantry's frame failed")
-                    print(f"\tfailed for position {self.gantry.position}")
-                    pass
-                self.spincoater.idle()  # dont actively hold chuck in registered position
             
         else:
             if all(

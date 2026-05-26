@@ -31,6 +31,13 @@ class GripperCamera:
         self._raw_images = []  # Holds the raw images
         self._current_meta = []
         
+        # Load sample detection SVM model if it exists
+        self.model_path = os.path.join(MODULE_DIR, "calibrations", "sample_detection_model.xml")
+        self.svm = None
+        if os.path.exists(self.model_path):
+            self.svm = cv2.ml.SVM_load(self.model_path)
+
+        
     def connect(self):
         self.handle = cv2.VideoCapture(self.id, cv2.CAP_DSHOW)
         if not self.handle.isOpened():
@@ -51,19 +58,104 @@ class GripperCamera:
         if self.handle is None or not self.handle.isOpened():
             raise RuntimeError("Camera is not connected. Call connect() first.")
 
+        # Flush the internal camera buffer to avoid capturing stale frames from previous transfers
+        for _ in range(5):
+            self.handle.grab()
+
         ret, frame = self.handle.read()
         if not ret:
             raise RuntimeError("Can't receive frame (stream end?).")
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    def _extract_features(self, img: np.ndarray) -> np.ndarray:
+        """Crops the central Region of Interest and extracts HOG features."""
+        # Convert to grayscale if needed
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = img
+            
+        # Crop to Region of Interest (the space between the claws)
+        h, w = gray.shape
+        roi = gray[int(h*0.3):int(h*0.7), int(w*0.3):int(w*0.7)]
+        roi = cv2.resize(roi, (64, 64))
+        
+        # HOG descriptor
+        hog = cv2.HOGDescriptor(
+            _winSize=(64,64),
+            _blockSize=(16,16),
+            _blockStride=(8,8),
+            _cellSize=(8,8),
+            _nbins=9
+        )
+        features = hog.compute(roi)
+        return features.flatten()
+
+    def train_model(self, data_dir: str):
+        """
+        Parses gripper_camera_pictures directory to auto-label and train an SVM.
+        """
+        import glob
+        print(f"Training SVM from dataset in {data_dir}...")
+        features_list = []
+        labels_list = []
+        
+        search_path = os.path.join(data_dir, "**", "transfers", "*.png")
+        image_paths = glob.glob(search_path, recursive=True)
+        
+        for path in image_paths:
+            filename = os.path.basename(path)
+            # Auto-label based on filename
+            if "catch" in filename:
+                label = 1
+            elif "release" in filename:
+                label = 0
+            else:
+                continue
+                
+            img = cv2.imread(path)
+            if img is None:
+                continue
+                
+            feats = self._extract_features(img)
+            features_list.append(feats)
+            labels_list.append(label)
+            
+        if not features_list:
+            print("No training data found!")
+            return
+            
+        features_np = np.array(features_list, dtype=np.float32)
+        labels_np = np.array(labels_list, dtype=np.int32)
+        
+        svm = cv2.ml.SVM_create()
+        svm.setType(cv2.ml.SVM_C_SVC)
+        svm.setKernel(cv2.ml.SVM_LINEAR)
+        svm.setTermCriteria((cv2.TERM_CRITERIA_MAX_ITER, 1000, 1e-6))
+        
+        print(f"Training on {len(labels_list)} images...")
+        svm.train(features_np, cv2.ml.ROW_SAMPLE, labels_np)
+        
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        svm.save(self.model_path)
+        self.svm = svm
+        print(f"Model successfully saved to {self.model_path}")
+
     def detect_sample(self, img: np.ndarray) -> bool:
         """
-        Evaluates an image to detect if a square glass substrate is present.
+        Evaluates an image to detect if a square glass substrate is present between the claws.
         Returns True if found, False otherwise.
         """
-        # TODO: implement properly, for now assuming sample is always present
-        return True
+        if self.svm is None:
+            print("Warning: Sample detection SVM not loaded. Run train_model() first. Defaulting to True.")
+            return True
+            
+        features = self._extract_features(img)
+        features = np.array([features], dtype=np.float32)
+        _, result = self.svm.predict(features)
+        
+        return bool(result[0][0] == 1)
 
     # TODO: Implement sample detection
     def log_capture(self, image: np.ndarray, metadata: dict):
