@@ -498,7 +498,7 @@ class Maestro:
                 load = float(self.gripper._handle.readline())
             return load
 
-    def transfer(self, p1, p2, zhop=True, brute_force=False, from_hotplate = False, capture_metadata=None):
+    def transfer(self, p1, p2, zhop=True, brute_force=False, from_hotplate = False, capture_metadata=None, **kwargs):
         """Move a sample from one location (source) to another (destination)
 
         Args:
@@ -883,8 +883,6 @@ class Maestro:
         for worker in self.workers.values():
             worker.start()
 
-        if self.gantry.in_use and self.gripper.in_use:
-            self.gripper_camera.archive_production_batch()
 
     def stop(self):
         print('Beginning to stop PASCAL')
@@ -909,6 +907,13 @@ class Maestro:
             print(f"Stopping {w} now")
             w.stop_workers()
             print(f"\tStop Successful!")
+
+        if self.gripper_camera.handle is not None:
+            self.gripper_camera.disconnect()
+            if not os.path.exists(self.gripper_camera.base_dir):
+                os.mkdir(self.gripper_camera.base_dir)
+            self.gripper_camera.archive_production_batch()
+           
         # if self.liquidhandler.server.ip is not None:
         if self.given_run_ip is not None:
             print("Stopping the liquidhandler Server Now.")
@@ -925,8 +930,6 @@ class Maestro:
         print("Maestro stopped!")
         if self.gantry.in_use and self.gripper.in_use:
             self.gantry.movetoclear()
-            if self.gripper_camera.handle is not None:
-                self.gripper_camera.disconnect()
         # self.thread.join()
 
     def __del__(self):

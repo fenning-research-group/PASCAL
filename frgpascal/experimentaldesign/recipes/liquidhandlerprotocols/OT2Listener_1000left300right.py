@@ -527,7 +527,39 @@ def run(protocol_context):
 
     # spincoater
     spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")
+    # Before we define any instruments, access the hardware controller bridge
+    # For API 2.10, we can use the internal implementation to get the hardware API
+    hw_api = protocol_context._implementation.get_hardware()
 
+    protocol_context.comment("Legacy Hardware Configuration:")
+    hw_api = protocol_context._implementation.get_hardware()
+    orig_config = hw_api.config
+    protocol_context.comment(f"Config Type: {type(orig_config)}")
+    protocol_context.comment(f"Config Attributes: {dir(orig_config)}")
+    accel = ",".join([f"{k},{v}" for k, v in orig_config.acceleration.items()])
+    # jerk = orig_config.junction_deviation
+    # protocol_context.comment(f"config keys: {orig_config.keys()}")
+    # protocol_context.comment(f"Default speeds: {protocol_context.default_max_speed}")
+    # protocol_context.comment(f"Default Y speeds: {protocol_context.max_speeds['Y']}")
+    protocol_context.comment(f"O.G. Accel (mm/s^2): {accel}")
+    # Define safer acceleration and jerk (junction deviation) values
+    # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
+    new = {
+        "acceleration": {
+            "X": 500, 
+            "Y": 500,
+            "Z": 400,
+            "A": 400,   # Right pipette mount
+            "B": 400,   # Left pipette mount
+        },
+        # "junction_deviation": 0.01,
+    }
+    orig_config.acceleration = new["acceleration"]
+    hw_api.set_config(orig_config)
+    # new_config = hw_api.config._replace(acceleration = new["acceleration"])
+    # hw_api.set_config(new_config)
+    protocol_context.comment("Hardware config updated to limit acceleration!")
+    #  hw_api.update_config_override(new_config)
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
         tips_300=tips_300,

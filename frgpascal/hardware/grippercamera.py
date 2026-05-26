@@ -39,6 +39,9 @@ class GripperCamera:
         # settings
         # self.handle.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc("Y", "1", "6", " "))
         # self.handle.set(cv2.CAP_PROP_CONVERT_RGB, 0)
+        self._current_images = []
+        self._raw_images = []
+        self._current_meta = []
 
     def disconnect(self):
         self.handle.release()  # TODO maybe not correct syntax for opencv
