@@ -422,3 +422,15 @@ class OT2Server:
     def mark_completed(self):
         maestro = {"complete": 0}
         self._add_task(maestro)
+
+    def mark_spincoat_start(self, sample_name):
+        maestro = {
+            "print_sample": f"START `spincoat` step for sample: {sample_name}"
+        }
+        self._add_task(maestro)
+    def mark_spincoat_stop(self, sample_name):
+        maestro = {
+            "print_sample": f"END `spincoat` step for sample: {sample_name}"
+        }
+        self._add_task(maestro)
+        

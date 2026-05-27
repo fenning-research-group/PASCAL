@@ -918,7 +918,7 @@ class Maestro:
             self.gripper_camera.archive_production_batch()
            
         # if self.liquidhandler.server.ip is not None:
-        if self.given_run_ip is not None:
+        if (self.given_run_ip is not None) and (self.given_run_ip != ''):
             print("Stopping the liquidhandler Server Now.")
             self.liquidhandler.mark_completed()  # tell liquid handler to complete the protocol.
             print("\tStop Successful!")

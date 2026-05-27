@@ -169,6 +169,8 @@ class ListenerWebsocket:
                 finished = True
                 self.__stop.set()  # flag the websocket to close
                 self.status = STATUS_ALL_DONE
+            if "print_sample" in maestro:
+                self._protocol_context.comment(maestro["print_sample"])
 
     # Processing tasks
     async def __worker(self):
