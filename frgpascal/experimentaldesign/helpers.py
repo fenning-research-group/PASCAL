@@ -667,7 +667,7 @@ class PASCALPlanner:
 
     def solve_schedule(
         self, shuffle: bool = True, prioritize_first_spincoat: bool = False,
-         use_gantry: bool = False, **kwargs
+         use_gantry: bool = True, **kwargs
     ):
         self.system: System = build(use_gantry)
         if shuffle:
