@@ -530,13 +530,13 @@ class PLImaging(CharacterizationStationTemplate):
     def save(self, imgs, sample):
         for t, img in imgs.items():
             fname = f"{sample}_plimage_{int(t*1e3)}ms.tif"
-        imwrite(
-            os.path.join(self.savedir, fname),
-            img,
-            compression="zlib",
-            resolution=(1.0 / 1.528, 1.0 / 1.528),  # 1 pixel = 1.528 um
-            metadata={"unit": "um"},
-        )
+            imwrite(
+                os.path.join(self.savedir, fname),
+                img,
+                compression="zlib",
+                resolution=(1.0 / 1.528, 1.0 / 1.528),  # 1 pixel = 1.528 um
+                metadata={"unit": "um"},
+            )
 
 
 class BrightfieldImaging(CharacterizationStationTemplate):
