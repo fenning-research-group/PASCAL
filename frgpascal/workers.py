@@ -4,11 +4,12 @@ from collections import namedtuple
 from roboflo import Worker as Worker_roboflo
 import json
 import time
+import os
+import sys
 
 from frgpascal.hardware.liquidhandler import expected_timings
 
 task_tuple = namedtuple("task", ["function", "estimated_duration", "other_workers"])
-
 
 class WorkerTemplate(Worker_roboflo):
     """Template class for Workers
@@ -40,6 +41,36 @@ class WorkerTemplate(Worker_roboflo):
         asyncio.set_event_loop(loop)
         self.loop = loop
         self.queue = asyncio.PriorityQueue()
+        self.setup_logger(self.name)
+
+    def setup_logger(self, logger_name):
+        self.worker_logger = logging.getLogger(logger_name)
+        self.worker_logger.setLevel(logging.DEBUG)
+        
+        if self.maestro and hasattr(self.maestro, "experiment_folder"):
+            if not self.worker_logger.handlers:
+                worker_logs_dir = os.path.join(self.maestro.experiment_folder, "worker_logs")
+                os.makedirs(worker_logs_dir, exist_ok=True)
+                
+                fh = logging.FileHandler(
+                    os.path.join(worker_logs_dir, f"{logger_name}.log")
+                )
+                sh = logging.StreamHandler(sys.stdout)
+                sh.setLevel(logging.INFO)
+                
+                fh_formatter = logging.Formatter(
+                    "%(asctime)s %(levelname)s: %(message)s",
+                    datefmt="%m/%d/%Y %I:%M:%S %p",
+                )
+                sh_formatter = logging.Formatter(
+                    "%(asctime)s %(message)s",
+                    datefmt="%I:%M:%S",
+                )
+                fh.setFormatter(fh_formatter)
+                sh.setFormatter(sh_formatter)
+                
+                self.worker_logger.addHandler(fh)
+                self.worker_logger.addHandler(sh)
 
     def start(self):
         def future_callback(future):
@@ -165,7 +196,6 @@ class WorkerTemplate(Worker_roboflo):
 
     def __hash__(self):
         return hash(str(type(self)))
-
 
 ### Gantry gripper
 def _to_hotplate(f):
@@ -451,6 +481,8 @@ class Worker_Hotplate(WorkerTemplate):
         }
 
     async def anneal(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Annealing for {details['duration']} seconds at {details.get('temperature', 'unknown')} degrees.")
         await asyncio.sleep(details["duration"])
 
 
