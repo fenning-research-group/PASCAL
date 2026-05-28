@@ -349,38 +349,39 @@ characterizationline:
       cameraid: "12519"  #serial number for Thorlabs Camera
       # position: 326.5 #position (mm) at which characterization axis centers sample in FOV
       # position: 544.0 #position (mm) at which characterization axis centers sample in FOV
-      position: 130.5
+      position: 139
       switchindex: 9 #switchbox plug index for light source (ring light)
     pl_imaging:
       # cameraid: SAME AS DARKFIELD, NO NEED TO INPUT HERE #serial number for Thorlabs Camera #same camera as darkfield
       # position: 326.5 #position (mm) at which characterization axis centers sample in FOV
       # position: 544.0 #position (mm) at which characterization axis centers sample in FOV
-      position: 130.5
+      position: 139
       switchindex: 11 #switchbox plug index for light source (blue LED lamp)
     brightfield:
       cameraid: "12316" #serial number for Thorlabs Camera
       # position: 630.0 #position (mm) at which characterization axis centers sample in FOV
       # position: 847.5 #position (mm) at which characterization axis centers sample in FOV
-      position: 205
+      position: 200
       switchindex: 8 #switchbox plug index for light source (ring light)
     pl_blue: #spectroscopy
       # position: 1145.0
       # position: 1360.0 Jan 2026 position
-      position: 335
+      # position: 335
+      position: 334.5
       switchindex: 5
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     pl_red: #spectroscopy
       # position: 1145.0 #position (mm) at which characterization axis centers sample in FOV
       # position: 1360.0 Jan 2026 position
-      position: 335
+      position: 334.5 #335
       switchindex: 4 #switchbox plug index for light source (red laser)
       laser_settling_time: 0.2 #seconds for laser power to stabilize
 
     transmission: #spectroscopy
       # position: 1165.0 #position (mm) at which characterization axis centers sample in FOV
       # position: 1360.0 Jan 2026 position
-      position: 335
+      position: 334.5 #335
     #fourpointprobe:
     # position:397.5
 

@@ -114,7 +114,7 @@ class ListenerWebsocket:
 
         self.__calibrate_time_to_nist()
         self.__initialize_tasks()  # populate task list
-
+        self._protocol_context = protocol_context
         # #TODO: uncomment this for eliminating opentrons shaking
         # ## must also account for new <spincoat> spin_start delay time as speeds decrease
         # new_speed = self.SLOWEST_XY_RATE
@@ -169,6 +169,8 @@ class ListenerWebsocket:
                 finished = True
                 self.__stop.set()  # flag the websocket to close
                 self.status = STATUS_ALL_DONE
+            if "print_sample" in maestro:
+                self._protocol_context.comment(maestro["print_sample"])
 
     # Processing tasks
     async def __worker(self):
@@ -243,6 +245,7 @@ class ListenerWebsocket:
     def _aspirate_from_well(
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
+        self._protocol_context.comment('START `_aspirate_from_well` step')
         p = pipette
         # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
@@ -264,6 +267,7 @@ class ListenerWebsocket:
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
+        self._protocol_context.comment('END `_aspirate_from_well` step')
 
     def _next_tip(self, pipette):
         pipette = self._get_pipette(pipette)
@@ -334,6 +338,7 @@ class ListenerWebsocket:
         reuse_tip=False,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
+        self._protocol_context.comment('START `aspirate_for_spincoating` step')
         p = self._get_pipette(pipette=pipette)
         if p.has_tip:
             p.drop_tip()
@@ -353,6 +358,7 @@ class ListenerWebsocket:
             touch_tip=touch_tip,
             pre_mix=pre_mix,
         )
+        self._protocol_context.comment('END `aspirate_for_spincoating` step')
 
     def aspirate_both_for_spincoating(
         self,
@@ -371,6 +377,7 @@ class ListenerWebsocket:
         reuse_psk = False
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
+        self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
         if legacy:
             for p in self.pipettes.values():
                 if p.has_tip:
@@ -407,8 +414,10 @@ class ListenerWebsocket:
         )
 
         self.stage_for_dispense(pipette="perovskite")
+        self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
 
     def stage_for_dispense(self, pipette, slow_travel=False):
+        self._protocol_context.comment('START `stage_for_dispense` step')
         p = self._get_pipette(pipette)
         if slow_travel:
             speed = self.SLOW_XY_RATE
@@ -416,6 +425,7 @@ class ListenerWebsocket:
             speed = None
         # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
         p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
+        self._protocol_context.comment('END `stage_for_dispense` step')
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
@@ -423,7 +433,7 @@ class ListenerWebsocket:
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
         slow_travel = kwargs.get("slow_travel", False)
         blow_out = kwargs.get("blow_out", False)
-
+        self._protocol_context.comment('START `dispense_onto_chuck` step')
         p = self._get_pipette(pipette)
         relative_rate = rate / p.flow_rate.dispense
         if slow_travel:
@@ -439,14 +449,17 @@ class ListenerWebsocket:
             self.spincoater[self.STANDBY].top(), force_direct=True,
             speed = self.SLOWEST_XY_RATE,
         )  # Move off of chuck to prevent dripping onto substrate
+        self._protocol_context.comment('END `dispense_onto_chuck` step')
 
     def clear_chuck(self):
+        self._protocol_context.comment('START `clear_chuck` step')
         self.pipettes["right"].move_to(
             location=types.Location(
                 point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
             ),
             speed = self.SLOWEST_XY_RATE,
         )
+        self._protocol_context.comment('END `clear_chuck` step')
 
     def mix(self, mixing_netlist, **kwargs):
         p = self._get_pipette(pipette="perovskite")
@@ -495,6 +508,7 @@ class ListenerWebsocket:
         the order of operations feels overly complicated, but is chosen to minimize
         the travel (both horizontally and vertically) of the pipette heads
         """
+        self._protocol_context.comment("START `cleanup` step")
         # drop all tips that dont need to be returned
         for p, return_this_tip in self.return_current_tip.items():
             if not p.has_tip:
@@ -514,6 +528,7 @@ class ListenerWebsocket:
         next_tip = self._next_tip(pipette="right")
         p = self._get_pipette("right")
         p.move_to(next_tip.top(5), speed = self.SLOWEST_XY_RATE)
+        self._protocol_context.comment("END `cleanup` step")
 
 
 def run(protocol_context):
@@ -527,7 +542,39 @@ def run(protocol_context):
 
     # spincoater
     spincoater = protocol_context.load_labware("frg_spincoater_v1", location="3")
+    # Before we define any instruments, access the hardware controller bridge
+    # For API 2.10, we can use the internal implementation to get the hardware API
+    hw_api = protocol_context._implementation.get_hardware()
 
+    protocol_context.comment("Legacy Hardware Configuration:")
+    hw_api = protocol_context._implementation.get_hardware()
+    orig_config = hw_api.config
+    protocol_context.comment(f"Config Type: {type(orig_config)}")
+    protocol_context.comment(f"Config Attributes: {dir(orig_config)}")
+    accel = ",".join([f"{k},{v}" for k, v in orig_config.acceleration.items()])
+    # jerk = orig_config.junction_deviation
+    # protocol_context.comment(f"config keys: {orig_config.keys()}")
+    # protocol_context.comment(f"Default speeds: {protocol_context.default_max_speed}")
+    # protocol_context.comment(f"Default Y speeds: {protocol_context.max_speeds['Y']}")
+    protocol_context.comment(f"O.G. Accel (mm/s^2): {accel}")
+    # Define safer acceleration and jerk (junction deviation) values
+    # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
+    new = {
+        "acceleration": {
+            "X": 500, 
+            "Y": 500,
+            "Z": 400,
+            "A": 400,   # Right pipette mount
+            "B": 400,   # Left pipette mount
+        },
+        # "junction_deviation": 0.01,
+    }
+    orig_config.acceleration = new["acceleration"]
+    hw_api.set_config(orig_config)
+    # new_config = hw_api.config._replace(acceleration = new["acceleration"])
+    # hw_api.set_config(new_config)
+    protocol_context.comment("Hardware config updated to limit acceleration!")
+    #  hw_api.update_config_override(new_config)
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
         tips_300=tips_300,

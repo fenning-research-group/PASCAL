@@ -904,8 +904,10 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         Returns:
             record: dictionary of recorded spincoating process.
         """
-        print(f"\tstarting Spincoat of {sample}")
+        print(f"\tstarting Spincoat of {sample['name']}")
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
+        # self.liquidhandler.server._protocol_context.comment(f"START `spincoat` step for sample {sample['name']}")
+        self.liquidhandler.server.mark_spincoat_start(sample_name = sample['name'])
         print(f"\tliquidhandler.server._start_directly() finished compiling")
         t0 = self.maestro.nist_time
         self.spincoater.start_logging()
@@ -941,8 +943,12 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
         rpm_log = self.spincoater.finish_logging()
         print(f"{t0-self.maestro.nist_time:.2f} finished logging")
+        # self.liquidhandler.server._protocol_context.comment(f"END`spincoat` step for sample {sample['name']}")
+        self.liquidhandler.server.mark_spincoater_start(sample_name = sample['name'])
         self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
         print(f"{t0-self.maestro.nist_time:.2f} server stopped")
+
+        
         return {
             "liquidhandler_timings": {**drop_times},
             "spincoater_log": {**rpm_log},
