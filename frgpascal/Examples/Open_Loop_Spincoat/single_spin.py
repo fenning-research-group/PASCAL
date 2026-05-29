@@ -392,9 +392,9 @@ class SingleSpin:
         :param settings: Description
         """
 
-        update_step_settings(self, rpm, acceleration, duration)
+        self.update_step_settings(self, rpm, acceleration, duration)
         if drop_number != -1:
-            update_drop_settings(self, drop_number, time, volume, rate, slow_travel, slow_retract,
+            self.update_drop_settings(self, drop_number, time, volume, rate, slow_travel, slow_retract,
                              air_gap, touch_tip, blow_out, pre_mix, reuse_tip, solution)
         else:
             print("Drop number not specified; skipping drop updates. If updating anything other than rpm, acceleration, or duration, please specify which drop to update (0 or 1)")
