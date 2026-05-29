@@ -303,10 +303,14 @@ class Worker_GantryGripper(WorkerTemplate):
         }
 
     def idle_gantry(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info("Idling gantry.")
         self.maestro.idle_gantry()
 
     @_to_hotplate
     def spincoater_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from spincoater to hotplate {details['destination']}.")
         p1 = self.spincoater()
 
         hotplate_name = details["destination"]
@@ -324,6 +328,8 @@ class Worker_GantryGripper(WorkerTemplate):
         }
 
     def spincoater_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from spincoater to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         p1 = self.spincoater()
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -335,6 +341,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2, capture_metadata=capture_meta)
 
     def spincoater_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from spincoater to characterization.")
         p1 = self.spincoater()
         p2 = self.characterization.axis()
 
@@ -342,6 +350,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2, capture_metadata=capture_meta)
 
     def hotplate_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -361,6 +371,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to characterization.")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -375,6 +387,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to spincoater.")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -389,6 +403,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def storage_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to spincoater.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -401,6 +417,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
     @_to_hotplate
     def storage_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to hotplate {details['destination']}.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -422,6 +440,8 @@ class Worker_GantryGripper(WorkerTemplate):
         }
 
     def storage_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to characterization.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -433,6 +453,8 @@ class Worker_GantryGripper(WorkerTemplate):
         self.maestro.transfer(p1, p2, capture_metadata=capture_meta)
 
     def characterization_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from characterization to spincoater.")
         p1 = self.characterization.axis()
         p2 = self.spincoater()
 
@@ -441,6 +463,8 @@ class Worker_GantryGripper(WorkerTemplate):
 
     @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from characterization to hotplate {details['destination']}.")
         p1 = self.characterization.axis()
 
         hotplate_name = details["destination"]
@@ -458,6 +482,8 @@ class Worker_GantryGripper(WorkerTemplate):
         }
 
     def characterization_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Moving sample {sample['name']} from characterization to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         p1 = self.characterization.axis()
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -482,7 +508,8 @@ class Worker_Hotplate(WorkerTemplate):
 
     async def anneal(self, sample, details):
         if hasattr(self, 'worker_logger') and self.worker_logger:
-            self.worker_logger.info(f"Annealing for {details['duration']} seconds at {details.get('temperature', 'unknown')} degrees.")
+            temp = self.hotplates[sample["hotplate_slot"]["hotplate"]].controller.setpoint
+            self.worker_logger.info(f"Annealing for {details['duration']} seconds at {temp} degrees.")
         await asyncio.sleep(details["duration"])
 
 
@@ -502,6 +529,8 @@ class Worker_Storage(WorkerTemplate):
         }
 
     async def rest(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Resting for {details['duration']} seconds.")
         await asyncio.sleep(details["duration"])
 
 
@@ -904,6 +933,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         Returns:
             record: dictionary of recorded spincoating process.
         """
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Spincoating sample {sample['name']}.")
         print(f"\tstarting Spincoat of {sample['name']}")
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
         # self.liquidhandler.server._protocol_context.comment(f"START `spincoat` step for sample {sample['name']}")
@@ -956,6 +987,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         }
 
     def mix(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Mixing solutions for sample {sample['name']}.")
         mixing_netlist = details["mixing_netlist"]
         self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
 
@@ -977,6 +1010,8 @@ class Worker_Characterization(WorkerTemplate):
         }
 
     def characterize(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Characterizing sample {sample['name']}.")
         self.characterization.run(samplename=sample["name"], details=details)
 
         # if maestro is under external control, ping the websocket client to alert that a sample has been characterized
@@ -1085,10 +1120,14 @@ class Worker_HumanOperator(WorkerTemplate):
         }
 
     def idle_human(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info("Human operator: Idling.")
         self.maestro.idle_human()
 
     @_to_hotplate
     def spincoater_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from spincoater to hotplate {details['destination']}.")
         p1 = self.spincoater()
         hotplate_name = details["destination"]
         hotplate = self.hotplates[hotplate_name]
@@ -1107,6 +1146,8 @@ class Worker_HumanOperator(WorkerTemplate):
         }
 
     def spincoater_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from spincoater to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         p1 = self.spincoater()
         tray, slot = (
             sample["storage_slot"]["tray"],
@@ -1121,6 +1162,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def spincoater_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from spincoater to characterization.")
         p1 = self.spincoater()
         p2 = self.characterization.axis()
 
@@ -1131,6 +1174,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def hotplate_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -1151,6 +1196,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
     
     def hotplate_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to characterization.")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -1166,6 +1213,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def hotplate_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from hotplate {sample['hotplate_slot']['hotplate']} to spincoater.")
         hotplate, hpslot = (
             sample["hotplate_slot"]["hotplate"],
             sample["hotplate_slot"]["slot"],
@@ -1181,6 +1230,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.hotplates[hotplate].unload(slot=hpslot)
 
     def storage_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to spincoater.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -1196,6 +1247,8 @@ class Worker_HumanOperator(WorkerTemplate):
 
     @_to_hotplate
     def storage_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to hotplate {details['destination']}.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -1220,6 +1273,8 @@ class Worker_HumanOperator(WorkerTemplate):
         }
 
     def storage_to_characterization(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}) to characterization.")
         tray, slot = (
             sample["storage_slot"]["tray"],
             sample["storage_slot"]["slot"],
@@ -1234,6 +1289,8 @@ class Worker_HumanOperator(WorkerTemplate):
         self.maestro.transfer(p1, p2, sample=sample, task_id=details["task_id"], take_picture=True)
 
     def characterization_to_spincoater(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from characterization to spincoater.")
         p1 = self.characterization.axis()
         p2 = self.spincoater()
 
@@ -1245,6 +1302,8 @@ class Worker_HumanOperator(WorkerTemplate):
 
     @_to_hotplate
     def characterization_to_hotplate(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from characterization to hotplate {details['destination']}.")
         p1 = self.characterization.axis()
 
         hotplate_name = details["destination"]
@@ -1263,6 +1322,8 @@ class Worker_HumanOperator(WorkerTemplate):
         }
 
     def characterization_to_storage(self, sample, details):
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Human operator: Moving sample {sample['name']} from characterization to storage ({sample['storage_slot']['tray']}, slot {sample['storage_slot']['slot']}).")
         p1 = self.characterization.axis()
         tray, slot = (
             sample["storage_slot"]["tray"],
