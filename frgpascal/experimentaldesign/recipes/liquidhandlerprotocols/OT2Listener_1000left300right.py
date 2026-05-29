@@ -258,7 +258,9 @@ class ListenerWebsocket:
         if slow_retract:
             p.move_to(self.labwares[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if touch_tip:
-            p.touch_tip()
+            p.touch_tip(
+                speed = 0.1 # mm/s
+            )
         if air_gap:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
@@ -561,8 +563,8 @@ def run(protocol_context):
     # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
     new = {
         "acceleration": {
-            "X": 500, 
-            "Y": 500,
+            "X": 250, # 500 too high still
+            "Y": 250,
             "Z": 400,
             "A": 400,   # Right pipette mount
             "B": 400,   # Left pipette mount
