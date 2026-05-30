@@ -26,14 +26,21 @@ MODULE_DIR = os.path.dirname(__file__)
 CALIBRATION_DIR = os.path.join(MODULE_DIR, "calibrations")
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["characterizationline"]
+with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
+    gripper_constants = yaml.load(f, Loader=yaml.FullLoader)["gripper"]
 
+OPENING_WIDTHS = {
+    "square_10mm": 12,
+    "square_17mm": 18,
+    "square_25-3mm": 27,
+}
 
 ## Line Methods
 class CharacterizationLine:
     """High-level control object for characterization of samples in PASCAL"""
 
-    def __init__(self, rootdir, gantry, switchbox: Switchbox, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
-        self.axis = CharacterizationAxis(gantry=gantry, sample_size = sample_size)
+    def __init__(self, rootdir, gantry, gripper, switchbox: Switchbox, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
+        self.axis = CharacterizationAxis(gantry=gantry, gripper=gripper, sample_size = sample_size)
         self.rootdir = rootdir
         #print(self.rootdir) ##added comment
         if not os.path.exists(self.rootdir):
@@ -166,7 +173,7 @@ class CharacterizationAxis:
     """Controls for the characterization line stage (1D axis)"""
 
     def __init__(
-        self, gantry, port=None, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]
+        self, gantry, gripper, port=None, sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]
     ):
         # communication variables
         if port is None:
@@ -193,9 +200,11 @@ class CharacterizationAxis:
             "positiontolerance"
         ]  # tolerance for position, in mm
         self.gantry = gantry
+        self.gripper = gripper
         self.__calibrated = False  # calibrate gantry transfer coordinates
         self.TRANSFERPOSITION = constants["axis"]["transfer_position"]
         self.p0 = constants["axis"]["p0"]
+        self.OPENWIDTH = OPENING_WIDTHS[self._SAMPLESIZEOPTION]
         # connect to characterizationline by default
         self.connect()
         self.set_defaults()
@@ -243,6 +252,10 @@ class CharacterizationAxis:
         # self.gantry.moveto(x=self.gantry.OT2_XLIM, y=self.gantry.OT2_YLIM, zhop=False)
         # self.gantry.moveto(x=self.p0[0], y=self.p0[1], avoid_ot2=False, zhop=False)
         if self.gantry.in_use:
+            self.gripper.GRIPPERTIMEOUT = (
+                69420  # prevents the gripper from closing during calibration of positions
+            )
+            self.gripper.open(self.OPENWIDTH)
             self.moveto(self.TRANSFERPOSITION)
             self.gantry.moveto(*self.p0)
             self.gantry.gui()
@@ -251,12 +264,17 @@ class CharacterizationAxis:
             self.__calibrated = True
             with open(os.path.join(CALIBRATION_DIR, "characterizationaxis_calibration.yaml"), "r") as f:
                 old = yaml.safe_load(f)
-            old[self._SAMPLESIZEOPTION] = self.coordinates
+            
+            old[self._SAMPLESIZEOPTION] = self.coordinates.tolist()
             with open(
                 os.path.join(CALIBRATION_DIR, f"characterizationaxis_calibration.yaml"), "w"
             ) as f:
                 # yaml.dump(self.coordinates.tolist(), f)
-                yaml.dump(old)
+                yaml.dump(old, f)
+            self.gripper.GRIPPERTIMEOUT = gripper_constants[
+                "idle_timeout"
+            ]  # reset to the hardware constants value
+
         else:
             print("The Gantry is not being used in this PASCAL instance.")
 

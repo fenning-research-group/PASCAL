@@ -428,6 +428,7 @@ class OT2Server:
             "print_sample": f"START `spincoat` step for sample: {sample_name}"
         }
         self._add_task(maestro)
+        
     def mark_spincoat_stop(self, sample_name):
         maestro = {
             "print_sample": f"END `spincoat` step for sample: {sample_name}"

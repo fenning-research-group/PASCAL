@@ -315,7 +315,7 @@ characterizationline:
     x_min: 0 #min x position (mm)
     transfer_position: 0 #x coordinate to transfer samples to/from gantry
     # p0: [563.5, 249.9, 76] #initial guess for coordinates for gantry to center over slot. safe to overestimate z here to avoid crashes
-    p0: [502.6, 138.0, 25]
+    p0: [524.6, 245.9, 25]
     traveltime: #polynomial y=mx+b to predict axis travel time (y, seconds) for a given distance (x, mm)
       m: 0.0461
       b: 1.161

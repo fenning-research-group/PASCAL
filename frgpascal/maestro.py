@@ -1000,14 +1000,16 @@ class Maestro:
             try:
                 self.characterization = CharacterizationLine(
                     gantry=self.gantry,
+                    gripper=self.gripper,
                     rootdir=ROOTDIR,
                     switchbox=self.switchbox,
                     sample_size = self.__sample_size_key
                 )
-            except:
+            except Exception as e:
                 print(
                     "Failed to connect to characterization line, continuing without it."
                 )
+                print(e)
 
     def _handle_gantry_connection(self):
         """
