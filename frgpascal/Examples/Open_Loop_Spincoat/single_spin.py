@@ -142,6 +142,79 @@ def main():
         print("\nSafely disconnecting hardware...")
         spincoater.disconnect()
 
+class Standalone_Worker_SpincoaterLiquidhandler(Worker_SpincoaterLiquidHandler):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    def spincoat(self, sample, details):
+        """executes a series of spin coating steps. A final "stop" step is inserted
+        at the end to bring the rotor to a halt.
+
+        Args:
+            recipe (SpincoatRecipe): recipe of spincoating steps + drop times
+
+        Returns:
+            record: dictionary of recorded spincoating process.
+        """
+        print(f"\tstarting Spincoat of {sample['name']}")
+        self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
+        # self.liquidhandler.server._protocol_context.comment(f"START `spincoat` step for sample {sample['name']}")
+        self.liquidhandler.server.mark_spincoat_start(sample_name = sample['name'])
+        print(f"\tliquidhandler.server._start_directly() finished compiling")
+        t0 = self.maestro.nist_time
+        self.spincoater.start_logging()
+        ### set up liquid handler tasks
+        if len(details["drops"]) == 1:
+            headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
+                t0=t0, drop=details["drops"][0]
+            )
+        else:  # assume two drops, planning does not allow for >2
+            headstart, liquidhandlertasks = self._generatelhtasks_twodrops(
+                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1]
+            )
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            tasks_future = asyncio.gather(
+                self._monitor_droptimes(liquidhandlertasks, t0),
+                self._set_spinspeeds(details["steps"], t0, headstart),
+                return_exceptions = True
+            )
+
+            # def future_callback(future):
+            #     try:
+            #         future.result()
+            #     except Exception as e:
+            #         self.logger.exception(f"Exception in {self}")
+            #         # if future.exception(): #your long thing had an exception
+            #         #     self.logger.error(f'Exception in {self}: {future.exception()}')
+
+            # tasks_future.add_done_callback(future_callback)
+            print(f"these are the tasks we need to do:\n{tasks_future}")
+            print(f"{t0-self.maestro.nist_time:.2f} starting the deposition tasks")
+            results = loop.run_until_complete(tasks_future)
+            drop_times = results[0]
+            for i, res in enumerate(results):
+                if isinstance(res, Exception):
+                    print(f"Task{i} failed with exception: {res}")
+            print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
+            rpm_log = self.spincoater.finish_logging()
+            print(f"{t0-self.maestro.nist_time:.2f} finished logging")
+            # self.liquidhandler.server._protocol_context.comment(f"END`spincoat` step for sample {sample['name']}")
+            self.liquidhandler.server.mark_spincoater_start(sample_name = sample['name'])
+            self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
+            print(f"{t0-self.maestro.nist_time:.2f} server stopped")
+        except Exception as e:
+            print(f"++Fatal exception during loop execution: {e}")
+        finally:
+            loop.close()
+
+        
+        return {
+            "liquidhandler_timings": {**drop_times},
+            "spincoater_log": {**rpm_log},
+            "headstart": headstart,
+        }
+
 
 class SingleSpin:
     def __init__(self, simulate = False):
