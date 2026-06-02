@@ -186,7 +186,7 @@ class Standalone_Worker_SpincoaterLiquidhandler(Worker_SpincoaterLiquidHandler):
         self.loop = asyncio.new_event_loop()
         # self.queue = asyncio.PriorityQueue()
         # self.setup_logger(self.name)
-    def spincoat(self, sample, details):
+    async def spincoat(self, sample, details):
         """executes a series of spin coating steps. A final "stop" step is inserted
         at the end to bring the rotor to a halt.
 
@@ -215,7 +215,7 @@ class Standalone_Worker_SpincoaterLiquidhandler(Worker_SpincoaterLiquidHandler):
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            tasks_future = asyncio.gather(
+            tasks_future = await asyncio.gather(
                 self._monitor_droptimes(liquidhandlertasks, t0),
                 self._set_spinspeeds(details["steps"], t0, headstart),
                 return_exceptions = True
