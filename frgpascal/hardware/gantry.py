@@ -146,6 +146,17 @@ class Gantry:
                 try:
                     print(f"Trying to connect to Duet at {self.ip}:{port}...")
                     self._handle = socket.create_connection((self.ip, port), timeout = 5)
+
+                    # # Clear any stale data from the socket connected. e.g., partially executed Gantry.moveto() commands which could crash gripper.
+                    # self._handle.setblocking(False)
+                    # try:
+                    #     while True:
+                    #         data = self._handle.recv(4096)
+                    #         if not data:
+                    #             break
+                    # except (BlockingIOError, socket.error):
+                    #     pass # Buffer is now empty
+                    # self._handle.setblocking(True)
                     if port == "21":
                         print(f"\tDuet connected over OTHER type connection")
                     elif port == "23":

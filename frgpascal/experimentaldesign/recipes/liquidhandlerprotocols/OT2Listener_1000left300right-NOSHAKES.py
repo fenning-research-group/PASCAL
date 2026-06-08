@@ -1,3 +1,6 @@
+"""This OT2PASCALProtocol used the following template:
+OT2Listener_1000left300right-NOSHAKES.py
+"""
 import asyncio
 import websockets
 import json
@@ -78,8 +81,8 @@ class ListenerWebsocket:
         self.SLOW_Z_RATE = 20  # mm/s
         self.SLOW_XY_RATE = 100  # mm/s
         # TODO: Fix slow motion when gantry is updated
-        self.SLOWEST_XY_RATE = 100 # mm/s
-        # self.SLOWEST_XY_RATE = 20 # mm/s
+        # self.SLOWEST_XY_RATE = 100 # mm/s
+        self.SLOWEST_XY_RATE = 20 # mm/s
         self.MIX_VOLUME = (
             50  # uL to repeatedly aspirate/dispense when mixing well contents
         )
@@ -245,7 +248,7 @@ class ListenerWebsocket:
     def _aspirate_from_well(
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
-        # self._protocol_context.comment('START `_aspirate_from_well` step')
+        self._protocol_context.comment('START `_aspirate_from_well` step')
         p = pipette
         # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
@@ -269,7 +272,7 @@ class ListenerWebsocket:
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
-        # self._protocol_context.comment('END `_aspirate_from_well` step')
+        self._protocol_context.comment('END `_aspirate_from_well` step')
 
     def _next_tip(self, pipette):
         pipette = self._get_pipette(pipette)
@@ -299,10 +302,10 @@ class ListenerWebsocket:
         p_psk = self.pipettes['right']
         p_as = self.pipettes['left']
         if p_psk.has_tip:
-            p_psk.move_to(self.TRASH.top(z=5), speed = self.SLOWEST_XY_RATE)
+            p_psk.move_to(self.TRASH.top(5), speed = self.SLOWEST_XY_RATE)
             p_psk.drop_tip()
         if p_as.has_tip:
-            p_psk.move_to(self.TRASH.top(z=5), speed = self.SLOWEST_XY_RATE)
+            p_psk.move_to(self.TRASH.top(5), speed = self.SLOWEST_XY_RATE)
             p_as.drop_tip()
         if reuse_psk:
             tip = self._get_reusable_tip(p_psk, psk_tray, psk_well)
@@ -346,21 +349,30 @@ class ListenerWebsocket:
         reuse_tip=False,
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
-        # self._protocol_context.comment('START `aspirate_for_spincoating` step')
+        self._protocol_context.comment('START `aspirate_for_spincoating` step')
         p = self._get_pipette(pipette=pipette)
+        self._protocol_context.comment(f'Got the pipette: {p}')
         if reuse_tip:
+            self._protocol_context.comment('Reusing tip!')
             tip = self._get_reusable_tip(pipette, tray, well)
+            self._protocol_context.comment(f'Next Tip is {type(tip)}')
             if p.has_tip:
-                p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
+                p.move_to(tip.top(10), speed = self.SLOWEST_XY_RATE)
                 p.drop_tip()
-            p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
+            p.move_to(tip.top(10), speed = self.SLOWEST_XY_RATE)
             p.pick_up_tip(tip)
             self.return_current_tip[p] = True
         else:
             if p.has_tip:
+                self._protocol_context.commment('p300 has a tip!')
                 p.move_to(self.TRASH['A1'].top(5), speed = self.SLOWEST_XY_RATE)
-            tip - self._next_tip(pipette)
-            p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
+                p.drop_tip()
+            self._protocol_context.comment('thinking about next tip')
+            tip = self._next_tip(pipette)
+            self._protocol_context.comment('Found next tip')
+            self._protocol_context.comment(f'Next Tip is {type(tip)}')
+            self._protocol_context.comment(f'Next Tip pos is {tip.top()}')
+            p.move_to(tip.top(10), speed = self.SLOWEST_XY_RATE)
             p.pick_up_tip()
         self._aspirate_from_well(
             tray=tray,
@@ -391,7 +403,7 @@ class ListenerWebsocket:
         reuse_psk = False
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
-        # self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
+        self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
         if legacy:
             for p in self.pipettes.values():
                 if p.has_tip:
@@ -428,10 +440,10 @@ class ListenerWebsocket:
         )
 
         self.stage_for_dispense(pipette="perovskite")
-        # self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
+        self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
 
     def stage_for_dispense(self, pipette, slow_travel=False):
-        # self._protocol_context.comment('START `stage_for_dispense` step')
+        self._protocol_context.comment('START `stage_for_dispense` step')
         p = self._get_pipette(pipette)
         if slow_travel:
             speed = self.SLOW_XY_RATE
@@ -439,7 +451,7 @@ class ListenerWebsocket:
             speed = None
         # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
         p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
-        # self._protocol_context.comment('END `stage_for_dispense` step')
+        self._protocol_context.comment('END `stage_for_dispense` step')
 
     def dispense_onto_chuck(self, pipette, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
@@ -447,7 +459,7 @@ class ListenerWebsocket:
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
         slow_travel = kwargs.get("slow_travel", False)
         blow_out = kwargs.get("blow_out", False)
-        # self._protocol_context.comment('START `dispense_onto_chuck` step')
+        self._protocol_context.comment('START `dispense_onto_chuck` step')
         p = self._get_pipette(pipette)
         relative_rate = rate / p.flow_rate.dispense
         if slow_travel:
@@ -463,17 +475,17 @@ class ListenerWebsocket:
             self.spincoater[self.STANDBY].top(), force_direct=True,
             speed = self.SLOWEST_XY_RATE,
         )  # Move off of chuck to prevent dripping onto substrate
-        # self._protocol_context.comment('END `dispense_onto_chuck` step')
+        self._protocol_context.comment('END `dispense_onto_chuck` step')
 
     def clear_chuck(self):
-        # self._protocol_context.comment('START `clear_chuck` step')
+        self._protocol_context.comment('START `clear_chuck` step')
         self.pipettes["right"].move_to(
             location=types.Location(
                 point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
             ),
             speed = self.SLOWEST_XY_RATE,
         )
-        # self._protocol_context.comment('END `clear_chuck` step')
+        self._protocol_context.comment('END `clear_chuck` step')
 
     def mix(self, mixing_netlist, **kwargs):
         p = self._get_pipette(pipette="perovskite")
@@ -575,16 +587,16 @@ def run(protocol_context):
     # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
     new = {
         "acceleration": {
-            "X": 5, # 50 too high
-            "Y": 5, # 50 too high
+            "X": 1, # 5 too high
+            "Y": 1, # 5 too high
             "Z": 100,
             "A": 100,   # Right pipette mount
             "B": 100,   # Left pipette mount
         },
         # "junction_deviation": 0.01,
         "default_max_speed": {
-            "X": 100,
-            "Y": 100, 
+            "X": 50, # 100 too high
+            "Y": 50, # 100 too high
             "Z": 125,
             "A": 100,
             "B": 100,
