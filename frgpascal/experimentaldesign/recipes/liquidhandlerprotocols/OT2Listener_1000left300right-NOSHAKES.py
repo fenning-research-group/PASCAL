@@ -259,7 +259,7 @@ class ListenerWebsocket:
             p.move_to(self.labwares[tray][well].top(2), speed=self.SLOW_Z_RATE)
         if touch_tip:
             p.touch_tip(
-                speed = 0.1 # mm/s
+                speed = 1 # mm/s
             )
         if air_gap:
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
@@ -299,20 +299,26 @@ class ListenerWebsocket:
         p_psk = self.pipettes['right']
         p_as = self.pipettes['left']
         if p_psk.has_tip:
+            p_psk.move_to(self.TRASH.top(z=5), speed = self.SLOWEST_XY_RATE)
             p_psk.drop_tip()
         if p_as.has_tip:
+            p_psk.move_to(self.TRASH.top(z=5), speed = self.SLOWEST_XY_RATE)
             p_as.drop_tip()
         if reuse_psk:
             tip = self._get_reusable_tip(p_psk, psk_tray, psk_well)
+            p_psk.move_to(tip.top(30), speed = self.SLOWEST_XY_RATE)
             p_psk.pick_up_tip(tip)
         elif not reuse_psk:
             tip = self._next_tip(pipette = p_psk)
+            p_psk.move_to(tip.top(30), speed = self.SLOWEST_XY_RATE)
             p_psk.pick_up_tip(tip)
         if reuse_as:
             tip = self._get_reusable_tip(p_as, as_tray, as_well)
+            p_psk.move_to(tip.top(30), speed = self.SLOWEST_XY_RATE)
             p_as.pick_up_tip(tip)
         elif not reuse_as:
             tip = self._next_tip(pipette = p_as)
+            p_psk.move_to(tip.top(30), speed = self.SLOWEST_XY_RATE)
             p_as.pick_up_tip(tip)
     ### Callable Tasks
 
@@ -342,13 +348,19 @@ class ListenerWebsocket:
         """Aspirates from a single source well and stages the pipette near the spincoater"""
         # self._protocol_context.comment('START `aspirate_for_spincoating` step')
         p = self._get_pipette(pipette=pipette)
-        if p.has_tip:
-            p.drop_tip()
         if reuse_tip:
             tip = self._get_reusable_tip(pipette, tray, well)
+            if p.has_tip:
+                p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
+                p.drop_tip()
+            p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
             p.pick_up_tip(tip)
             self.return_current_tip[p] = True
         else:
+            if p.has_tip:
+                p.move_to(self.TRASH['A1'].top(5), speed = self.SLOWEST_XY_RATE)
+            tip - self._next_tip(pipette)
+            p.move_to(tip.top(z=10), speed = self.SLOWEST_XY_RATE)
             p.pick_up_tip()
         self._aspirate_from_well(
             tray=tray,
