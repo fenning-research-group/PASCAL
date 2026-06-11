@@ -126,7 +126,7 @@ class ListenerWebsocket:
         
         self.__save_defaults()
         self._protocol_context = protocol_context
-        self._HW_API = self._protocol_context.get_hardware()
+        self._HW_API = self._protocol_context._implementation.get_hardware()
         # #TODO: uncomment this for eliminating opentrons shaking
         # ## must also account for new <spincoat> spin_start delay time as speeds decrease
         # new_speed = self.SLOWEST_XY_RATE

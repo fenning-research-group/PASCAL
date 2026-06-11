@@ -629,20 +629,20 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         else:
             return self.liquidhandler.CONSTANTS["dispensedelay"]
 
-    def _generatelhtasks_onedrop(self, t0, drop, ot2_behavior = None):
+    def _generatelhtasks_onedrop(self, t0, drop, ot2_settings = None):
         liquidhandlertasks = {}
-        if ot2_behavior is None:
+        if ot2_settings is None:
             (
                 aspirate_duration,
                 staging_duration,
                 dispense_duration,
             ) = expected_timings(drop)
-        elif ot2_behavior is not None:
+        elif ot2_settings is not None:
             (
                 aspirate_duration,
                 staging_duration,
                 dispense_duration,
-            ) = self.dynamic_timings(drop, ot2_behavior)
+            ) = self.dynamic_timings(drop, ot2_settings)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -657,11 +657,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             - staging_duration
             - dispense_duration
         )
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["overwrite_constants"] (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
-                    ot2_settings = ot2_behavior
+                    ot2_settings = ot2_settings
                 )
             )
         liquidhandlertasks["aspirate_solution"] = (
@@ -688,7 +688,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         )
 
         self.liquidhandler.cleanup(nist_time=last_time + 0.5)
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["revert_to_defaults"] = (
                 self.liquidhandler.revert_to_defaults(
                     nist_time = last_time + 0.1
@@ -696,7 +696,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
         return headstart, liquidhandlertasks
 
-    def _generatelhtasks_twodrops(self, t0, drop0, drop1, ot2_behavior = None):
+    def _generatelhtasks_twodrops(self, t0, drop0, drop1, ot2_settings = None):
 
         aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
             drop0
@@ -717,7 +717,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-                ot2_behavior = ot2_behavior
+                ot2_behavior = ot2_settings
             )
 
         else:
@@ -731,7 +731,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-                ot2_behavior = ot2_behavior
+                ot2_behavior = ot2_settings
             )
 
     def _generatelhtasks_twodrops_together(
@@ -745,12 +745,12 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         aspirate1_duration,
         staging1_duration,
         dispense1_duration,
-        ot2_behavior = None
+        ot2_settings = None
     ):
         """Aspirate both solutions together, not enough time to do them one by one"""
         liquidhandlertasks = {}
 
-        ##TODO: dynamically adjust the timings based on the values within ot2_behavior
+        ##TODO: dynamically adjust the timings based on the values within ot2_settings
         # timings
         if drop0["slow_travel"] or drop1["slow_travel"]:
             # both pipettes hold liquid at once, so if one is slow travel, both must be slow travel.
@@ -790,11 +790,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         dispense1_time = t0 + drop1["time"] + headstart - dispense1_duration
 
         # build tasklist
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["overwrite_constants"] (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
-                    ot2_settings = ot2_behavior
+                    ot2_settings = ot2_settings
                 )
             )
         liquidhandlertasks["aspirate_solution0"] = (
@@ -849,7 +849,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         )
 
         self.liquidhandler.cleanup(nist_time=dispense1_time + 0.1)
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["revert_to_defaults"] = (
                 self.liquidhandler.revert_to_defaults(
                     nist_time = dispense1_time + 0.2
@@ -868,7 +868,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         aspirate1_duration,
         staging1_duration,
         dispense1_duration,
-        ot2_behavior = None
+        ot2_settings = None
     ):
         """Aspirate, stage, and dispense first drop before aspirating the second drop."""
         liquidhandlertasks = {}
@@ -899,11 +899,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         dispense1_time = t0 + drop1["time"] + headstart - dispense1_duration
 
         # build tasklist
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["overwrite_constants"] (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
-                    ot2_settings = ot2_behavior
+                    ot2_settings = ot2_settings
                 )
             )
         liquidhandlertasks["aspirate_solution0"] = (
@@ -963,7 +963,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         )
 
         self.liquidhandler.cleanup(nist_time=dispense1_time + 0.5)
-        if ot2_behavior is not None:
+        if ot2_settings is not None:
             liquidhandlertasks["revert_to_defaults"] = (
                 self.liquidhandler.revert_to_defaults(
                     nist_time = dispense1_time + 0.6
@@ -991,14 +991,14 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         t0 = self.maestro.nist_time
         self.spincoater.start_logging()
         ### set up liquid handler tasks
-        ot2_behavior = details["OT2 settings"] if "OT2 settings" in details else None
+        ot2_settings = details["ot2_settings"] if "ot2_settings" in details else None
         if len(details["drops"]) == 1:
             headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
-                t0=t0, drop=details["drops"][0], ot2_settings = ot2_behavior
+                t0=t0, drop=details["drops"][0], ot2_settings = ot2_settings
             )
         else:  # assume two drops, planning does not allow for >2
             headstart, liquidhandlertasks = self._generatelhtasks_twodrops(
-                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1], ot2_settings = ot2_behavior
+                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1], ot2_settings = ot2_settings
             )
 
         loop = asyncio.new_event_loop()
