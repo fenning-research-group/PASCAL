@@ -9,12 +9,70 @@ import websockets
 import threading
 import uuid
 import logging
+from dataclasses import dataclass, fields, _MISSING_TYPE, field
+from typing import Union, Set, List, Optional, Tuple, Generic, TypeVar
 
 MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["liquidhandler"]
 
 tc = constants["timings"]
+vc = constants["velocity"]
+a_ = constants["acceleration"]
+
+@dataclass
+class OT2VelocitySettings:
+    """dataclass for restricting form of velocity variables to be fed into the OT-2."""
+    X: float = vc["X"]
+    Y: float = vc["Y"]
+    Z: float = vc["Z"]
+    A: float = vc["A"]
+    B: float = vc["B"]
+    C: float = vc["C"]
+    
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
+
+@dataclass
+class OT2AccelerationSettings:
+    """dataclass for restricting form of acceleration variables to be fed into the OT-2."""
+    X: float = a_["X"]
+    Y: float = a_["Y"]
+    Z: float = a_["Z"]
+    A: float = a_["A"]
+    B: float = a_["B"]
+    C: float = a_["C"]
+
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
+
+@dataclass
+class OT2MotionConfig:
+    """dataclass for storing the base properties used for programmatically adjusting OT-2 motion behavior per-sample."""
+    # Liquid Arm Velocity
+    velocities: OT2VelocitySettings = field(
+        default_factory = lambda: {
+            k: vc[k] for k in ["X", "Y", "Z", "A", "B", "C"]
+        })
+    accelerations: OT2AccelerationSettings = field(
+        default_factory = lambda: {
+            k: a_[k] for k in ["X", "Y", "Z", "A", "B", "C"]
+        })
+    # Motion Execution:
+    MAXSPEED: float = 1
+    MINSPEED: float = 1
+
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
 
 
 def expected_timings(drop):
@@ -42,6 +100,42 @@ def expected_timings(drop):
         staging_duration = tc["travel_slow"]
         dispense_duration = tc["dispensedelay_slow"]
     else:
+        staging_duration = tc["travel"]
+        dispense_duration = tc["dispensedelay"]
+
+    return aspirate_duration, staging_duration, dispense_duration
+
+def dynamic_timings(drop, ot2_settings):
+    """Estimate the duration (seconds) liquid aspiration will require for a given drop.
+    Uses the ot2_settings alongside expected labware coordinates to account for variable motion speeds.
+
+    Parameters
+    ----------
+    drop : dict
+        Dictionary representation of `frgpascal.experimentaldesign.tasks.Drop` object representative of the liquid to be deposited.
+    ot2_settings : 
+        Dictionary representation of `frgpascal.experimentaldesign.tasks.OT2MotionConfig` object representation 
+        of the motion behavior of the liquid arm.
+
+    Returns
+    -------
+    tuple(float)
+        The expected duration of the aspirate, staging, and dispense pipette actions, respectively.
+    """
+    ac = tc["aspirate"] # aspiration constants
+    pick_tip_duration = ac["prepare_tip"]
+    aspirate_duration = ac["prepare_tip"] + drop["volume"] / 100 + tc["travel"]
+    aspirate_duration += drop["pre_mix"][0] * (
+        ac["premix"]["a"] * drop["pre_mix"][1] + ac["premix"]["b"]
+    ) # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
+    if drop["touch_tip"]:
+        aspirate_duration += ac["touchtip"]
+    if drop["slow_retract"]:
+        aspirate_duration += ac["slowretract"]
+    if drop["slow_travel"]:
+        staging_duration = tc["travel_slow"]
+        dispense_duration = tc["dispensedelay_slow"]
+    elif not drop["slow_travel"]:
         staging_duration = tc["travel"]
         dispense_duration = tc["dispensedelay"]
 
@@ -171,6 +265,23 @@ class OT2:
             taskid=taskid,
             nist_time=nist_time,
             mixing_netlist=mixing_netlist,
+        )
+        return taskid
+    
+    def overwrite_constants(self, taskid=None, nist_time=None, ot2_settings={}):
+        taskid = self.server.add_to_queue(
+            task="overwrite_constants",
+            taskid=taskid,
+            nist_time=nist_time,
+            ot2_settings = ot2_settings,
+        )
+        return taskid
+    
+    def revert_to_defaults(self, taskid=None, nist_time=None):
+        taskid = self.server.add_to_queue(
+            task="revert_to_defaults",
+            taskid=taskid,
+            nist_time=nist_time
         )
         return taskid
 

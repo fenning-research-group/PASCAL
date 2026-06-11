@@ -268,9 +268,40 @@ liquidhandler:
   # dispense_delay: 1
   # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
   # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
+  velocity: # Default liquid arm motion values from the OT-2
+    X: 600  # mm/s
+    Y: 400  # mm/s
+    Z: 150  # mm/s
+    A: 125  # mm/s
+    B: 40  # mm/s
+    C: 40  # mm/s
+  acceleration: # Default liquid arm values from the OT-2
+    X: 3000 # mm/s^2
+    Y: 3000 # mm/s^2
+    Z: 1500 # mm/s^2
+    A: 1500 # mm/s^2
+    B: 200  # mm/s^2
+    C: 200  # mm/s^2
+  pipette: # constants related to pipette operation
+    airgap: 10 # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
+    aspirate_height: 0.3 # mm, distance between tip and bottom of wells while aspirating
+    dispense_height: 1 # mm, distance between tip and bottom of wells while dispensing
+    dispense_rate: 150 # uL/s
+    spincoating_dispense_height: 1 # distance between tip and as-calibrated top of sample on chuck
+    spincoating_dispense_rate: 200 # uL/s
+    touch_tip_rate: 10 # mm/s
+    slow_z_rate: 20 # mm/s
+    slow_xy_rate: 100 # mm/s
+    slowest_xy_rate: 20 # mm/s
+    mix_volume: 50 # uL to repeatedly aspirate/dispense when mixing well contents.
+    clear_chuck: # position to move pipette arm after deposition so leftover solvent doesn't drop onto spinning film.
+      X: 150 # mm
+      Y: 100 # mm
+      Z: 100 # mm, (0, 0, 0) is front left floor corner of ot-2 gantry's working volume. Exact opposite vertex as the "home" coordinate.
   server:
     ip: "169.254.160.20" #this is the external IP of the OT2 robot, can be found in the OT2 app!
     port: 8764
+  
 
 sampletray:
   # p1: [369.1, 77.6, 20.7]

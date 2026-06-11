@@ -8,6 +8,8 @@ import mixsol as mx
 from mixsol.helpers import components_to_name
 from frgpascal.system import generate_workers
 import roboflo
+from dataclasses import dataclass, fields, _MISSING_TYPE, field
+from typing import Tuple
 
 from frgpascal.hardware import liquidhandler
 from frgpascal.workers import (
@@ -67,6 +69,77 @@ __hide_me = [
 AVAILABLE_TASKS = {
     task: details for task, details in ALL_TASKS.items() if task not in __hide_me
 }  # tasks to display to user
+### Liquid Motion Configuration
+tc = HARDWARECONSTANTS["liquidhandler"]["timings"]
+vc = HARDWARECONSTANTS["liquidhandler"]["velocity"]
+a_ = HARDWARECONSTANTS["liquidhandler"]["acceleration"]
+v_ = HARDWARECONSTANTS["liquidhandler"]["velocity"]
+p_ = HARDWARECONSTANTS["liquidhandler"]["pipette"]
+
+@dataclass
+class OT2VelocitySettings:
+    """dataclass for restricting form of velocity variables to be fed into the OT-2."""
+    X: float = v_["X"]
+    Y: float = v_["Y"]
+    Z: float = v_["Z"]
+    A: float = v_["A"]
+    B: float = v_["B"]
+    C: float = v_["C"]
+    
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
+
+@dataclass
+class OT2AccelerationSettings:
+    """dataclass for restricting form of acceleration variables to be fed into the OT-2."""
+    X: float = a_["X"]
+    Y: float = a_["Y"]
+    Z: float = a_["Z"]
+    A: float = a_["A"]
+    B: float = a_["B"]
+    C: float = a_["C"]
+
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
+
+@dataclass
+class OT2MotionConfig:
+    """dataclass for storing the base properties used for programmatically adjusting OT-2 motion behavior per-sample."""
+    # Liquid Arm Motion
+    velocities: OT2VelocitySettings = field(
+        default_factory = OT2VelocitySettings)
+    accelerations: OT2AccelerationSettings = field(
+        default_factory = OT2AccelerationSettings)
+    # Motion Execution:
+    SLOW_Z_RATE: float = p_["slow_z_rate"]
+    SLOW_XY_RATE: float = p_["slow_xy_rate"]
+    SLOWEST_XY_RATE: float = p_["slowest_xy_rate"]   # Pipette Actions:
+    AIRGAP: float = p_["airgap"] # airgap, in uL, to aspirate after drawing solution. Helps avoid drips, but reduces max tip capacity.
+    ASPIRATE_HEIGHT: float = p_["aspirate_height"]
+    DISPENSE_HEIGHT: float = p_["dispense_height"]
+    DISPENSE_RATE: float = p_["dispense_rate"]
+    SPINCOATING_DISPENSE_HEIGHT: float = p_["spincoating_dispense_height"]
+    SPINCOATING_DISPENSE_RATE: float = p_["spincoating_dispense_rate"]
+    TOUCH_TIP_RATE: float = p_["touch_tip_rate"]
+    # position planning:
+    CLEARCHUCKPOSITION: Tuple[float] = (
+        p_["clear_chuck"]["X"],
+        p_["clear_chuck"]["Y"],
+        p_["clear_chuck"]["Z"],
+        ) # mm, 0,0,0 = front left floor corner of ot-2 gantry's working volume.
+
+
+    def __post_init__(self):
+        for field in fields(self):
+            # If there is a default and the value of the field is missing, then we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
 
 ### Sample Class
 
@@ -476,7 +549,7 @@ class Mix(Task):
 
 
 class Spincoat(Task):
-    def __init__(self, steps: list, drops: list, duration: float = None, immediate=False):
+    def __init__(self, steps: list, drops: list, duration: float = None, ot2_behavior: dict = None, immediate=False):
         """
 
         Args:
@@ -548,6 +621,8 @@ class Spincoat(Task):
         else:
             final_duration = calculated_duration
 
+        self.ot2_behavior = ot2_behavior
+
         super().__init__(task="spincoat", duration=final_duration, immediate=immediate)
 
     def generate_details(self):
@@ -562,6 +637,7 @@ class Spincoat(Task):
             "start_times": self.start_times,
             "duration": self.duration,
             "drops": drops,
+            "ot2_settings": self.ot2_behavior
         }
 
     def __repr__(self):
@@ -594,6 +670,10 @@ class Spincoat(Task):
 
     def __hash__(self):
         return hash(self.__key())
+    
+class SpecialSpincoat(Spincoat):
+    def __init__(self, steps: list, drops: list, duration: float = None, immediate=False):
+        super().__init__(steps = steps, drops = drops, duration = duration, immediate = immediate)
 
 
 class Anneal(Task):

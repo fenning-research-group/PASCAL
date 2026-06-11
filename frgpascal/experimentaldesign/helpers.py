@@ -19,7 +19,7 @@ from matplotlib.colors import Normalize
 import pandas as pd
 from frgpascal.system import generate_workers, build
 from frgpascal.workers import Worker_Hotplate
-from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol
+from frgpascal.experimentaldesign.protocolwriter import generate_ot2_protocol, generate_ot2_protocolNEW
 from typing import Tuple
 import mixsol as mx
 from mixsol.mix import _solutions_to_matrix
@@ -768,6 +768,14 @@ class PASCALPlanner:
             # template = "1000left300right"
             template = ot2_template
             generate_ot2_protocol(
+                title=self.name,
+                mixing_netlist=self.mixing_netlist,
+                labware=self.solution_storage,
+                tipracks_1000=self.tip_racks_1000,
+                tipracks_300=self.tip_racks_300,
+                template=template,
+            )
+            generate_ot2_protocolNEW(
                 title=self.name,
                 mixing_netlist=self.mixing_netlist,
                 labware=self.solution_storage,
