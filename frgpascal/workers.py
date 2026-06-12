@@ -642,7 +642,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate_duration,
                 staging_duration,
                 dispense_duration,
-            ) = self.dynamic_timings(drop, ot2_settings)
+            ) = expected_timings(drop)
+            # ) = self.dynamic_timings(drop, ot2_settings)
 
         headstart = (
             aspirate_duration + staging_duration + dispense_duration - drop["time"]
@@ -658,7 +659,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             - dispense_duration
         )
         if ot2_settings is not None:
-            liquidhandlertasks["overwrite_constants"] (
+            liquidhandlertasks["overwrite_constants"] = (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
                     ot2_settings = ot2_settings
@@ -791,7 +792,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
         # build tasklist
         if ot2_settings is not None:
-            liquidhandlertasks["overwrite_constants"] (
+            liquidhandlertasks["overwrite_constants"] = (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
                     ot2_settings = ot2_settings
@@ -900,7 +901,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
         # build tasklist
         if ot2_settings is not None:
-            liquidhandlertasks["overwrite_constants"] (
+            liquidhandlertasks["overwrite_constants"] = (
                 self.liquidhandler.overwrite_constants(
                     nist_time = t0,
                     ot2_settings = ot2_settings

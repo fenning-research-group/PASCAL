@@ -276,17 +276,24 @@ class ListenerWebsocket:
                 # speed=self.SLOW_Z_RATE
             )
         if touch_tip:
+            
+            self._protocol_context.comment('START `p.touch_tip` step')
             p.touch_tip(
                 # speed = 1 # mm/s
                 speed = self.config.TOUCH_TIP_RATE
             )
             
-            p.moveto(
-                self.labwares[tray][well].top(2), 
-                speed = self.config.SLOW_Z_RATE,
-                # speed = self.SLOW_Z_RATE
-            )
+            self._protocol_context.comment('END `p.touch_tip` step')
+            # self._protocol_context.comment('START `move out of vial` step')
+            # p.moveto(
+            #     self.labwares[tray][well].top(2), 
+            #     speed = self.config.SLOW_Z_RATE,
+            #     # speed = self.SLOW_Z_RATE
+            # )
+            # self._protocol_context.comment('END `move out of vial` step')
         if air_gap:
+            
+            self._protocol_context.comment('START `air_gap` step')
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
                 volume=self.AIRGAP,
@@ -294,6 +301,8 @@ class ListenerWebsocket:
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
+            
+            self._protocol_context.comment('END `air_gap` step')
         self._protocol_context.comment('END `_aspirate_from_well` step')
 
     def _next_tip(self, pipette):
@@ -386,15 +395,15 @@ class ListenerWebsocket:
                     obj_ = self.config.velocities
                 for k_, v_ in v.items():
                     setattr(
-                        obj = obj_,
-                        name = k_,
-                        value = v_
+                        obj_, # obj to edit
+                        k_, # attr name
+                        v_ # new value
                     )
             else:
                 setattr(
-                    obj = self.config,
-                    name = k,
-                    value = v
+                    self.config, # obj to edit
+                    k, # attr name
+                    v # new value
                 )
 
     def _reset_to_defaults(self):
@@ -439,64 +448,64 @@ class ListenerWebsocket:
         ot2_settings = {},
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-            )
-            self._protocol_context.comment('START `aspirate_for_spincoating` step')
-            p = self._get_pipette(pipette=pipette)
-            self._protocol_context.comment(f'Got the pipette: {p}')
-            if reuse_tip:
-                self._protocol_context.comment('Reusing tip!')
-                tip = self._get_reusable_tip(pipette, tray, well)
-                self._protocol_context.comment(f'Next Tip is {type(tip)}')
-                if p.has_tip:
-                    p.move_to(
-                        tip.top(10), 
-                        speed = self.config.SLOWEST_XY_RATE
-                        # speed = self.SLOWEST_XY_RATE
-                    )
-                    p.drop_tip()
-                p.move_to(
-                    tip.top(10),
-                    speed = self.config.SLOWEST_XY_RATE
-                    # speed = self.SLOWEST_XY_RATE
-                )
-                p.pick_up_tip(tip)
-                self.return_current_tip[p] = True
-            else:
-                if p.has_tip:
-                    self._protocol_context.commment('p300 has a tip!')
-                    p.move_to(
-                        self.TRASH['A1'].top(5), 
-                        speed = self.config.SLOWEST_XY_RATE
-                        # speed = self.SLOWEST_XY_RATE
-                    )
-                    p.drop_tip()
-                self._protocol_context.comment('thinking about next tip')
-                tip = self._next_tip(pipette)
-                self._protocol_context.comment('Found next tip')
-                self._protocol_context.comment(f'Next Tip is {type(tip)}')
-                self._protocol_context.comment(f'Next Tip pos is {tip.top()}')
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #     )
+        self._protocol_context.comment('START `aspirate_for_spincoating` step')
+        p = self._get_pipette(pipette=pipette)
+        self._protocol_context.comment(f'Got the pipette: {p}')
+        if reuse_tip:
+            self._protocol_context.comment('Reusing tip!')
+            tip = self._get_reusable_tip(pipette, tray, well)
+            self._protocol_context.comment(f'Next Tip is {type(tip)}')
+            if p.has_tip:
                 p.move_to(
                     tip.top(10), 
                     speed = self.config.SLOWEST_XY_RATE
                     # speed = self.SLOWEST_XY_RATE
                 )
-                p.pick_up_tip()
-            self._aspirate_from_well(
-                tray=tray,
-                well=well,
-                volume=volume,
-                pipette=p,
-                slow_retract=slow_retract,
-                air_gap=air_gap,
-                touch_tip=touch_tip,
-                pre_mix=pre_mix,
+                p.drop_tip()
+            p.move_to(
+                tip.top(10),
+                speed = self.config.SLOWEST_XY_RATE
+                # speed = self.SLOWEST_XY_RATE
             )
-            # self._protocol_context.comment('END `aspirate_for_spincoating` step')
-        finally:
-            self._reset_to_defaults()
+            p.pick_up_tip(tip)
+            self.return_current_tip[p] = True
+        else:
+            if p.has_tip:
+                self._protocol_context.commment('p300 has a tip!')
+                p.move_to(
+                    self.TRASH['A1'].top(5), 
+                    speed = self.config.SLOWEST_XY_RATE
+                    # speed = self.SLOWEST_XY_RATE
+                )
+                p.drop_tip()
+            self._protocol_context.comment('thinking about next tip')
+            tip = self._next_tip(pipette)
+            self._protocol_context.comment('Found next tip')
+            self._protocol_context.comment(f'Next Tip is {type(tip)}')
+            self._protocol_context.comment(f'Next Tip pos is {tip.top()}')
+            p.move_to(
+                tip.top(10), 
+                speed = self.config.SLOWEST_XY_RATE
+                # speed = self.SLOWEST_XY_RATE
+            )
+            p.pick_up_tip()
+        self._aspirate_from_well(
+            tray=tray,
+            well=well,
+            volume=volume,
+            pipette=p,
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+            pre_mix=pre_mix,
+        )
+        # self._protocol_context.comment('END `aspirate_for_spincoating` step')
+        # finally:
+        #     self._reset_to_defaults()
 
     def aspirate_both_for_spincoating(
         self,
@@ -516,160 +525,160 @@ class ListenerWebsocket:
         ot2_settings = {},
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-            )
-            self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
-            if legacy:
-                for p in self.pipettes.values():
-                    if p.has_tip:
-                        p.drop_tip
-                for p in self.pipettes.values():
-                    p.pick_up_tip() # Opentrons API forces all of the first-called pipette process to be done before moving on to pipette # 2
-            else:
-                self._load_pipettes(
-                    psk_tray = psk_tray,
-                    psk_well = psk_well,
-                    as_tray = as_tray,
-                    as_well = as_well,
-                    reuse_as = reuse_as,
-                    reuse_psk = reuse_psk
-                )
-
-            self._aspirate_from_well(
-                tray=psk_tray,
-                well=psk_well,
-                volume=psk_volume,
-                pipette=self._get_pipette("perovskite"),
-                slow_retract=slow_retract,
-                air_gap=air_gap,
-                touch_tip=touch_tip,
-            )
-            self._aspirate_from_well(
-                tray=as_tray,
-                well=as_well,
-                volume=as_volume,
-                pipette=self._get_pipette("antisolvent"),
-                slow_retract=slow_retract,
-                air_gap=air_gap,
-                touch_tip=touch_tip,
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #     )
+        self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
+        if legacy:
+            for p in self.pipettes.values():
+                if p.has_tip:
+                    p.drop_tip
+            for p in self.pipettes.values():
+                p.pick_up_tip() # Opentrons API forces all of the first-called pipette process to be done before moving on to pipette # 2
+        else:
+            self._load_pipettes(
+                psk_tray = psk_tray,
+                psk_well = psk_well,
+                as_tray = as_tray,
+                as_well = as_well,
+                reuse_as = reuse_as,
+                reuse_psk = reuse_psk
             )
 
-            self.stage_for_dispense(pipette="perovskite")
-            self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
-        finally:
-            self._reset_to_defaults()
+        self._aspirate_from_well(
+            tray=psk_tray,
+            well=psk_well,
+            volume=psk_volume,
+            pipette=self._get_pipette("perovskite"),
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
+        self._aspirate_from_well(
+            tray=as_tray,
+            well=as_well,
+            volume=as_volume,
+            pipette=self._get_pipette("antisolvent"),
+            slow_retract=slow_retract,
+            air_gap=air_gap,
+            touch_tip=touch_tip,
+        )
+
+        self.stage_for_dispense(pipette="perovskite")
+        self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
+        # finally:
+        #     self._reset_to_defaults()
 
     def stage_for_dispense(self, pipette, slow_travel=False, ot2_settings = {}):
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings,
-            )
-            self._protocol_context.comment('START `stage_for_dispense` step')
-            p = self._get_pipette(pipette)
-            if slow_travel:
-                speed = self.SLOW_XY_RATE
-            else:
-                speed = None
-            # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
-            p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
-            self._protocol_context.comment('END `stage_for_dispense` step')
-        finally:
-            self._reset_to_defaults()
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings,
+        #     )
+        self._protocol_context.comment('START `stage_for_dispense` step')
+        p = self._get_pipette(pipette)
+        if slow_travel:
+            speed = self.SLOW_XY_RATE
+        else:
+            speed = None
+        # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
+        p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
+        self._protocol_context.comment('END `stage_for_dispense` step')
+        # finally:
+        #     self._reset_to_defaults()
 
     def dispense_onto_chuck(self, pipette, ot2_settings = {}, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-                )
-            height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
-            rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
-            slow_travel = kwargs.get("slow_travel", False)
-            blow_out = kwargs.get("blow_out", False)
-            self._protocol_context.comment('START `dispense_onto_chuck` step')
-            p = self._get_pipette(pipette)
-            relative_rate = rate / p.flow_rate.dispense
-            if slow_travel:
-                p.move_to(
-                    location=self.spincoater[self.CHUCK].top(height),
-                    # speed=self.SLOW_XY_RATE,
-                    speed = self.SLOWEST_XY_RATE,
-                )
-            p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
-            if blow_out:
-                p.blow_out()
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #         )
+        height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
+        rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
+        slow_travel = kwargs.get("slow_travel", False)
+        blow_out = kwargs.get("blow_out", False)
+        self._protocol_context.comment('START `dispense_onto_chuck` step')
+        p = self._get_pipette(pipette)
+        relative_rate = rate / p.flow_rate.dispense
+        if slow_travel:
             p.move_to(
-                self.spincoater[self.STANDBY].top(), force_direct=True,
+                location=self.spincoater[self.CHUCK].top(height),
+                # speed=self.SLOW_XY_RATE,
                 speed = self.SLOWEST_XY_RATE,
-            )  # Move off of chuck to prevent dripping onto substrate
-            self._protocol_context.comment('END `dispense_onto_chuck` step')
-        finally:
-            self._reset_to_defaults()
+            )
+        p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
+        if blow_out:
+            p.blow_out()
+        p.move_to(
+            self.spincoater[self.STANDBY].top(), force_direct=True,
+            speed = self.SLOWEST_XY_RATE,
+        )  # Move off of chuck to prevent dripping onto substrate
+        self._protocol_context.comment('END `dispense_onto_chuck` step')
+        # finally:
+        #     self._reset_to_defaults()
 
     def clear_chuck(self, ot2_settings = {}):
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-            )
-            self._protocol_context.comment('START `clear_chuck` step')
-            self.pipettes["right"].move_to(
-                location=types.Location(
-                    point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
-                ),
-                speed = self.SLOWEST_XY_RATE,
-            )
-            self._protocol_context.comment('END `clear_chuck` step')
-        finally:
-            self._reset_to_defaults()
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #     )
+        self._protocol_context.comment('START `clear_chuck` step')
+        self.pipettes["right"].move_to(
+            location=types.Location(
+                point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
+            ),
+            speed = self.SLOWEST_XY_RATE,
+        )
+        self._protocol_context.comment('END `clear_chuck` step')
+        # finally:
+        #     self._reset_to_defaults()
 
     def mix(self, mixing_netlist, ot2_settings, **kwargs):
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-            )
-            p = self._get_pipette(pipette="perovskite")
-            for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
-                source_labware, source_well = source_str.split("-")
-                source = self.labwares[source_labware][source_well]
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #     )
+        p = self._get_pipette(pipette="perovskite")
+        for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
+            source_labware, source_well = source_str.split("-")
+            source = self.labwares[source_labware][source_well]
 
-                destinations = []
-                volumes = []
-                for destination_str, volume in destination_strings.items():
-                    destination_labware, destination_well = destination_str.split("-")
-                    destinations.append(
-                        self.labwares[destination_labware][destination_well]
-                    )
-                    volumes.append(volume)
-
-                if i == len(mixing_netlist) - 1:  # ie this is the last transfer
-                    mix_after = (5, 50)
-                else:
-                    mix_after = (0, 0)
-                dispense_rate0 = p.flow_rate.dispense
-                aspirate_rate0 = p.flow_rate.aspirate
-
-                p.flow_rate.aspirate = 20
-                p.flow_rate.dispense = 50  # slow to handle viscous solutions
-
-                p.transfer(
-                    volume=volumes,
-                    source=source,
-                    dest=destinations,
-                    mix_after=mix_after,
-                    disposal_volume=0,
-                    carryover=True,
-                    new_tip="always",
-                    touch_tip=True,
-                    blow_out=True,
-                    blow_out_location="destination well",
-                    air_gap=20,
+            destinations = []
+            volumes = []
+            for destination_str, volume in destination_strings.items():
+                destination_labware, destination_well = destination_str.split("-")
+                destinations.append(
+                    self.labwares[destination_labware][destination_well]
                 )
-                p.flow_rate.aspirate = aspirate_rate0
-                p.flow_rate.dispense = dispense_rate0
-        finally:
-            self._reset_to_defaults()
+                volumes.append(volume)
+
+            if i == len(mixing_netlist) - 1:  # ie this is the last transfer
+                mix_after = (5, 50)
+            else:
+                mix_after = (0, 0)
+            dispense_rate0 = p.flow_rate.dispense
+            aspirate_rate0 = p.flow_rate.aspirate
+
+            p.flow_rate.aspirate = 20
+            p.flow_rate.dispense = 50  # slow to handle viscous solutions
+
+            p.transfer(
+                volume=volumes,
+                source=source,
+                dest=destinations,
+                mix_after=mix_after,
+                disposal_volume=0,
+                carryover=True,
+                new_tip="always",
+                touch_tip=True,
+                blow_out=True,
+                blow_out_location="destination well",
+                air_gap=20,
+            )
+            p.flow_rate.aspirate = aspirate_rate0
+            p.flow_rate.dispense = dispense_rate0
+        # finally:
+        #     self._reset_to_defaults()
 
     def cleanup(self, ot2_settings = {}):
         """drops/returns tips of all pipettes to prepare pipettes for future commands
@@ -677,36 +686,37 @@ class ListenerWebsocket:
         the order of operations feels overly complicated, but is chosen to minimize
         the travel (both horizontally and vertically) of the pipette heads
         """
-        try:
-            self._update_motion(
-                new_config_dict = ot2_settings
-            )
-            # self._protocol_context.comment("START `cleanup` step")
-            # drop all tips that dont need to be returned
-            for p, return_this_tip in self.return_current_tip.items():
-                if not p.has_tip:
-                    continue
-                if not return_this_tip:
-                    p.drop_tip()
+        # try:
+        #     self._update_motion(
+        #         new_config_dict = ot2_settings
+        #     )
+        # self._protocol_context.comment("START `cleanup` step")
+        # drop all tips that dont need to be returned
+        for p, return_this_tip in self.return_current_tip.items():
+            if not p.has_tip:
+                continue
+            if not return_this_tip:
+                p.drop_tip()
 
-            # first blow out all returning tips, then drop them back
-            for p, return_this_tip in self.return_current_tip.items():
-                if return_this_tip:
-                    p.blow_out(self.TRASH)
-            for p, return_this_tip in self.return_current_tip.items():
-                if return_this_tip:
-                    p.return_tip()
-                    self.return_current_tip[p] = False
+        # first blow out all returning tips, then drop them back
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.blow_out(self.TRASH)
+        for p, return_this_tip in self.return_current_tip.items():
+            if return_this_tip:
+                p.return_tip()
+                self.return_current_tip[p] = False
 
-            next_tip = self._next_tip(pipette="right")
-            p = self._get_pipette("right")
-            p.move_to(next_tip.top(5), speed = self.SLOWEST_XY_RATE)
-            # self._protocol_context.comment("END `cleanup` step")
-        finally:
-            self._reset_to_defaults()
+        next_tip = self._next_tip(pipette="right")
+        p = self._get_pipette("right")
+        p.move_to(next_tip.top(5), speed = self.SLOWEST_XY_RATE)
+        # self._protocol_context.comment("END `cleanup` step")
+        # finally:
+        #     self._reset_to_defaults()
 
     def overwrite_constants(self, ot2_settings = {}):
         """Updates the motion behavior of OT-2 for this particular sample's Worker_SpincoaterLiquidHandler task execution."""
+        self._protocol_context.comment("START `overwrite_constants` step")
         # Update the OT2MotionConfig:
         self._update_motion(
             new_config_dict = ot2_settings
@@ -720,9 +730,12 @@ class ListenerWebsocket:
         orig_hw_config.acceleration = new["acceleration"]
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
+        self._protocol_context.comment("END `overwrite_constants` step")
+        
 
     def revert_to_defaults(self):
         """Resets the motion behavior of OT-2 to legacy settings, to be used at the end of each task execution."""
+        self._protocol_context.comment("START `revert_to_defaults` step")
         # Update the OT2MotionConfig:
         self._reset_to_defaults()
         # Apply the saved defaults to the hardware API's default settings again.
@@ -735,7 +748,8 @@ class ListenerWebsocket:
         orig_hw_config.acceleration = new["acceleration"]
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
-
+        self._protocol_context.comment("END `revert_to_defaults` step")
+        
 
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
