@@ -255,6 +255,58 @@ class ListenerWebsocket:
             return self.pipettes["left"]
         else:
             raise ValueError("Invalid pipette name given!")
+    
+    def _smooth_touch_tip(self, well, pipette, speed, radius_frac = 1):
+        """Mirrors the InstrumentContext.touch_tip() execution, with finer control of speed.
+
+        Parameters
+        ----------
+        well : WellContext
+            the Well object representing the liquid storage slot.
+        pipette : InstrumentContext
+            the pipette object
+        speed : float
+            motion speed along all axes, in mm/s
+        radius_frac : int, optional
+            % of the well radius we move the pipette, by default 1.
+            Can decrease if solutions are particularly sticky to ~0.85
+        """
+        p = pipette
+        center_location = well.top()
+        center_point = center_location.point
+        if hasattr(well, 'diameter') and well.diameter is not None:
+            r_x = (well.diameter / 2.0) * radius_frac
+            r_y = r_x
+        else: # non-circular well!
+            r_x = (well.length / 2.0) * radius_frac
+            r_y = (well.width / 2.0) * radius_frac
+        edge_points = [
+            types.Point(
+                center_point.x + r_x, 
+                center_point.y, 
+                center_point.z
+            ), # East
+            types.Point(
+                center_point.x - r_x, 
+                center_point.y, 
+                center_point.z
+            ), # West
+            types.Point(
+                center_point.x, 
+                center_point.y + r_y, 
+                center_point.z
+            ), # South
+            types.Point(
+                center_point.x, 
+                center_point.y - r_y, 
+                center_point.z
+            ), # North
+        ]
+        p.move_to(center_location, speed = speed)
+        for point in edge_points:
+            p.move_to(center_location.move(point - center_location.point), speed = speed)
+        p.move_to(center_location, speed = speed)
+
 
     def _aspirate_from_well(
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
@@ -278,11 +330,11 @@ class ListenerWebsocket:
         if touch_tip:
             
             self._protocol_context.comment('START `p.touch_tip` step')
-            p.touch_tip(
+            # p.touch_tip(
                 # speed = 1 # mm/s
-                speed = self.config.TOUCH_TIP_RATE
-            )
-            
+                # speed = self.config.TOUCH_TIP_RATE
+            # )
+            self._smooth_touch_tip(well = well, pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
             self._protocol_context.comment('END `p.touch_tip` step')
             # self._protocol_context.comment('START `move out of vial` step')
             # p.moveto(
