@@ -415,9 +415,14 @@ class ListenerWebsocket:
             self,
             new_config_dict,
         ):
+        self._protocol_context.comment("START `update` step")
+        old_vX = self.config.velocities.X
+        planned_vX = new_config_dict["velocities"]["X"]
         self.__update_config(
             new_config_dict = new_config_dict
         )
+        new_vX = self.config.velocities.X
+        self._protocol_context.comment(f"END `update` step: old {old_vX};planned {planned_vX};actual {new_vX}")
     
     ### Callable Tasks
 
