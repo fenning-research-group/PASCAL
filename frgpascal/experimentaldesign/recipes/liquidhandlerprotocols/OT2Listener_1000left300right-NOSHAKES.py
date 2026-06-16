@@ -196,7 +196,8 @@ class ListenerWebsocket:
             if sleep_for > 0:
                 await asyncio.sleep(sleep_for)
             self.status = STATUS_TASK_INPROGRESS
-            self.tasks[task["task"]](*task["args"], **task["kwargs"])
+            timings = self.tasks[task["task"]](*task["args"], **task["kwargs"])
+            task["runtime_timings"] = timings
             # Notify the queue that the "work item" has been processed.
             self.q.task_done()
             self.status = STATUS_IDLE
@@ -322,24 +323,34 @@ class ListenerWebsocket:
     def _aspirate_from_well(
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
+        timings = {}
         self._protocol_context.comment('START `_aspirate_from_well` step')
         p = pipette
         # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
+            t0 = time.time()
             p.mix(
                 repetitions=pre_mix[0],
                 volume=pre_mix[1],
                 location=self.labwares[tray][well],
             )
+            tf = time.time()
+            timings["premix_volume-duration"] = tf - t0
+        t0 = time.time()
         p.aspirate(volume=volume, location=self.labwares[tray][well])
+        tf = time.time()
+        timings["aspirate_volume-duration"] = tf - t0
         if slow_retract:
+            t0 = time.time()
             p.move_to(
                 self.labwares[tray][well].top(2), 
                 speed = self.config.SLOW_Z_RATE,
                 # speed=self.SLOW_Z_RATE
             )
+            tf = time.time()
+            timings["slow_retract-duration"] = tf - t0
         if touch_tip:
-            
+            t0 = time.time()
             self._protocol_context.comment('START `p.touch_tip` step')
             # p.touch_tip(
                 # speed = 1 # mm/s
@@ -347,6 +358,8 @@ class ListenerWebsocket:
             # )
             self._smooth_touch_tip(well = self.labwares[tray][well], pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
             self._protocol_context.comment('END `p.touch_tip` step')
+            tf = time.time()
+            timings["touch_tip-duration"] = tf - t0
             # self._protocol_context.comment('START `move out of vial` step')
             # p.moveto(
             #     self.labwares[tray][well].top(2), 
@@ -355,7 +368,7 @@ class ListenerWebsocket:
             # )
             # self._protocol_context.comment('END `move out of vial` step')
         if air_gap:
-            
+            t0 = time.time()
             self._protocol_context.comment('START `air_gap` step')
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
             p.aspirate(
@@ -366,7 +379,10 @@ class ListenerWebsocket:
             # p.air_gap(self.AIRGAP)
             
             self._protocol_context.comment('END `air_gap` step')
+            tf = time.time()
+            timings["air_gap-duration"] = tf - t0
         self._protocol_context.comment('END `_aspirate_from_well` step')
+        return timings
 
     def _next_tip(self, pipette):
         pipette = self._get_pipette(pipette)
@@ -393,38 +409,59 @@ class ListenerWebsocket:
         return next_tip
 
     def _load_pipettes(self, psk_tray, psk_well, as_tray, as_well, reuse_psk = False, reuse_as = True):
+        timings = {}
         p_psk = self.pipettes['right']
         p_as = self.pipettes['left']
         if p_psk.has_tip:
+            t0 = time.time()
             p_psk.move_to(
                 self.TRASH.top(5), 
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_psk.drop_tip()
+            t2 = time.time()
+            timings["p300_move_to_trash-duration"] = t1 - t0
+            timings["p300_drop_tip_in_trash-duration"] = t2 - t1
         if p_as.has_tip:
+            t0 = time.time()
             p_psk.move_to(
                 self.TRASH.top(5), 
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_as.drop_tip()
+            t2 = time.time()
+            timings["p1000_move_to_trash-duration"] = t1 - t0
+            timings["p1000_drop_tip_in_trash-duration"] = t2 - t1
         if reuse_psk:
             tip = self._get_reusable_tip(p_psk, psk_tray, psk_well)
+            t0 = time.time()
             p_psk.move_to(
                 tip.top(30), 
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_psk.pick_up_tip(tip)
+            t2 = time.time()
+            timings["p300_move_to_tip-duration"] = t1 - t0
+            timings["p300_pick_up_tip-duration"] = t2 - t1
         elif not reuse_psk:
             tip = self._next_tip(pipette = p_psk)
+            t0 = time.time()
             p_psk.move_to(
                 tip.top(30), 
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_psk.pick_up_tip(tip)
+            t2 = time.time()
+            timings["p300_move_to_tip-duration"] = t1 - t0
+            timings["p300_pick_up_tip-duration"] = t2 - t1
         if reuse_as:
             tip = self._get_reusable_tip(p_as, as_tray, as_well)
             p_psk.move_to(
@@ -432,15 +469,25 @@ class ListenerWebsocket:
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_as.pick_up_tip(tip)
+            t2 = time.time()
+            timings["p1000_move_to_tip-duration"] = t1 - t0
+            timings["p1000_pick_up_tip-duration"] = t2 - t1
         elif not reuse_as:
             tip = self._next_tip(pipette = p_as)
+            t0 = time.time()
             p_psk.move_to(
                 tip.top(30),
                 speed = self.config.SLOWEST_XY_RATE
                 # speed = self.SLOWEST_XY_RATE
             )
+            t1 = time.time()
             p_as.pick_up_tip(tip)
+            t2 = time.time()
+            timings["p1000_move_to_tip-duration"] = t1 - t0
+            timings["p1000_pick_up_tip-duration"] = t2 - t1
+        return timings
     
     def __save_defaults(self):
         if self._NEVER_SAVED:
@@ -516,6 +563,7 @@ class ListenerWebsocket:
         ot2_settings = {},
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
+        timings = {}
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
@@ -571,6 +619,7 @@ class ListenerWebsocket:
             touch_tip=touch_tip,
             pre_mix=pre_mix,
         )
+        return timings
         # self._protocol_context.comment('END `aspirate_for_spincoating` step')
         # finally:
         #     self._reset_to_defaults()
@@ -593,6 +642,7 @@ class ListenerWebsocket:
         ot2_settings = {},
     ):
         """Aspirates two solutions and stages the perovskite (right) pipette near spincoater"""
+        timings = {}
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
@@ -605,7 +655,7 @@ class ListenerWebsocket:
             for p in self.pipettes.values():
                 p.pick_up_tip() # Opentrons API forces all of the first-called pipette process to be done before moving on to pipette # 2
         else:
-            self._load_pipettes(
+            timings["_load_pipettes"] = self._load_pipettes(
                 psk_tray = psk_tray,
                 psk_well = psk_well,
                 as_tray = as_tray,
@@ -614,7 +664,7 @@ class ListenerWebsocket:
                 reuse_psk = reuse_psk
             )
 
-        self._aspirate_from_well(
+        timings["_aspirate_from_well-p300"] = self._aspirate_from_well(
             tray=psk_tray,
             well=psk_well,
             volume=psk_volume,
@@ -623,7 +673,7 @@ class ListenerWebsocket:
             air_gap=air_gap,
             touch_tip=touch_tip,
         )
-        self._aspirate_from_well(
+        timings["_aspirate_from_well-p1000"] = self._aspirate_from_well(
             tray=as_tray,
             well=as_well,
             volume=as_volume,
@@ -633,18 +683,22 @@ class ListenerWebsocket:
             touch_tip=touch_tip,
         )
 
-        self.stage_for_dispense(pipette="perovskite")
+        timings["stage_for_dispense"] = self.stage_for_dispense(pipette="perovskite")
         self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def stage_for_dispense(self, pipette, slow_travel=False, ot2_settings = {}):
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings,
         #     )
+        timings = {}
+        t0 = time.time()
         self._protocol_context.comment('START `stage_for_dispense` step')
         p = self._get_pipette(pipette)
+        t1 = time.time()
         if slow_travel:
             speed = self.SLOW_XY_RATE
         else:
@@ -652,8 +706,13 @@ class ListenerWebsocket:
         # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
         p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
         self._protocol_context.comment('END `stage_for_dispense` step')
+        t2 = time.time()
+        timings["call_pipette-duration"] = t1 - t0
+        timings["move_pipette_to_stage-duration"] = t2 - t1
+        timings["stage_for_dispense-duration"] = t2 - t0
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def dispense_onto_chuck(self, pipette, ot2_settings = {}, **kwargs):  # , height=None, rate=None):
         """dispenses contents of declared pipette onto the spincoater"""
@@ -661,35 +720,54 @@ class ListenerWebsocket:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
         #         )
+        timings = {}
         height = kwargs.get("height", self.SPINCOATING_DISPENSE_HEIGHT)
         rate = kwargs.get("rate", self.SPINCOATING_DISPENSE_RATE)
         slow_travel = kwargs.get("slow_travel", False)
         blow_out = kwargs.get("blow_out", False)
+        t0 = time.time()
         self._protocol_context.comment('START `dispense_onto_chuck` step')
         p = self._get_pipette(pipette)
         relative_rate = rate / p.flow_rate.dispense
         if slow_travel:
+            t1 = time.time()
             p.move_to(
                 location=self.spincoater[self.CHUCK].top(height),
                 # speed=self.SLOW_XY_RATE,
                 speed = self.SLOWEST_XY_RATE,
             )
+            t2 = time.time()
+            timings["slow_move_to_chuck-duration"] = t2 - t1
+        else:
+            t2 = time.time()
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
+        t3 = time.time()
+        timings["dispense_onto_chuck-duration"] = t3 - t2
         if blow_out:
             p.blow_out()
+            t5 = time.time()
+        else:
+            t5 = time.time()
+        timings["blow_out_over_chuck-duration"] = t5 - t3
         p.move_to(
             self.spincoater[self.STANDBY].top(), force_direct=True,
             speed = self.SLOWEST_XY_RATE,
         )  # Move off of chuck to prevent dripping onto substrate
         self._protocol_context.comment('END `dispense_onto_chuck` step')
+        t6 = time.time()
+        timings["move_off_of_chuck_to_standby-duration"] = t6 - t5
+        timings["dispense_onto_chuck-duration"] = t6 - t0
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def clear_chuck(self, ot2_settings = {}):
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
         #     )
+        timings = {}
+        t0 = time.time()
         self._protocol_context.comment('START `clear_chuck` step')
         self.pipettes["right"].move_to(
             location=types.Location(
@@ -698,14 +776,18 @@ class ListenerWebsocket:
             speed = self.SLOWEST_XY_RATE,
         )
         self._protocol_context.comment('END `clear_chuck` step')
+        t1 = time.time()
+        timings["clear_chuck-duration"] = t1 - t0
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def mix(self, mixing_netlist, ot2_settings, **kwargs):
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
         #     )
+        timings = {}
         p = self._get_pipette(pipette="perovskite")
         for i, (source_str, destination_strings) in enumerate(mixing_netlist.items()):
             source_labware, source_well = source_str.split("-")
@@ -747,6 +829,7 @@ class ListenerWebsocket:
             p.flow_rate.dispense = dispense_rate0
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def cleanup(self, ot2_settings = {}):
         """drops/returns tips of all pipettes to prepare pipettes for future commands
@@ -754,6 +837,7 @@ class ListenerWebsocket:
         the order of operations feels overly complicated, but is chosen to minimize
         the travel (both horizontally and vertically) of the pipette heads
         """
+        timings = {}
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
@@ -781,9 +865,12 @@ class ListenerWebsocket:
         # self._protocol_context.comment("END `cleanup` step")
         # finally:
         #     self._reset_to_defaults()
+        return timings
 
     def overwrite_constants(self, ot2_settings = {}):
         """Updates the motion behavior of OT-2 for this particular sample's Worker_SpincoaterLiquidHandler task execution."""
+        timings = {}
+        t0 = time.time()
         self._protocol_context.comment("START `overwrite_constants` step")
         # Update the OT2MotionConfig:
         self._update_motion(
@@ -799,10 +886,15 @@ class ListenerWebsocket:
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
         self._protocol_context.comment("END `overwrite_constants` step")
+        t1 = time.time()
+        timings["overwrite_constants-duration"] = t1 - t0
+        return timings
         
 
     def revert_to_defaults(self):
         """Resets the motion behavior of OT-2 to legacy settings, to be used at the end of each task execution."""
+        timings = {}
+        t0 = time.time()
         self._protocol_context.comment("START `revert_to_defaults` step")
         # Update the OT2MotionConfig:
         self._reset_to_defaults()
@@ -817,7 +909,9 @@ class ListenerWebsocket:
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
         self._protocol_context.comment("END `revert_to_defaults` step")
-        
+        t1 = time.time()
+        timings["revert_to_defaults-duration"] = t1 - t0
+        return timings
 
 def run(protocol_context):
     protocol_context.set_rail_lights(on=False)
