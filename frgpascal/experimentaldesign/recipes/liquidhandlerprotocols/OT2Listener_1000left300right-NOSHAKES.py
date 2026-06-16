@@ -292,6 +292,11 @@ class ListenerWebsocket:
                 center_point.z
             ), # West
             types.Point(
+                center_point.x,
+                center_point.y,
+                center_point.z
+            ), # middle of vial top
+            types.Point(
                 center_point.x, 
                 center_point.y + r_y, 
                 center_point.z
@@ -301,11 +306,17 @@ class ListenerWebsocket:
                 center_point.y - r_y, 
                 center_point.z
             ), # North
+            types.Point(
+                center_point.x,
+                center_point.y,
+                center_point.z
+            ), # middle of vial top
         ]
         p.move_to(center_location, speed = speed)
-        for point in edge_points:
-            p.move_to(center_location.move(point - center_location.point), speed = speed)
-        p.move_to(center_location, speed = speed)
+        for edge, direc in zip(edge_points, ["E", "W", "M", "S", "N", "M"]):
+            self._protocol_context.comment(f"Moving {direc}")
+            p.move_to(center_location.move(edge - center_location.point), speed = speed)
+        # p.move_to(center_location, speed = speed)
 
 
     def _aspirate_from_well(
@@ -334,7 +345,7 @@ class ListenerWebsocket:
                 # speed = 1 # mm/s
                 # speed = self.config.TOUCH_TIP_RATE
             # )
-            self._smooth_touch_tip(well = well, pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
+            self._smooth_touch_tip(well = self.labwares[tray][well], pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
             self._protocol_context.comment('END `p.touch_tip` step')
             # self._protocol_context.comment('START `move out of vial` step')
             # p.moveto(
