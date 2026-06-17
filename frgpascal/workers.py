@@ -567,6 +567,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                     completed_tasks[task] = (
                         self.liquidhandler.server.completed_tasks[taskid] - t0
                     )  # save the completion time of the liquidhandler task
+                    completed_tasks[f"{task}-TASKID"] = taskid # save the unique id of the liquidhandler task
                     print(
                         f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {task}, {taskid}"
                     )
