@@ -1034,7 +1034,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             "liquidhandler_timings": {**drop_times},
             "spincoater_log": {**rpm_log},
             "headstart": headstart,
-            "ot2_action_timings": {**self.liquidhandler.server.task_timings[details['task_id']]}
+            "ot2_action_timings": {**self.liquidhandler.server.task_timings}
         }
 
     def mix(self, sample, details):

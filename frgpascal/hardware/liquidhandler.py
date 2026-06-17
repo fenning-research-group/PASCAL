@@ -411,6 +411,7 @@ class OT2Server:
 
     def _start_directly(self):
         self.uri = f"ws://{self.ip}:{self.port}"
+        self.task_timings = {}
 
         def run_loop(loop):
             asyncio.set_event_loop(loop)
