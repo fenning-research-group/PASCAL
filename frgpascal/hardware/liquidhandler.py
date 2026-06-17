@@ -318,6 +318,7 @@ class OT2Server:
         self.port = constants["server"]["port"]
         self.pending_tasks = []
         self.completed_tasks = {}
+        self.task_timings = {}
         self.POLLINGRATE = 1  # seconds between status checks to OT2
         self.loop = asyncio.new_event_loop()
 
@@ -497,6 +498,10 @@ class OT2Server:
                 self.pending_tasks.append(ot2["acknowledged"])
             if "completed" in ot2:
                 self._update_completed_tasklist(ot2["completed"])
+            if "task_metadata" in ot2:
+                result_data = ot2["task_metadata"]
+                tid = result_data["taskid"]
+                self.task_timings[tid] = result_data["runtime_timings"]
 
     async def __add_task(self, task):
         # print(task)
