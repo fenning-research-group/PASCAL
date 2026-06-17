@@ -218,6 +218,14 @@ class ListenerWebsocket:
 
         await task["finished_event"].wait()
 
+        ot2_result = {
+            "task_metadata": {
+                "taskid": task["taskid"],
+                "runtime_timings": task.get("runtime_timings", {})
+            }
+        }
+        await websocket.send(json.dumps(ot2_result))
+
     async def __update_status(self, websocket):
         # print("> updating task status")
         ot2 = {"completed": self.all_completed_tasks}
