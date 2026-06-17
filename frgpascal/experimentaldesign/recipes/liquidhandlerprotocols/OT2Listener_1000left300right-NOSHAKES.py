@@ -217,6 +217,8 @@ class ListenerWebsocket:
         await websocket.send(json.dumps(ot2))
 
         await task["finished_event"].wait()
+        if "runtime_timings" not in task.keys():
+            task["runtime_timings"] = self._tasktimings
 
         ot2_result = {
             "task_metadata": {
@@ -571,6 +573,7 @@ class ListenerWebsocket:
         ot2_settings = {},
     ):
         """Aspirates from a single source well and stages the pipette near the spincoater"""
+        self._tasktimings = {}
         timings = {}
         # try:
         #     self._update_motion(
@@ -617,7 +620,7 @@ class ListenerWebsocket:
                 # speed = self.SLOWEST_XY_RATE
             )
             p.pick_up_tip()
-        self._aspirate_from_well(
+        timings["_aspirate_from_well-p300"] = self._aspirate_from_well(
             tray=tray,
             well=well,
             volume=volume,
@@ -627,6 +630,7 @@ class ListenerWebsocket:
             touch_tip=touch_tip,
             pre_mix=pre_mix,
         )
+        self._tasktimings = timings
         return timings
         # self._protocol_context.comment('END `aspirate_for_spincoating` step')
         # finally:
@@ -695,6 +699,7 @@ class ListenerWebsocket:
         self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
         # finally:
         #     self._reset_to_defaults()
+        self._tasktimings = timings
         return timings
 
     def stage_for_dispense(self, pipette, slow_travel=False, ot2_settings = {}):
