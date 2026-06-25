@@ -354,16 +354,30 @@ class ListenerWebsocket:
         # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
             t0 = time.time()
+            t0_point = self.__get_point(pipette = p)
             p.mix(
                 repetitions=pre_mix[0],
                 volume=pre_mix[1],
                 location=self.labwares[tray][well],
             )
             tf = time.time()
-            timings["premix_volume-duration"] = tf - t0
+            tf_point = self.__get_point(pipette = p)
+            timings["premix_volume-ACTION"] = {
+                "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                "End_Point": (tf_point.x, tf_point.y, tf_point.z),
+                "Duration (s)": tf - t0
+            }
+            # timings["premix_volume-duration"] = tf - t0
         t0 = time.time()
+        t0_point = self.__get_point(pipette = p)
         p.aspirate(volume=volume, location=self.labwares[tray][well])
         tf = time.time()
+        tf_point = self.__get_point(pipette = p)
+        timings["aspirate_volume-ACTION"] = {
+            "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+            "End_Point": (tf_point.x, tf_point.y, tf_point.z),
+            "Duration (s)": tf - t0
+        }
         timings["aspirate_volume-duration"] = tf - t0
         if slow_retract:
             t0_point = self.__get_point(pipette = p)
