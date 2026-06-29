@@ -398,11 +398,11 @@ class ListenerWebsocket:
             t0_point = self.__get_point(pipette = p)
             t0 = time.time()
             self._protocol_context.comment('START `p.touch_tip` step')
-            # p.touch_tip(
-                # speed = 1 # mm/s
-                # speed = self.config.TOUCH_TIP_RATE
-            # )
-            smooth_times = self._smooth_touch_tip(well = self.labwares[tray][well], pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
+            if self.config.TOUCH_TIP_RATE is None:
+                p.touch_tip()
+                smooth_times = {}
+            else:
+                smooth_times = self._smooth_touch_tip(well = self.labwares[tray][well], pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
             self._protocol_context.comment('END `p.touch_tip` step')
             tf_point = self.__get_point(pipette = p)
             tf = time.time()
@@ -1240,16 +1240,16 @@ def run(protocol_context):
     # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
     new = {
         "acceleration": {
-            "X": 1, # 5 too high
-            "Y": 1, # 5 too high
+            "X": 3000,
+            "Y": 3000,
             "Z": 100,
             "A": 100,   # Right pipette mount
             "B": 100,   # Left pipette mount
         },
         # "junction_deviation": 0.01,
         "default_max_speed": {
-            "X": 50, # 100 too high
-            "Y": 50, # 100 too high
+            "X": 600,
+            "Y": 400,
             "Z": 125,
             "A": 100,
             "B": 100,

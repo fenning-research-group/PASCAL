@@ -289,10 +289,12 @@ liquidhandler:
     dispense_rate: 150 # uL/s
     spincoating_dispense_height: 1 # distance between tip and as-calibrated top of sample on chuck
     spincoating_dispense_rate: 200 # uL/s
-    touch_tip_rate: 10 # mm/s
+    touch_tip_rate: None # <- for original OT-2 behavior
+    # touch_tip_rate: 10 # mm/s
     slow_z_rate: 20 # mm/s
     slow_xy_rate: 100 # mm/s
-    slowest_xy_rate: 20 # mm/s
+    # slowest_xy_rate: 20 # mm/s
+    slowest_xy_rate: 100 # mm/s
     mix_volume: 50 # uL to repeatedly aspirate/dispense when mixing well contents.
     clear_chuck: # position to move pipette arm after deposition so leftover solvent doesn't drop onto spinning film.
       X: 150 # mm

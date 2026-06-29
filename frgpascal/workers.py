@@ -719,7 +719,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-                ot2_behavior = ot2_settings
+                ot2_settings = ot2_settings
             )
 
         else:
@@ -733,7 +733,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-                ot2_behavior = ot2_settings
+                ot2_settings = ot2_settings
             )
 
     def _generatelhtasks_twodrops_together(
