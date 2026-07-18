@@ -100,6 +100,7 @@ class SpinCoater:
 
     def connect(self, **kwargs):
         regular_bootup = kwargs.get('regular_bootup', True)
+        sc_axis = kwargs.get('sc_axis', 'axis0')
         if regular_bootup:
             # connect to odrive BLDC controller
             print("Connecting to odrive")
@@ -121,7 +122,13 @@ class SpinCoater:
 
             print("\tFound motor, now calibrating. This takes 10-20 seconds.")
             # input("\tPress enter once shroud is out of the way: ")
-            self.axis = self.odrv0.axis0
+            if sc_axis == 'axis0':
+                self.axis = self.odrv0.axis0
+                # self.axis.motor.config.calibration_current = 15
+            else:
+                self.axis = self.odrv0.axis1
+                # self.axis.motor.config.calibration_current = 10    
+            print("\tFull Calib integer state: {AXIS_STATE_FULL_CALIBRATION_SEQUENCE}")
             self.axis.requested_state = (
                 AXIS_STATE_FULL_CALIBRATION_SEQUENCE  # calibrate the encoder
             )
@@ -133,7 +140,8 @@ class SpinCoater:
                 AXIS_STATE_CLOSED_LOOP_CONTROL  # normal control mode
             )
             # odrive defaults
-            self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
+            # self.axis.motor.config.current_lim = 10  # Amps NOT SAME AS POWER SUPPLY CURRENT. This is targeting ~25% of the specified max motor current
+            self.axis.motor.config.current_lim = 40
             self.axis.controller.config.circular_setpoints = True  # position = 0-1 radial
             self.axis.trap_traj.config.vel_limit = (
                 0.5  # for position moves to lock position

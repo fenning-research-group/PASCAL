@@ -146,7 +146,9 @@ class Gantry:
                 try:
                     print(f"Trying to connect to Duet at {self.ip}:{port}...")
                     self._handle = socket.create_connection((self.ip, port), timeout = 5)
-
+                    self._handle.sendall(b"\n") # open the ethernet chat
+                    time.sleep(0.5)
+                    # self._handle.recv(1024) # flush old info
                     # # Clear any stale data from the socket connected. e.g., partially executed Gantry.moveto() commands which could crash gripper.
                     # self._handle.setblocking(False)
                     # try:
@@ -170,6 +172,7 @@ class Gantry:
             self._connected_network_devices[self.ip] = self._handle
             print(f"Connected to Duet at {self.ip}:{port}")
             self.__done_connecting = True
+            self.__CONNECTING = True
         except Exception as e:
             raise ValueError(f"Failed to connect to Duet at {self.ip}:{port}! \n{e}")
     
@@ -250,7 +253,11 @@ class Gantry:
     def write(self, msg):
         # print("cool thing: {self._ethernet})")
         if self._ethernet:
-            output = [self.send_gcode(msg, homing = True)]
+            homing = True
+            if self.__CONNECTING:
+                homing = False
+                self.__CONNECTING = False
+            output = [self.send_gcode(msg, homing = homing)]
         else:
             self._handle.write(f"{msg}\n".encode())
             time.sleep(self.POLLINGDELAY)
@@ -348,6 +355,19 @@ class Gantry:
 
     def _transition_to_frame(self, target_frame):
         if self._original_pascal:
+            if self.position != self.TRANSITION_COORDINATES:
+                self._movecommand(
+                    x = self.position[0],
+                    y = self.position[1],
+                    z = 0.25*(self.__ZLIM - self.position[2]) + self.position[2] - 0.2,
+                    speed = self.speed,
+                )
+                self._movecommand(
+                    x = self.TRANSITION_COORDINATES[0],
+                    y = self.TRANSITION_COORDINATES[1],
+                    z = self.TRANSITION_COORDINATES[2],
+                    speed = self.speed
+                )
             self._movecommand(
                 self.position[0],
                 y = self.position[1],
@@ -463,6 +483,9 @@ class Gantry:
             # y = np.round(y, decimals = 1)
             # z = np.round(z, decimals = 1)
             print(x, y, z)
+            z_ceiling = z
+            z_ceiling = min(z_ceiling, self.__ZLIM)
+            z = z_ceiling
             x, y, z = self._transform_coordinates(x, y, z)
             x, y, z = self.premove(x, y, z) # will error out if invalid move
             if speed is None:

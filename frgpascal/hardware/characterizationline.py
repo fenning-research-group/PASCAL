@@ -367,19 +367,19 @@ class CharacterizationAxis:
         reached_destination = False
         while not reached_destination and time_elapsed < self.TIMEOUT:
             time.sleep(self.POLLINGDELAY)
-            print(f"{self._handle.in_waiting} nawwww")
+            # print(f"{self._handle.in_waiting} nawwww")
             while not self._handle.in_waiting and time_elapsed_2 < self.TIMEOUT:
                 time.sleep(2*self.POLLINGDELAY)
-                print('waiting for serial.Serial to have nonzero bytes available to read')
+                # print('waiting for serial.Serial to have nonzero bytes available to read')
                 time_elapsed_2 = time.time() - start_time
             while self._handle.in_waiting:
                 line = self._handle.readline().decode("utf-8").strip()
                 if line == "echo:FinishedMoving":
-                    print(f"\t\tEncoder thinks we have finished moving, time to update our self.position")
+                    # print(f"\t\tEncoder thinks we have finished moving, time to update our self.position")
                     self.update()
-                    print(f"\t\tOur updated position has been saved as {self.position}")
+                    # print(f"\t\tOur updated position has been saved as {self.position}")
                     if self.position - self.__targetposition < self.POSITIONTOLERANCE:
-                        print(f"\tSUCCESS!")
+                        # print(f"\tSUCCESS!")
                         reached_destination = True
                     else:
                         print("pascal evil yet again")
@@ -389,8 +389,8 @@ class CharacterizationAxis:
             time_elapsed = time.time() - start_time
 
         if (time_elapsed >= self.TIMEOUT) or (time_elapsed_2 >= self.TIMEOUT):
-            print("cl.axis._waitformovement timed-out, so the final position of the motor was not updated from the initial position.")
-            print("time for the backup position definition while-loop")
+            # print("cl.axis._waitformovement timed-out, so the final position of the motor was not updated from the initial position.")
+            # print("time for the backup position definition while-loop")
             reached_destination = False
             while not reached_destination:
                 time.sleep(self.POLLINGDELAY)
@@ -401,7 +401,7 @@ class CharacterizationAxis:
                     if position0 is not None:
                         self.position = position0
                         reached_destination = True
-                        print(f"\tposition has been brute-forced to update to the current location of {self.position}")
+                        # print(f"\tposition has been brute-forced to update to the current location of {self.position}")
                     elif position0 is None:
                         raise ValueError("cl.axis._getposition failed to return a valid position!")
 
@@ -417,7 +417,7 @@ class CharacterizationAxis:
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     found_coordinates = True
                     break
-        print(f"\tWithin self.update, the found_coordinates conditional has been defined to be {found_coordinates}")
+        # print(f"\tWithin self.update, the found_coordinates conditional has been defined to be {found_coordinates}")
         self.position = x
 
     def movetotransfer(self):
@@ -643,15 +643,52 @@ class TransmissionSpectroscopy(CharacterizationStationTemplate):
 
     def calibrate(self, exposure_times: list):
         # self.slider.top_left()  # moves longpass filter out of the transmitted path
-        self.slider.bottom_right()
-        self.shutter.close()  # close the shutter
+        # self.slider.bottom_right()
+        # self.shutter.close()  # close the shutter
+        # open shutter + move filter slider
+        threads = [
+            Thread(
+                # target=self.slider.top_left
+                target = self.slider.bottom_right
+            ),  # move longpass filter out of the detector path
+            Thread(target=self.shutter.close),  # close the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
         self.spectrometer._exposure_times = exposure_times
-        self.spectrometer.take_dark_baseline(skip_repeats=True)
+        self.spectrometer.take_dark_baseline(
+            skip_repeats = False
+            # skip_repeats=True # legacy
+        )
         print("Transmission dark baselines taken")
-        self.shutter.open()  # open the shutter
-        self.spectrometer.take_light_baseline(skip_repeats=True)
+        # self.shutter.open()  # open the shutter
+        # open shutter + move filter slider
+        threads = [
+            # Thread(
+            #     # target=self.slider.top_left
+            #     target = self.slider.bottom_right
+            # ),  # move longpass filter out of the detector path
+            Thread(target=self.shutter.open),  # open the shutter to transmission lamp
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.spectrometer.take_light_baseline(
+            skip_repeats = False
+            # skip_repeats=True # legacy
+        )
         print("Transmission light baselines taken")
-        self.shutter.close()  # closes the shutter
+        threads = [
+            Thread(target=self.shutter.close), # close the shutter again
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        # self.shutter.close()  # closes the shutter
 
 
 class PLSpectroscopy(CharacterizationStationTemplate):

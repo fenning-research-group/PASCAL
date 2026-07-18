@@ -566,6 +566,8 @@ class Maestro:
             # from_hotplate = self._is_target_on_a_hotplate(p1)
             if from_hotplate:
                 self.gantry.moverel(y = 0.5, zhop = False)
+            if not from_hotplate:
+                self.gantry.moverel(z = 2, zhop = False)
             ### Code for drop check, currently not being used
             # self.gantry.moveto(
             #     x=p2[0], y=p2[1], z=p2[2] + 5, zhop=zhop

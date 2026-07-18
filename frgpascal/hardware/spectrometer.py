@@ -84,8 +84,9 @@ class Spectrometer:
     def take_light_baseline(self, skip_repeats=False):
         """takes an illuminated baseline at each integration time from HDR timings"""
         numscans0 = self.num_scans
-        self.num_scans = 3
+        self.num_scans = 8 #3
         for t in self._exposure_times:
+            print(f"exposure_time: {t}")
             if skip_repeats and t in self.__baseline_light:
                 continue  # already taken
             self.exposure_time = t
@@ -96,7 +97,7 @@ class Spectrometer:
     def take_dark_baseline(self, skip_repeats=False):
         """takes an dark baseline at each integration time from HDR timings"""
         numscans0 = self.num_scans
-        self.num_scans = 3
+        self.num_scans = 8 #3
         for t in self._exposure_times:
             print(f"exposure_time: {t}")
             if skip_repeats and t in self.__baseline_dark:
