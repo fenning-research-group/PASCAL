@@ -163,14 +163,18 @@ class SpinCoater:
         self.__connected = False
         self._libfibre_watchdog.join()
         # this always throws an "object lost" error...which is what we want
+        original_spincoater = True
         try:
             # print(self.odrv0.__dict__)
-            if reboot:            
-                print('rebooting instead')
-                self.odrv0.reboot()
-            else:
-                print('destroying')
+            if original_spincoater:
                 self.odrv0._destroy()
+            else:
+                if reboot:            
+                    print('rebooting instead')
+                    self.odrv0.reboot()
+                else:
+                    print('destroying')
+                    self.odrv0._destroy()
             # print(self.odrv0.__dict__)
 
         except Exception as e:
@@ -303,6 +307,7 @@ class SpinCoater:
         ):  # tolerance = 360*value degrees, 0.025 ~= 10 degrees
             time.sleep(0.1)
             if time.time() - t0 > self.TIMEOUT:
+                print(f"WE TIMED OUT:\n\tPositionError:\n\t\t{np.abs(self.__HOMEPOSITION - self.axis.encoder.pos_circular)}")
                 print("resetting")
                 self.reset()
                 t0 = time.time()
@@ -314,7 +319,8 @@ class SpinCoater:
         try:
             print('Disconnecting from odrive')
             self.disconnect()
-        except:
+        except Exception as e:
+            print(e)
             print('There was an error during sc.disconnect()')
             pass
         self.connect()
@@ -339,6 +345,7 @@ class SpinCoater:
         while (np.abs(target_position - self.axis.encoder.pos_circular)) > 0.025:
             time.sleep(0.1)
             if time.time() - t0 > self.TIMEOUT:
+                print(f"WE TIMED OUT:\n\tPositionError:\n\t\t{np.abs(target_position - self.axis.encoder.pos_circular)}")
                 print("resetting")
                 self.reset()
                 t0 = time.time()
@@ -436,7 +443,8 @@ class SpinCoater:
                     self.odrv0._libfibre.timer_map = {
                         0: self.odrv0._libfibre.timer_map[latest_idx]
                     }
-                except:
+                except Exception as e:
+                    print(e)
                     print(
                         "Spincoater unable to flush - probably disconnected, will try again later"
                     )
