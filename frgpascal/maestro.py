@@ -442,7 +442,10 @@ class Maestro:
                     self.spincoater.twist_off()
                     print("++m.gantry.moverel(z = 10)++ Acutally zhop up now that sample is grabbed!")
                     self.gantry.moverel(z=self.gantry.ZHOP_HEIGHT)
-                    self.spincoater.lock()
+                    lock_spincoater_thread = Thread(target=self.spincoater.lock)
+                    lock_spincoater_thread.start()  # move the spincoater to registered position
+                    lock_spincoater_thread.join()
+                    # self.spincoater.lock()
                 print("++Hold tight++ !!!")
                 self.gripper.open(self.SAMPLEWIDTH - 2)
                 # self.gripper.open(self.SAMPLEWIDTH - 1)
