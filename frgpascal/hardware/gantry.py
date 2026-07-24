@@ -21,21 +21,23 @@ with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)
 
 
+
 class Gantry:
-    def __init__(self, port=None, ip=None, duet_port=None):
+    def __init__(self, port=None, ip=None, duet_port=None, verbose = False):
+        self.verbose = verbose
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
-            print(self.port, "if") ## added comment
+            self.spec_print(self.port, "if") ## added comment
         else:
             self.port = port
-            print(port, "else") ## added comment
+            self.spec_print(port, "else") ## added comment
         if ip is None:
             ip = constants["gantry"]["device_identifiers"]["duet_ip"]
         if duet_port is None:
             duet_port = constants["gantry"]["device_identifiers"]["duet_port"]
         self.ip = ip
-        print(self.ip)
+        self.spec_print(self.ip)
         self.duet_port = duet_port
         self.POLLINGDELAY = constants["gantry"][
             "pollingrate"
@@ -88,8 +90,10 @@ class Gantry:
         self.__done_connecting = False
         self.connect()  # connect by default
         self.in_use = True
-        print("gantry connected")
-
+        self.spec_print("gantry connected")
+    def spec_print(self, msg):
+        if self.verbose:
+            self.print(msg)
     # communication methods
     def connect(self, response = None):
         if response is None:
@@ -111,7 +115,7 @@ class Gantry:
                 None
             ]
         self.set_defaults()
-        print("Connected to Gantry")
+        self.spec_print("Connected to Gantry")
 
     def connect_usb(self):
         self._handle = serial.Serial(port=self.port, timeout=1, baudrate=115200)
@@ -128,14 +132,14 @@ class Gantry:
             )
             return "Reply from" in result.stdout
         except Exception as e:
-            print(f"Ping error: {e}")
+            self.spec_print(f"Ping error: {e}")
             return False
 
     def connect_ethernet(self):
         # Have we connected to the Duet already
         if self.ip in self._connected_network_devices:
-            print (self._connected_network_devices)
-            print(f"Duet at {self.ip} already connected.")
+            self.spec_print (self._connected_network_devices)
+            self.spec_print(f"Duet at {self.ip} already connected.")
             return self._connected_network_devices[self.ip]
         # Can we talk with the Duet
         # if not self.ping_duet(ip = self.ip):
@@ -144,7 +148,7 @@ class Gantry:
         try:
             for port in ["23", self.duet_port, "21", "23", "80"]:
                 try:
-                    print(f"Trying to connect to Duet at {self.ip}:{port}...")
+                    self.spec_print(f"Trying to connect to Duet at {self.ip}:{port}...")
                     self._handle = socket.create_connection((self.ip, port), timeout = 5)
                     self._handle.sendall(b"\n") # open the ethernet chat
                     time.sleep(0.5)
@@ -160,17 +164,17 @@ class Gantry:
                     #     pass # Buffer is now empty
                     # self._handle.setblocking(True)
                     if port == "21":
-                        print(f"\tDuet connected over OTHER type connection")
+                        self.spec_print(f"\tDuet connected over OTHER type connection")
                     elif port == "23":
-                        print(f"\tDuet connected over TCP type connection")
+                        self.spec_print(f"\tDuet connected over TCP type connection")
                     elif port == "80":
-                        print(f"\tDuet connected over HTTP type connection")
+                        self.spec_print(f"\tDuet connected over HTTP type connection")
                     self.duet_port = port
                     break
                 except Exception as e:
-                    print(f"\tConnecting at {self.ip}:{port} failed\n\t{e}")
+                    self.spec_print(f"\tConnecting at {self.ip}:{port} failed\n\t{e}")
             self._connected_network_devices[self.ip] = self._handle
-            print(f"Connected to Duet at {self.ip}:{port}")
+            self.spec_print(f"Connected to Duet at {self.ip}:{port}")
             self.__done_connecting = True
             self.__CONNECTING = True
         except Exception as e:
@@ -199,7 +203,7 @@ class Gantry:
         """
         if not self._handle:
             raise ValueError("Socket is not connected, be sure to run Gantry().connect() first!")
-        # print("im still running")
+        # self.spec_print("im still running")
         self._handle.sendall((command + "\n").encode("utf-8"))
         if not self.__done_connecting:
             homing = False
@@ -251,7 +255,7 @@ class Gantry:
         self.set_speed_percentage(80)  # set speed to 80% of max
 
     def write(self, msg):
-        # print("cool thing: {self._ethernet})")
+        # self.spec_print("cool thing: {self._ethernet})")
         if self._ethernet:
             homing = True
             if self.__CONNECTING:
@@ -276,31 +280,31 @@ class Gantry:
         self.write("M18")
 
     def update(self):
-        print("UPDATING:")
+        self.spec_print("UPDATING:")
         found_coordinates = False
         while not found_coordinates:
             output = self.write("M114")  # get current position
-            print("\t", output)
-            print("\t", type(output))
-            print("\t", len(output))
+            self.spec_print("\t", output)
+            self.spec_print("\t", type(output))
+            self.spec_print("\t", len(output))
             output, output2 = output[0]
             if output is None:
                 output = output2
             if isinstance(output, str):
                 output = [output]
             for line in output:
-                print(line)
+                self.spec_print(line)
                 if line.startswith("X:"):
                     x = float(re.findall(r"X:(\S*)", line)[0])
                     y = float(re.findall(r"Y:(\S*)", line)[0])
                     z = float(re.findall(r"Z:(\S*)", line)[0])
                     found_coordinates = True
-                    # print(f'Home is @ [{x}, {y}, {z}]')
+                    # self.spec_print(f'Home is @ [{x}, {y}, {z}]')
                     break
         self.position = [
             round(x, 1), round(y,1), round(z,1)]
         self.__currentframe = self._target_frame(*self.position)
-        print(f"\t\t{self.__currentframe}")
+        self.spec_print(f"\t\t{self.__currentframe}")
         if self._original_pascal:
             self.__ZLIM = self.__FRAMES[self.__currentframe]["z_max"]
         else:
@@ -339,17 +343,17 @@ class Gantry:
             string: name of frame. if none, returns 'invalid'
         """
         for frame, lims in self.__FRAMES.items():
-            print(f"\tchecking frame {frame}")
+            self.spec_print(f"\tchecking frame {frame}")
             if x < lims["x_min"] or x > lims["x_max"]:
-                print(f"\t\t{x} is outside bounds")
+                self.spec_print(f"\t\t{x} is outside bounds")
                 continue
             if y < lims["y_min"] or y > lims["y_max"]:
-                print(f"\t\t{y} is outside bounds")
+                self.spec_print(f"\t\t{y} is outside bounds")
                 continue
             if z < lims["z_min"] or z > lims["z_max"]:
-                print(f"\t\t{z} is outside bounds")
+                self.spec_print(f"\t\t{z} is outside bounds")
                 continue
-            print(f"\tthe position [{x}, {y}, {z}] is inside of frame {frame}")
+            self.spec_print(f"\tthe position [{x}, {y}, {z}] is inside of frame {frame}")
             return frame
         return "invalid"
 
@@ -383,7 +387,7 @@ class Gantry:
                 x += 0.2
                 self.__ZLIM = constants["gantry"]["workspace_limits"]["z_max"]
             self._movecommand(x, y, z, speed = self.speed)
-            print(f'\tGantry is now at Transition Coordinates: \n\t[{x}, {y}, {z}]')
+            self.spec_print(f'\tGantry is now at Transition Coordinates: \n\t[{x}, {y}, {z}]')
         else:
             self._movecommand(
                 x=self.position[0],
@@ -418,22 +422,22 @@ class Gantry:
             y = self.position[1]
         if z is None:
             z = self.position[2]
-        print(f"Checking x: {x}, y: {y}, z: {z}")
-        # print(f"type of the y object: {type(y)}")
+        self.spec_print(f"Checking x: {x}, y: {y}, z: {z}")
+        # self.spec_print(f"type of the y object: {type(y)}")
         # if isinstance(y, float):
             # y = round(y, 1)
 
         # check if we are transitioning between workspace/gantry, if so, handle it
         target_frame = self._target_frame(x, y, z)
-        print(target_frame)
+        self.spec_print(target_frame)
         cur_frames = list(self.__FRAMES.keys())
         if target_frame not in cur_frames:
-            print(f"frame {target_frame} is not in the defined frames!")
+            self.spec_print(f"frame {target_frame} is not in the defined frames!")
         if target_frame == "invalid":
             raise ValueError(f"Coordinate ({x}, {y}, {z}) is invalid!")
         if self._original_pascal:
             if self.__currentframe != target_frame:
-                print(f"\ttime to transition to a new frame")
+                self.spec_print(f"\ttime to transition to a new frame")
                 self._transition_to_frame(target_frame)
             return x, y, z
         else:
@@ -455,7 +459,7 @@ class Gantry:
                         speed=self.speed,
                         m400=True,
                     )
-                    print("zhopping")
+                    self.spec_print("zhopping")
                 self._movecommand(
                     transition_coord[0],
                     transition_coord[1],
@@ -465,7 +469,7 @@ class Gantry:
                 )
 
             # elif self.__currentframe != target_frame and zhop:
-            #     print("This motion wants to zhop while doing a frame transition!")
+            #     self.spec_print("This motion wants to zhop while doing a frame transition!")
 
             return x, y, z
 
@@ -482,7 +486,7 @@ class Gantry:
             # x = np.round(x, decimals = 1)
             # y = np.round(y, decimals = 1)
             # z = np.round(z, decimals = 1)
-            print(x, y, z)
+            self.spec_print(x, y, z)
             z_ceiling = z
             z_ceiling = min(z_ceiling, self.__ZLIM)
             z = z_ceiling
@@ -495,21 +499,21 @@ class Gantry:
             if zhop:
                 
                 z_ceiling = max(self.position[2], z) + self.ZHOP_HEIGHT
-                print(f"\tz_ceil: {z_ceiling}, ZLIM: {self.__ZLIM}")
+                self.spec_print(f"\tz_ceil: {z_ceiling}, ZLIM: {self.__ZLIM}")
                 z_ceiling = min(
                     z_ceiling, self.__ZLIM
                 ) # cant z-hop above build volume. mostly here for first move after homing
-                print(f"\tmoving to z_ceil: {z_ceiling}")
+                self.spec_print(f"\tmoving to z_ceil: {z_ceiling}")
                 self.moveto(z = z_ceiling, zhop = False, speed = speed)
-                print(f"\tmoving to x, y: {x}, {y}")
+                self.spec_print(f"\tmoving to x, y: {x}, {y}")
                 self.moveto(x, y, z_ceiling, zhop = False, speed = speed)
-                print(f"\tmoving to z: {z}")
+                self.spec_print(f"\tmoving to z: {z}")
                 self.moveto(z=z, zhop = False, speed = speed)
             else:
                 self._movecommand(x, y, z, speed)
         else:
             x, y, z = self.premove(x, y, z, zhop)  # will error out if invalid move
-            # print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
+            # self.spec_print(f"\tGantry moving to:\n\t\tx: {x}, y: {y}, z: {z}")
             if speed is None:
                 speed = self.speed
             if (x == self.position[0]) and (y == self.position[1]):
@@ -602,28 +606,28 @@ class Gantry:
         
         reached_destination = False
         while not reached_destination and time_elapsed < self.GANTRYTIMEOUT:
-            print("Are we there yet?")
+            self.spec_print("Are we there yet?")
             time.sleep(self.POLLINGDELAY)
             yapping = self._ready_to_talk()
             while yapping:
-                print("Ready to talk")
+                self.spec_print("Ready to talk")
                 if self._ethernet:
                     self._handle.settimeout(None)
                     line = self._handle.recv(1024).decode("utf-8").strip()
-                    # print(line)
+                    # self.spec_print(line)
                 else:
                     line = self._handle.readline().decode("utf-8").strip()
                 done_move = "FinishedMoving" in line
                 yapping = self._ready_to_talk()
-                print(f"done_move: {done_move}")
+                self.spec_print(f"done_move: {done_move}")
                 if done_move:
-                    print(f"\tUpdating...")
+                    self.spec_print(f"\tUpdating...")
                     self.update()
-                    print(f"\tUpdated!")
-                    print(f"self.position: {self.position}")
-                    print(f"self.__targetposition: {self.__targetposition}")
-                    print(0 == int(np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)])))
-                    print(0 == np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)]))
+                    self.spec_print(f"\tUpdated!")
+                    self.spec_print(f"self.position: {self.position}")
+                    self.spec_print(f"self.__targetposition: {self.__targetposition}")
+                    self.spec_print(0 == int(np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)])))
+                    self.spec_print(0 == np.linalg.norm([a - b for a, b in zip(self.position, self.__targetposition)]))
                     if (
                         np.linalg.norm(
                             [
