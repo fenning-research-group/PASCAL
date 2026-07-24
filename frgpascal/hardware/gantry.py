@@ -28,10 +28,10 @@ class Gantry:
         # communication variables
         if port is None:
             self.port = get_port(constants["gantry"]["device_identifiers"])
-            self.spec_print(self.port, "if") ## added comment
+            self.spec_print([self.port, "if"]) ## added comment
         else:
             self.port = port
-            self.spec_print(port, "else") ## added comment
+            self.spec_print([port, "else"]) ## added comment
         if ip is None:
             ip = constants["gantry"]["device_identifiers"]["duet_ip"]
         if duet_port is None:
@@ -138,7 +138,7 @@ class Gantry:
     def connect_ethernet(self):
         # Have we connected to the Duet already
         if self.ip in self._connected_network_devices:
-            self.spec_print (self._connected_network_devices)
+            self.spec_print(self._connected_network_devices)
             self.spec_print(f"Duet at {self.ip} already connected.")
             return self._connected_network_devices[self.ip]
         # Can we talk with the Duet
@@ -284,9 +284,9 @@ class Gantry:
         found_coordinates = False
         while not found_coordinates:
             output = self.write("M114")  # get current position
-            self.spec_print("\t", output)
-            self.spec_print("\t", type(output))
-            self.spec_print("\t", len(output))
+            self.spec_print(f"\t{output}")
+            self.spec_print(f"\t{type(output)}")
+            self.spec_print(f"\t{len(output)}")
             output, output2 = output[0]
             if output is None:
                 output = output2
@@ -486,7 +486,7 @@ class Gantry:
             # x = np.round(x, decimals = 1)
             # y = np.round(y, decimals = 1)
             # z = np.round(z, decimals = 1)
-            self.spec_print(x, y, z)
+            self.spec_print([x, y, z])
             z_ceiling = z
             z_ceiling = min(z_ceiling, self.__ZLIM)
             z = z_ceiling
