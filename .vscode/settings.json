@@ -1,1 +1,5 @@
-{"python.defaultInterpreterPath": "/opt/anaconda3/envs/pascal_env/bin/python"}
+{
+    "python.defaultInterpreterPath": "/opt/anaconda3/envs/pascal_env/bin/python",
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda"
+}
