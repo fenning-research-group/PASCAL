@@ -73,6 +73,13 @@ class LiquidLabware:
     ):
         if "-" in name:
             raise ValueError(' "-" character not allowed in LiquidLabware name')
+        if ('Tray4mL' not in name) and ('Tray15mL' not in name):
+            raise ValueError(
+                ("For Timing Estimation, either 'Tray4mL' or 'Tray15mL' or 'Tray96wellplate` " 
+                f"must be \n\tin the `LiquidLabware.name` "
+                f"as the default touch_tip speed is noticeably different "
+                f"with increasing vial width")
+            )
         if deck_slot not in ALLOWED_DECK_SLOTS:
             raise ValueError(
                 f"{deck_slot} is not a valid deck slot ({ALLOWED_DECK_SLOTS})!"
