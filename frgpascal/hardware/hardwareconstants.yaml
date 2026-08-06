@@ -253,21 +253,61 @@ hotplates:
 liquidhandler:
   pollingrate: 0.1 #delay (seconds) between checks for new commands to push to liquid handler server
   timings:
-    aspirate:
-      preparetip: 10 #time (seconds) to pick up a fresh tip
-      premix: # time (seconds) = (a*volume + b) * num_cycles
-        a: 0.0209
-        b: 0.5132
-      slowretract: 3 #extra time to slowly retract pipette from well
-      touchtip: 1.5 #time to touch tip/knock off droplets on side of well
-      airgap: 2.5 #time to add an airgap
-    travel: 2 #time to move from tiprack to aspiration well
-    travel_slow: 4 #time to move if slow_travel active
-    dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
-    dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active
-  # dispense_delay: 1
-  # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
-  # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
+    legacy_SHAKY:
+      aspirate:
+        preparetip: 10 #time (seconds) to pick up a fresh tip
+        premix: # time (seconds) = (a*volume + b) * num_cycles
+          a: 0.0209
+          b: 0.5132
+        slowretract: 3 #extra time to slowly retract pipette from well
+        touchtip: 1.5 #time to touch tip/knock off droplets on side of well
+        airgap: 2.5 #time to add an airgap
+      travel: 2 #time to move from tiprack to aspiration well
+      travel_slow: 4 #time to move if slow_travel active
+      dispensedelay: 0.8 # time (seconds) between initiating a dispense command and the liquid beginning to hit the spincoating sample
+      dispensedelay_slow: 1 #time to dispense *from staging position* if slow_travel active
+    # dispense_delay: 1
+    # aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
+    # staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
+    modern_NOSHAKES: # calibrated by experiments
+      aspirate:
+        preparetip: 2.99 # time (seconds) to pick up a fresh tip
+        premix: # time (seconds) = (a*volume + b) * num_cycles
+          a: 0.0209
+          b: 0.5132
+        slowretract: # this can vary +- 5-10 microseconds 
+          Tray4mL:
+            2.36 # time (seconds) to move pipette tip out of 4mL well
+          Tray15mL:
+            3.65 # time (seconds) to move pipette out of 15mL well
+        touchtip: # this can vary +- 50-60 microseconds
+          Tray4mL: # median value of observations over many replicates
+            7.65 # time (seconds) to execute touch tip/knock off droplets on side of well
+          Tray15mL:
+            10.47
+        airgap: 1.16 # time to add an airgap between tip of pipette and bottom of aliquot
+      travel: 2
+      travel_slow: 5.3
+      dispensedelay: 1
+      dispensedelay_slow : 1
+        
+
+
+  # -- (spacer) -- the above were already commented out
+  # timings:    **numbers are taken as mean of ["durations"] from timing_results**
+  #   aspirate:         
+  #     preparetip: 2.99(3) # time (seconds) to pick up a fresh tip
+  #     premix: # time (seconds) = (a*volume + b) * num_cycles
+  #       a: 0.0209
+  #       b: 0.5132
+  #     slowretract: 3.65(1) #extra time to slowly retract pipette from well
+  #     touchtip: 10.51(5) #time to touch tip/knock off droplets on side of well
+  #     airgap: 1.18(3) #time to add an airgap
+  #   travel_slow: 4 #time to move if slow_travel active
+  #   dispensedelay_slow: 4.08 #time (seconds) to dispense *from staging position* if slow_travel active
+  #   dispense_delay: 1
+  #   aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
+  #   staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
   velocity: # Default liquid arm motion values from the OT-2
     X: 600  # mm/s
     Y: 400  # mm/s

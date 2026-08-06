@@ -637,13 +637,15 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate_duration,
                 staging_duration,
                 dispense_duration,
-            ) = expected_timings(drop)
+            # ) = expected_timings(drop) # legacy
+            ) = dynamic_timings(drop)
         elif ot2_settings is not None:
             (
                 aspirate_duration,
                 staging_duration,
                 dispense_duration,
-            ) = expected_timings(drop)
+            # ) = expected_timings(drop) # legacy
+            ) = dynamic_timings(drop)
             # ) = self.dynamic_timings(drop, ot2_settings)
 
         headstart = (
@@ -700,10 +702,17 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
 
     def _generatelhtasks_twodrops(self, t0, drop0, drop1, ot2_settings = None):
 
-        aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
+        # aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
+        #     drop0
+        # )
+        # aspirate1_duration, staging1_duration, dispense1_duration = expected_timings(
+        #     drop1
+        # )
+
+        aspirate0_duration, staging0_duration, dispense0_duration = dynamic_timings(
             drop0
         )
-        aspirate1_duration, staging1_duration, dispense1_duration = expected_timings(
+        aspirate1_duration, staging1_duration, dispense1_duration = dynamic_timings(
             drop1
         )
         if (drop1["time"] - drop0["time"]) < (

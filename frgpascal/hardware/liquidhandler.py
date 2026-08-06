@@ -16,7 +16,7 @@ MODULE_DIR = os.path.dirname(__file__)
 with open(os.path.join(MODULE_DIR, "hardwareconstants.yaml"), "r") as f:
     constants = yaml.load(f, Loader=yaml.FullLoader)["liquidhandler"]
 
-tc = constants["timings"]
+timings = constants["timings"]
 vc = constants["velocity"]
 a_ = constants["acceleration"]
 
@@ -84,6 +84,7 @@ def expected_timings(drop):
     Returns:
         float: duration, in seconds
     """
+    tc = timings["legacy_SHAKY"]
     ac = tc["aspirate"]  # aspiration constants
     aspirate_duration = ac["preparetip"] + drop["volume"] / 100 + tc["travel"]
     aspirate_duration += drop["pre_mix"][0] * (
@@ -105,7 +106,11 @@ def expected_timings(drop):
 
     return aspirate_duration, staging_duration, dispense_duration
 
-def dynamic_timings(drop, ot2_settings):
+def dynamic_timings(
+        drop, 
+        # VIAL_SIZE = "Tray15mL", 
+        ot2_settings = {} #TODO: Update timing estimate to allow full control of ot2_settings
+    ):
     """Estimate the duration (seconds) liquid aspiration will require for a given drop.
     Uses the ot2_settings alongside expected labware coordinates to account for variable motion speeds.
 
@@ -122,22 +127,29 @@ def dynamic_timings(drop, ot2_settings):
     tuple(float)
         The expected duration of the aspirate, staging, and dispense pipette actions, respectively.
     """
+    tc = timings["modern_NOSHAKES"]
+    if "Tray4mL" in drop["solution"]["well"]["labware"]:
+        VIAL_SIZE = "Tray4mL"
+    elif "Tray15mL" in drop["solution"]["well"]["labware"]:
+        VIAL_SIZE = "Tray15mL"
+    else:
+        VIAL_SIZE = "Tray15mL"
     ac = tc["aspirate"] # aspiration constants
-    pick_tip_duration = ac["prepare_tip"]
-    aspirate_duration = ac["prepare_tip"] + drop["volume"] / 100 + tc["travel"]
+    pick_tip_duration = ac["preparetip"]
+    aspirate_duration = ac["preparetip"] + drop["volume"] / 100 + tc["travel"]
     aspirate_duration += drop["pre_mix"][0] * (
         ac["premix"]["a"] * drop["pre_mix"][1] + ac["premix"]["b"]
     ) # overhead time for aspirate+dispense cycles to mix solution prior to final aspiration
     if drop["touch_tip"]:
-        aspirate_duration += ac["touchtip"]
-    if drop["slow_retract"]:
-        aspirate_duration += ac["slowretract"]
-    if drop["slow_travel"]:
-        staging_duration = tc["travel_slow"]
-        dispense_duration = tc["dispensedelay_slow"]
-    elif not drop["slow_travel"]:
-        staging_duration = tc["travel"]
-        dispense_duration = tc["dispensedelay"]
+        aspirate_duration += ac["touchtip"][VIAL_SIZE]
+    # if d/rop["slow_retract"]:
+    aspirate_duration += ac["slowretract"][VIAL_SIZE]
+    # if drop["slow_travel"]:
+    staging_duration = tc["travel_slow"]
+    dispense_duration = tc["dispensedelay_slow"]
+    # elif not drop["slow_travel"]:
+    #     staging_duration = tc["travel"]
+    #     dispense_duration = tc["dispensedelay"]
 
     return aspirate_duration, staging_duration, dispense_duration
 

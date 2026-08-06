@@ -605,9 +605,9 @@ class Maestro:
                 self.gantry.moveto(x=p2[0], y=p2[1], z=p2[2], zhop=True)
                 lock_spincoater_thread.join()
                 # time.sleep(2)
-                self.gantry.moveto(
-                    x=p2[0], y=p2[1], z=p2[2] - 0.05, zhop=False
-                )  # overshoot z to press sample onto o-ring on spincoater chuck
+                # self.gantry.moveto(
+                #     x=p2[0], y=p2[1], z=p2[2] - 0.05, zhop=False
+                # )  # overshoot z to press sample onto o-ring on spincoater chuck
                 self.spincoater.vacuum_on()
                 
             else:

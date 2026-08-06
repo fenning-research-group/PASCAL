@@ -40,6 +40,14 @@ def get_sizekey(size_str):
         size_str = f"{bef}-{aft}"
     return size_str
 
+# def odrv_call(fn, *args, **kwargs):
+#     try:
+#         return fn(*args, **kwargs)
+#     except Exception as e:
+#         print(type(e))
+#         print(repr(e))
+#         raise
+
 class SpinCoater:
     def __init__(
             self, 
@@ -95,17 +103,19 @@ class SpinCoater:
         ]
         # give a little extra z clearance, crashing into the foil around the spincoater is annoying!
         self.p0 = np.asarray(constants["spincoater"]["p0"]) + [0, 0, 0.05]
-        self.connect(sc_axis = sc_axis, regular_bootup = regular_bootup)
+        self._sc_axis = sc_axis
+        self.connect(sc_axis = self._sc_axis, regular_bootup = regular_bootup)
         self._current_rps = 0
 
     def connect(self, **kwargs):
         regular_bootup = kwargs.get('regular_bootup', True)
-        sc_axis = kwargs.get('sc_axis', 'axis0')
+        sc_axis = kwargs.get('sc_axis', self._sc_axis)
         if regular_bootup:
             # connect to odrive BLDC controller
             print("Connecting to odrive")
             # this is admittedly hacky. Connect, reboot (which disonnects), then connect again. Reboot necessary when communication line is broken
             self.odrv0 = odrive.find_any()
+            # self.odrv0 = odrv_call(odrive.find_any())
             # try:
             #     self.odrv0 = odrive.find_any(timeout=3)
             # except:
@@ -122,7 +132,7 @@ class SpinCoater:
 
             print("\tFound motor, now calibrating. This takes 10-20 seconds.")
             # input("\tPress enter once shroud is out of the way: ")
-            if sc_axis == 'axis0':
+            if self._sc_axis == 'axis0':
                 self.axis = self.odrv0.axis0
                 # self.axis.motor.config.calibration_current = 15
             else:
@@ -438,6 +448,7 @@ class SpinCoater:
                         dt = datetime.strftime(datetime.now(), "%m/%d %H:%M:%S")
                         self._error_log.append((dt, self._lookup_error))
                         self.axis.clear_errors()
+                        # odrv_call(self.axis.clear_errors)
 
                     latest_idx = max(list(self.odrv0._libfibre.timer_map.keys()))
                     self.odrv0._libfibre.timer_map = {
@@ -451,3 +462,21 @@ class SpinCoater:
 
     def __del__(self):
         self.disconnect()
+
+    def test_spin(
+            self,
+            rpm = 3000,
+            acceleration = 1000,
+            repeat = 1,
+            duration = 15,
+            dump_dir = ""):
+        self.start_logging()
+        self.set_rpm(rpm = rpm, acceleration = acceleration)
+        time.sleep(duration)
+        self.stop()
+        logs = self.finish_logging()
+        if dump_dir != "":
+            # raise ValueError()
+            import json
+            with open(os.path.join(dump_dir, f"{rpm}_test_{repeat}.json"), "w") as f:
+                json.dump(logs, f)
