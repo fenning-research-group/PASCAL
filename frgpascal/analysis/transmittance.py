@@ -102,7 +102,8 @@ def tauc(
     ev = 1240 / wl  # convert nm to ev
 
     taucvalue = (a * h * nu) ** (1 / n)
-    taucvalue_threshold = taucvalue.max() * fit_threshold
+    taucvalue = np.nan_to_num(taucvalue, posinf = np.nan, neginf = np.nan)
+    taucvalue_threshold = np.nanmax(taucvalue) * fit_threshold
     best_slope = None
     best_intercept = None
     best_r2 = 0
