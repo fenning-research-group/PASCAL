@@ -287,8 +287,8 @@ liquidhandler:
             10.47
         airgap: 1.16 # time to add an airgap between tip of pipette and bottom of aliquot
       travel: 2
-      travel_slow: 5.3
-      dispensedelay: 1
+      travel_slow: 4
+      dispensedelay: 0.8
       dispensedelay_slow : 1
         
 
@@ -308,21 +308,21 @@ liquidhandler:
   #   dispense_delay: 1
   #   aspiration_delay: 22.5  # time (seconds) to perform an aspiration and stage the pipette
   #   staging_delay: 1.5  # time (seconds) to move pipette into position for drop staging
-  velocity: # Default liquid arm motion values from the OT-2
+  velocity: # Default liquid arm motion values from the OT-2 Legacy behavior
     X: 600  # mm/s
     Y: 400  # mm/s
     Z: 150  # mm/s
     A: 125  # mm/s
     B: 40  # mm/s
     C: 40  # mm/s
-  acceleration: # Default liquid arm values from the OT-2
+  acceleration: # Default liquid arm values from the OT-2 Legacy behavior
     X: 3000 # mm/s^2
     Y: 3000 # mm/s^2
     Z: 1500 # mm/s^2
     A: 1500 # mm/s^2
     B: 200  # mm/s^2
     C: 200  # mm/s^2
-  pipette: # constants related to pipette operation
+  pipette: # constants related to pipette operation from the OT-2 Legacy behavior
     airgap: 10 # airgap, in ul, to aspirate after solution. helps avoid drips, but reduces max tip capacity
     aspirate_height: 0.3 # mm, distance between tip and bottom of wells while aspirating
     dispense_height: 1 # mm, distance between tip and bottom of wells while dispensing

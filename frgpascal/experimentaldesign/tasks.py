@@ -8,7 +8,7 @@ import mixsol as mx
 from mixsol.helpers import components_to_name
 from frgpascal.system import generate_workers
 import roboflo
-from dataclasses import dataclass, fields, _MISSING_TYPE, field
+from dataclasses import dataclass, fields, _MISSING_TYPE, field, asdict
 from typing import Tuple
 
 from frgpascal.hardware import liquidhandler
@@ -140,7 +140,19 @@ class OT2MotionConfig:
             # If there is a default and the value of the field is missing, then we can assign a value
             if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
                 setattr(self, field.name, field.default)
-
+# NOTE: here we define `OT2NoShake` a default no-shakes motion config for quick input file referencing:
+OT2NoShake = OT2MotionConfig(
+    velocities = OT2VelocitySettings(
+        X = 15,
+        Y = 15,
+    ),
+    accelerations = OT2AccelerationSettings(
+        X = 5,
+        Y = 5
+    ),
+    SLOWEST_XY_RATE = 5,
+    TOUCH_TIP_RATE = 5, # rest of params auto-fill with the legacy OT-2 settings
+)
 ### Sample Class
 
 
@@ -549,7 +561,7 @@ class Mix(Task):
 
 
 class Spincoat(Task):
-    def __init__(self, steps: list, drops: list, duration: float = None, ot2_behavior: dict = None, immediate=False):
+    def __init__(self, steps: list, drops: list, duration: float = None, ot2_behavior: dict = None, immediate=False, slowmo = False):
         """
 
         Args:
@@ -620,7 +632,8 @@ class Spincoat(Task):
             final_duration = duration
         else:
             final_duration = calculated_duration
-
+        if slowmo and (ot2_behavior is None):
+            ot2_behavior = copy.deepcopy(asdict(OT2NoShake))
         self.ot2_behavior = ot2_behavior
 
         super().__init__(task="spincoat", duration=final_duration, immediate=immediate)

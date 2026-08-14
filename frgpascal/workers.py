@@ -6,6 +6,7 @@ import json
 import time
 import os
 import sys
+import copy
 
 from frgpascal.hardware.liquidhandler import expected_timings, dynamic_timings
 
@@ -555,9 +556,11 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         }
 
     async def _monitor_droptimes(self, liquidhandlertasks, t0):
+        # TIMEOUT = 140 # legacy shaky opentrons
+        TIMEOUT = 600
         completed_tasks = {}
         # print(f"lh tasks: {liquidhandlertasks}")
-        while len(liquidhandlertasks) > len(completed_tasks):
+        while 2*len(liquidhandlertasks) > len(completed_tasks): # -TASKID doubles len of completed_tasks
             # print(f"iteration: {gamma}, tasks_done: {len(completed_tasks)}")
             for task, taskid in liquidhandlertasks.items():
                 if task in completed_tasks:
@@ -572,7 +575,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         f"\t\t{t0-self.maestro.nist_time:.2f} droptime found {task}, {taskid}"
                     )
                 await asyncio.sleep(0.1)
-            if abs(self.maestro.nist_time - t0) > 140:
+            if abs(self.maestro.nist_time - t0) > TIMEOUT:
                 print(f'\ttaking toooooo long, ending the lh while loop')
                 break
         print(f"\t{t0-self.maestro.nist_time:.2f} found all droptimes")
@@ -700,7 +703,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
         return headstart, liquidhandlertasks
 
-    def _generatelhtasks_twodrops(self, t0, drop0, drop1, ot2_settings = None):
+    def _generatelhtasks_twodrops(self, t0, drop0, drop1, ot2_settings = None, headstart = None):
 
         # aspirate0_duration, staging0_duration, dispense0_duration = expected_timings(
         #     drop0
@@ -728,7 +731,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-                ot2_settings = ot2_settings
+                ot2_settings = ot2_settings,
+                headstart=headstart
             )
 
         else:
@@ -756,7 +760,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         aspirate1_duration,
         staging1_duration,
         dispense1_duration,
-        ot2_settings = None
+        ot2_settings = None,
+        headstart = None
     ):
         """Aspirate both solutions together, not enough time to do them one by one"""
         liquidhandlertasks = {}
@@ -773,21 +778,25 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 aspirate0_duration,
                 staging0_duration,
                 dispense0_duration,
-            ) = expected_timings(drop0)
+            # ) = expected_timings(drop0)
+            ) = dynamic_timings(drop0)
             (
                 aspirate1_duration,
                 staging1_duration,
                 dispense1_duration,
-            ) = expected_timings(drop1)
+            # ) = expected_timings(drop1)
+            ) = dynamic_timings(drop1)
 
-        headstart = (
-            aspirate0_duration
-            + aspirate1_duration
-            + staging0_duration
-            + dispense0_duration
-            - drop0["time"]
-        )
-        headstart = max(headstart, 0)
+        if headstart is None:
+            headstart = (
+                aspirate0_duration
+                + aspirate1_duration
+                + staging0_duration
+                + dispense0_duration
+                - drop0["time"]
+            )
+            headstart = max(headstart, 0)
+        
         aspirate_time = (
             t0
             + drop0["time"]
@@ -982,7 +991,8 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             )
         return headstart, liquidhandlertasks
 
-    def spincoat(self, sample, details):
+    # def spincoat(self, sample, details):
+    def spincoat_v0(self, sample, details):
         """executes a series of spin coating steps. A final "stop" step is inserted
         at the end to bring the rotor to a halt.
 
@@ -1003,15 +1013,15 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         self.spincoater.start_logging()
         ### set up liquid handler tasks
         ot2_settings = details["ot2_settings"] if "ot2_settings" in details else None
+        headstart = 218.87 # single trajectory 2A3X deposition, just to see what happens.
         if len(details["drops"]) == 1:
             headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
                 t0=t0, drop=details["drops"][0], ot2_settings = ot2_settings
             )
         else:  # assume two drops, planning does not allow for >2
             headstart, liquidhandlertasks = self._generatelhtasks_twodrops(
-                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1], ot2_settings = ot2_settings
+                t0=t0, drop0=details["drops"][0], drop1=details["drops"][1], ot2_settings = ot2_settings, headstart=headstart
             )
-
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         tasks_future = asyncio.gather(
@@ -1046,6 +1056,293 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             "headstart": headstart,
             "ot2_action_timings": {**self.liquidhandler.server.task_timings}
         }
+
+    # def spincoat_v2(self, sample, details):
+    def spincoat(self, sample, details):
+        """executes a series of spin coating steps. A final "stop" step is inserted
+        at the end to bring the rotor to a halt.
+
+        Splits liquidhandler tasks into two segments. First, prepare all solutions 
+        without controlling spincoater up until the first deposition time, then
+        execute up to two depositions in parallel with spincoater motor control.
+
+        """
+        if hasattr(self, 'worker_logger') and self.worker_logger:
+            self.worker_logger.info(f"Spincoating sample {sample['name']}.")
+        print(f"\tstarting Spincoat of {sample['name']}")
+        self.liquidhandler.server._start_directly()  # connect to liquid handler websocket
+        # self.liquidhandler.server._protocol_context.comment(f"START `spincoat` step for sample {sample['name']}")
+        # self.liquidhandler.server.mark_spincoat_start(sample_name = sample['name']) # sending too many comments can overload memory on the OT2
+        print(f"\tliquidhandler.server._start_directly() finished compiling")
+        drop_times = {} 
+        t0 = self.maestro.nist_time
+        self.spincoater.start_logging()
+        ### set up liquid handler tasks
+        ot2_settings = details["ot2_settings"] if "ot2_settings" in details else None
+        headstart = 218.87 # single trajectory 2A3X deposition, just to see what happens.
+        if len(details["drops"]) == 1:
+            headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
+                t0=t0, drop=details["drops"][0], ot2_settings = ot2_settings
+            )
+            # every method call of self.liquidhandler will add that task to the OT2Sever's queue.
+            # so, to split into {pick_up_liquids} and {coat}, we define the methods separately per-batch
+            drop0 = details["drops"][0]
+            aspirate_duration, staging_duration, dispense_duration = dynamic_timings(
+                drop0
+            )
+            headstart = (
+                aspirate_duration
+                + staging_duration
+                + dispense_duration
+                - drop0["time"]
+            )
+            headstart = max(headstart, 0)
+            aspirate_time = (
+                t0 
+                + drop0["time"]
+                + headstart
+                - aspirate_duration
+                - staging_duration
+                - dispense_duration
+            )
+            liquidhandlertasks_prep = {}
+            if ot2_settings is not None:
+                liquidhandlertasks_prep[
+                    "overwrite_constants"
+                ] = (
+                    self.liquidhandler.overwrite_constants(
+                        nist_time = t0,
+                        ot2_settings = ot2_settings
+                    )
+                )
+            liquidhandlertasks_prep[
+                "aspirate_solution"
+            ] = (
+                self.liquidhandler.aspirate_for_spincoating(
+                    nist_time = aspirate_time,
+                    tray = drop0["solution"]["well"]["labware"],
+                    well = drop0["solution"]["well"]["well"],
+                    volume = drop0["volume"],
+                    pipette = "perovskite", # NOTE: TODO: this hardcodes the aspiration to ONLY use the 300uL pipette. Will fail if we try to do single-step deposition with 1000uL tip!
+                    slow_retract = drop0["slow_retract"],
+                    air_gap = drop0["air_gap"],
+                    touch_tip = drop0["touch_tip"],
+                    pre_mix = drop0["pre_mix"],
+                    reuse_tip = drop0["reuse_tip"]
+                )
+            )
+            liquidhandlertasks_prep[
+                "stage_solution"
+            ] = (
+                self.liquidhandler.stage_perovskite( # TODO: does this work if using the 1000uL pipette for PSK?
+                    nist_time = aspirate_time + 1 # immediately after aspirate
+                )
+            )
+        else:  # assume two drops, planning does not allow for >2
+            # headstart, liquidhandlertasks = self._generatelhtasks_twodrops(
+            #     t0=t0, drop0=details["drops"][0], drop1=details["drops"][1], ot2_settings = ot2_settings, headstart=headstart
+            # )
+            #every method call of self.liquidhandler will add that task to the OT2Server's queue.
+            drop0 = details["drops"][0]
+            drop1 = details["drops"][1]
+            aspirate0_duration, staging0_duration, dispense0_duration = dynamic_timings(
+                drop0
+            )
+            aspirate1_duration, staging1_duration, dispense1_duration = dynamic_timings(
+                drop1
+            )
+            headstart = (
+                aspirate0_duration
+                + aspirate1_duration
+                + staging0_duration
+                + dispense0_duration
+                - drop0["time"]
+            )
+            headstart = max(headstart, 0)
+            aspirate_time = (
+                t0 + drop0["time"] + headstart 
+                - aspirate0_duration - aspirate1_duration
+                - staging0_duration - dispense0_duration
+            )
+            liquidhandlertasks_prep = {}
+            if ot2_settings is not None:
+                liquidhandlertasks_prep[
+                    "overwrite_constants"
+                ] = self.liquidhandler.overwrite_constants(
+                    nist_time = t0,
+                    ot2_settings = ot2_settings
+                )
+            liquidhandlertasks_prep[
+                "aspirate_solution0"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time = aspirate_time,
+                tray = drop0["solution"]["well"]["labware"],
+                well = drop0["solution"]["well"]["well"],
+                volume = drop0["volume"],
+                pipette = "perovskite",
+                slow_retract = drop0["slow_retract"],
+                air_gap = drop0["air_gap"],
+                pre_mix = drop0["pre_mix"],
+                reuse_tip = drop0["reuse_tip"],
+            )
+            liquidhandlertasks_prep[
+                "aspirate_solution1"
+            ] = self.liquidhandler.aspirate_for_spincoating(
+                nist_time = aspirate_time + 0.1,
+                tray = drop1["solution"]["well"]["labware"],
+                well = drop1["solution"]["well"]["well"],
+                volume = drop1["volume"],
+                pipette = "antisolvent",
+                slow_retract = drop1["slow_retract"],
+                air_gap = drop1["air_gap"],
+                pre_mix = drop1["pre_mix"],
+                reuse_tip = drop1["reuse_tip"],
+            )
+            liquidhandlertasks_prep[
+                "stage_solution0"
+            ] = self.liquidhandler.stage_perovskite(
+                nist_time = aspirate_time + 0.2,
+                slow_travel = drop0["slow_travel"],
+            )
+            
+            # for step in ["overwrite_constants", "aspirate_solution0", "aspirate_solution1", "stage_solution0"]:
+            #     liquidhandlertasks_prep[step] = copy.deepcopy(liquidhandlertasks[step])
+
+        soln_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(soln_loop)
+        tasks_future = asyncio.gather(
+            self._monitor_droptimes(liquidhandlertasks_prep, t0)
+        )
+
+        def future_callback(future):
+            try:
+                future.result()
+            except Exception as e:
+                self.logger.exception(f"Exception in {self}")
+        tasks_future.add_done_callback(future_callback)
+        print(f"these are the tasks we need to do:\n{tasks_future}")
+        print(f"{t0-self.maestro.nist_time:.2f} starting the solution prep tasks")
+        drop_times_prep = soln_loop.run_until_complete(tasks_future)
+        drop_times.update(drop_times_prep[0])
+        print(f"{t0-self.maestro.nist_time:.2f} ready to deposit")
+        prep_time = self.maestro.nist_time - t0
+        t0 = self.maestro.nist_time
+        if len(details["drops"]) == 1:
+            # raise Exception
+            drop0 = details["drops"][0]
+            (
+                aspirate_duration,
+                staging_duration,
+                dispense_duration
+            ) = dynamic_timings(drop0)
+            # if drop0["time"] < 0:
+            #     headstart = abs(drop0["time"]) + dispense0_duration
+            # else:
+            #     headstart = dispense_duration
+            headstart = dispense_duration - drop0["time"]
+            headstart = max(headstart, 0) # stick to t=0 start time if it works out
+            dispense_time = t0 + drop0["time"] - dispense0_duration + headstart
+            liquidhandlertasks_deposit = {}
+            liquidhandlertasks_deposit[
+                "dispense_solution"
+            ] = (
+                self.liquidhandler.drop_perovskite(
+                    nist_time = dispense_time,
+                    rate = drop0["rate"],
+                    height = drop0["height"]
+                )
+            )
+            liquidhandlertasks_deposit[
+                "cleanup"
+            ] = (
+                self.liquidhandler.cleanup(nist_time = dispense_time + 0.5)
+            )
+            if ot2_settings is not None:
+                liquidhandlertasks_deposit["revert_to_defaults"] = (
+                    self.liquidhandler.revert_to_defauls(
+                        nist_time = dispense_time + 1
+                    )
+                )
+        else:
+            
+            drop0 = details["drops"][0]
+            drop1 = details["drops"][1]
+            (
+                aspirate0_duration,
+                staging0_duration,
+                dispense0_duration,
+            # ) = expected_timings(drop0)
+            ) = dynamic_timings(drop0)
+            (
+                aspirate1_duration,
+                staging1_duration,
+                dispense1_duration,
+            # ) = expected_timings(drop1)
+            ) = dynamic_timings(drop1)
+            if drop0["time"] < 0:
+                headstart = abs(drop0["time"]) + dispense0_duration
+            dispense0_time = t0 + drop0["time"] - dispense0_duration + headstart
+            dispense1_time = t0 + drop1["time"] - dispense1_duration + headstart
+            liquidhandlertasks_deposit = {}
+            liquidhandlertasks_deposit["dispense_solution0"] = self.liquidhandler.drop_perovskite(
+                nist_time = dispense0_time,
+                height = drop0["height"],
+                rate = drop0["rate"],
+                slow_travel = drop0["slow_travel"],
+            )
+            liquidhandlertasks_deposit["stage_solution1"] = self.liquidhandler.stage_antisolvent(
+                nist_time = dispense0_time + 0.1, # immediate after first dispense
+                slow_travel = drop1["slow_travel"]
+            )
+            liquidhandlertasks_deposit["dispense_solution1"] = self.liquidhandler.drop_antisolvent(
+                nist_time = dispense1_time,
+                height = drop1["height"],
+                rate = drop1["rate"],
+                slow_travel = drop1["slow_travel"]
+            )
+            liquidhandlertasks_deposit["cleanup"] = self.liquidhandler.cleanup(nist_time = dispense1_time + 0.5)
+            if ot2_settings is not None:
+                liquidhandlertasks_deposit["revert_to_defauls"] = (
+                    self.liquidhandler.revert_to_defaults(
+                        nist_time = dispense1_time + 0.2
+                    )
+                )
+        prep_time += headstart
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        tasks_future = asyncio.gather(
+            self._monitor_droptimes(liquidhandlertasks_deposit, t0),
+            self._set_spinspeeds(details["steps"], t0, headstart),
+        )
+
+        def future_callback(future):
+            try:
+                future.result()
+            except Exception as e:
+                self.logger.exception(f"Exception in {self}")
+                # if future.exception(): #your long thing had an exception
+                #     self.logger.error(f'Exception in {self}: {future.exception()}')
+
+        tasks_future.add_done_callback(future_callback)
+        print(f"these are the tasks we need to do:\n{tasks_future}")
+        print(f"{t0-self.maestro.nist_time:.2f} starting the deposition tasks")
+        drop_times_deposit, _ = loop.run_until_complete(tasks_future)
+        print(f"{t0-self.maestro.nist_time:.2f} finished all tasks")
+        rpm_log = self.spincoater.finish_logging()
+        print(f"{t0-self.maestro.nist_time:.2f} finished logging")
+        # self.liquidhandler.server._protocol_context.comment(f"END`spincoat` step for sample {sample['name']}")
+        # self.liquidhandler.server.mark_spincoat_stop(sample_name = sample['name'])
+        self.liquidhandler.server.stop()  # disconnect from liquid handler websocket
+        print(f"{t0-self.maestro.nist_time:.2f} server stopped")
+        drop_times.update(drop_times_deposit)
+        
+        return {
+            "liquidhandler_timings": {**drop_times},
+            "spincoater_log": {**rpm_log},
+            "headstart": prep_time,
+            "ot2_action_timings": {**self.liquidhandler.server.task_timings}
+        }
+
 
     def mix(self, sample, details):
         if hasattr(self, 'worker_logger') and self.worker_logger:

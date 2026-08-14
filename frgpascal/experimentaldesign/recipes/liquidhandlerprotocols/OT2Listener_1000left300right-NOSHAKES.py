@@ -328,7 +328,7 @@ class ListenerWebsocket:
         prior_loc = "M"
         counter = 0
         for edge, direc in zip(edge_points, ["E", "W", "M", "S", "N", "M"]):
-            self._protocol_context.comment(f"Moving {direc}")
+            # self._protocol_context.comment(f"Moving {direc}")
             t0_point = self.__get_point(pipette = p)
             t0 = time.time()
             p.move_to(center_location.move(edge - center_location.point), speed = speed)
@@ -349,7 +349,7 @@ class ListenerWebsocket:
         self, tray, well, volume, pipette, slow_retract, air_gap, touch_tip, pre_mix
     ):
         timings = {}
-        self._protocol_context.comment('START `_aspirate_from_well` step')
+        # self._protocol_context.comment('START `_aspirate_from_well` step')
         p = pipette
         # p.move_to(self.labwares[tray][well].bottom(p.well_bottom_clearance.aspirate))
         if pre_mix[0] > 0:
@@ -397,13 +397,13 @@ class ListenerWebsocket:
         if touch_tip:
             t0_point = self.__get_point(pipette = p)
             t0 = time.time()
-            self._protocol_context.comment('START `p.touch_tip` step')
+            # self._protocol_context.comment('START `p.touch_tip` step')
             if self.config.TOUCH_TIP_RATE is None:
                 p.touch_tip()
                 smooth_times = {}
             else:
                 smooth_times = self._smooth_touch_tip(well = self.labwares[tray][well], pipette = p, speed = self.config.TOUCH_TIP_RATE, radius_frac = 1)
-            self._protocol_context.comment('END `p.touch_tip` step')
+            # self._protocol_context.comment('END `p.touch_tip` step')
             tf_point = self.__get_point(pipette = p)
             tf = time.time()
             timings["touch_tip-ACTION"] = {
@@ -421,21 +421,25 @@ class ListenerWebsocket:
             # self._protocol_context.comment('END `move out of vial` step')
         if air_gap:
             t0 = time.time()
-            self._protocol_context.comment('START `air_gap` step')
+            # self._protocol_context.comment('START `air_gap` step')
             relative_rate = 20 / p.flow_rate.dispense  # 20 uL/s
+            t0_point = self.__get_point(pipette = p)
             p.aspirate(
                 volume=self.AIRGAP,
                 location=self.labwares[tray][well].top(2),
                 rate=relative_rate,
             )  # force a slow airgap
             # p.air_gap(self.AIRGAP)
+            tf_point = self.__get_point(pipette = p)
             
-            self._protocol_context.comment('END `air_gap` step')
+            # self._protocol_context.comment('END `air_gap` step')
             tf = time.time()
             timings["air_gap-ACTION"] = {
+                "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                "End_Point": (tf_point.x, tf_point.y, tf_point.z),
                 "Duration (s)": tf - t0
             }
-        self._protocol_context.comment('END `_aspirate_from_well` step')
+        # self._protocol_context.comment('END `_aspirate_from_well` step')
         return timings
 
     def _next_tip(self, pipette):
@@ -670,14 +674,14 @@ class ListenerWebsocket:
             self,
             new_config_dict,
         ):
-        self._protocol_context.comment("START `update` step")
+        # self._protocol_context.comment("START `update` step")
         old_vX = self.config.velocities.X
         planned_vX = new_config_dict["velocities"]["X"]
         self.__update_config(
             new_config_dict = new_config_dict
         )
         new_vX = self.config.velocities.X
-        self._protocol_context.comment(f"END `update` step: old {old_vX};planned {planned_vX};actual {new_vX}")
+        # self._protocol_context.comment(f"END `update` step: old {old_vX};planned {planned_vX};actual {new_vX}")
     
     def __get_point(
             self,
@@ -742,13 +746,14 @@ class ListenerWebsocket:
         #         new_config_dict = ot2_settings
         #     )
         t0 = time.time()
-        self._protocol_context.comment('START `aspirate_for_spincoating` step')
+        # self._protocol_context.comment('START `aspirate_for_spincoating` step')
         p = self._get_pipette(pipette=pipette)
-        self._protocol_context.comment(f'Got the pipette: {p}')
+        # self._protocol_context.comment(f'Got the pipette: {p}')
+        pipette_key = "p300" if pipette == "perovskite" else "p1000"
         if reuse_tip:
-            self._protocol_context.comment('Reusing tip!')
+            # self._protocol_context.comment('Reusing tip!')
             tip = self._get_reusable_tip(pipette, tray, well)
-            self._protocol_context.comment(f'Next Tip is {type(tip)}')
+            # self._protocol_context.comment(f'Next Tip is {type(tip)}')
             if p.has_tip:
                 t0_point = self.__get_point(pipette = p)
                 have_tip_move_to_trash_t0 = time.time()
@@ -762,7 +767,7 @@ class ListenerWebsocket:
                 p.drop_tip()
                 t2_point = self.__get_point(pipette = p)
                 have_tip_move_to_trash_t2 = time.time()
-                timings["drop_current_tip-move_to_trash"] = {
+                timings[f"drop_current_tip-move_to_trash-{pipette_key}"] = {
                     "move_to_trash-ACTION": {
                         "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
                         "End_Point": (t1_point.x, t1_point.y, t1_point.z),
@@ -788,7 +793,7 @@ class ListenerWebsocket:
             p.pick_up_tip(tip)
             t2_point = self.__get_point(pipette = p)
             move_to_new_tip_t2 = time.time()
-            timings["pick_up_tip-move_to_tip"] = {
+            timings[f"pick_up_tip-move_to_tip-{pipette_key}"] = {
                 "move_to_tip-ACTION": {
                     "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
                     "End_Point": (t1_point.x, t1_point.y, t1_point.z),
@@ -828,11 +833,11 @@ class ListenerWebsocket:
                         "Duration (s)": have_tip_move_to_trash_t2 - have_tip_move_to_trash_t1
                     }
                 }
-            self._protocol_context.comment('thinking about next tip')
+            # self._protocol_context.comment('thinking about next tip')
             tip = self._next_tip(pipette)
-            self._protocol_context.comment('Found next tip')
-            self._protocol_context.comment(f'Next Tip is {type(tip)}')
-            self._protocol_context.comment(f'Next Tip pos is {tip.top()}')
+            # self._protocol_context.comment('Found next tip')
+            # self._protocol_context.comment(f'Next Tip is {type(tip)}')
+            # self._protocol_context.comment(f'Next Tip pos is {tip.top()}')
 
             t0_point = self.__get_point(pipette = p)
             move_to_new_tip_t0 = time.time()
@@ -846,7 +851,7 @@ class ListenerWebsocket:
             p.pick_up_tip()
             t2_point = self.__get_point(pipette = p)
             move_to_new_tip_t2 = time.time()
-            timings["pick_up_tip-move_to_tip"] = {
+            timings[f"pick_up_tip-move_to_tip-{pipette_key}"] = {
                 "move_to_tip-ACTION": {
                     "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
                     "End_Point": (t1_point.x, t1_point.y, t1_point.z),
@@ -858,7 +863,7 @@ class ListenerWebsocket:
                     "Duration (s)": move_to_new_tip_t2 - move_to_new_tip_t1,
                 }
             }
-        timings["_aspirate_from_well-p300"] = self._aspirate_from_well(
+        timings[f"_aspirate_from_well-{pipette_key}"] = self._aspirate_from_well(
             tray=tray,
             well=well,
             volume=volume,
@@ -897,7 +902,7 @@ class ListenerWebsocket:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
         #     )
-        self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
+        # self._protocol_context.comment('START `aspirate_both_for_spincoating` step')
         if legacy:
             for p in self.pipettes.values():
                 if p.has_tip:
@@ -934,7 +939,7 @@ class ListenerWebsocket:
         )
 
         timings["stage_for_dispense"] = self.stage_for_dispense(pipette="perovskite")
-        self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
+        # self._protocol_context.comment('END `aspirate_both_for_spincoating` step')
         # finally:
         #     self._reset_to_defaults()
         self._tasktimings = timings
@@ -947,7 +952,7 @@ class ListenerWebsocket:
         #     )
         timings = {}
         t0 = time.time()
-        self._protocol_context.comment('START `stage_for_dispense` step')
+        # self._protocol_context.comment('START `stage_for_dispense` step')
         p = self._get_pipette(pipette)
         t1 = time.time()
         t1_point = self.__get_point(pipette = p)
@@ -957,7 +962,7 @@ class ListenerWebsocket:
             speed = None
         # p.move_to(self.spincoater[self.STANDBY].top(), speed=speed)
         p.move_to(self.spincoater[self.STANDBY].top(), speed = self.SLOWEST_XY_RATE)
-        self._protocol_context.comment('END `stage_for_dispense` step')
+        # self._protocol_context.comment('END `stage_for_dispense` step')
         t2 = time.time()
         t2_point = self.__get_point(pipette = p)
         timings["ACTIONS"] = {
@@ -988,7 +993,7 @@ class ListenerWebsocket:
         slow_travel = kwargs.get("slow_travel", False)
         blow_out = kwargs.get("blow_out", False)
         t0 = time.time()
-        self._protocol_context.comment('START `dispense_onto_chuck` step')
+        # self._protocol_context.comment('START `dispense_onto_chuck` step')
         p = self._get_pipette(pipette)
         relative_rate = rate / p.flow_rate.dispense
         if slow_travel:
@@ -1025,7 +1030,7 @@ class ListenerWebsocket:
             self.spincoater[self.STANDBY].top(), force_direct=True,
             speed = self.SLOWEST_XY_RATE,
         )  # Move off of chuck to prevent dripping onto substrate
-        self._protocol_context.comment('END `dispense_onto_chuck` step')
+        # self._protocol_context.comment('END `dispense_onto_chuck` step')
         t6 = time.time()
         t6_point = self.__get_point(pipette = p)
         # timings["move_off_of_chuck_to_standby-duration"] = t6 - t5
@@ -1059,14 +1064,14 @@ class ListenerWebsocket:
         timings = {}
         t0 = time.time()
         t0_point = self.__get_point(pipette = self.pipettes["right"])
-        self._protocol_context.comment('START `clear_chuck` step')
+        # self._protocol_context.comment('START `clear_chuck` step')
         self.pipettes["right"].move_to(
             location=types.Location(
                 point=types.Point(*self.CLEARCHUCKPOSITION), labware=None
             ),
             speed = self.SLOWEST_XY_RATE,
         )
-        self._protocol_context.comment('END `clear_chuck` step')
+        # self._protocol_context.comment('END `clear_chuck` step')
         t1 = time.time()
         t1_point = self.__get_point(pipette = self.pipettes["right"])
         # timings["clear_chuck-duration"] = t1 - t0
@@ -1134,31 +1139,87 @@ class ListenerWebsocket:
         the order of operations feels overly complicated, but is chosen to minimize
         the travel (both horizontally and vertically) of the pipette heads
         """
-        timings = {}
+        timings = {"ACTIONS": {}}
         # try:
         #     self._update_motion(
         #         new_config_dict = ot2_settings
         #     )
         # self._protocol_context.comment("START `cleanup` step")
+        pipette_sides = {v: k for k, v in self.pipettes.items()}
         # drop all tips that dont need to be returned
         for p, return_this_tip in self.return_current_tip.items():
+            LR = pipette_sides[p]
+            if LR == "left":
+                pipette_key = "p1000"
+            else:
+                pipette_key = "p300"
             if not p.has_tip:
                 continue
             if not return_this_tip:
+                t0 = time.time()
+                t0_point = self.__get_point(pipette = p)
                 p.drop_tip()
-
+                t1 = time.time()
+                t1_point = self.__get_point(pipette = p)
+                timings["ACTIONS"][f"throw_away_tip-{pipette_key}-ACTION"] = {
+                    "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                    "End_Point": (t1_point.x, t1_point.y, t1_point.z),
+                    "Duration (s)": t1 - t0  
+                }
         # first blow out all returning tips, then drop them back
         for p, return_this_tip in self.return_current_tip.items():
             if return_this_tip:
+                LR = pipette_sides[p]
+                if LR == "left":
+                    pipette_key = "p1000"
+                else:
+                    pipette_key = "p300"
+                t0 = time.time()
+                t0_point = self.__get_point(pipette = p)
                 p.blow_out(self.TRASH)
+                t1 = time.time()
+                t1_point = self.__get_point(pipette = p)
+                timings["ACTIONS"][f"blow_out_tip-{pipette_key}-ACTION"] = {
+                    "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                    "End_Point": (t1_point.x, t1_point.y, t1_point.z),
+                    "Duration (s)": t1 - t0  
+                }
         for p, return_this_tip in self.return_current_tip.items():
             if return_this_tip:
+                LR = pipette_sides[p]
+                if LR == "left":
+                    pipette_key = "p1000"
+                else:
+                    pipette_key = "p300"
+                t0 = time.time()
+                t0_point = self.__get_point(pipette = p)
                 p.return_tip()
+                t1 = time.time()
                 self.return_current_tip[p] = False
+                t1 = time.time()
+                t1_point = self.__get_point(pipette = p)
+                timings["ACTIONS"][f"put_back_tip-{pipette_key}-ACTION"] = {
+                    "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                    "End_Point": (t1_point.x, t1_point.y, t1_point.z),
+                    "Duration (s)": t1 - t0  
+                }
 
         next_tip = self._next_tip(pipette="right")
+        t3 = time.time()
         p = self._get_pipette("right")
+        t0 = time.time()
+        t0_point = self.__get_point(pipette = self.pipettes["right"])
         p.move_to(next_tip.top(5), speed = self.SLOWEST_XY_RATE)
+        t1 = time.time()
+        t1_point = self.__get_point(pipette = self.pipettes["right"])
+        timings["ACTIONS"]["call_pipette-p300-ACTION"] = {
+            "call_pipette-ACTION": {"Duration (s)": t0 - t3},
+        }
+        timings["ACTIONS"]["move_pipette_to_tip_from_trash-ACTION"] = {
+                "Start_Point": (t0_point.x, t0_point.y, t0_point.z),
+                "End_Point": (t1_point.x, t1_point.y, t1_point.z),
+                "Duration (s)": t1 - t0
+            }
         # self._protocol_context.comment("END `cleanup` step")
         # finally:
         #     self._reset_to_defaults()
@@ -1168,7 +1229,7 @@ class ListenerWebsocket:
         """Updates the motion behavior of OT-2 for this particular sample's Worker_SpincoaterLiquidHandler task execution."""
         timings = {}
         t0 = time.time()
-        self._protocol_context.comment("START `overwrite_constants` step")
+        # self._protocol_context.comment("START `overwrite_constants` step")
         # Update the OT2MotionConfig:
         self._update_motion(
             new_config_dict = ot2_settings
@@ -1182,7 +1243,7 @@ class ListenerWebsocket:
         orig_hw_config.acceleration = new["acceleration"]
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
-        self._protocol_context.comment("END `overwrite_constants` step")
+        # self._protocol_context.comment("END `overwrite_constants` step")
         t1 = time.time()
         timings["overwrite_constants-duration"] = t1 - t0
         return timings
@@ -1192,7 +1253,7 @@ class ListenerWebsocket:
         """Resets the motion behavior of OT-2 to legacy settings, to be used at the end of each task execution."""
         timings = {}
         t0 = time.time()
-        self._protocol_context.comment("START `revert_to_defaults` step")
+        # self._protocol_context.comment("START `revert_to_defaults` step")
         # Update the OT2MotionConfig:
         self._reset_to_defaults()
         # Apply the saved defaults to the hardware API's default settings again.
@@ -1205,7 +1266,7 @@ class ListenerWebsocket:
         orig_hw_config.acceleration = new["acceleration"]
         orig_hw_config.default_max_speed = new["default_max_speed"]
         self._HW_API.set_config(orig_hw_config)
-        self._protocol_context.comment("END `revert_to_defaults` step")
+        # self._protocol_context.comment("END `revert_to_defaults` step")
         t1 = time.time()
         timings["revert_to_defaults-duration"] = t1 - t0
         return timings
@@ -1225,17 +1286,17 @@ def run(protocol_context):
     # For API 2.10, we can use the internal implementation to get the hardware API
     hw_api = protocol_context._implementation.get_hardware()
 
-    protocol_context.comment("Legacy Hardware Configuration:")
+    # protocol_context.comment("Legacy Hardware Configuration:")
     hw_api = protocol_context._implementation.get_hardware()
     orig_config = hw_api.config
-    protocol_context.comment(f"Config Type: {type(orig_config)}")
-    protocol_context.comment(f"Config Attributes: {dir(orig_config)}")
+    # protocol_context.comment(f"Config Type: {type(orig_config)}")
+    # protocol_context.comment(f"Config Attributes: {dir(orig_config)}")
     accel = ",".join([f"{k},{v}" for k, v in orig_config.acceleration.items()])
     # jerk = orig_config.junction_deviation
     # protocol_context.comment(f"config keys: {orig_config.keys()}")
     # protocol_context.comment(f"Default speeds: {protocol_context.default_max_speed}")
     # protocol_context.comment(f"Default Y speeds: {protocol_context.max_speeds['Y']}")
-    protocol_context.comment(f"O.G. Accel (mm/s^2): {accel}")
+    # protocol_context.comment(f"O.G. Accel (mm/s^2): {accel}")
     # Define safer acceleration and jerk (junction deviation) values
     # Junction deviation (jerk) default is 0.02. Dropping to 0.01 makes the corners smoother
     new = {
@@ -1262,11 +1323,11 @@ def run(protocol_context):
     new_config = hw_api.config
     # new_config = hw_api.config._replace(acceleration = new["acceleration"])
     accel = ",".join([f"{k},{v}" for k, v in new_config.acceleration.items()])
-    protocol_context.comment(f"New Accel (mm/s^2): {accel}")
+    # protocol_context.comment(f"New Accel (mm/s^2): {accel}")
     accel = ",".join([f"{k},{v}" for k, v in new_config.default_max_speed.items()])
     
-    protocol_context.comment(f"New Max Speeds (mm/s): {accel}")
-    protocol_context.comment("Hardware config updated to limit acceleration!")
+    # protocol_context.comment(f"New Max Speeds (mm/s): {accel}")
+    # protocol_context.comment("Hardware config updated to limit acceleration!")
     #  hw_api.update_config_override(new_config)
     listener = ListenerWebsocket(
         protocol_context=protocol_context,
