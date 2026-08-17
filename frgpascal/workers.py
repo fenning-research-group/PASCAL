@@ -1252,16 +1252,28 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                     height = drop0["height"]
                 )
             )
-            liquidhandlertasks_deposit[
-                "cleanup"
-            ] = (
-                self.liquidhandler.cleanup(nist_time = dispense_time + 0.5)
-            )
+            # Actually awaiting the finishing of "cleanup" lhtask takes too long.
+            # Letting it run in the background without blocking GantryGripper or HumanOperator 
+            # Pick and Place to move to hotplate will decrease the spin_done->anneal_start time gap
+            # To guarantee the OT-2 arm and pick/place do not collide, we historically rely on the 
+            # remainder of the spin step plus the spincoater.stop() execution duration plus the 
+            # "move GantryGripper Into opentrons workspace" task duration.
+            # TODO: Update the liquidhandertasks_deposit to add a "move to trash bin" command within the awaited lhtasks, to guarantee the GantryGripper will not crash.
+            # # implementation to await the finishing of cleanup:
+            # liquidhandlertasks_deposit[
+            #     "cleanup"
+            # ] = (
+            #     self.liquidhandler.cleanup(nist_time = dispense_time + 0.5)
+            # )
+            self.liquidhandler.cleanup(nist_time = dispense_time + 0.5)
             if ot2_settings is not None:
-                liquidhandlertasks_deposit["revert_to_defaults"] = (
-                    self.liquidhandler.revert_to_defauls(
-                        nist_time = dispense_time + 1
-                    )
+                # liquidhandlertasks_deposit["revert_to_defaults"] = (
+                    # self.liquidhandler.revert_to_defauls(
+                        # nist_time = dispense_time + 1
+                    # )
+                # )
+                self.liquidhander.revert_to_defaults(
+                    nist_time = dispense_time + 1
                 )
         else:
             
@@ -1300,12 +1312,16 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                 rate = drop1["rate"],
                 slow_travel = drop1["slow_travel"]
             )
-            liquidhandlertasks_deposit["cleanup"] = self.liquidhandler.cleanup(nist_time = dispense1_time + 0.5)
+            # liquidhandlertasks_deposit["cleanup"] = self.liquidhandler.cleanup(nist_time = dispense1_time + 0.5)
+            self.liquidhandler.cleanup(nist_time = dispense1_time + 0.5)
             if ot2_settings is not None:
-                liquidhandlertasks_deposit["revert_to_defauls"] = (
-                    self.liquidhandler.revert_to_defaults(
-                        nist_time = dispense1_time + 0.2
-                    )
+                # liquidhandlertasks_deposit["revert_to_defauls"] = (
+                #     self.liquidhandler.revert_to_defaults(
+                #         nist_time = dispense1_time + 0.2
+                #     )
+                # )
+                self.liquidhandler.revert_to_defaults(
+                    nist_time = dispense1_time + 1
                 )
         prep_time += headstart
         loop = asyncio.new_event_loop()
