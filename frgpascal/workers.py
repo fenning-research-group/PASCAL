@@ -1081,9 +1081,9 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
         ot2_settings = details["ot2_settings"] if "ot2_settings" in details else None
         headstart = 218.87 # single trajectory 2A3X deposition, just to see what happens.
         if len(details["drops"]) == 1:
-            headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
-                t0=t0, drop=details["drops"][0], ot2_settings = ot2_settings
-            )
+            # headstart, liquidhandlertasks = self._generatelhtasks_onedrop(
+            #     t0=t0, drop=details["drops"][0], ot2_settings = ot2_settings
+            # )
             # every method call of self.liquidhandler will add that task to the OT2Sever's queue.
             # so, to split into {pick_up_liquids} and {coat}, we define the methods separately per-batch
             drop0 = details["drops"][0]
@@ -1272,7 +1272,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
                         # nist_time = dispense_time + 1
                     # )
                 # )
-                self.liquidhander.revert_to_defaults(
+                self.liquidhandler.revert_to_defaults(
                     nist_time = dispense_time + 1
                 )
         else:
