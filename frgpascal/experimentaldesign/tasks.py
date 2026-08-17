@@ -633,7 +633,7 @@ class Spincoat(Task):
         else:
             final_duration = calculated_duration
         if slowmo and (ot2_behavior is None):
-            ot2_behavior = copy.deepcopy(asdict(OT2NoShake))
+            ot2_behavior = deepcopy(asdict(OT2NoShake))
         self.ot2_behavior = ot2_behavior
 
         super().__init__(task="spincoat", duration=final_duration, immediate=immediate)
