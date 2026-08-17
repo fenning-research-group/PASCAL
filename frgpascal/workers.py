@@ -1241,7 +1241,7 @@ class Worker_SpincoaterLiquidHandler(WorkerTemplate):
             #     headstart = dispense_duration
             headstart = dispense_duration - drop0["time"]
             headstart = max(headstart, 0) # stick to t=0 start time if it works out
-            dispense_time = t0 + drop0["time"] - dispense0_duration + headstart
+            dispense_time = t0 + drop0["time"] - dispense_duration + headstart
             liquidhandlertasks_deposit = {}
             liquidhandlertasks_deposit[
                 "dispense_solution"
