@@ -667,7 +667,7 @@ class PASCALPlanner:
 
     def solve_schedule(
         self, shuffle: bool = True, prioritize_first_spincoat: bool = False,
-         use_gantry: bool = True, **kwargs
+         use_gantry: bool = False, **kwargs
     ):
         self.system: System = build(use_gantry)
         if shuffle:
@@ -701,7 +701,7 @@ class PASCALPlanner:
         print(f'schedule image saved to "{filename}"')
 
     def export(self, new_ll_export = True,
-               ot2_template = "1000left300right"
+               ot2_template = "1000left300right-NOSHAKES"
                ):
         ## plot solution destinations
         ll_with_solutions = [ll for ll in self.solution_storage if len(ll.contents) > 0]
