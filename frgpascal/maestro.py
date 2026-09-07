@@ -449,7 +449,8 @@ class Maestro:
                     lock_spincoater_thread.join()
                     # self.spincoater.lock()
                 print("++Hold tight++ !!!")
-                self.gripper.open(self.SAMPLEWIDTH - 2)
+                self.gripper.open(self.SAMPLEWIDTH)
+                # self.gripper.open(self.SAMPLEWIDTH - 2)
                 # self.gripper.open(self.SAMPLEWIDTH - 1)
                 time.sleep(0.1)
                 if (

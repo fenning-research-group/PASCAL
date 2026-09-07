@@ -38,6 +38,8 @@ class Gripper:
 
         self.MAXPWM = constants["gripper"]["pwm_max"]  # max pwm signal (us)
         self.MINPWM = constants["gripper"]["pwm_min"]
+        self.PWMperMM = constants["gripper"]["slope"]
+        self.PWMoffset = constants["gripper"]["intercept"]
         self.MAXWIDTH = constants["gripper"]["width_max"]  # max gripper width, in mm
         self.MINWIDTH = constants["gripper"]["width_min"]
         self.SLOWGRIPPERINTERVAL = constants["gripper"]["slow_interval"]
@@ -161,12 +163,20 @@ class Gripper:
             raise Exception(
                 f"Angle {angle} outside acceptable range ({self.MINPWM}-{self.MAXPWM})"
             )
-        m = (self.MAXWIDTH - self.MINWIDTH) / (self.MAXPWM - self.MINPWM)
-        b = self.MINWIDTH - m * self.MINPWM
+        # Pre sep 2026:
+        # m = (self.MAXWIDTH - self.MINWIDTH) / (self.MAXPWM - self.MINPWM)
+        # b = self.MINWIDTH - m * self.MINPWM
+        # return np.round(m * angle + b, 1)
+        # Sep 2026:
+        m = self.PWMperMM
+        b = self.PWMoffset
+        # pwn = m*width + b
+        width = (angle - b)/m
+        return width
         # fractional_angle = (angle - self.MINPWM) / (self.MAXPWM - self.MINPWM)
         # width = fractional_angle * (self.MAXWIDTH - self.MINWIDTH) + self.MINWIDTH
 
-        return np.round(m * angle + b, 1)
+        
 
     def __width_to_pwm(self, width):
         """
@@ -177,10 +187,12 @@ class Gripper:
                 f"Width {width} outside acceptable range ({self.MINWIDTH}-{self.MAXWIDTH})"
             )
 
-        fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
-        angle = fractional_width * (self.MAXPWM - self.MINPWM) + self.MINPWM
-
-        return np.round(angle, 0).astype(int)  # nearest angle
+        # fractional_width = (width - self.MINWIDTH) / (self.MAXWIDTH - self.MINWIDTH)
+        # angle = fractional_width * (self.MAXPWM - self.MINPWM) + self.MINPWM
+        m = self.PWMperMM
+        b = self.PWMoffset
+        pwm = m*width + b
+        return np.round(pwm, 0).astype(int)  # nearest angle
 
     # gripper timeout watchdog
     def __start_gripper_timeout_watchdog(self):
