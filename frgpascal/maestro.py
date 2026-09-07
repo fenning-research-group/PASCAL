@@ -261,21 +261,23 @@ class Maestro:
         self.storage = {
             "Tray1": SampleTray(
                 name="Tray1",
-                version="storage_v4",
+                version="storage_v5",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p1"],
                 sample_size = self.__sample_size_key,
-                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
+                testslots = ["H1", "H6", "G2", "G5", "F3", "F4", "E2", "E5", "D1", "D6", "C3", "C4", "B2", "B5", "A1", "A6"]
+                # testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
             "Tray2": SampleTray(
                 name="Tray2",
-                version="storage_v4",
+                version="storage_v5",
                 gantry=self.gantry,
                 gripper=self.gripper,
                 p0=constants["sampletray"]["p2"],
                 sample_size = self.__sample_size_key,
-                testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
+                testslots = ["H1", "H6", "G2", "G5", "F3", "F4", "E2", "E5", "D1", "D6", "C3", "C4", "B2", "B5", "A1", "A6"]
+                # testslots = [f"{row}{col}" for row in ['I', 'G', 'E', 'C', 'A'] for col in [1, 3, 5]]
             ),
         }
         self.__tray_endpoints = None

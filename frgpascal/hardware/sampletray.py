@@ -74,7 +74,7 @@ class SampleTray(Workspace):
 class Tray1(SampleTray):
     """Wrapper class with default arguments for Tray1"""
 
-    def __init__(self, version="storage_v4", gantry=None, gripper=None, p0=[0, 0, 0], sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
+    def __init__(self, version="storage_v5", gantry=None, gripper=None, p0=[0, 0, 0], sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
         super().__init__(
             name="Tray1", version=version, gantry=gantry, gripper=gripper, p0=p0, testslots = ["A1"], sample_size = sample_size
 
@@ -84,7 +84,7 @@ class Tray1(SampleTray):
 class Tray2(SampleTray):
     """Wrapper class with default arguments for Tray2"""
 
-    def __init__(self, version="storage_v4", gantry=None, gripper=None, p0=[0, 0, 0], sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
+    def __init__(self, version="storage_v5", gantry=None, gripper=None, p0=[0, 0, 0], sample_size: str = Literal["square_10mm", "square_17mm", "square_25.3mm"]):
         super().__init__(
             name="Tray2", version=version, gantry=gantry, gripper=gripper, p0=p0, testslots = ["A1"], sample_size = sample_size
 
