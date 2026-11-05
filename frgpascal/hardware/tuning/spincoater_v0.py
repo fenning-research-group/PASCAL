@@ -196,25 +196,30 @@ class TuneODriveLegacy:
         ):
         rpm_results = {}
         for rpm in tqdm(rpm_sweep):
-            self._calibrate()
-            self.odrv0.axis0.controller.input_vel = 0 # added axis0
-            self.odrv0.axis0.requested_state = 1
-            self.odrv0.clear_errors()
-            if rpm not in rpm_results.keys():
-                rpm_results[rpm] = {}
-            veltest_params = VelocityTestParams(
-                pos_proportional_gain = pos_proportional_gain,
-                vel_proportional_gain = vel_proportional_gain,
-                vel_integrator_gain = vel_integrator_gain,
-                vel_setpoint = rpm,
-            )
-            vel_dict, test_params = self._velocity_test(test_params = veltest_params)
-            rpm_results[rpm]['vel_dict'] = vel_dict
-            rpm_results[rpm]["VelocityTestParams"] = asdict(test_params)
-            
-            self.odrv0.axis0.controller.input_vel = 0 # added axis0
-            self.odrv0.axis0.requested_state = 1
-            self.odrv0.clear_errors()
+            try:
+                self._calibrate()
+                self.odrv0.axis0.controller.input_vel = 0 # added axis0
+                self.odrv0.axis0.requested_state = 1
+                self.odrv0.clear_errors()
+                if rpm not in rpm_results.keys():
+                    rpm_results[rpm] = {}
+                veltest_params = VelocityTestParams(
+                    pos_proportional_gain = pos_proportional_gain,
+                    vel_proportional_gain = vel_proportional_gain,
+                    vel_integrator_gain = vel_integrator_gain,
+                    vel_setpoint = rpm,
+                )
+                vel_dict, test_params = self._velocity_test(test_params = veltest_params)
+                rpm_results[rpm]['vel_dict'] = vel_dict
+                rpm_results[rpm]["VelocityTestParams"] = asdict(test_params)
+                
+                self.odrv0.axis0.controller.input_vel = 0 # added axis0
+                self.odrv0.axis0.requested_state = 1
+                self.odrv0.clear_errors()
+            except:
+                self.odrv0.axis0.controller.input_vel = 0 # added axis0
+                self.odrv0.axis0.requested_state = 1
+                self.odrv0.clear_errors()
         pos_results = {}
         for pos in tqdm(pos_sweep):
             try:

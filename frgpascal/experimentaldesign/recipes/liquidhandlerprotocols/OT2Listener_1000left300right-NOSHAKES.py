@@ -1013,9 +1013,24 @@ class ListenerWebsocket:
                 "Duration (s)": t2 - t1
             }
         else:
+            t1_point = self.__get_point(pipette = p)
+            t1 = time.time()
+            p.move_to(
+                location=self.spincoater[self.CHUCK].top(height),
+                # speed=self.SLOW_XY_RATE,
+                # speed = self.SLOWEST_XY_RATE,
+            )
             t2 = time.time()
             t2_point = self.__get_point(pipette = p)
-            slowaction_metadata = {}
+            # timings["slow_move_to_chuck-duration"] = t2 - t1
+            slowaction_metadata = {
+                "Start_Point": (t1_point.x, t1_point.y, t1_point.z),
+                "End_Point": (t2_point.x, t2_point.y, t2_point.z),
+                "Duration (s)": t2 - t1
+            }
+            t_2 = time.time()
+            # t2_point = self.__get_point(pipette = p)
+            # slowaction_metadata = {}
         p.dispense(location=self.spincoater[self.CHUCK].top(height), rate=relative_rate)
         t3 = time.time()
         t3_point = self.__get_point(pipette = p)
@@ -1040,7 +1055,7 @@ class ListenerWebsocket:
             "dispense_onto_chuck-ACTION": {
                 "Start_Point": (t2_point.x, t2_point.y, t2_point.z),
                 "End_Point": (t3_point.x, t3_point.y, t3_point.z),
-                "Duration (s)": t3 - t2
+                "Duration (s)": t3 - t_2
             },
             "blow_out_over_chuck-ACTION": {
                 "Duration (s)": t5 - t3
