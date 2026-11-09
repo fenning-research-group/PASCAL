@@ -153,10 +153,12 @@ class Maestro:
         ]  # number of times to try picking up a sample before erroring out
         self.TWISTOFF = True
         self._fakeout = test_gantrygripper
-
+        # TODO: Further improve the camera:
+        self.TAKE_PHOTOS = False
         # ID is 0 by default and increments based on how many cameras are connected, i.e if it is the second 
         # conencted camera then it should have an id of 1, etc. 
-        self.gripper_camera = GripperCamera(id = 0) 
+        if self.TAKE_PHOTOS:
+            self.gripper_camera = GripperCamera(id = 0)
 
         
         # Workers
@@ -579,23 +581,24 @@ class Maestro:
             #     raise ValueError("Sample dropped in transit!")
 
             # camera things
-            if capture_metadata is not None:
-                meta = capture_metadata.copy()
-                meta.update({
-                    "action": "catch",
-                    "timestamp": time.time()
-                })
-                img = self.gripper_camera.capture_image()
-                
-                # Verify Pick
-                sample_present = self.gripper_camera.detect_sample(img)
-                meta["sample_present"] = sample_present
-                self.gripper_camera.log_capture(img, meta)
-                
-                #if not sample_present:
-                #    self.gripper.close()
-                 #   self.idle_gantry()
-                 #   raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
+            if self.TAKE_PHOTOS:
+                if capture_metadata is not None:
+                    meta = capture_metadata.copy()
+                    meta.update({
+                        "action": "catch",
+                        "timestamp": time.time()
+                    })
+                    img = self.gripper_camera.capture_image()
+                    
+                    # Verify Pick
+                    sample_present = self.gripper_camera.detect_sample(img)
+                    meta["sample_present"] = sample_present
+                    self.gripper_camera.log_capture(img, meta)
+                    
+                    #if not sample_present:
+                    #    self.gripper.close()
+                    #   self.idle_gantry()
+                    #   raise Exception("PICK FAILURE: The sample was not successfully picked up by the gripper.")
                  
             if all(
                 [a == b for a, b in zip(p2, self.spincoater())]
@@ -637,24 +640,25 @@ class Maestro:
                     pass
                 self.spincoater.idle()  # dont actively hold chuck in registered position
 
-            # camera things
-            if capture_metadata is not None:
-                meta = capture_metadata.copy()
-                meta.update({
-                    "action": "release",
-                    "timestamp": time.time()
-                })
-                img = self.gripper_camera.capture_image()
-                
-                # Verify Place
-                sample_present = self.gripper_camera.detect_sample(img)
-                meta["sample_present"] = sample_present
-                self.gripper_camera.log_capture(img, meta)
-                
-                #if sample_present:
-                #    self.gripper.close()
-                 #   self.idle_gantry()
-                 #   raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
+            if self.TAKE_PHOTOS:
+                # camera things
+                if capture_metadata is not None:
+                    meta = capture_metadata.copy()
+                    meta.update({
+                        "action": "release",
+                        "timestamp": time.time()
+                    })
+                    img = self.gripper_camera.capture_image()
+                    
+                    # Verify Place
+                    sample_present = self.gripper_camera.detect_sample(img)
+                    meta["sample_present"] = sample_present
+                    self.gripper_camera.log_capture(img, meta)
+                    
+                    #if sample_present:
+                    #    self.gripper.close()
+                    #   self.idle_gantry()
+                    #   raise Exception("PLACE FAILURE: The sample failed to release and is stuck to the gripper.")
             
         else:
             if all(
@@ -871,10 +875,10 @@ class Maestro:
 
         self._start_loop()
         self.t0 = self.nist_time
-
-        if self.gantry.in_use and self.gripper.in_use:
-            self.gripper_camera.connect()
-            self.gripper_camera.base_dir = os.path.join(self.experiment_folder, "gripper_camera_pictures")
+        if self.TAKE_PHOTOS:
+            if self.gantry.in_use and self.gripper.in_use:
+                self.gripper_camera.connect()
+                self.gripper_camera.base_dir = os.path.join(self.experiment_folder, "gripper_camera_pictures")
 
         for worker in self.workers.values():
             worker.prime(loop=self.loop)
@@ -915,13 +919,13 @@ class Maestro:
             print(f"Stopping {w} now")
             w.stop_workers()
             print(f"\tStop Successful!")
-
-        if self.gripper_camera.handle is not None:
-            self.gripper_camera.disconnect()
-            if not os.path.exists(self.gripper_camera.base_dir):
-                os.mkdir(self.gripper_camera.base_dir)
-            self.gripper_camera.archive_production_batch()
-           
+        if self.TAKE_PHOTOS:
+            if self.gripper_camera.handle is not None:
+                self.gripper_camera.disconnect()
+                if not os.path.exists(self.gripper_camera.base_dir):
+                    os.mkdir(self.gripper_camera.base_dir)
+                self.gripper_camera.archive_production_batch()
+            
         # if self.liquidhandler.server.ip is not None:
         if (self.given_run_ip is not None) and (self.given_run_ip != ''):
             print("Stopping the liquidhandler Server Now.")
